@@ -13,6 +13,8 @@ import AppBackground from './components/AppBackground'
 import { ToastContext, useToastState } from './hooks/useToast'
 import { AccountsProvider, useAccounts } from './hooks/useAccounts'
 
+import ModsPage from './components/mods/ModsPage'
+
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 function PlaceholderPage({ title }) {
@@ -243,7 +245,7 @@ function AppInner() {
         )
       case 'account':  return <AccountPage />
       case 'play':     return <PlayPage />
-      case 'mods':     return <PlaceholderPage title="Mods" />
+      case 'mods':     return <ModsPage />
       case 'worlds':   return <PlaceholderPage title="Worlds" />
       case 'settings': return <SettingsPage />
       default:         return (

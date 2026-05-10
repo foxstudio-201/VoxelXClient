@@ -80,6 +80,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Shell
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
 
+  // Modrinth
+  modrinthSearch:          (opts)           => ipcRenderer.invoke('modrinth:search', opts),
+  modrinthGetProject:      (idOrSlug)       => ipcRenderer.invoke('modrinth:getProject', idOrSlug),
+  modrinthGetVersions:     (idOrSlug, f)    => ipcRenderer.invoke('modrinth:getVersions', idOrSlug, f),
+  modrinthInstall:         (opts)           => ipcRenderer.invoke('modrinth:install', opts),
+  modrinthGetGameVersions: ()               => ipcRenderer.invoke('modrinth:getGameVersions'),
+  modrinthGetCategories:   ()               => ipcRenderer.invoke('modrinth:getCategories'),
+  onModrinthInstallProgress: (cb) => {
+    const handler = (_e, data) => cb(data)
+    ipcRenderer.on('modrinth:installProgress', handler)
+    return () => ipcRenderer.removeListener('modrinth:installProgress', handler)
+  },
+
   // Launcher
   launchGame:      (opts)       => ipcRenderer.invoke('launcher:launch', opts),
   stopGame:        (opts)       => ipcRenderer.invoke('launcher:stop', opts),

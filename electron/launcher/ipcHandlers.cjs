@@ -12,6 +12,7 @@ const { setupFabric }         = require('./fabric/fabricLoader.cjs')
 const { setupForge }          = require('./forge/forgeLoader.cjs')
 const { setupNeoForge }       = require('./neoforge/neoforgeLoader.cjs')
 const { ensureFabricMods }    = require('./modrinth/modrinthMods.cjs')
+const { searchProjects, getProject, getProjectVersions, installVersion, getGameVersions, getCategories } = require('./modrinth/modrinthSearch.cjs')
 const { launchGame }          = require('./vanilla/gameRunner.cjs')
 const { startPlaytimeTracker, getProfileStats } = require('./statsTracker.cjs')
 
@@ -569,6 +570,51 @@ function registerLauncherHandlers(getTrustedWindow) {
     } catch {
       return []
     }
+  })
+
+  // ── Modrinth search & install ─────────────────────────────────────────────
+
+  ipcMain.handle('modrinth:search', async (e, opts) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    try { return await searchProjects(opts) }
+    catch (err) { return { error: err.message } }
+  })
+
+  ipcMain.handle('modrinth:getProject', async (e, idOrSlug) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    try { return await getProject(idOrSlug) }
+    catch (err) { return { error: err.message } }
+  })
+
+  ipcMain.handle('modrinth:getVersions', async (e, idOrSlug, filters) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    try { return await getProjectVersions(idOrSlug, filters) }
+    catch (err) { return { error: err.message } }
+  })
+
+  ipcMain.handle('modrinth:install', async (e, opts) => {
+    const win = getTrustedWindow(e)
+    if (!win) return { error: 'Unauthorized' }
+    try {
+      return await installVersion({
+        ...opts,
+        onProgress: (p) => {
+          if (!win.isDestroyed()) win.webContents.send('modrinth:installProgress', p)
+        },
+      })
+    } catch (err) { return { error: err.message } }
+  })
+
+  ipcMain.handle('modrinth:getGameVersions', async (e) => {
+    if (!getTrustedWindow(e)) return []
+    try { return await getGameVersions() }
+    catch { return [] }
+  })
+
+  ipcMain.handle('modrinth:getCategories', async (e) => {
+    if (!getTrustedWindow(e)) return []
+    try { return await getCategories() }
+    catch { return [] }
   })
 }
 
