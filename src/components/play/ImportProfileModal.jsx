@@ -1,0 +1,524 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
+import fabricIcon    from '../../assets/loader/fabric.png'
+import forgeIcon     from '../../assets/loader/forge.png'
+import neoforgeIcon  from '../../assets/loader/neoforge.png'
+import curseforgeIcon from '../../assets/loader/curseforge.png'
+import modrinthIcon  from '../../assets/loader/modrinth.png'
+import defaultBg     from '../../assets/minecraft-versions/default.png'
+
+import v112 from '../../assets/minecraft-versions/1.12.png'
+import v115 from '../../assets/minecraft-versions/1.15.png'
+import v116 from '../../assets/minecraft-versions/1.16.png'
+import v117 from '../../assets/minecraft-versions/1.17.png'
+import v118 from '../../assets/minecraft-versions/1.18.png'
+import v119 from '../../assets/minecraft-versions/1.19.png'
+import v120 from '../../assets/minecraft-versions/1.20.png'
+import v121 from '../../assets/minecraft-versions/1.21.png'
+
+const isElectron = typeof window !== 'undefined' && window.electronAPI
+
+const VERSION_MAP = {
+  '1.12': v112, '1.15': v115, '1.16': v116, '1.17': v117,
+  '1.18': v118, '1.19': v119, '1.20': v120, '1.21': v121,
+}
+
+const LOADER_ICONS = {
+  fabric:   fabricIcon,
+  forge:    forgeIcon,
+  neoforge: neoforgeIcon,
+}
+
+const SOURCES = {
+  curseforge: {
+    id: 'curseforge',
+    label: 'CurseForge',
+    color: '#f97316',
+    icon: curseforgeIcon,
+    ext: '.zip',
+  },
+  modrinth: {
+    id: 'modrinth',
+    label: 'Modrinth',
+    color: '#22c55e',
+    icon: modrinthIcon,
+    ext: '.zip / .mrpack',
+  },
+}
+
+function getMajorVersion(v) {
+  if (!v) return null
+  const parts = v.split('.')
+  return parts.length >= 2 ? `${parts[0]}.${parts[1]}` : v
+}
+
+function getVersionImage(gameVersion) {
+  if (!gameVersion) return defaultBg
+  const major = getMajorVersion(gameVersion)
+  return VERSION_MAP[major] || defaultBg
+}
+
+// ─── PreviewCard ──────────────────────────────────────────────────────────────
+function PreviewCard({ source, meta }) {
+  const theme = SOURCES[source]
+  // Ưu tiên: iconBase64 (từ zip) > iconUrl (từ manifest URL) > loader icon
+  const icon = meta.iconBase64 || meta.iconUrl || LOADER_ICONS[meta.loader] || forgeIcon
+  const bgImage = meta.iconUrl || getVersionImage(meta.gameVersion)
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border"
+      style={{ borderColor: theme.color + '44', background: `linear-gradient(135deg, ${theme.color}12 0%, #141414 60%)` }}
+    >
+      <div className="relative h-24 overflow-hidden">
+        <img src={bgImage} alt="bg" className="w-full h-full object-cover" draggable={false} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70 pointer-events-none" />
+        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+          style={{ background: theme.color + 'cc', color: '#fff' }}>
+          <img src={theme.icon} alt={theme.label} className="w-3 h-3 object-contain" />
+          {theme.label}
+        </div>
+        {meta.gameVersion && (
+          <div className="absolute bottom-2 left-3">
+            <span className="text-[10px] font-mono text-white/70 bg-black/50 px-1.5 py-0.5 rounded">{meta.gameVersion}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center border"
+          style={{ background: theme.color + '18', borderColor: theme.color + '33' }}>
+          <img src={icon} alt="icon" className="w-7 h-7 object-contain" draggable={false} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm text-white truncate">{meta.name || 'Unnamed'}</p>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            {meta.loader && (
+              <span className="text-[10px] font-semibold capitalize" style={{ color: theme.color }}>
+                {meta.loader}{meta.loaderVersion ? ` ${meta.loaderVersion}` : ''}
+              </span>
+            )}
+            {meta.loader && meta.gameVersion && <span className="text-[10px] text-white/25">·</span>}
+            {meta.gameVersion && <span className="text-[10px] text-white/40">{meta.gameVersion}</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Modal ───────────────────────────────────────────────────────────────
+// Sidebar width = 68px, thêm 12px padding → minimized left = 80px
+const MINIMIZED_LEFT = 80
+
+export default function ImportProfileModal({ onClose, onCreate }) {
+  const [activeSource, setActiveSource] = useState('curseforge')
+  const [filePath, setFilePath]         = useState(null)
+  const [fileName, setFileName]         = useState(null)
+  const [meta, setMeta]                 = useState(null)
+  const [reading, setReading]           = useState(false)
+  const [importing, setImporting]       = useState(false)
+  const [progress, setProgress]         = useState(null)
+  const [isDragging, setIsDragging]     = useState(false)
+  const [minimized, setMinimized]       = useState(false)
+  const dropZoneRef                     = useRef(null)
+  const dragCounter                     = useRef(0)
+
+  const theme = SOURCES[activeSource]
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape' && !importing) onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose, importing])
+
+  // ── Process file path ──
+  const processFilePath = useCallback(async (fPath, fName) => {
+    setReading(true)
+    setMeta(null)
+    setFilePath(fPath)
+    setFileName(fName)
+    try {
+      const metaResult = await window.electronAPI.readModpackMeta(fPath)
+      if (metaResult?.error) {
+        setMeta({ name: fName.replace(/\.(zip|mrpack)$/i, ''), gameVersion: '', loader: '', loaderVersion: '', iconBase64: null, iconUrl: null })
+      } else {
+        setMeta(metaResult)
+      }
+    } catch {
+      setMeta({ name: fName.replace(/\.(zip|mrpack)$/i, ''), gameVersion: '', loader: '', loaderVersion: '', iconBase64: null, iconUrl: null })
+    } finally {
+      setReading(false)
+    }
+  }, [])
+
+  // ── Browse ──
+  async function handleBrowse() {
+    if (!isElectron) return
+    try {
+      const r = await window.electronAPI.browseModpack()
+      if (r?.canceled || !r?.filePath) return
+      await processFilePath(r.filePath, r.name)
+    } catch (err) { console.error('[ImportModal]', err) }
+  }
+
+  // ── Drag & Drop ──
+  const onDragEnter = useCallback((e) => {
+    e.preventDefault(); e.stopPropagation()
+    dragCounter.current++
+    if (dragCounter.current === 1) setIsDragging(true)
+  }, [])
+  const onDragOver = useCallback((e) => { e.preventDefault(); e.stopPropagation() }, [])
+  const onDragLeave = useCallback((e) => {
+    e.preventDefault(); e.stopPropagation()
+    dragCounter.current--
+    if (dragCounter.current === 0) setIsDragging(false)
+  }, [])
+  const onDrop = useCallback(async (e) => {
+    e.preventDefault(); e.stopPropagation()
+    dragCounter.current = 0; setIsDragging(false)
+    if (importing) return
+    const dropped = e.dataTransfer.files[0]
+    if (!dropped || !dropped.name.match(/\.(zip|mrpack)$/i)) return
+    let fPath = null
+    if (isElectron && window.electronAPI.getFilePath) fPath = window.electronAPI.getFilePath(dropped)
+    if (!fPath) return
+    await processFilePath(fPath, dropped.name)
+  }, [importing, processFilePath])
+
+  function handleClearFile() {
+    setFilePath(null); setFileName(null); setMeta(null); setProgress(null)
+  }
+  function switchSource(src) { setActiveSource(src); handleClearFile() }
+
+  // ── Import ──
+  async function handleImport() {
+    if (!filePath || !meta) return
+    setImporting(true)
+    setProgress({ phase: 'create', log: 'Tạo profile...', percent: 1 })
+
+    try {
+      const loader = meta.loader || (activeSource === 'modrinth' ? 'fabric' : 'forge')
+      // Ưu tiên URL (nhẹ hơn), fallback về base64 từ icon.png trong zip
+      const iconUrl = meta.iconUrl || meta.iconBase64 || null
+
+      const createResult = await onCreate({
+        name:          meta.name || fileName?.replace(/\.(zip|mrpack)$/i, '') || 'Modpack',
+        loader,
+        gameVersion:   meta.gameVersion || '',
+        loaderVersion: meta.loaderVersion || '',
+        importSource:  activeSource,
+        importIconUrl: iconUrl,
+        importBgUrl:   meta.iconUrl || meta.iconBase64 || null,
+      })
+
+      if (createResult?.error) {
+        setProgress({ phase: 'error', log: `Lỗi tạo profile: ${createResult.error}`, percent: 0 })
+        return
+      }
+
+      const profileId = createResult?.profile?.id
+      if (!profileId || !isElectron) { onClose(); return }
+
+      const unsub = window.electronAPI.onImportProgress?.((data) => setProgress(data))
+      setProgress({ phase: 'start', log: 'Bắt đầu import...', percent: 2 })
+
+      const result = await window.electronAPI.importModpack({ filePath, source: activeSource, profileId })
+      unsub?.()
+
+      if (result?.error) {
+        setProgress({ phase: 'error', log: `Lỗi: ${result.error}`, percent: 0 })
+        return
+      }
+
+      setProgress({ phase: 'done', log: 'Import hoàn tất!', percent: 100 })
+      setTimeout(() => onClose(), 900)
+    } catch (err) {
+      setProgress({ phase: 'error', log: `Lỗi: ${err.message}`, percent: 0 })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const canImport = !!filePath && !!meta && !reading && !importing
+
+  // ══════════════════════════════════════════════════════
+  // MINIMIZED VIEW — góc dưới trái, cách sidebar 12px
+  // ══════════════════════════════════════════════════════
+  if (minimized) {
+    const isRunning = importing && progress
+    const isDone    = progress?.phase === 'done'
+    const isError   = progress?.phase === 'error'
+
+    return (
+      <div
+        className="fixed z-50 flex items-center gap-3 px-3.5 py-2.5 rounded-2xl shadow-2xl shadow-black/60 cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+        style={{
+          bottom: 20,
+          left: MINIMIZED_LEFT,
+          background: '#1a1a1a',
+          border: `1px solid ${isError ? '#ef444455' : isDone ? '#22c55e55' : theme.color + '55'}`,
+          minWidth: 260,
+          maxWidth: 340,
+        }}
+        onClick={() => setMinimized(false)}
+        title="Click để mở lại"
+      >
+        {/* Source icon */}
+        <div className="flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center"
+          style={{ background: theme.color + '20', border: `1px solid ${theme.color}44` }}>
+          <img src={theme.icon} alt={theme.label} className="w-5 h-5 object-contain" />
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white/80 truncate">
+            {meta?.name || fileName?.replace(/\.(zip|mrpack)$/i, '') || 'Import'}
+          </p>
+          {isRunning ? (
+            <div className="flex items-center gap-2 mt-1">
+              <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${progress.percent ?? 0}%`, background: isError ? '#ef4444' : theme.color }}
+                />
+              </div>
+              <span className="text-[10px] font-mono flex-shrink-0"
+                style={{ color: isError ? '#f87171' : isDone ? '#4ade80' : theme.color }}>
+                {progress.percent ?? 0}%
+              </span>
+            </div>
+          ) : (
+            <p className="text-[10px] text-white/30 mt-0.5">
+              {filePath ? 'Sẵn sàng import' : 'Chọn file để import'}
+            </p>
+          )}
+        </div>
+
+        {/* Spinner / done / error icon */}
+        <div className="flex-shrink-0 flex items-center gap-1.5">
+          {importing && !isDone && !isError && (
+            <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" style={{ color: theme.color }}>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          )}
+          {isDone && (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-green-400">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+          )}
+          {isError && (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-red-400">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+          )}
+          {/* Close button — chỉ hiện khi không đang import */}
+          {!importing && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose() }}
+              className="w-5 h-5 flex items-center justify-center rounded-md text-white/30 hover:text-white/70 hover:bg-white/10 transition-all"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ══════════════════════════════════════════════════════
+  // FULL MODAL VIEW
+  // ══════════════════════════════════════════════════════
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget && !importing) onClose() }}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)' }}
+      >
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4">
+          <div>
+            <h2 className="text-base font-bold text-white">Import Profile</h2>
+            <p className="text-xs text-white/30 mt-0.5">Import từ modpack .zip / .mrpack</p>
+          </div>
+          <div className="flex items-center gap-1">
+            {/* Minimize button */}
+            <button
+              onClick={() => setMinimized(true)}
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
+              title="Thu gọn"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <path d="M19 13H5v-2h14v2z"/>
+              </svg>
+            </button>
+            {/* Close button */}
+            <button
+              onClick={() => { if (!importing) onClose() }}
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white hover:bg-white/8 transition-all"
+              title="Đóng"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* ── Source tabs ── */}
+        <div className="px-5 pb-4">
+          <div className="flex gap-1.5 p-1 bg-white/4 rounded-xl border border-white/5">
+            {Object.values(SOURCES).map(src => (
+              <button
+                key={src.id}
+                onClick={() => switchSource(src.id)}
+                disabled={importing}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold border transition-all duration-150 disabled:opacity-50"
+                style={
+                  activeSource === src.id
+                    ? { background: src.color + '20', borderColor: src.color + '55', color: src.color }
+                    : { background: 'transparent', borderColor: 'transparent', color: 'rgba(255,255,255,0.35)' }
+                }
+              >
+                <img src={src.icon} alt={src.label} className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                {src.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Content ── */}
+        <div className="px-5 pb-5 flex flex-col gap-4">
+          {/* File picker / preview */}
+          {!filePath ? (
+            <div
+              ref={dropZoneRef}
+              onDragEnter={onDragEnter}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-10 px-6 cursor-pointer transition-all duration-200 select-none"
+              style={{
+                borderColor: isDragging ? theme.color : theme.color + '44',
+                background:  isDragging ? theme.color + '12' : theme.color + '06',
+              }}
+              onClick={handleBrowse}
+            >
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200"
+                style={{
+                  background: isDragging ? theme.color + '30' : theme.color + '20',
+                  border: `1px solid ${theme.color}${isDragging ? '88' : '44'}`,
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7" style={{ color: theme.color }}>
+                  <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold" style={{ color: isDragging ? theme.color : 'rgba(255,255,255,0.7)' }}>
+                  {isDragging ? 'Thả file vào đây' : 'Kéo & thả hoặc click để chọn'}
+                </p>
+                <p className="text-xs text-white/30 mt-1">Hỗ trợ {theme.label} ({theme.ext})</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {/* File info bar */}
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border"
+                style={{ background: theme.color + '0d', borderColor: theme.color + '33' }}>
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0" style={{ color: theme.color }}>
+                  <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10z"/>
+                </svg>
+                <span className="flex-1 text-xs text-white/70 truncate font-mono">{fileName}</span>
+                {!importing && (
+                  <button onClick={handleClearFile}
+                    className="w-5 h-5 flex items-center justify-center rounded-md text-white/30 hover:text-white/70 hover:bg-white/8 transition-all flex-shrink-0">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {reading && (
+                <div className="flex items-center justify-center gap-2 py-6">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" style={{ color: theme.color }}>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  <span className="text-xs text-white/40">Đang đọc file...</span>
+                </div>
+              )}
+
+              {!reading && meta && <PreviewCard source={activeSource} meta={meta} />}
+            </div>
+          )}
+
+          {/* Progress */}
+          {progress && (
+            <div className="flex flex-col gap-2 px-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-white/50 truncate flex-1">{progress.log}</span>
+                <span className="text-xs font-mono font-bold flex-shrink-0"
+                  style={{ color: progress.phase === 'error' ? '#f87171' : theme.color }}>
+                  {progress.percent ?? 0}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-white/8 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${progress.percent ?? 0}%`, background: progress.phase === 'error' ? '#ef4444' : theme.color }} />
+              </div>
+              {progress.total > 0 && (
+                <p className="text-[10px] text-white/25 text-right">{progress.done ?? 0} / {progress.total} mods</p>
+              )}
+              {progress.phase === 'error' && (
+                <p className="text-[10px] text-red-400/70 mt-1">
+                  Kiểm tra kết nối mạng. Một số mod có thể cần CurseForge API key.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => { if (!importing) onClose() }}
+              disabled={importing}
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/8 border border-white/5 hover:border-white/10 transition-all disabled:opacity-40"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={!canImport}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white transition-all duration-150 active:scale-95 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              style={{
+                background: canImport ? theme.color : 'rgba(255,255,255,0.08)',
+                boxShadow:  canImport ? `0 4px 16px ${theme.color}40` : 'none',
+              }}
+            >
+              {importing ? (
+                <span className="flex items-center justify-center gap-1.5">
+                  <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  {progress?.phase === 'mods' ? `Tải mods ${progress.done ?? 0}/${progress.total ?? 0}`
+                    : progress?.phase === 'overrides' ? 'Giải nén...'
+                    : progress?.phase === 'done' ? 'Hoàn tất!'
+                    : 'Đang import...'}
+                </span>
+              ) : 'Import'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

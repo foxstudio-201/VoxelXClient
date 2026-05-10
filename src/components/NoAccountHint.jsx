@@ -1,0 +1,129 @@
+import { useEffect, useState } from 'react'
+
+export default function NoAccountHint({ onGoToAccount }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 500)
+    return () => clearTimeout(t)
+  }, [])
+
+  // Chỉ ẩn, không navigate
+  function dismiss() {
+    setVisible(false)
+  }
+
+  // Ẩn rồi navigate
+  function goToAccount() {
+    setVisible(false)
+    setTimeout(onGoToAccount, 200)
+  }
+
+  return (
+    <div className="absolute inset-0 z-30 pointer-events-none">
+
+      {/* Backdrop — click ngoài chỉ ẩn, không navigate */}
+      <div
+        onClick={dismiss}
+        className={`
+          absolute inset-0 pointer-events-auto
+          transition-opacity duration-300
+          ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+        `}
+        style={{ background: 'rgba(0,0,0,0.35)' }}
+      />
+
+      {/* Ring pulse quanh nút account ở cuối sidebar */}
+      <div
+        className={`
+          absolute pointer-events-none
+          transition-all duration-500
+          ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
+        `}
+        style={{
+          left: 8,
+          bottom: 16,
+          width: 48,
+          height: 48,
+          borderRadius: 12,
+          border: '2px solid rgba(74,222,128,0.7)',
+          boxShadow: '0 0 0 4px rgba(74,222,128,0.15), 0 0 16px rgba(74,222,128,0.3)',
+          animation: visible ? 'pulse-ring 1.8s ease-in-out infinite' : 'none',
+        }}
+      />
+
+      {/* Card popup — stopPropagation để click bên trong không trigger backdrop */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`
+          absolute pointer-events-auto
+          transition-all duration-300 ease-out
+          ${visible
+            ? 'opacity-100 translate-x-0'
+            : 'opacity-0 -translate-x-2 pointer-events-none'
+          }
+        `}
+        style={{ left: 72, bottom: 10 }}
+      >
+        <div className="flex items-end gap-0">
+          {/* Mũi tên trỏ sang trái */}
+          <div
+            className="flex-shrink-0 self-center mb-1"
+            style={{
+              width: 0, height: 0,
+              borderTop:    '7px solid transparent',
+              borderBottom: '7px solid transparent',
+              borderRight:  '9px solid rgba(74,222,128,0.2)',
+            }}
+          />
+
+          {/* Card */}
+          <div className="relative bg-[#161616] border border-green-500/20 rounded-xl shadow-2xl shadow-black/70 w-60 overflow-hidden">
+            <div className="h-[2px] bg-gradient-to-r from-green-500 to-emerald-400 w-full" />
+
+            {/* Pulse dot */}
+            <span className="absolute top-3 right-3 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            </span>
+
+            <div className="p-4">
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="w-8 h-8 rounded-lg bg-green-500/15 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-green-400">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white leading-tight">Chưa có tài khoản</p>
+                  <p className="text-[11px] text-white/35">Cần tài khoản để chơi</p>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-white/45 leading-relaxed mb-3.5">
+                Tạo tài khoản <span className="text-white/70 font-medium">Offline</span> hoặc đăng nhập{' '}
+                <span className="text-white/70 font-medium">Microsoft</span> để bắt đầu khởi động Minecraft.
+              </p>
+
+              {/* Nút này mới navigate */}
+              <button
+                onClick={goToAccount}
+                className="
+                  w-full py-2 rounded-lg text-xs font-bold
+                  bg-green-500 hover:bg-green-400 text-white
+                  transition-all duration-150 active:scale-95
+                  flex items-center justify-center gap-1.5
+                "
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                Tạo tài khoản ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
