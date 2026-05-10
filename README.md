@@ -19,7 +19,7 @@ Manage profiles, install mods, and launch any Minecraft version — all in one p
 </p>
 
 <p>
-  <a href="https://client.foxstudio.site">🌐 Website</a> &nbsp;·&nbsp;
+  <a href="https://voxelxclient.vercel.app">🌐 Website</a> &nbsp;·&nbsp;
   <a href="https://join.foxstudio.site">💬 Discord</a> &nbsp;·&nbsp;
   <a href="#-download">⬇️ Download</a>
 </p>
@@ -185,6 +185,6 @@ Released under the [MIT License](LICENSE).
 
 Made with ❤️ by **FoxStudio**
 
-<a href="https://client.foxstudio.site">client.foxstudio.site</a> &nbsp;·&nbsp; <a href="https://join.foxstudio.site">Discord</a>
+<a href="https://voxelxclient.vercel.app">voxelxclient.vercel.app</a> &nbsp;·&nbsp; <a href="https://join.foxstudio.site">Discord</a>
 
 </div>
