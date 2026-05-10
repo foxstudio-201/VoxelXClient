@@ -1,15 +1,103 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useModrinthInstall } from '../modrinth/useModrinth'
+import VersionSelect from './VersionSelect'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
+const LOADER_COLORS = {
+  fabric:   'text-purple-400',
+  forge:    'text-orange-400',
+  neoforge: 'text-rose-400',
+  vanilla:  'text-green-400',
+}
+
+// ─── Custom profile dropdown ──────────────────────────────────────────────────
+function ProfileSelect({ profiles, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const selected = profiles.find(p => p.id === value)
+
+  useEffect(() => {
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs transition-all"
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          border: `1px solid ${open ? 'rgba(74,222,128,0.4)' : 'rgba(255,255,255,0.1)'}`,
+          color: selected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.3)',
+        }}
+      >
+        <span className="flex items-center gap-2 min-w-0 flex-1 truncate">
+          {selected ? (
+            <>
+              <span className="truncate font-medium">{selected.name}</span>
+              <span className="text-white/25 flex-shrink-0">{selected.gameVersion}</span>
+              <span className={`text-[9px] capitalize flex-shrink-0 ${LOADER_COLORS[selected.loader] || 'text-white/40'}`}>
+                {selected.loader}
+              </span>
+            </>
+          ) : (
+            <span>Select profile</span>
+          )}
+        </span>
+        <svg className={`w-3.5 h-3.5 flex-shrink-0 text-white/30 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl overflow-hidden"
+          style={{ background:'rgba(16,16,16,0.98)', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 16px 40px rgba(0,0,0,0.7)', backdropFilter:'blur(12px)' }}>
+          <div className="overflow-y-auto max-h-44 py-1" style={{ scrollbarWidth: 'thin' }}>
+            {profiles.length === 0 && (
+              <div className="px-3 py-3 text-xs text-white/25 text-center">No profiles found</div>
+            )}
+            {profiles.map(p => {
+              const isSelected = p.id === value
+              return (
+                <button key={p.id} type="button"
+                  onClick={() => { onChange(p); setOpen(false) }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all duration-100"
+                  style={{ background: isSelected ? 'rgba(74,222,128,0.1)' : 'transparent', color: isSelected ? '#4ade80' : 'rgba(255,255,255,0.65)' }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                >
+                  <span className="flex-1 text-xs font-semibold truncate">{p.name}</span>
+                  <span className="text-[10px] text-white/25 flex-shrink-0">{p.gameVersion}</span>
+                  <span className={`text-[9px] capitalize flex-shrink-0 ${LOADER_COLORS[p.loader] || 'text-white/40'}`}>{p.loader}</span>
+                  {isSelected && (
+                    <svg className="w-3 h-3 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── InstallModal ─────────────────────────────────────────────────────────────
 export default function InstallModal({ project, versions, projectType, onClose }) {
-  const [profiles, setProfiles]         = useState([])
-  const [selectedProfile, setProfile]   = useState(null)
-  const [selectedVersion, setVersion]   = useState(null)
+  const [profiles, setProfiles]       = useState([])
+  const [selectedProfile, setProfile] = useState(null)
+  const [selectedVersion, setVersion] = useState(null)
   const { install, installing, progress, error, done, reset } = useModrinthInstall()
 
-  // Load profiles
   useEffect(() => {
     if (!isElectron) return
     window.electronAPI.getProfiles().then(data => {
@@ -19,7 +107,6 @@ export default function InstallModal({ project, versions, projectType, onClose }
     })
   }, [])
 
-  // Default to first version
   useEffect(() => {
     if (versions?.length > 0 && !selectedVersion) setVersion(versions[0])
   }, [versions])
@@ -28,10 +115,10 @@ export default function InstallModal({ project, versions, projectType, onClose }
     if (!selectedVersion || !selectedProfile) return
     reset()
     await install({
-      versionId:   selectedVersion.id,
+      versionId:    selectedVersion.id,
       projectType,
       instancePath: selectedProfile.instancePath,
-      accountId:   null, // install to shared mods folder
+      accountId:    null,
     })
   }
 
@@ -41,7 +128,7 @@ export default function InstallModal({ project, versions, projectType, onClose }
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative z-10 w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: 'rgba(14,14,14,0.98)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 24px 80px rgba(0,0,0,0.7)' }}>
+        style={{ background:'rgba(14,14,14,0.98)', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 24px 80px rgba(0,0,0,0.7)' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
@@ -54,7 +141,8 @@ export default function InstallModal({ project, versions, projectType, onClose }
               <p className="text-white/30 text-xs capitalize">{projectType}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 transition-all">
+          <button onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -62,40 +150,28 @@ export default function InstallModal({ project, versions, projectType, onClose }
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          {/* Version selector */}
+          {/* Version */}
           <div>
             <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
               Version
             </label>
-            <select
+            <VersionSelect
+              versions={versions}
               value={selectedVersion?.id || ''}
-              onChange={e => setVersion(versions.find(v => v.id === e.target.value))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500/50"
-            >
-              {versions?.map(v => (
-                <option key={v.id} value={v.id} style={{ background: '#1a1a1a' }}>
-                  {v.version_number} — {v.game_versions?.join(', ')}
-                </option>
-              ))}
-            </select>
+              onChange={v => setVersion(v)}
+            />
           </div>
 
-          {/* Profile selector */}
+          {/* Profile */}
           <div>
             <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
               Install to Profile
             </label>
-            <select
+            <ProfileSelect
+              profiles={profiles}
               value={selectedProfile?.id || ''}
-              onChange={e => setProfile(profiles.find(p => p.id === e.target.value))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-green-500/50"
-            >
-              {profiles.map(p => (
-                <option key={p.id} value={p.id} style={{ background: '#1a1a1a' }}>
-                  {p.name} ({p.gameVersion} · {p.loader})
-                </option>
-              ))}
-            </select>
+              onChange={p => setProfile(p)}
+            />
           </div>
 
           {/* Progress */}
@@ -135,12 +211,10 @@ export default function InstallModal({ project, versions, projectType, onClose }
               {done ? 'Close' : 'Cancel'}
             </button>
             {!done && (
-              <button
-                onClick={handleInstall}
+              <button onClick={handleInstall}
                 disabled={installing || !selectedVersion || !selectedProfile}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}
-              >
+                style={{ background:'linear-gradient(135deg,#22c55e,#16a34a)' }}>
                 {installing ? 'Installing...' : 'Install'}
               </button>
             )}

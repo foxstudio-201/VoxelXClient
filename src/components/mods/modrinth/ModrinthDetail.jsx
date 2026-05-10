@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useModrinthProject, useModrinthVersions } from './useModrinth'
 import InstallModal from '../shared/InstallModal'
+import VersionSelect from '../shared/VersionSelect'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -114,24 +115,16 @@ export default function ModrinthDetail({ projectId, projectType, onBack }) {
 
         {/* Version selector + Install button */}
         <div className="flex items-center gap-2 mb-4">
-          <select
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-green-500/50"
+          <VersionSelect
+            versions={versions}
             value={selectedVersion?.id || ''}
-            onChange={e => setSelectedVersion(versions.find(v => v.id === e.target.value) || null)}
-          >
-            <option value="" style={{ background: '#1a1a1a' }}>
-              {vLoading ? 'Loading versions...' : `Select version (${versions.length})`}
-            </option>
-            {versions.map(v => (
-              <option key={v.id} value={v.id} style={{ background: '#1a1a1a' }}>
-                {v.version_number} — {v.game_versions?.slice(0,3).join(', ')}
-              </option>
-            ))}
-          </select>
+            onChange={v => setSelectedVersion(v)}
+            loading={vLoading}
+          />
           <button
             onClick={() => setShowInstall(true)}
             disabled={!selectedVersion}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
             style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,7 +135,7 @@ export default function ModrinthDetail({ projectId, projectType, onBack }) {
           {isElectron && project.source_url && (
             <button
               onClick={() => window.electronAPI.openExternal(project.source_url)}
-              className="p-2 rounded-lg text-white/30 hover:text-white transition-all hover:bg-white/5"
+              className="p-2 rounded-lg text-white/30 hover:text-white transition-all hover:bg-white/5 flex-shrink-0"
               title="Open on Modrinth"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
