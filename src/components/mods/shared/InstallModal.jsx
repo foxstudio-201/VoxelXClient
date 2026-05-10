@@ -59,7 +59,7 @@ function ProfileSelect({ profiles, value, onChange }) {
       {open && (
         <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl overflow-hidden"
           style={{ background:'rgba(16,16,16,0.98)', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 16px 40px rgba(0,0,0,0.7)', backdropFilter:'blur(12px)' }}>
-          <div className="overflow-y-auto max-h-44 py-1" style={{ scrollbarWidth: 'thin' }}>
+          <div className="overflow-y-auto max-h-44 py-1 custom-scroll">
             {profiles.length === 0 && (
               <div className="px-3 py-3 text-xs text-white/25 text-center">No profiles found</div>
             )}

@@ -9,7 +9,7 @@ const SUB_TABS = [
 
 export default function ModrinthSubTabs({ active, onChange }) {
   return (
-    <div className="flex items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+    <div className="flex items-center gap-1 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {SUB_TABS.map(tab => (
         <button
           key={tab.id}
