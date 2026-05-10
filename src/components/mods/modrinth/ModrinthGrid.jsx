@@ -26,7 +26,7 @@ export default function ModrinthGrid({ results, loading, error, view, onSelect, 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div
-        className="flex-1 overflow-y-auto pr-1 custom-scroll"
+        className="flex-1 overflow-y-auto pr-1"
         style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}
       >
         {view === 'grid' ? (

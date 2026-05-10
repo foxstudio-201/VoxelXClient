@@ -85,7 +85,7 @@ export default function VersionSelect({ versions, value, onChange, loading, plac
         >
           <div
             ref={listRef}
-            className="overflow-y-auto max-h-52 py-1 custom-scroll"
+            className="overflow-y-auto max-h-52 py-1"
           >
             {(!versions || versions.length === 0) && (
               <div className="px-3 py-3 text-xs text-white/25 text-center">No versions available</div>

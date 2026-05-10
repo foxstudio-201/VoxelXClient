@@ -72,7 +72,7 @@ export default function ModrinthFilters({ filters, onChange }) {
 
   return (
     <div
-      className="flex flex-col gap-0 overflow-y-auto h-full custom-scroll"
+      className="flex flex-col gap-0 overflow-y-auto h-full"
       style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}
     >
 
@@ -140,7 +140,7 @@ export default function ModrinthFilters({ filters, onChange }) {
           </svg>
         </button>
         {expanded.versions && (
-          <div className="px-3 pb-3 flex flex-col gap-0.5 max-h-48 overflow-y-auto custom-scroll">
+          <div className="px-3 pb-3 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
             {gameVersions.length === 0 && (
               <p className="text-white/20 text-xs py-2">Loading...</p>
             )}
