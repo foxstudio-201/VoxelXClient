@@ -25,7 +25,10 @@ export default function ModrinthGrid({ results, loading, error, view, onSelect, 
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto pr-1 custom-scroll">
+      <div
+        className="flex-1 overflow-y-auto pr-1 custom-scroll"
+        style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}
+      >
         {view === 'grid' ? (
           <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 p-1">
             {results.map(p => (

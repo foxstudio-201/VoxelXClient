@@ -1,24 +1,26 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
+const LIMIT = 20
 
 // ─── Search hook ──────────────────────────────────────────────────────────────
 export function useModrinthSearch(filters) {
-  const [results, setResults]   = useState([])
-  const [total, setTotal]       = useState(0)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState(null)
-  const [page, setPage]         = useState(0)
-  const abortRef                = useRef(false)
-  const LIMIT = 20
+  const [results, setResults] = useState([])
+  const [total, setTotal]     = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
+  const offsetRef             = useRef(0)   // track current offset without state
+  const abortRef              = useRef(false)
+  const loadingRef            = useRef(false) // prevent double-fetch
 
-  const search = useCallback(async (resetPage = true) => {
+  // ── Core fetch ──────────────────────────────────────────────────────────────
+  const fetchPage = useCallback(async (offset, append) => {
     if (!isElectron) return
+    if (loadingRef.current) return
+    loadingRef.current = true
     abortRef.current = false
     setLoading(true)
     setError(null)
-    const offset = resetPage ? 0 : page * LIMIT
-    if (resetPage) setPage(0)
 
     try {
       const data = await window.electronAPI.modrinthSearch({
@@ -28,23 +30,26 @@ export function useModrinthSearch(filters) {
       })
       if (abortRef.current) return
       if (data?.error) { setError(data.error); return }
-      if (resetPage) {
-        setResults(data.hits || [])
+
+      const hits = data.hits || []
+      if (append) {
+        setResults(prev => {
+          // Deduplicate by project_id
+          const existing = new Set(prev.map(r => r.project_id))
+          const newHits = hits.filter(h => !existing.has(h.project_id))
+          return [...prev, ...newHits]
+        })
       } else {
-        setResults(prev => [...prev, ...(data.hits || [])])
+        setResults(hits)
       }
       setTotal(data.total_hits || 0)
+      offsetRef.current = offset + hits.length
     } catch (err) {
       if (!abortRef.current) setError(err.message)
     } finally {
       if (!abortRef.current) setLoading(false)
+      loadingRef.current = false
     }
-  }, [filters, page])
-
-  // Re-search when filters change
-  useEffect(() => {
-    search(true)
-    return () => { abortRef.current = true }
   }, [
     filters.query,
     filters.projectType,
@@ -54,21 +59,50 @@ export function useModrinthSearch(filters) {
     JSON.stringify(filters.categories),
   ])
 
+  // ── Reset & search when filters change ──────────────────────────────────────
+  useEffect(() => {
+    abortRef.current = true   // cancel any in-flight request
+    loadingRef.current = false
+    offsetRef.current = 0
+    setResults([])
+    setTotal(0)
+    setError(null)
+
+    // Small delay to let abort propagate
+    const t = setTimeout(() => {
+      abortRef.current = false
+      fetchPage(0, false)
+    }, 10)
+
+    return () => {
+      clearTimeout(t)
+      abortRef.current = true
+    }
+  }, [
+    filters.query,
+    filters.projectType,
+    filters.sortBy,
+    JSON.stringify(filters.gameVersions),
+    JSON.stringify(filters.loaders),
+    JSON.stringify(filters.categories),
+  ])
+
+  // ── Load more — append next page ─────────────────────────────────────────────
   const loadMore = useCallback(() => {
-    setPage(p => p + 1)
-    search(false)
-  }, [search])
+    if (loadingRef.current) return
+    fetchPage(offsetRef.current, true)
+  }, [fetchPage])
 
   const hasMore = results.length < total
 
-  return { results, total, loading, error, loadMore, hasMore, refresh: () => search(true) }
+  return { results, total, loading, error, loadMore, hasMore }
 }
 
 // ─── Project detail hook ──────────────────────────────────────────────────────
 export function useModrinthProject(idOrSlug) {
-  const [project, setProject]   = useState(null)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState(null)
+  const [project, setProject] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
 
   useEffect(() => {
     if (!idOrSlug || !isElectron) return

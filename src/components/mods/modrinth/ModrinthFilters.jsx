@@ -71,7 +71,10 @@ export default function ModrinthFilters({ filters, onChange }) {
   }
 
   return (
-    <div className="flex flex-col gap-0 overflow-y-auto h-full custom-scroll">
+    <div
+      className="flex flex-col gap-0 overflow-y-auto h-full custom-scroll"
+      style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}
+    >
 
       {/* Sort */}
       <div className="border-b border-white/5">

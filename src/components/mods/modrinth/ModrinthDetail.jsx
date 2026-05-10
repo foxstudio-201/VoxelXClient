@@ -164,7 +164,8 @@ export default function ModrinthDetail({ projectId, projectType, onBack }) {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 custom-scroll">
+      <div className="flex-1 overflow-y-auto px-4 py-3 custom-scroll"
+        style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
         {activeTab === 'description' && (
           <div className="prose prose-invert prose-sm max-w-none">
             <div
