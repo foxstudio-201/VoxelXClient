@@ -112,8 +112,7 @@ VoxelXClient/
 │   └── utils/                 # Utility functions
 │
 ├── public/                    # Static assets
-├── scripts/                   # Build & icon generation scripts
-└── web/                       # Landing page (separate repo)
+└── scripts/                   # Build & icon generation scripts
 ```
 
 ---
