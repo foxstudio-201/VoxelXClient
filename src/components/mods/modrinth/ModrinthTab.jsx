@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import ModrinthSubTabs from './ModrinthSubTabs'
 import ModrinthFilters from './ModrinthFilters'
 import ModrinthGrid from './ModrinthGrid'
 import ModrinthDetail from './ModrinthDetail'
 import ViewToggle from '../shared/ViewToggle'
+import TabLoadingOverlay from '../shared/TabLoadingOverlay'
 import { useModrinthSearch } from './useModrinth'
 
 const DEFAULT_FILTERS = {
@@ -18,10 +19,21 @@ const DEFAULT_FILTERS = {
 export default function ModrinthTab() {
   const [filters, setFilters]         = useState(DEFAULT_FILTERS)
   const [view, setView]               = useState('grid')
-  const [selectedProject, setProject] = useState(null) // { id, type }
+  const [selectedProject, setProject] = useState(null)
   const [searchInput, setSearchInput] = useState('')
+  const [tabLoading, setTabLoading]   = useState(false)
+  const tabLoadingTimer               = useRef(null)
 
   const { results, total, loading, error, loadMore, hasMore, refresh } = useModrinthSearch(filters)
+
+  // Khi loading kết thúc → ẩn overlay
+  useEffect(() => {
+    if (!loading && tabLoading) {
+      // Delay nhỏ để tránh flash
+      tabLoadingTimer.current = setTimeout(() => setTabLoading(false), 120)
+    }
+    return () => clearTimeout(tabLoadingTimer.current)
+  }, [loading, tabLoading])
 
   function updateFilters(patch) {
     setFilters(prev => ({ ...prev, ...patch }))
@@ -29,8 +41,10 @@ export default function ModrinthTab() {
   }
 
   function handleSubTab(type) {
-    updateFilters({ projectType: type, query: '' })
+    setTabLoading(true)   // bật overlay ngay khi đổi tab
+    setProject(null)
     setSearchInput('')
+    setFilters(prev => ({ ...prev, projectType: type, query: '' }))
   }
 
   function handleSearch(e) {
@@ -82,7 +96,10 @@ export default function ModrinthTab() {
       </div>
 
       {/* Main: filters + content */}
-      <div className="flex flex-1 overflow-hidden gap-0">
+      <div className="flex flex-1 overflow-hidden gap-0 relative">
+        {/* Loading overlay khi đổi sub-tab */}
+        <TabLoadingOverlay visible={tabLoading} />
+
         {/* Left: filters panel */}
         <div
           className="flex-shrink-0 w-36 border-r overflow-hidden"
