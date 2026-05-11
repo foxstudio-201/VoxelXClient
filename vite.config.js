@@ -7,6 +7,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // Treat .glb/.gltf as binary assets so Vite copies them and returns a URL
+  assetsInclude: ['**/*.glb', '**/*.gltf'],
   base: './',
   server: {
     port: 5173,
