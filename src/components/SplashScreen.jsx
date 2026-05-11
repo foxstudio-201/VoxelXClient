@@ -6,7 +6,7 @@ export default function SplashScreen({ onDone }) {
   const [pct, setPct]         = useState(0)
   const [log, setLog]         = useState('Khởi tạo...')
   const [fadeOut, setFadeOut] = useState(false)
-  const [version, setVersion] = useState(__APP_VERSION__)
+  const [version, setVersion] = useState('')
   const doneRef               = useRef(false)
   const pctRef                = useRef(0)
 
@@ -226,7 +226,7 @@ export default function SplashScreen({ onDone }) {
           <h1 className="text-3xl font-black text-white tracking-tight">
             VoxelX<span className="text-green-400">Client</span>
           </h1>
-          <p className="text-xs text-white/25 mt-1 font-mono tracking-widest">v{version}</p>
+          <p className="text-xs text-white/25 mt-1 font-mono tracking-widest">{version ? `v${version}` : ''}</p>
         </div>
 
         {/* Progress */}
