@@ -10,6 +10,7 @@ permissions:
   contents: write
 
 jobs:
+  # ── Windows ──────────────────────────────────────────────────────────────────
   build-windows:
     name: Build Windows
     runs-on: windows-latest
@@ -29,7 +30,6 @@ jobs:
       - name: Download Electron binary
         run: npx electron --version
 
-      # Restore certificate từ secret (nếu có)
       - name: Setup code signing certificate
         shell: pwsh
         env:
@@ -47,7 +47,7 @@ jobs:
       - name: Build Vite
         run: npm run build
 
-      - name: Build Electron
+      - name: Build Electron (Windows)
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,16 +70,7 @@ jobs:
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
 
-      - name: List build output
-        shell: pwsh
-        run: |
-          if (Test-Path "dist-electron") {
-            Get-ChildItem dist-electron -Recurse -Include "*.exe","*.zip" | Select-Object Name, Length
-          } else {
-            Write-Host "dist-electron not found"
-          }
-
-      - name: Upload artifacts
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: VoxelXClient-Windows-${{ steps.version.outputs.VERSION }}
@@ -89,26 +80,126 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+  # ── Linux ─────────────────────────────────────────────────────────────────────
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libnotify-dev \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            xauth \
+            xvfb \
+            libgbm-dev \
+            libasound2-dev \
+            rpm
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Download Electron binary
+        run: npx electron --version
+
+      - name: Build Vite
+        run: npm run build
+
+      - name: Build Electron (Linux)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npx electron-builder --linux --x64 --publish never
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelXClient-Linux-${{ steps.version.outputs.VERSION }}
+          path: |
+            dist-electron/*.AppImage
+            dist-electron/*.deb
+            dist-electron/*.rpm
+          if-no-files-found: warn
+          retention-days: 30
+
+  # ── Create Release (after both builds) ───────────────────────────────────────
+  create-release:
+    name: Create GitHub Release
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: VoxelXClient-Windows-${{ steps.version.outputs.VERSION }}
+          path: release-files/windows
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: VoxelXClient-Linux-${{ steps.version.outputs.VERSION }}
+          path: release-files/linux
+
+      - name: List release files
+        run: find release-files -type f | sort
+
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: VoxelXClient v${{ steps.version.outputs.VERSION }}
           body: |
             ## VoxelXClient v${{ steps.version.outputs.VERSION }}
 
-            ### Tải xuống
-            - **VoxelXClient Setup x.x.x.exe** — Installer (khuyến nghị)
-            - **VoxelXClient x.x.x.exe** — Portable (không cần cài đặt)
+            ### Windows
+            - **VoxelXClient Setup x.x.x.exe** — Installer (recommended)
+            - **VoxelXClient x.x.x.exe** — Portable (no install needed)
 
-            ### Yêu cầu
-            - Windows 10/11 (64-bit)
-            - Kết nối internet để tải Minecraft
+            ### Linux
+            - **VoxelXClient-x.x.x.AppImage** — Universal (run anywhere)
+            - **voxelxclient_x.x.x_amd64.deb** — Debian/Ubuntu
 
-            > ⚠️ Nếu Windows SmartScreen hiện cảnh báo: click **More info** → **Run anyway**
+            ### Requirements
+            - Windows 10/11 (64-bit) or Linux x64
+            - Internet connection to download Minecraft
+
+            > ⚠️ Windows: SmartScreen may warn on first run — click **More info** → **Run anyway**
+            > 🐧 Linux AppImage: `chmod +x VoxelXClient*.AppImage && ./VoxelXClient*.AppImage`
           files: |
-            dist-electron/*.exe
-            dist-electron/*.zip
+            release-files/windows/*.exe
+            release-files/windows/*.zip
+            release-files/linux/*.AppImage
+            release-files/linux/*.deb
+            release-files/linux/*.rpm
           fail_on_unmatched_files: false
           draft: false
           prerelease: false

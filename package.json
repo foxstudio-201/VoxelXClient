@@ -87,6 +87,21 @@
       "requestedExecutionLevel": "asInvoker",
       "forceCodeSigning": false
     },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico",
+      "category": "Game",
+      "maintainer": "FoxStudio <contact@foxstudio.dev>"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
