@@ -26,7 +26,29 @@ const isDev = process.env.NODE_ENV === 'development'
 app.setAppUserModelId('com.voxelxclient.launcher')
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
-const ICON_PATH     = path.join(__dirname, '../public/icon.ico')
+// In production (asar), public/ files are inside the asar archive and cannot be
+// accessed via fs.existsSync. We need to use process.resourcesPath for icons.
+function resolveIconPath() {
+  // Dev: relative to electron/main.cjs → ../public/icon.ico
+  const devPath = path.join(__dirname, '../public/icon.ico')
+  if (isDev && fs.existsSync(devPath)) return devPath
+
+  // Production: electron-builder copies extraResources to resources/
+  // but public/ is inside asar. Use __dirname which points to app.asar/electron/
+  // The asar-extracted path for resources is process.resourcesPath
+  const resourcesIcon = path.join(process.resourcesPath, 'icon.ico')
+  if (fs.existsSync(resourcesIcon)) return resourcesIcon
+
+  // Fallback: try next to the exe (portable build)
+  const exeDir = path.dirname(process.execPath)
+  const exeIcon = path.join(exeDir, 'resources', 'icon.ico')
+  if (fs.existsSync(exeIcon)) return exeIcon
+
+  // Last resort: dev path even in prod (works if asar:false)
+  return devPath
+}
+
+const ICON_PATH     = resolveIconPath()
 const ACCOUNTS_DIR  = path.join(app.getPath('appData'), '.VoxelXClient')
 const ACCOUNTS_FILE = path.join(ACCOUNTS_DIR, 'accounts.json')
 
@@ -243,39 +265,53 @@ function createUpdateWindow() {
 
 // ─── Tray ─────────────────────────────────────────────────────────────────────
 function createTray() {
-  if (!fs.existsSync(ICON_PATH)) return
-  const trayIcon = nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 })
-  tray = new Tray(trayIcon)
-  tray.setToolTip('VoxelXClient')
-  tray.setContextMenu(Menu.buildFromTemplate([
-    {
-      label: 'VoxelXClient', enabled: false,
-      icon: nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 }),
-    },
-    { type: 'separator' },
-    {
-      label: 'Mở VoxelXClient',
-      click: () => {
-        if (mainWindow) { mainWindow.show(); mainWindow.focus() }
-        else createMainWindow()
+  try {
+    let trayIcon
+    if (fs.existsSync(ICON_PATH)) {
+      trayIcon = nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 })
+    } else {
+      // Fallback: empty icon so tray still works
+      trayIcon = nativeImage.createEmpty()
+    }
+
+    tray = new Tray(trayIcon)
+    tray.setToolTip('VoxelXClient')
+
+    const menuIcon = fs.existsSync(ICON_PATH)
+      ? nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 })
+      : undefined
+
+    tray.setContextMenu(Menu.buildFromTemplate([
+      {
+        label: 'VoxelXClient', enabled: false,
+        ...(menuIcon ? { icon: menuIcon } : {}),
       },
-    },
-    {
-      label: 'Kiểm tra cập nhật...',
-      click: () => {
-        createUpdateWindow()
+      { type: 'separator' },
+      {
+        label: 'Mở VoxelXClient',
+        click: () => {
+          if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+          else createMainWindow()
+        },
       },
-    },
-    { type: 'separator' },
-    {
-      label: 'Thoát',
-      click: () => { app.isQuitting = true; app.quit() },
-    },
-  ]))
-  tray.on('double-click', () => {
-    if (mainWindow) { mainWindow.show(); mainWindow.focus() }
-    else createMainWindow()
-  })
+      {
+        label: 'Kiểm tra cập nhật...',
+        click: () => { createUpdateWindow() },
+      },
+      { type: 'separator' },
+      {
+        label: 'Thoát',
+        click: () => { app.isQuitting = true; app.quit() },
+      },
+    ]))
+
+    tray.on('double-click', () => {
+      if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+      else createMainWindow()
+    })
+  } catch (err) {
+    console.error('[Tray] Failed to create tray:', err.message)
+  }
 }
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────

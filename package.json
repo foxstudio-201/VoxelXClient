@@ -67,6 +67,10 @@
     ],
     "extraResources": [
       {
+        "from": "public/icon.ico",
+        "to": "icon.ico"
+      },
+      {
         "from": "mod-skin",
         "to": "mod-skin",
         "filter": ["**/*.jar"]
