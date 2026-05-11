@@ -3,7 +3,7 @@
 <br/>
 
 <!-- Logo -->
-<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/favicon.svg" width="80" height="80" alt="VoxelXClient Logo" />
+<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/icon.png" width="80" height="80" alt="VoxelXClient Logo" />
 
 <h1>VoxelXClient</h1>
 
