@@ -112,9 +112,6 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps --ignore-scripts
 
-      - name: Download Electron binary
-        run: npx electron --version
-
       - name: Build Vite
         run: npm run build
 
