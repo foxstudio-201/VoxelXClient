@@ -231,7 +231,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   serverGetLogs:       (id)                  => ipcRenderer.invoke('server:getLogs', id),
   serverGetStatus:     (id)                  => ipcRenderer.invoke('server:getStatus', id),
   serverListDir:       (id, sub)             => ipcRenderer.invoke('server:listDir', id, sub),
+  serverListDirFull:   (id, sub)             => ipcRenderer.invoke('server:listDirFull', id, sub),
   serverListFiles:     (id)                  => ipcRenderer.invoke('server:listFiles', id),
+  serverReadFile:      (id, filePath)        => ipcRenderer.invoke('server:readFile', id, filePath),
+  serverWriteFile:     (id, filePath, content) => ipcRenderer.invoke('server:writeFile', id, filePath, content),
+  serverDeleteItems:   (id, paths)           => ipcRenderer.invoke('server:deleteItems', id, paths),
+  serverCompress:      (id, paths, zipName)  => ipcRenderer.invoke('server:compress', id, paths, zipName),
+  serverExtract:       (id, filePath)        => ipcRenderer.invoke('server:extract', id, filePath),
+  serverUploadFile:    (id, sub, name, b64)  => ipcRenderer.invoke('server:uploadFile', id, sub, name, b64),
+  serverGetNetworkInfo:(id)                  => ipcRenderer.invoke('server:getNetworkInfo', id),
+  serverStartTunnel:   (id, port)            => ipcRenderer.invoke('server:startTunnel', id, port),
+  serverStopTunnel:    (id)                  => ipcRenderer.invoke('server:stopTunnel', id),
+  onServerTunnelLog:   (cb) => {
+    const handler = (_, data) => cb(data)
+    require('electron').ipcRenderer.on('server:tunnelLog', handler)
+    return () => require('electron').ipcRenderer.removeListener('server:tunnelLog', handler)
+  },
   serverOpenFolder:    (id, sub)             => ipcRenderer.invoke('server:openFolder', id, sub),
   serverBrowse:        ()                    => ipcRenderer.invoke('server:browse'),
   serverInstallJava:   (pkg, id)             => ipcRenderer.invoke('server:installJava', pkg, id),

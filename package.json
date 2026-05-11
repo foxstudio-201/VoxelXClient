@@ -27,6 +27,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@tailwindcss/vite": "^4.3.0",
+    "adm-zip": "^0.5.17",
     "discord-rpc": "^4.0.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -73,18 +74,24 @@
       {
         "from": "mod-skin",
         "to": "mod-skin",
-        "filter": ["**/*.jar"]
+        "filter": [
+          "**/*.jar"
+        ]
       }
     ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "public/icon.ico",
@@ -95,11 +102,15 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "public/icon.png",

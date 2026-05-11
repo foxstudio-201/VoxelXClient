@@ -203,28 +203,48 @@ function GeneralTab({ profile, onProfileUpdated }) {
         />
       </div>
 
-      {/* RAM Slider */}
+      {/* RAM — custom step buttons + visual bar */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-white/50">RAM tối đa</label>
           <span className="text-xs font-bold text-green-400">{ram} GB</span>
         </div>
-        <input
-          type="range"
-          min={1}
-          max={32}
-          step={1}
-          value={ram}
-          onChange={e => setRam(Number(e.target.value))}
-          className="w-full accent-green-500 cursor-pointer"
-          style={{ height: '4px' }}
-        />
-        <div className="flex justify-between">
+
+        {/* Custom track: marks as clickable segments */}
+        <div className="relative flex items-center gap-0 h-6">
+          {ramMarks.map((m, i) => {
+            const isActive = m <= ram
+            const isCurrent = m === ram
+            const isLast = i === ramMarks.length - 1
+            return (
+              <button
+                key={m}
+                onClick={() => setRam(m)}
+                className="relative flex-1 flex flex-col items-center gap-1 group"
+                title={`${m} GB`}
+              >
+                {/* Track segment */}
+                <div className={`w-full h-1.5 transition-all ${
+                  isLast ? 'rounded-r-full' : i === 0 ? 'rounded-l-full' : ''
+                } ${isActive ? 'bg-green-500' : 'bg-white/10 group-hover:bg-white/20'}`} />
+                {/* Thumb dot on current */}
+                {isCurrent && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-green-400 shadow-lg shadow-green-500/40 ring-2 ring-green-400/30 z-10" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Mark labels */}
+        <div className="flex">
           {ramMarks.map(m => (
             <button
               key={m}
               onClick={() => setRam(m)}
-              className={`text-[9px] px-1.5 py-0.5 rounded transition-all ${ram === m ? 'text-green-400 bg-green-500/10' : 'text-white/20 hover:text-white/50'}`}
+              className={`flex-1 text-center text-[9px] py-0.5 rounded transition-all ${
+                m === ram ? 'text-green-400 font-bold' : 'text-white/20 hover:text-white/50'
+              }`}
             >
               {m}G
             </button>

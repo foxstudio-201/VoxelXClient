@@ -173,9 +173,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: VoxelXClient v${{ steps.version.outputs.VERSION }}
+          name: VoxelXClient
           body: |
-            ## VoxelXClient v${{ steps.version.outputs.VERSION }}
+            ## VoxelXClient
 
             ### Windows
             - **VoxelXClient Setup x.x.x.exe** — Installer (recommended)

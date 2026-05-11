@@ -5,11 +5,11 @@
  */
 
 const { ipcMain, dialog } = require('electron')
+const { app } = require('electron')
 const path  = require('path')
 const fs    = require('fs')
 const https = require('https')
 const http  = require('http')
-const { app } = require('electron')
 const { spawn } = require('child_process')
 
 const DATA_DIR    = path.join(app.getPath('appData'), '.VoxelXClient')
@@ -31,6 +31,8 @@ const SERVER_DOWNLOAD_URLS = {
 
 // Running server processes: Map<serverId, { proc, logs, status }>
 const runningServers = new Map()
+// Running playit tunnels: Map<serverId, ChildProcess>
+const runningTunnels = new Map()
 
 function ensureDir(d) { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }) }
 
@@ -624,6 +626,283 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
+  // server:listDirFull — list both dirs and files in any subpath
+  ipcMain.handle('server:listDirFull', (e, serverId, subPath) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const base = server.serverDir
+    const target = subPath ? path.join(base, subPath) : base
+    if (!target.startsWith(base)) return { error: 'Đường dẫn không hợp lệ' }
+    if (!fs.existsSync(target)) return { ok: true, entries: [] }
+    try {
+      const raw = fs.readdirSync(target, { withFileTypes: true })
+      const entries = raw.map(e => {
+        const fullPath = path.join(target, e.name)
+        const relPath = subPath ? path.join(subPath, e.name) : e.name
+        let size = null
+        if (e.isFile()) {
+          try { size = fs.statSync(fullPath).size } catch {}
+        }
+        return { name: e.name, path: relPath.replace(/\\/g, '/'), isDir: e.isDirectory(), size }
+      })
+      const dirs  = entries.filter(e => e.isDir).sort((a, b) => a.name.localeCompare(b.name))
+      const files = entries.filter(e => !e.isDir).sort((a, b) => a.name.localeCompare(b.name))
+      return { ok: true, entries: [...dirs, ...files] }
+    } catch (err) { return { error: err.message } }
+  })
+
+  // server:getNetworkInfo — get local IP, public IP, and server port
+  ipcMain.handle('server:getNetworkInfo', async (e, serverId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+
+    // Get local IP
+    const os = require('os')
+    let localIp = '127.0.0.1'
+    try {
+      const ifaces = os.networkInterfaces()
+      for (const name of Object.keys(ifaces)) {
+        for (const iface of ifaces[name]) {
+          if (iface.family === 'IPv4' && !iface.internal) {
+            localIp = iface.address
+            break
+          }
+        }
+        if (localIp !== '127.0.0.1') break
+      }
+    } catch {}
+
+    // Get public IP
+    let publicIp = null
+    try {
+      const body = await new Promise((resolve, reject) => {
+        const https = require('https')
+        https.get('https://api.ipify.org', { timeout: 5000 }, res => {
+          let d = ''
+          res.on('data', c => { d += c })
+          res.on('end', () => resolve(d.trim()))
+        }).on('error', reject).on('timeout', reject)
+      })
+      publicIp = body
+    } catch {}
+
+    // Read port from server.properties
+    let port = '25565'
+    try {
+      const propsPath = path.join(server.serverDir, 'server.properties')
+      if (fs.existsSync(propsPath)) {
+        const content = fs.readFileSync(propsPath, 'utf-8')
+        const match = content.match(/^server-port\s*=\s*(\d+)/m)
+        if (match) port = match[1]
+      }
+    } catch {}
+
+    return { ok: true, localIp, publicIp, port }
+  })
+
+  // server:startTunnel — start bore TCP tunnel (no account needed)
+  // bore local <port> --to bore.pub
+  ipcMain.handle('server:startTunnel', async (e, serverId, port) => {
+    const win = getTrustedWindow(e)
+    if (!win) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+
+    const { spawn } = require('child_process')
+    const zlib = require('zlib')
+
+    const agentDir = path.join(app.getPath('appData'), '.VoxelXClient', 'bore')
+    ensureDir(agentDir)
+    const agentExe = path.join(agentDir, process.platform === 'win32' ? 'bore.exe' : 'bore')
+
+    function sendLog(line, extra = {}) {
+      if (!win.isDestroyed()) win.webContents.send('server:tunnelLog', { serverId, line, ...extra })
+    }
+
+    // Kill existing tunnel
+    if (runningTunnels.has(serverId)) {
+      try { runningTunnels.get(serverId).kill() } catch {}
+      runningTunnels.delete(serverId)
+    }
+
+    // Add Windows Defender exclusion for the bore directory before downloading
+    if (process.platform === 'win32') {
+      try {
+        const { execSync } = require('child_process')
+        execSync(`powershell -Command "Add-MpPreference -ExclusionPath '${agentDir}'" -ErrorAction SilentlyContinue`, { windowsHide: true, timeout: 5000 })
+        sendLog('Đã thêm exclusion Windows Defender cho thư mục bore')
+      } catch { /* ignore if no permission */ }
+    }
+
+    // Download bore if not present
+    if (!fs.existsSync(agentExe)) {
+      sendLog('Đang tải bore tunnel...', { status: 'downloading' })
+      try {
+        // Fetch latest release
+        const releaseInfo = await new Promise((resolve, reject) => {
+          https.get('https://api.github.com/repos/ekzhang/bore/releases/latest',
+            { headers: { 'User-Agent': 'VoxelXClient/1.0', 'Accept': 'application/vnd.github.v3+json' }, timeout: 10000 },
+            res => {
+              let body = ''
+              res.on('data', c => { body += c })
+              res.on('end', () => { try { resolve(JSON.parse(body)) } catch { reject(new Error('Invalid JSON')) } })
+            }
+          ).on('error', reject)
+        })
+
+        const platform = process.platform
+        const arch = process.arch
+        let assetName
+        if (platform === 'win32') {
+          assetName = 'bore-' + releaseInfo.tag_name + '-x86_64-pc-windows-msvc.zip'
+        } else if (platform === 'darwin') {
+          assetName = arch === 'arm64'
+            ? 'bore-' + releaseInfo.tag_name + '-aarch64-apple-darwin.tar.gz'
+            : 'bore-' + releaseInfo.tag_name + '-x86_64-apple-darwin.tar.gz'
+        } else {
+          assetName = arch === 'arm64'
+            ? 'bore-' + releaseInfo.tag_name + '-aarch64-unknown-linux-musl.tar.gz'
+            : 'bore-' + releaseInfo.tag_name + '-x86_64-unknown-linux-musl.tar.gz'
+        }
+
+        const asset = releaseInfo.assets?.find(a => a.name === assetName)
+        if (!asset) throw new Error(`Không tìm thấy: ${assetName}`)
+
+        sendLog(`Tải ${assetName}...`)
+        const archivePath = path.join(agentDir, assetName)
+
+        // Download archive
+        await new Promise((resolve, reject) => {
+          function doGet(url) {
+            const client = url.startsWith('https') ? https : require('http')
+            client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, res => {
+              if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return doGet(res.headers.location)
+              if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
+              const out = fs.createWriteStream(archivePath)
+              res.pipe(out)
+              out.on('finish', resolve)
+              out.on('error', reject)
+            }).on('error', reject)
+          }
+          doGet(asset.browser_download_url)
+        })
+
+        // Extract
+        if (assetName.endsWith('.zip')) {
+          // Use PowerShell on Windows
+          const { execSync } = require('child_process')
+          execSync(`powershell -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${agentDir}' -Force"`, { windowsHide: true })
+        } else {
+          // tar.gz on Linux/Mac
+          const { execSync } = require('child_process')
+          execSync(`tar -xzf "${archivePath}" -C "${agentDir}"`, { cwd: agentDir })
+        }
+
+        // Cleanup archive
+        try { fs.unlinkSync(archivePath) } catch {}
+        if (process.platform !== 'win32') fs.chmodSync(agentExe, 0o755)
+
+        // Verify file exists (Windows Defender may have deleted it)
+        if (!fs.existsSync(agentExe)) {
+          sendLog('⚠️ Windows Defender đã xóa bore.exe. Vui lòng thêm exclusion cho thư mục: ' + agentDir, { status: 'error' })
+          sendLog('Hướng dẫn: Windows Security → Virus & threat protection → Manage settings → Add or remove exclusions → Add folder: ' + agentDir, {})
+          return { error: 'Windows Defender blocked bore.exe. Add exclusion for: ' + agentDir }
+        }
+
+        sendLog('Tải xong bore tunnel')
+      } catch (err) {
+        sendLog(`Lỗi tải bore: ${err.message}`, { status: 'error' })
+        return { error: err.message }
+      }
+    }
+
+    // Start bore: bore local <port> --to bore.pub
+    sendLog(`Khởi động tunnel: cổng ${port} → bore.pub...`, { status: 'starting' })
+
+    // Check file exists (may have been deleted by antivirus)
+    if (!fs.existsSync(agentExe)) {
+      const msg = `bore.exe không tìm thấy tại: ${agentExe}\nCó thể bị Windows Defender xóa. Thêm exclusion cho thư mục: ${agentDir}`
+      sendLog(msg, { status: 'error' })
+      return { error: msg }
+    }
+
+    try {
+      const proc = spawn(agentExe, ['local', String(port), '--to', 'bore.pub'], {
+        cwd: agentDir,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+      runningTunnels.set(serverId, proc)
+
+      let buf = ''
+      const onData = (d) => {
+        buf += d.toString()
+        const lines = buf.split('\n')
+        buf = lines.pop()
+        lines.filter(Boolean).forEach(line => {
+          sendLog(line)
+          // bore outputs: "listening at bore.pub:XXXXX"
+          const m = line.match(/bore\.pub:(\d+)/i)
+          if (m) {
+            const addr = `bore.pub:${m[1]}`
+            sendLog('', { status: 'running', addr })
+          }
+        })
+      }
+
+      proc.stdout.on('data', onData)
+      proc.stderr.on('data', onData)
+      proc.on('close', code => {
+        if (buf.trim()) sendLog(buf.trim())
+        runningTunnels.delete(serverId)
+        sendLog(`Tunnel đã dừng (code ${code})`, { status: 'stopped' })
+      })
+      proc.on('error', err => sendLog(`Lỗi: ${err.message}`, { status: 'error' }))
+
+      return { ok: true }
+    } catch (err) {
+      sendLog(`Lỗi khởi động: ${err.message}`, { status: 'error' })
+      return { error: err.message }
+    }
+  })
+
+  // server:stopTunnel — stop bore tunnel
+  ipcMain.handle('server:stopTunnel', (e, serverId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const proc = runningTunnels.get(serverId)
+    if (proc) {
+      try { proc.kill() } catch {}
+      runningTunnels.delete(serverId)
+    }
+    return { ok: true }
+  })
+
+  // server:uploadFile — write binary file from base64
+  ipcMain.handle('server:uploadFile', (e, serverId, subPath, fileName, base64Data) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (typeof fileName !== 'string' || fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+      return { error: 'Tên file không hợp lệ' }
+    }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const base = server.serverDir
+    const dir = subPath ? path.join(base, subPath) : base
+    if (!dir.startsWith(base)) return { error: 'Đường dẫn không hợp lệ' }
+    ensureDir(dir)
+    const target = path.join(dir, fileName)
+    if (!target.startsWith(base + path.sep)) return { error: 'Đường dẫn không hợp lệ' }
+    try {
+      const buf = Buffer.from(base64Data, 'base64')
+      fs.writeFileSync(target, buf)
+      return { ok: true }
+    } catch (err) { return { error: err.message } }
+  })
+
   // server:openFolder
   ipcMain.handle('server:openFolder', async (e, serverId, subPath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
@@ -665,6 +944,112 @@ function registerServerHandlers(getTrustedWindow) {
     } catch {
       return { ok: true, versions: ['1.21.4', '1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2', '1.17.1', '1.16.5'] }
     }
+  })
+
+  // server:readFile — read text file content
+  ipcMain.handle('server:readFile', (e, serverId, filePath) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const base = server.serverDir
+    const target = path.join(base, filePath)
+    if (!target.startsWith(base + path.sep) && target !== base) return { error: 'Đường dẫn không hợp lệ' }
+    try {
+      const content = fs.readFileSync(target, 'utf-8')
+      return { ok: true, content }
+    } catch (err) { return { error: err.message } }
+  })
+
+  // server:writeFile — write text file content
+  ipcMain.handle('server:writeFile', (e, serverId, filePath, content) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (typeof content !== 'string') return { error: 'Nội dung không hợp lệ' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const base = server.serverDir
+    const target = path.join(base, filePath)
+    if (!target.startsWith(base + path.sep)) return { error: 'Đường dẫn không hợp lệ' }
+    try {
+      fs.writeFileSync(target, content, 'utf-8')
+      return { ok: true }
+    } catch (err) { return { error: err.message } }
+  })
+
+  // server:deleteItems — delete files/folders
+  ipcMain.handle('server:deleteItems', (e, serverId, itemPaths) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (!Array.isArray(itemPaths)) return { error: 'Danh sách không hợp lệ' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const base = server.serverDir
+    const errors = []
+    for (const p of itemPaths) {
+      const target = path.join(base, p)
+      if (!target.startsWith(base + path.sep)) { errors.push(`Đường dẫn không hợp lệ: ${p}`); continue }
+      try {
+        if (!fs.existsSync(target)) continue
+        const stat = fs.statSync(target)
+        if (stat.isDirectory()) fs.rmSync(target, { recursive: true, force: true })
+        else fs.unlinkSync(target)
+      } catch (err) { errors.push(`${p}: ${err.message}`) }
+    }
+    return errors.length ? { error: errors.join('\n') } : { ok: true }
+  })
+
+  // server:compress — zip selected files/folders
+  ipcMain.handle('server:compress', async (e, serverId, itemPaths, zipName) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (!Array.isArray(itemPaths) || !itemPaths.length) return { error: 'Không có file để nén' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const base = server.serverDir
+    const safeName = (zipName || 'archive.zip').replace(/[^a-zA-Z0-9._\-]/g, '_')
+    const zipPath = path.join(base, safeName)
+    if (!zipPath.startsWith(base + path.sep)) return { error: 'Đường dẫn không hợp lệ' }
+
+    try {
+      const { execSync } = require('child_process')
+      // Use PowerShell Compress-Archive on Windows
+      const targets = itemPaths.map(p => {
+        const t = path.join(base, p)
+        if (!t.startsWith(base + path.sep)) throw new Error(`Đường dẫn không hợp lệ: ${p}`)
+        return t
+      })
+      if (process.platform === 'win32') {
+        const pathList = targets.map(t => `"${t}"`).join(',')
+        execSync(`powershell -Command "Compress-Archive -Path ${pathList} -DestinationPath '${zipPath}' -Force"`, { cwd: base, windowsHide: true })
+      } else {
+        const relPaths = itemPaths.map(p => `"${p}"`).join(' ')
+        execSync(`zip -r "${safeName}" ${relPaths}`, { cwd: base })
+      }
+      return { ok: true, zipPath }
+    } catch (err) { return { error: err.message } }
+  })
+
+  // server:extract — unzip a zip file
+  ipcMain.handle('server:extract', async (e, serverId, zipFilePath) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const base = server.serverDir
+    const target = path.join(base, zipFilePath)
+    if (!target.startsWith(base + path.sep)) return { error: 'Đường dẫn không hợp lệ' }
+    if (!fs.existsSync(target)) return { error: 'File không tồn tại' }
+
+    try {
+      const { execSync } = require('child_process')
+      if (process.platform === 'win32') {
+        execSync(`powershell -Command "Expand-Archive -Path '${target}' -DestinationPath '${base}' -Force"`, { cwd: base, windowsHide: true })
+      } else {
+        execSync(`unzip -o "${target}" -d "${base}"`, { cwd: base })
+      }
+      return { ok: true }
+    } catch (err) { return { error: err.message } }
   })
 }
 
