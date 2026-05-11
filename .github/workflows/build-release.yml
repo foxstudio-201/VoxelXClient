@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-windows:
     name: Build Windows
@@ -68,6 +71,15 @@ jobs:
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
 
+      - name: List build output
+        shell: pwsh
+        run: |
+          if (Test-Path "dist-electron") {
+            Get-ChildItem dist-electron -Recurse -Include "*.exe","*.zip" | Select-Object Name, Length
+          } else {
+            Write-Host "dist-electron not found"
+          }
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -75,6 +87,7 @@ jobs:
           path: |
             dist-electron/*.exe
             dist-electron/*.zip
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Create GitHub Release
@@ -97,6 +110,7 @@ jobs:
           files: |
             dist-electron/*.exe
             dist-electron/*.zip
+          fail_on_unmatched_files: false
           draft: false
           prerelease: false
           generate_release_notes: true
