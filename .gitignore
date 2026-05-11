@@ -28,3 +28,16 @@ web/
 
 # Large demo files
 modpack_demo/
+
+# Build output
+dist-electron/
+
+# Code signing certificates (NEVER commit these)
+certs/
+*.pfx
+*.p12
+*.cer
+
+# Environment variables
+.env
+.env.local

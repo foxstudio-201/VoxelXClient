@@ -48,16 +48,51 @@
   "build": {
     "appId": "com.voxelxclient.launcher",
     "productName": "VoxelXClient",
+    "copyright": "Copyright © 2024 FoxStudio",
+    "asar": true,
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron",
+      "buildResources": "build-resources"
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "!electron/launcher/_logblock.txt",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "mod-skin",
+        "to": "mod-skin",
+        "filter": ["**/*.jar"]
+      }
     ],
     "win": {
-      "target": "nsis",
-      "icon": "public/icon.ico"
-    }
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "forceCodeSigning": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "installerHeaderIcon": "public/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VoxelXClient"
+    },
+    "publish": null
   }
 }
