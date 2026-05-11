@@ -3,9 +3,13 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
+// Import GLB as Vite assets so paths resolve correctly in production (file:// protocol)
+import wideGlbUrl from '../../assets/model/wide.glb'
+import slimGlbUrl from '../../assets/model/slim.glb'
+
 // Preload cả 2 model
-useGLTF.preload('/models/wide.glb')
-useGLTF.preload('/models/slim.glb')
+useGLTF.preload(wideGlbUrl)
+useGLTF.preload(slimGlbUrl)
 
 // ─── Skin URL — username trước, UUID sau ─────────────────────────────────────
 
@@ -250,7 +254,7 @@ function LoadingBox() {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 export default function PlayerModel3D({ uuid, username, slim = false, customSkinUrl = null, className = '' }) {
-  const modelPath = slim ? '/models/slim.glb' : '/models/wide.glb'
+  const modelPath = slim ? slimGlbUrl : wideGlbUrl
 
   // Pause render loop khi component bị ẩn (display:none) để tiết kiệm GPU
   const [visible, setVisible] = useState(true)
