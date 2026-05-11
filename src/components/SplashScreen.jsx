@@ -6,7 +6,7 @@ export default function SplashScreen({ onDone }) {
   const [pct, setPct]         = useState(0)
   const [log, setLog]         = useState('Khởi tạo...')
   const [fadeOut, setFadeOut] = useState(false)
-  const [version, setVersion] = useState('1.0.0')
+  const [version, setVersion] = useState(__APP_VERSION__)
   const doneRef               = useRef(false)
   const pctRef                = useRef(0)
 
