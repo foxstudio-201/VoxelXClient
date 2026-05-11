@@ -1,8 +1,23 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell } = require('electron')
 const path = require('path')
 const fs   = require('fs')
 const rpc  = require('./discordRPC.cjs')
-const { registerProfileHandlers } = require('./profileManager.cjs')
+const { registerProfileHandlers, registerGroupHandlers, registerProfileContentHandlers, registerJavaDistroHandlers } = require('./profileManager.cjs')
+const { registerServerHandlers } = require('./serverManager.cjs')
 const { registerLauncherHandlers } = require('./launcher.cjs')
 const { loginWithWindow, refreshMinecraftToken } = require('./msAuth.cjs')
 
@@ -16,7 +31,6 @@ const ACCOUNTS_DIR  = path.join(app.getPath('appData'), '.VoxelXClient')
 const ACCOUNTS_FILE = path.join(ACCOUNTS_DIR, 'accounts.json')
 
 // ─── Trusted origins ──────────────────────────────────────────────────────────
-// Chỉ cho phép load từ các origin này
 const ALLOWED_ORIGINS = isDev
   ? ['http://localhost:5173']
   : ['file://']
@@ -34,7 +48,6 @@ function isTrustedOrigin(url) {
     const u = new URL(url)
     if (!isDev && u.protocol === 'file:') return true
     if (ALLOWED_ORIGINS.some(o => url.startsWith(o))) return true
-    // Avatar API domains — chỉ cho phép load ảnh, không navigate
     return false
   } catch { return false }
 }
@@ -52,7 +65,6 @@ function validateAccount(account) {
 }
 
 function sanitizeAccount(account) {
-  // Chỉ giữ lại các field được phép — loại bỏ mọi field lạ
   const base = {
     id:        account.id,
     uuid:      account.uuid,
@@ -60,7 +72,6 @@ function sanitizeAccount(account) {
     username:  account.username,
     createdAt: account.createdAt,
   }
-  // Microsoft accounts lưu thêm token để auto-refresh
   if (account.type === 'microsoft') {
     base.msRefreshToken = account.msRefreshToken || null
     base.mcToken        = account.mcToken        || null
@@ -86,7 +97,6 @@ function readAccounts() {
 }
 function writeAccounts(data) {
   ensureAccountsFile()
-  // Atomic write: ghi vào file tạm rồi rename để tránh corrupt
   const tmp = ACCOUNTS_FILE + '.tmp'
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600 })
   fs.renameSync(tmp, ACCOUNTS_FILE)
@@ -110,7 +120,7 @@ const DEFAULT_SETTINGS = {
 }
 
 function readSettings() {
-  ensureAccountsFile() // đảm bảo thư mục tồn tại
+  ensureAccountsFile()
   try {
     if (!fs.existsSync(SETTINGS_FILE)) return { ...DEFAULT_SETTINGS }
     return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8')) }
@@ -133,12 +143,12 @@ let tray         = null
 function secureWebPrefs() {
   return {
     preload:                     path.join(__dirname, 'preload.cjs'),
-    contextIsolation:            true,   // renderer không access Node
-    nodeIntegration:             false,  // không cho renderer dùng Node APIs
+    contextIsolation:            true,   // renderer cannot access Node
+    nodeIntegration:             false,  // renderer cannot use Node APIs
     nodeIntegrationInWorker:     false,
     nodeIntegrationInSubFrames:  false,
-    // sandbox: true — disabled trên Windows do lỗi GPU cache permission
-    // contextIsolation + nodeIntegration:false đã đủ bảo mật
+    // sandbox: true — disabled on Windows due to GPU cache permission bug
+    // contextIsolation + nodeIntegration:false is sufficient security
     webSecurity:                 true,   // enforce same-origin
     allowRunningInsecureContent: false,
     experimentalFeatures:        false,
@@ -159,22 +169,19 @@ function createMainWindow() {
     webPreferences: secureWebPrefs(),
   })
 
-  // Chặn navigation ra ngoài allowed origins
   mainWindow.webContents.on('will-navigate', (e, url) => {
     if (!isTrustedOrigin(url)) {
       e.preventDefault()
-      shell.openExternal(url) // mở browser ngoài thay vì trong app
+      shell.openExternal(url)
     }
   })
 
-  // Chặn mở window mới (popup, target=_blank)
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isTrustedOrigin(url)) return { action: 'allow' }
     shell.openExternal(url)
     return { action: 'deny' }
   })
 
-  // Disable dev tools trong production
   if (!isDev) {
     mainWindow.webContents.on('devtools-opened', () => {
       mainWindow.webContents.closeDevTools()
@@ -183,8 +190,10 @@ function createMainWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173')
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+    mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
 
   mainWindow.on('close', (e) => {
@@ -205,7 +214,6 @@ function createUpdateWindow() {
     backgroundColor: '#0f0f0f',
     title: 'VoxelXClient – Check for Updates',
     icon,
-    // No parent — independent window
     modal:       false,
     skipTaskbar: false,
     webPreferences: secureWebPrefs(),
@@ -255,7 +263,6 @@ function createTray() {
     {
       label: 'Kiểm tra cập nhật...',
       click: () => {
-        // Mở update window độc lập — không cần show main window
         createUpdateWindow()
       },
     },
@@ -273,17 +280,18 @@ function createTray() {
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
-  // Cho phép load ảnh từ các Minecraft avatar API
-  // Không inject CSP vào cửa sổ auth Microsoft
   const { session } = require('electron')
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    // Bỏ qua CSP cho các trang Microsoft auth
     const url = details.url || ''
     if (
       url.includes('login.live.com') ||
       url.includes('login.microsoftonline.com') ||
       url.includes('microsoft.com') ||
-      url.includes('xbox.com')
+      url.includes('xbox.com') ||
+      url.includes('youtube.com') ||
+      url.includes('youtube-nocookie.com') ||
+      url.includes('googlevideo.com') ||
+      url.includes('ytimg.com')
     ) {
       return callback({ responseHeaders: details.responseHeaders })
     }
@@ -292,9 +300,13 @@ app.whenReady().then(() => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173 ws://localhost:5173;" +
-          "img-src 'self' data: blob: https://crafthead.net https://mc-heads.net https://minotar.net https://crafatar.com https://textures.minecraft.net https://media.forgecdn.net https://cdn.modrinth.com;" +
-          "connect-src 'self' http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net;"
+          "default-src 'self' 'unsafe-inline' http://localhost:5173 ws://localhost:5173;" +
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173;" +
+          "worker-src 'self' blob:;" +
+          "font-src 'self' data:;" +
+          "img-src 'self' data: blob: https:;" +
+          "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://youtube-nocookie.com https://youtube.com;" +
+          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com;"
         ],
       },
     })
@@ -302,8 +314,6 @@ app.whenReady().then(() => {
 
   createMainWindow()
   createTray()
-
-  // Khởi động Discord RPC nếu setting bật
   const initSettings = readSettings()
   if (initSettings.discordRPC) rpc.connect()
 
@@ -312,11 +322,10 @@ app.whenReady().then(() => {
   })
 })
 
-app.on('window-all-closed', () => { /* chạy ở tray */ })
+app.on('window-all-closed', () => { /* run in tray */ })
 app.on('before-quit', () => { app.isQuitting = true })
 
 // ─── Window controls IPC ──────────────────────────────────────────────────────
-// Validate sender frame trước khi thực hiện
 function getTrustedWindow(event) {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (!win) return null
@@ -339,16 +348,209 @@ ipcMain.on('window-close', (e) => {
 })
 
 // ─── Updater IPC ──────────────────────────────────────────────────────────────
+const GITHUB_REPO = 'foxstudio-201/VoxelXClient'
+
 ipcMain.handle('updater:check', async (e) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-  await new Promise(r => setTimeout(r, 1500))
-  return {
-    hasUpdate: false,
-    currentVersion: app.getVersion(),
-    latestVersion:  app.getVersion(),
-    message: 'Bạn đang dùng phiên bản mới nhất.',
+
+  const currentVersion = app.getVersion()
+
+  try {
+    const https = require('https')
+
+    const data = await new Promise((resolve, reject) => {
+      const req = https.get(
+        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+        {
+          headers: {
+            'User-Agent': 'VoxelXClient/' + currentVersion,
+            'Accept': 'application/vnd.github+json',
+          },
+          timeout: 8000,
+        },
+        (res) => {
+          let body = ''
+          res.on('data', c => { body += c })
+          res.on('end', () => {
+            // 404 = no releases yet
+            if (res.statusCode === 404) {
+              resolve(null)
+              return
+            }
+            if (res.statusCode !== 200) {
+              reject(new Error(`GitHub API returned HTTP ${res.statusCode}`))
+              return
+            }
+            try { resolve(JSON.parse(body)) }
+            catch { reject(new Error('Invalid JSON from GitHub API')) }
+          })
+        }
+      )
+      req.on('error', reject)
+      req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')) })
+    })
+
+    // No releases published yet
+    if (!data) {
+      return {
+        hasUpdate:      false,
+        currentVersion,
+        latestVersion:  currentVersion,
+        message:        'Chưa có bản phát hành nào trên GitHub.',
+        releaseUrl:     `https://github.com/${GITHUB_REPO}/releases`,
+        noRelease:      true,
+      }
+    }
+
+    const latestVersion = (data.tag_name || '').replace(/^v/, '')
+    const hasUpdate = latestVersion && latestVersion !== currentVersion
+      && compareVersions(latestVersion, currentVersion) > 0
+
+    // Find the installer asset for current platform
+    const assets = (data.assets || []).map(a => ({
+      name:        a.name,
+      downloadUrl: a.browser_download_url,
+      size:        a.size,
+    }))
+
+    // Pick best installer asset for current platform
+    let installerAsset = null
+    if (process.platform === 'win32') {
+      installerAsset = assets.find(a => /setup.*\.exe$/i.test(a.name) || /\.exe$/i.test(a.name))
+    } else if (process.platform === 'darwin') {
+      installerAsset = assets.find(a => /\.dmg$/i.test(a.name))
+    } else {
+      installerAsset = assets.find(a => /\.AppImage$/i.test(a.name) || /\.deb$/i.test(a.name))
+    }
+
+    return {
+      hasUpdate,
+      currentVersion,
+      latestVersion:  latestVersion || currentVersion,
+      releaseName:    data.name || latestVersion,
+      releaseNotes:   data.body || '',
+      releaseUrl:     data.html_url || `https://github.com/${GITHUB_REPO}/releases`,
+      publishedAt:    data.published_at || null,
+      installerAsset,
+      assets,
+      message: hasUpdate
+        ? `Phiên bản mới ${latestVersion} đã có sẵn!`
+        : 'Bạn đang dùng phiên bản mới nhất.',
+    }
+  } catch (err) {
+    return {
+      error:          true,
+      currentVersion,
+      message:        `Không thể kiểm tra cập nhật: ${err.message}`,
+    }
   }
 })
+
+// updater:download — download installer to temp dir, report progress
+ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  if (typeof downloadUrl !== 'string' || !downloadUrl.startsWith('https://')) {
+    return { error: 'Invalid download URL' }
+  }
+
+  const win = getTrustedWindow(e)
+  const https = require('https')
+  const os    = require('os')
+  const tmpDir  = path.join(os.tmpdir(), 'VoxelXClient-update')
+  const tmpFile = path.join(tmpDir, fileName || 'VoxelXClient-update.exe')
+
+  if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
+
+  try {
+    await new Promise((resolve, reject) => {
+      function doGet(url) {
+        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/' + app.getVersion() } }, (res) => {
+          // Follow redirects (GitHub uses redirects for asset downloads)
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            return doGet(res.headers.location)
+          }
+          if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
+
+          const total = parseInt(res.headers['content-length'] || '0', 10)
+          let downloaded = 0
+          const startTime = Date.now()
+          const out = fs.createWriteStream(tmpFile)
+
+          res.on('data', chunk => {
+            downloaded += chunk.length
+            const elapsed = (Date.now() - startTime) / 1000
+            const speed   = elapsed > 0 ? Math.round(downloaded / elapsed) : 0
+            const percent = total > 0 ? Math.round(downloaded / total * 100) : 0
+            if (!win.isDestroyed()) {
+              win.webContents.send('updater:downloadProgress', { downloaded, total, percent, speed })
+            }
+          })
+          res.pipe(out)
+          out.on('finish', resolve)
+          out.on('error', reject)
+          res.on('error', reject)
+        }).on('error', reject)
+      }
+      doGet(downloadUrl)
+    })
+
+    return { ok: true, filePath: tmpFile }
+  } catch (err) {
+    // Clean up partial download
+    try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile) } catch {}
+    return { error: err.message }
+  }
+})
+
+// updater:install — run the downloaded installer and quit the app
+ipcMain.handle('updater:install', (e, { filePath }) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  if (typeof filePath !== 'string') return { error: 'Invalid file path' }
+  if (!fs.existsSync(filePath)) return { error: 'Installer file not found' }
+
+  // Validate path is inside temp dir
+  const os = require('os')
+  const tmpDir = path.join(os.tmpdir(), 'VoxelXClient-update')
+  if (!filePath.startsWith(tmpDir)) return { error: 'Invalid installer path' }
+
+  try {
+    const { spawn } = require('child_process')
+
+    if (process.platform === 'win32') {
+      // Launch NSIS installer — detached so it survives app exit
+      // No /S flag so user sees the installer UI
+      spawn(filePath, [], {
+        detached: true,
+        stdio:    'ignore',
+      }).unref()
+    } else if (process.platform === 'darwin') {
+      spawn('open', [filePath], { detached: true, stdio: 'ignore' }).unref()
+    } else {
+      // Linux: make executable then run
+      fs.chmodSync(filePath, 0o755)
+      spawn(filePath, [], { detached: true, stdio: 'ignore' }).unref()
+    }
+
+    // Quit the app so installer can replace files
+    setTimeout(() => { app.isQuitting = true; app.quit() }, 500)
+    return { ok: true }
+  } catch (err) {
+    return { error: err.message }
+  }
+})
+
+// Simple semver comparison: returns 1 if a > b, -1 if a < b, 0 if equal
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] ?? 0
+    const nb = pb[i] ?? 0
+    if (na > nb) return 1
+    if (na < nb) return -1
+  }
+  return 0
+}
 
 ipcMain.handle('app:version', (e) => {
   if (!getTrustedWindow(e)) return null
@@ -361,10 +563,10 @@ ipcMain.handle('accounts:get', (e) => {
   return readAccounts()
 })
 
+// ─── Account ADD ──────────────────────────────────────────────────────────────
 ipcMain.handle('accounts:add', (e, account) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 
-  // Validate input
   const err = validateAccount(account)
   if (err) return { error: err }
 
@@ -374,7 +576,6 @@ ipcMain.handle('accounts:add', (e, account) => {
   )
   if (exists) return { error: 'Tài khoản đã tồn tại' }
 
-  // Chỉ lưu các field được whitelist
   const safe = sanitizeAccount(account)
   data.accounts.push(safe)
   if (!data.selectedId) data.selectedId = safe.id
@@ -382,6 +583,7 @@ ipcMain.handle('accounts:add', (e, account) => {
   return { ok: true, data }
 })
 
+// ─── Account REMOVE ──────────────────────────────────────────────────────────────
 ipcMain.handle('accounts:remove', (e, id) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -398,7 +600,6 @@ ipcMain.handle('accounts:select', (e, id) => {
   if (!validateId(id)) return { error: 'ID không hợp lệ' }
 
   const data = readAccounts()
-  // Đảm bảo id tồn tại trong danh sách
   if (!data.accounts.find(a => a.id === id)) return { error: 'Tài khoản không tồn tại' }
   data.selectedId = id
   writeAccounts(data)
@@ -412,12 +613,9 @@ ipcMain.handle('ms:startLogin', async (e) => {
 
   try {
     const result = await loginWithWindow(win)
-
-    // Lưu tài khoản
     const data = readAccounts()
     const exists = data.accounts.find(a => a.uuid === result.uuid)
     if (exists) {
-      // Cập nhật token nếu đã tồn tại
       const idx = data.accounts.indexOf(exists)
       data.accounts[idx] = sanitizeAccount({
         ...exists,
@@ -453,12 +651,11 @@ ipcMain.handle('ms:startLogin', async (e) => {
 })
 
 ipcMain.handle('ms:cancelLogin', (e) => {
-  // Với window flow, cancel được xử lý bởi người dùng đóng cửa sổ
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   return { ok: true }
 })
 
-// Auto-refresh: lấy mcToken mới nếu sắp hết hạn (< 5 phút)
+// ─── Auto-refresh ──────────────────────────────────────────────────────────────
 ipcMain.handle('ms:refreshToken', async (e, id) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -468,8 +665,6 @@ ipcMain.handle('ms:refreshToken', async (e, id) => {
   if (!account) return { error: 'Tài khoản không tồn tại' }
   if (account.type !== 'microsoft') return { error: 'Không phải tài khoản Microsoft' }
   if (!account.msRefreshToken) return { error: 'Không có refresh token' }
-
-  // Kiểm tra xem có cần refresh không (còn > 5 phút thì bỏ qua)
   const fiveMin = 5 * 60 * 1000
   if (account.mcTokenExpiry && account.mcTokenExpiry - Date.now() > fiveMin) {
     return { ok: true, skipped: true, mcToken: account.mcToken }
@@ -495,7 +690,6 @@ ipcMain.handle('ms:refreshToken', async (e, id) => {
 // ─── Shell IPC ────────────────────────────────────────────────────────────────
 ipcMain.handle('shell:openExternal', (e, url) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-  // Chỉ cho phép https URLs
   try {
     const u = new URL(url)
     if (u.protocol !== 'https:') return { error: 'Chỉ cho phép HTTPS' }
@@ -506,6 +700,10 @@ ipcMain.handle('shell:openExternal', (e, url) => {
 
 // ─── Profile IPC ──────────────────────────────────────────────────────────────
 registerProfileHandlers(getTrustedWindow)
+registerGroupHandlers(getTrustedWindow)
+registerProfileContentHandlers(getTrustedWindow)
+registerJavaDistroHandlers(getTrustedWindow)
+registerServerHandlers(getTrustedWindow)
 
 // ─── Launcher IPC ─────────────────────────────────────────────────────────────
 registerLauncherHandlers(getTrustedWindow)
@@ -556,14 +754,11 @@ ipcMain.handle('forge:getVersions', async (e, gameVersion) => {
         }).on('error', reject)
       })
     }
-
-    // Fetch cả 2 song song
     const [xmlBody, promoBody] = await Promise.all([
       httpsGet('https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml'),
       httpsGet('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json'),
     ])
 
-    // Parse XML — lấy tất cả <version> tag
     const allVersions = []
     const versionRe = /<version>([^<]+)<\/version>/g
     let m
@@ -571,13 +766,11 @@ ipcMain.handle('forge:getVersions', async (e, gameVersion) => {
       allVersions.push(m[1])
     }
 
-    // Lọc theo gameVersion prefix: "1.21.4-..." 
     const prefix = gameVersion + '-'
     const filtered = allVersions
       .filter(v => v.startsWith(prefix))
-      .map(v => v.slice(prefix.length)) // chỉ lấy phần forge version
+      .map(v => v.slice(prefix.length)) 
 
-    // Parse promotions
     const promos = JSON.parse(promoBody).promos || {}
     const recommended = promos[`${gameVersion}-recommended`] || null
     const latest      = promos[`${gameVersion}-latest`]      || null
@@ -621,8 +814,7 @@ ipcMain.handle('neoforge:getVersions', async (e, gameVersion) => {
     const mcPatch = mcParts[2] ?? '0'
     const prefix  = `${mcMinor}.${mcPatch}.`
 
-    // NeoForge does NOT have maven-metadata.xml — scrape directory listing instead
-    const html = await httpsGet('https://maven.neoforged.net/releases/net/neoforged/neoforge/')
+    // NeoForge does NOT have maven-metadata.xml — scrape directory listing instead    const html = await httpsGet('https://maven.neoforged.net/releases/net/neoforged/neoforge/')
 
     // Extract version directories: href="./21.4.0/"
     const dirRe = /href="\.\/([\d]+\.[\d]+\.[\d]+)\/"/g
@@ -632,7 +824,6 @@ ipcMain.handle('neoforge:getVersions', async (e, gameVersion) => {
       allVersions.push(m[1])
     }
 
-    // Filter by MC version prefix, sort descending (newest first)
     const filtered = allVersions
       .filter(v => v.startsWith(prefix))
       .sort((a, b) => {
@@ -672,8 +863,7 @@ ipcMain.handle('modpack:browse', async (e) => {
 
   const { dialog } = require('electron')
   const result = await dialog.showOpenDialog(win, {
-    title:       'Chọn file modpack',
-    buttonLabel: 'Chọn',
+    title:       'Chọn file modpack',    buttonLabel: 'Chọn',
     filters: [
       { name: 'Modpack', extensions: ['zip', 'mrpack'] },
       { name: 'All Files', extensions: ['*'] },
@@ -699,8 +889,6 @@ ipcMain.handle('modpack:readMeta', async (e, filePath) => {
 
   try {
     const buf = fs.readFileSync(filePath)
-
-    // ZIP central directory parser
     function readZipEntry(name) {
       let eocdOffset = -1
       for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65558); i--) {
@@ -735,10 +923,9 @@ ipcMain.handle('modpack:readMeta', async (e, filePath) => {
 
     const baseName = path.basename(filePath).replace(/\.(zip|mrpack)$/i, '')
     let name = baseName, gameVersion = '', loader = '', loaderVersion = ''
-    let iconBase64 = null  // data:image/png;base64,... từ icon.png trong zip
-    let iconUrl    = null  // URL từ manifest (CurseForge image field)
+    let iconBase64 = null  // data:image/png;base64,... from icon.png inside zip
+    let iconUrl    = null  // URL from manifest (CurseForge image field)
 
-    // CurseForge: manifest.json
     const manifestData = readZipEntry('manifest.json')
     if (manifestData) {
       const manifest = JSON.parse(manifestData.toString('utf8'))
@@ -749,11 +936,8 @@ ipcMain.handle('modpack:readMeta', async (e, filePath) => {
       else if (loaderRaw.startsWith('forge-'))  { loader = 'forge';    loaderVersion = loaderRaw.replace('forge-', '') }
       else if (loaderRaw.startsWith('fabric-')) { loader = 'fabric';   loaderVersion = loaderRaw.replace('fabric-', '') }
       else { loader = 'forge'; loaderVersion = loaderRaw }
-      // CurseForge stores avatar URL in manifest.image
-      if (manifest.image) iconUrl = manifest.image
-    }
+      if (manifest.image) iconUrl = manifest.image    }
 
-    // Modrinth: modrinth.index.json
     const mrData = readZipEntry('modrinth.index.json')
     if (mrData) {
       const mr = JSON.parse(mrData.toString('utf8'))
@@ -764,8 +948,6 @@ ipcMain.handle('modpack:readMeta', async (e, filePath) => {
       else if (mr.dependencies?.['forge'])      { loader = 'forge';    loaderVersion = mr.dependencies['forge'] }
       else if (mr.dependencies?.['quilt-loader']){ loader = 'quilt';   loaderVersion = mr.dependencies['quilt-loader'] }
     }
-
-    // Icon từ zip (ưu tiên hơn URL nếu có)
     for (const iconName of ['icon.png', 'pack.png']) {
       const iconData = readZipEntry(iconName)
       if (iconData) {
@@ -781,8 +963,6 @@ ipcMain.handle('modpack:readMeta', async (e, filePath) => {
 })
 
 // ─── Modpack Import IPC ───────────────────────────────────────────────────────
-// profiles:importModpack — import a CurseForge or Modrinth modpack file
-// Progress events are sent via 'import:progress' channel to the renderer
 ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId }) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
@@ -793,8 +973,7 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
   if (!filePath || !fs.existsSync(filePath)) return { error: 'File không tồn tại' }
   if (!['curseforge', 'modrinth'].includes(source)) return { error: 'Source không hợp lệ' }
 
-  // Get instance path from profile
-  const DATA_DIR_IMPORT = require('path').join(require('electron').app.getPath('appData'), '.VoxelXClient')
+  // Get instance path from profile  const DATA_DIR_IMPORT = require('path').join(require('electron').app.getPath('appData'), '.VoxelXClient')
   const PROFILES_FILE_IMPORT = require('path').join(DATA_DIR_IMPORT, 'profiles.json')
   let profilesData
   try { profilesData = JSON.parse(fs.readFileSync(PROFILES_FILE_IMPORT, 'utf-8')) }
@@ -830,9 +1009,9 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
         if (result.name && !latestData.profiles[idx].name.trim()) {
           latestData.profiles[idx].name = result.name
         }
-        // Lưu import metadata để hiển thị trên ProfileCard
+        // Save import metadata for display on ProfileCard
         latestData.profiles[idx].importSource  = source
-        // Chỉ overwrite nếu importer trả về giá trị mới — giữ nguyên giá trị từ profiles:create nếu importer trả null
+        // Only overwrite if importer returns a new value — keep value from profiles:create if importer returns null
         if (result.iconUrl) {
           latestData.profiles[idx].importIconUrl = result.iconUrl
           latestData.profiles[idx].importBgUrl   = result.iconUrl
@@ -868,6 +1047,248 @@ ipcMain.handle('profiles:saveTempFile', async (e, { name, buffer }) => {
   }
 })
 
+// ─── modpack:downloadAndImport ────────────────────────────────────────────────
+// Download a modpack file from URL, create a profile, then import it.
+// Used by the Mods browser (Modrinth/CurseForge/Technic) when projectType === 'modpack'.
+ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, source, profileMeta, groupId }) => {
+  const win = getTrustedWindow(e)
+  if (!win) return { error: 'Unauthorized' }
+
+  const os   = require('os')
+  const path = require('path')
+  const fs   = require('fs')
+  const https = require('https')
+  const http  = require('http')
+
+  function sendProgress(data) {
+    if (!win.isDestroyed()) win.webContents.send('import:progress', data)
+  }
+
+  // 1. Download file to temp
+  const tmpPath = path.join(os.tmpdir(), `vxc-modpack-${Date.now()}-${filename}`)
+  sendProgress({ phase: 'download', log: `Đang tải ${filename}...`, percent: 2 })
+
+  try {
+    await new Promise((resolve, reject) => {
+      const client = downloadUrl.startsWith('https') ? https : http
+      const tmpFile = fs.createWriteStream(tmpPath)
+      const doGet = (url) => {
+        client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            tmpFile.close()
+            return doGet(res.headers.location)
+          }
+          if (res.statusCode !== 200) {
+            res.resume()
+            return reject(new Error(`HTTP ${res.statusCode}: ${url}`))
+          }
+          const total = parseInt(res.headers['content-length'] || '0', 10)
+          let received = 0
+          res.on('data', chunk => {
+            received += chunk.length
+            if (total > 0) {
+              const pct = 2 + Math.round((received / total) * 18)
+              sendProgress({ phase: 'download', log: `Đang tải ${filename}: ${pct}%`, percent: pct })
+            }
+          })
+          res.pipe(tmpFile)
+          tmpFile.on('finish', () => { tmpFile.close(); resolve() })
+          tmpFile.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {} reject(err) })
+          res.on('error',     err => { try { fs.unlinkSync(tmpPath) } catch {} reject(err) })
+        }).on('error', reject)
+      }
+      doGet(downloadUrl)
+    })
+  } catch (err) {
+    sendProgress({ phase: 'error', log: `Lỗi tải file: ${err.message}`, percent: 0 })
+    return { error: err.message }
+  }
+
+  sendProgress({ phase: 'read', log: 'Đọc metadata modpack...', percent: 20 })
+
+  // 2. Read metadata from downloaded file
+  let meta = {}
+  try {
+    const { ipcMain: _ipc, BrowserWindow } = require('electron')
+    // Re-use the readMeta logic inline
+    const zlib = require('zlib')
+    const buf = fs.readFileSync(tmpPath)
+
+    function readZipEntry(name) {
+      let eocdOffset = -1
+      for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65558); i--) {
+        if (buf.readUInt32LE(i) === 0x06054b50) { eocdOffset = i; break }
+      }
+      if (eocdOffset < 0) return null
+      const cdOffset = buf.readUInt32LE(eocdOffset + 16)
+      const cdCount  = buf.readUInt16LE(eocdOffset + 10)
+      let pos = cdOffset
+      for (let i = 0; i < cdCount; i++) {
+        if (buf.readUInt32LE(pos) !== 0x02014b50) break
+        const compMethod  = buf.readUInt16LE(pos + 10)
+        const compSize    = buf.readUInt32LE(pos + 20)
+        const fnLen       = buf.readUInt16LE(pos + 28)
+        const extraLen    = buf.readUInt16LE(pos + 30)
+        const commentLen  = buf.readUInt16LE(pos + 32)
+        const localOffset = buf.readUInt32LE(pos + 42)
+        const fileName    = buf.slice(pos + 46, pos + 46 + fnLen).toString('utf8')
+        if (fileName === name) {
+          const lfnLen  = buf.readUInt16LE(localOffset + 26)
+          const lexLen  = buf.readUInt16LE(localOffset + 28)
+          const dataOff = localOffset + 30 + lfnLen + lexLen
+          const comp    = buf.slice(dataOff, dataOff + compSize)
+          if (compMethod === 0) return comp
+          if (compMethod === 8) return zlib.inflateRawSync(comp)
+          return null
+        }
+        pos += 46 + fnLen + extraLen + commentLen
+      }
+      return null
+    }
+
+    const baseName = path.basename(filename).replace(/\.(zip|mrpack)$/i, '')
+    let name = profileMeta?.name || baseName
+    let gameVersion = profileMeta?.gameVersion || ''
+    let loader = profileMeta?.loader || 'forge'
+    let loaderVersion = profileMeta?.loaderVersion || ''
+
+    const manifestData = readZipEntry('manifest.json')
+    if (manifestData) {
+      const manifest = JSON.parse(manifestData.toString('utf8'))
+      name        = manifest.name || name
+      gameVersion = manifest.minecraft?.version || gameVersion
+      const loaderRaw = (manifest.minecraft?.modLoaders || [])[0]?.id || ''
+      if (loaderRaw.startsWith('neoforge-'))    { loader = 'neoforge'; loaderVersion = loaderRaw.replace('neoforge-', '') }
+      else if (loaderRaw.startsWith('forge-'))  { loader = 'forge';    loaderVersion = loaderRaw.replace('forge-', '') }
+      else if (loaderRaw.startsWith('fabric-')) { loader = 'fabric';   loaderVersion = loaderRaw.replace('fabric-', '') }
+    }
+    const mrData = readZipEntry('modrinth.index.json')
+    if (mrData) {
+      const mr = JSON.parse(mrData.toString('utf8'))
+      name        = mr.name || name
+      gameVersion = mr.dependencies?.minecraft || gameVersion
+      if (mr.dependencies?.['fabric-loader'])    { loader = 'fabric';   loaderVersion = mr.dependencies['fabric-loader'] }
+      else if (mr.dependencies?.['neoforge'])    { loader = 'neoforge'; loaderVersion = mr.dependencies['neoforge'] }
+      else if (mr.dependencies?.['forge'])       { loader = 'forge';    loaderVersion = mr.dependencies['forge'] }
+      else if (mr.dependencies?.['quilt-loader']){ loader = 'quilt';    loaderVersion = mr.dependencies['quilt-loader'] }
+    }
+    meta = { name, gameVersion, loader, loaderVersion }
+  } catch (err) {
+    meta = {
+      name:          profileMeta?.name || path.basename(filename, path.extname(filename)),
+      gameVersion:   profileMeta?.gameVersion || '',
+      loader:        profileMeta?.loader || 'forge',
+      loaderVersion: profileMeta?.loaderVersion || '',
+    }
+  }
+
+  sendProgress({ phase: 'create', log: 'Tạo profile...', percent: 22 })
+
+  // 3. Create profile
+  const DATA_DIR_DL = path.join(require('electron').app.getPath('appData'), '.VoxelXClient')
+  const PROFILES_FILE_DL = path.join(DATA_DIR_DL, 'profiles.json')
+
+  const profileId = require('crypto').randomUUID()
+  const now = new Date().toISOString()
+  const INSTANCES_DIR_DL = path.join(DATA_DIR_DL, 'instances')
+  const instancePath = path.join(INSTANCES_DIR_DL, profileId)
+  try { fs.mkdirSync(instancePath, { recursive: true }) } catch {}
+
+  const profile = {
+    id:            profileId,
+    name:          meta.name || 'Modpack',
+    loader:        meta.loader,
+    gameVersion:   meta.gameVersion,
+    loaderVersion: meta.loaderVersion,
+    instancePath,
+    isCustomPath:  false,
+    createdAt:     now,
+    lastPlayed:    null,
+    sizeBytes:     0,
+    importSource:  source,
+    importIconUrl: profileMeta?.iconUrl || null,
+    importBgUrl:   profileMeta?.iconUrl || null,
+  }
+
+  try {
+    let profilesData
+    try { profilesData = JSON.parse(fs.readFileSync(PROFILES_FILE_DL, 'utf-8')) }
+    catch { profilesData = { profiles: [], selectedProfileId: null } }
+    profilesData.profiles.push(profile)
+    if (!profilesData.selectedProfileId) profilesData.selectedProfileId = profileId
+    const tmp = PROFILES_FILE_DL + '.tmp'
+    fs.writeFileSync(tmp, JSON.stringify(profilesData, null, 2), { mode: 0o600 })
+    fs.renameSync(tmp, PROFILES_FILE_DL)
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath) } catch {}
+    sendProgress({ phase: 'error', log: `Lỗi tạo profile: ${err.message}`, percent: 0 })
+    return { error: err.message }
+  }
+
+  sendProgress({ phase: 'start', log: 'Bắt đầu import modpack...', percent: 25 })
+
+  // 4. Import modpack
+  try {
+    let result
+    if (source === 'modrinth') {
+      const { importModrinthPack } = require('./launcher/modrinth/modrinthImporter.cjs')
+      result = await importModrinthPack(tmpPath, instancePath, sendProgress)
+    } else if (source === 'curseforge') {
+      const { importCurseForgePack } = require('./launcher/curseforge/curseforgeImporter.cjs')
+      result = await importCurseForgePack(tmpPath, instancePath, sendProgress)
+    } else {
+      // Technic or unknown — just extract zip as-is
+      result = { name: meta.name, gameVersion: meta.gameVersion, loader: meta.loader, loaderVersion: meta.loaderVersion }
+    }
+
+    // 5. Update profile with actual metadata from manifest
+    try {
+      const latestData = JSON.parse(fs.readFileSync(PROFILES_FILE_DL, 'utf-8'))
+      const idx = latestData.profiles.findIndex(p => p.id === profileId)
+      if (idx >= 0) {
+        if (result.gameVersion)   latestData.profiles[idx].gameVersion   = result.gameVersion
+        if (result.loader)        latestData.profiles[idx].loader        = result.loader
+        if (result.loaderVersion) latestData.profiles[idx].loaderVersion = result.loaderVersion
+        if (result.name)          latestData.profiles[idx].name          = result.name
+        if (result.iconUrl) {
+          latestData.profiles[idx].importIconUrl = result.iconUrl
+          latestData.profiles[idx].importBgUrl   = result.iconUrl
+        }
+        const tmp2 = PROFILES_FILE_DL + '.tmp'
+        fs.writeFileSync(tmp2, JSON.stringify(latestData, null, 2), { mode: 0o600 })
+        fs.renameSync(tmp2, PROFILES_FILE_DL)
+      }
+    } catch {}
+
+    // Cleanup temp file
+    try { fs.unlinkSync(tmpPath) } catch {}
+
+    // Add profile to group if groupId provided
+    if (groupId && typeof groupId === 'string' && /^[0-9a-f-]{36}$/.test(groupId)) {
+      try {
+        const GROUPS_FILE_DL = path.join(DATA_DIR_DL, 'groups.json')
+        let groupsData
+        try { groupsData = JSON.parse(fs.readFileSync(GROUPS_FILE_DL, 'utf-8')) }
+        catch { groupsData = { groups: [] } }
+        const grp = groupsData.groups.find(g => g.id === groupId)
+        if (grp && !grp.profileIds.includes(profileId)) {
+          grp.profileIds.push(profileId)
+          const tmpG = GROUPS_FILE_DL + '.tmp'
+          fs.writeFileSync(tmpG, JSON.stringify(groupsData, null, 2), { mode: 0o600 })
+          fs.renameSync(tmpG, GROUPS_FILE_DL)
+        }
+      } catch {}
+    }
+
+    sendProgress({ phase: 'done', log: `Đã tạo profile "${meta.name}" thành công!`, percent: 100 })
+    return { ok: true, profileId, profileName: meta.name }
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath) } catch {}
+    sendProgress({ phase: 'error', log: `Lỗi import: ${err.message}`, percent: 0 })
+    return { error: err.message }
+  }
+})
+
 ipcMain.handle('settings:get', (e) => {
   if (!getTrustedWindow(e)) return DEFAULT_SETTINGS
   return readSettings()
@@ -887,7 +1308,7 @@ ipcMain.handle('settings:save', (e, patch) => {
   const updated = { ...current, ...safe }
   writeSettings(updated)
 
-  // Toggle Discord RPC nếu setting thay đổi
+  // Toggle Discord RPC if setting changed
   if ('discordRPC' in safe) {
     if (safe.discordRPC) rpc.connect()
     else rpc.disconnect()

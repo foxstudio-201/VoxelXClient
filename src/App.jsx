@@ -14,6 +14,7 @@ import { ToastContext, useToastState } from './hooks/useToast'
 import { AccountsProvider, useAccounts } from './hooks/useAccounts'
 
 import ModsPage from './components/mods/ModsPage'
+import ServerPage from './components/server/ServerPage'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -40,7 +41,9 @@ function AppInner() {
   const [launchState, setLaunchState] = useState('idle')
   const [progress, setProgress]       = useState(null)
   const [launchError, setLaunchError] = useState(null)
-  const [activeKey, setActiveKey]     = useState(null) // key of profile being launched
+  const [activeKey, setActiveKey]     = useState(null)
+  // Server Java download progress — persists across page navigation
+  const [serverJavaProgress, setServerJavaProgress] = useState({}) // key of profile being launched
   const cleanupRef = useRef([])
 
   const updateInstance = useCallback((key, patch) => {
@@ -228,10 +231,13 @@ function AppInner() {
   const showHint = !loading && accounts.length === 0 && activePage === 'home'
   const instanceList = Array.from(instances.values())
 
+  // AccountPage chứa WebGL Canvas — giữ mount thường trực, chỉ ẩn/hiện bằng CSS
+  // để tránh "Context Lost" khi unmount Canvas đột ngột
   function renderPage() {
-    switch (activePage) {
-      case 'home':
-        return (
+    return (
+      <>
+        {/* Pages không có WebGL — mount/unmount bình thường */}
+        {activePage === 'home' && (
           <HomePage
             onNavigate={setActivePage}
             launchState={launchState}
@@ -242,25 +248,21 @@ function AppInner() {
             instances={instanceList}
             onKillInstance={handleKillInstance}
           />
-        )
-      case 'account':  return <AccountPage />
-      case 'play':     return <PlayPage />
-      case 'mods':     return <ModsPage />
-      case 'worlds':   return <PlaceholderPage title="Worlds" />
-      case 'settings': return <SettingsPage />
-      default:         return (
-        <HomePage
-          onNavigate={setActivePage}
-          launchState={launchState}
-          progress={progress}
-          launchError={launchError}
-          onLaunch={handleLaunch}
-          onLaunchReset={handleLaunchReset}
-          instances={instanceList}
-          onKillInstance={handleKillInstance}
-        />
-      )
-    }
+        )}
+        {activePage === 'play'     && <PlayPage />}
+        {activePage === 'mods'     && <ModsPage />}
+        {activePage === 'worlds'   && <ServerPage serverJavaProgress={serverJavaProgress} onServerJavaProgress={setServerJavaProgress} />}
+        {activePage === 'settings' && <SettingsPage />}
+
+        {/* AccountPage — luôn mount, ẩn bằng CSS khi không active */}
+        <div
+          style={{ display: activePage === 'account' ? 'flex' : 'none' }}
+          className="flex-1 h-full overflow-hidden"
+        >
+          <AccountPage />
+        </div>
+      </>
+    )
   }
 
   return (

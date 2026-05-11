@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
 import AddAccountModal from './AddAccountModal'
+import SkinCustomizeModal from './SkinCustomizeModal'
 import PlayerHead from '../ui/PlayerHead'
 import PlayerModel3D from '../ui/PlayerModel3D'
 
@@ -83,13 +84,56 @@ function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
 export default function AccountPage() {
   const { accounts, selectedId, loading, addAccount, removeAccount, selectAccount } = useAccounts()
   const toast = useToast()
-  const [showModal, setShowModal]         = useState(false)
-  const [removeConfirm, setRemoveConfirm] = useState(null)
-  const [slim, setSlim]                   = useState(false)
-  const [showUuid, setShowUuid]           = useState(false)
-  const [copied, setCopied]               = useState(false)
+  const [showModal, setShowModal]             = useState(false)
+  const [showSkinModal, setShowSkinModal]     = useState(false)
+  const [removeConfirm, setRemoveConfirm]     = useState(null)
+  const [slim, setSlim]                       = useState(false)
+  const [showUuid, setShowUuid]               = useState(false)
+  const [copied, setCopied]                   = useState(false)
+  const [skinSubTab, setSkinSubTab]           = useState('skin') // 'skin' | 'cape' | 'elytra'
+  const [cosmeticData, setCosmeticData]       = useState([])
+  const [cosmeticLoading, setCosmeticLoading] = useState(false)
+  const [appliedSkinUrl, setAppliedSkinUrl]   = useState(null) // custom skin URL for preview
+  const isElectronCtx = typeof window !== 'undefined' && window.electronAPI
 
   const selected = accounts.find(a => a.id === selectedId) ?? accounts[0] ?? null
+
+  // Load applied skin prefs when selected account changes
+  const isElectron = typeof window !== 'undefined' && window.electronAPI
+  useEffect(() => {
+    if (!selected?.uuid) { setAppliedSkinUrl(null); return }
+    const load = async () => {
+      try {
+        const prefs = isElectron
+          ? await window.electronAPI.getSkinPrefs({ uuid: selected.uuid })
+          : JSON.parse(localStorage.getItem(`vxc_skin_prefs_${selected.uuid}`) || 'null')
+        // Filter out invalid blob URLs that can't persist across reloads
+        const skinUrl = prefs?.skinUrl
+        if (skinUrl && skinUrl.startsWith('blob:')) {
+          console.warn('Invalid blob URL found in prefs, clearing:', skinUrl)
+          setAppliedSkinUrl(null)
+        } else {
+          setAppliedSkinUrl(skinUrl || null)
+        }
+      } catch { setAppliedSkinUrl(null) }
+    }
+    load()
+  }, [selected?.uuid])
+
+  // Fetch cosmetic data from VoxelXSkin API
+  useEffect(() => {
+    const controller = new AbortController()
+    setCosmeticLoading(true)
+    fetch('https://api.foxstudio.site/api/player/api_player_cosmetics.php', { signal: controller.signal })
+      .then(r => r.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : [])
+        setCosmeticData(list)
+      })
+      .catch(err => { if (err.name !== 'AbortError') setCosmeticData([]) })
+      .finally(() => setCosmeticLoading(false))
+    return () => controller.abort()
+  }, [])
 
   // Reset showUuid khi đổi account
   const prevSelectedId = useState(selectedId)
@@ -134,100 +178,232 @@ export default function AccountPage() {
     return result
   }
 
+  // Áp dụng skin trực tiếp từ grid (không mở modal)
+  async function handleSelectSkinFromGrid(item) {
+    if (item.isDefault) {
+      // Xóa custom skin, dùng skin mặc định
+      const newPrefs = {
+        uuid:      selected?.uuid,
+        skinUrl:   null,
+        capeUrl:   null,
+        elytraUrl: null,
+      }
+      try {
+        if (isElectronCtx) {
+          await window.electronAPI.saveSkinPrefs(newPrefs)
+        } else {
+          localStorage.setItem(`vxc_skin_prefs_${selected?.uuid}`, JSON.stringify(newPrefs))
+        }
+      } catch {}
+      setAppliedSkinUrl(null)
+      setSlim(false)
+      toast({ type: 'success', title: 'Đã áp dụng', message: 'Skin mặc định' })
+    } else {
+      // Skin custom đã được lưu, chỉ cần set lại state
+      setAppliedSkinUrl(item.url)
+      toast({ type: 'success', title: 'Đã áp dụng', message: 'Skin custom' })
+    }
+  }
+
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex w-full h-full overflow-hidden">
 
-      {/* ── LEFT: danh sách tài khoản ── */}
-      <div className="flex flex-col flex-1 overflow-hidden border-r border-white/5">
+      {/* ── LEFT: danh sách tài khoản + skin subtabs ── */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/5">
 
-        {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
-          <div>
-            <h1 className="text-lg font-bold text-white">Tài khoản</h1>
-            <p className="text-xs text-white/30 mt-0.5">Quản lý tài khoản Minecraft</p>
-          </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="
-              flex items-center gap-1.5 px-3.5 py-2 rounded-xl
-              bg-green-500 hover:bg-green-400 text-white text-xs font-bold
-              transition-all duration-150 active:scale-95 shadow-lg shadow-green-500/20
-            "
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-            </svg>
-            Thêm tài khoản
-          </button>
-        </div>
-
-        {/* List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <svg className="animate-spin w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg>
+        {/* ── Phần trên: Danh sách tài khoản ── */}
+        <div className="flex flex-col" style={{ maxHeight: '55%', minHeight: 180 }}>
+          {/* Header */}
+          <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
+            <div>
+              <h1 className="text-lg font-bold text-white">Tài khoản</h1>
+              <p className="text-xs text-white/30 mt-0.5">Quản lý tài khoản Minecraft</p>
             </div>
-          ) : accounts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white/15">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            <button
+              onClick={() => setShowModal(true)}
+              className="
+                flex items-center gap-1.5 px-3.5 py-2 rounded-xl
+                bg-green-500 hover:bg-green-400 text-white text-xs font-bold
+                transition-all duration-150 active:scale-95 shadow-lg shadow-green-500/20
+              "
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+              Thêm tài khoản
+            </button>
+          </div>
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto px-4 pb-3" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
+            {loading ? (
+              <div className="flex items-center justify-center h-24">
+                <svg className="animate-spin w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
               </div>
-              <div>
-                <p className="text-sm text-white/30 font-medium">Chưa có tài khoản</p>
-                <p className="text-xs text-white/15 mt-0.5">Nhấn "Thêm tài khoản" để bắt đầu</p>
-              </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="px-4 py-2 rounded-xl bg-green-500/15 text-green-400 text-xs font-semibold border border-green-500/20 hover:bg-green-500/25 transition-all"
-              >
-                + Thêm tài khoản đầu tiên
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {accounts.map(account => (
-                <div key={account.id} className="relative">
-                  <AccountRow
-                    account={account}
-                    isSelected={account.id === selectedId}
-                    onSelect={handleSelect}
-                    onRemove={handleRemove}
-                    confirmId={removeConfirm}
-                  />
-                  {/* Confirm xóa */}
-                  {removeConfirm === account.id && (
-                    <div className="absolute inset-0 rounded-xl bg-[#141414]/95 border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3">
-                      <span className="text-xs text-white/60 flex-1">Xóa tài khoản này?</span>
-                      <button
-                        onClick={() => handleRemove(account.id)}
-                        className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all"
-                      >Xóa</button>
-                      <button
-                        onClick={() => setRemoveConfirm(null)}
-                        className="px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/50 text-xs transition-all"
-                      >Hủy</button>
-                    </div>
-                  )}
+            ) : accounts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32 text-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white/15">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
                 </div>
-              ))}
+                <div>
+                  <p className="text-sm text-white/30 font-medium">Chưa có tài khoản</p>
+                  <p className="text-xs text-white/15 mt-0.5">Nhấn "Thêm tài khoản" để bắt đầu</p>
+                </div>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="px-4 py-2 rounded-xl bg-green-500/15 text-green-400 text-xs font-semibold border border-green-500/20 hover:bg-green-500/25 transition-all"
+                >
+                  + Thêm tài khoản đầu tiên
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {accounts.map(account => (
+                  <div key={account.id} className="relative">
+                    <AccountRow
+                      account={account}
+                      isSelected={account.id === selectedId}
+                      onSelect={handleSelect}
+                      onRemove={handleRemove}
+                      confirmId={removeConfirm}
+                    />
+                    {removeConfirm === account.id && (
+                      <div className="absolute inset-0 rounded-xl bg-[#141414]/95 border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3">
+                        <span className="text-xs text-white/60 flex-1">Xóa tài khoản này?</span>
+                        <button onClick={() => handleRemove(account.id)}
+                          className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">Xóa</button>
+                        <button onClick={() => setRemoveConfirm(null)}
+                          className="px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/50 text-xs transition-all">Hủy</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <p className="text-[10px] text-white/15 mt-2 px-1">
+                  {accounts.length} tài khoản
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
 
-              <p className="text-[10px] text-white/15 mt-3 px-1">
-                {accounts.length} tài khoản · %APPDATA%\.VoxelXClient\accounts.json
-              </p>
+        {/* Divider */}
+        <div className="flex-shrink-0 h-px bg-white/5 mx-4" />
+
+        {/* ── Phần dưới: Skin / Cape / Elytra subtabs ── */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* SubTab header */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2">
+            <div className="flex gap-0 border-b border-white/5 flex-1">
+              {[
+                { id: 'skin',   label: 'Skin' },
+                { id: 'cape',   label: 'Cape' },
+                { id: 'elytra', label: 'Elytra' },
+              ].map(tab => (
+                <button key={tab.id} onClick={() => setSkinSubTab(tab.id)}
+                  className={`px-3 py-2 text-xs font-semibold border-b-2 transition-all -mb-px ${
+                    skinSubTab === tab.id
+                      ? 'border-green-500 text-green-400'
+                      : 'border-transparent text-white/30 hover:text-white/60'
+                  }`}>
+                  {tab.label}
+                </button>
+              ))}
             </div>
+            {/* Nút tuỳ chỉnh */}
+            <button
+              onClick={() => setShowSkinModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/50 hover:text-white hover:bg-white/8 border border-white/8 transition-all ml-2 flex-shrink-0"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              Tuỳ chỉnh
+            </button>
+          </div>
+
+          {/* SubTab content */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
+{(() => {
+  // Build default skin URL from Minecraft username/UUID
+  const defaultSkinUrl = selected?.username ? `https://minotar.net/skin/${selected.username}` : null
+
+  // Panel dưới hiện skin gốc + skin custom
+  const savedItems = []
+
+  // Always show default Minecraft skin first (online or offline)
+  if (skinSubTab === 'skin' && defaultSkinUrl) {
+    savedItems.push({
+      url: defaultSkinUrl,
+      label: 'Skin mặc định',
+      active: !appliedSkinUrl,
+      isDefault: true
+    })
+  }
+
+  // Then show custom applied skin
+  if (skinSubTab === 'skin' && appliedSkinUrl) {
+    savedItems.push({ url: appliedSkinUrl, label: 'Custom', active: true, isDefault: false })
+  }
+
+  if (savedItems.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-24 gap-2">
+        <p className="text-xs text-white/20">
+          {skinSubTab === 'skin' ? 'Chưa áp dụng skin nào' : `Chưa áp dụng ${skinSubTab} nào`}
+        </p>
+        <button onClick={() => setShowSkinModal(true)}
+          className="text-xs text-green-400/60 hover:text-green-400 transition-colors">
+          + Chọn {skinSubTab}
+        </button>
+      </div>
+    )
+  }
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {savedItems.map((item, i) => (
+        <div key={i}
+          onClick={() => handleSelectSkinFromGrid(item)}
+          className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all cursor-pointer group relative"
+          style={{
+            background: item.active ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${item.active ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.07)'}`,
+          }}
+        >
+          {item.active && (
+            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-green-400" />
           )}
+          <img src={item.url} alt={item.label}
+            className="w-10 h-10 rounded-lg object-contain"
+            style={{ imageRendering: 'pixelated', background: 'rgba(255,255,255,0.05)' }}
+            onError={e => { e.currentTarget.style.display = 'none' }} />
+          <span className="text-[9px] text-white/40 truncate w-full text-center">{item.label}</span>
+          {!item.active && (
+            <span className="text-[9px] text-green-400/50 group-hover:text-green-400 transition-colors opacity-0 group-hover:opacity-100">
+              Áp dụng
+            </span>
+          )}
+          {item.active && (
+            <span className="text-[9px] text-green-400/60">Đang dùng</span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+})()}
+            </div>
         </div>
       </div>
 
       {/* ── RIGHT: 3D skin model ── */}
       <div
         className="flex-shrink-0 flex flex-col relative overflow-hidden"
-        style={{ width: 256, minWidth: 256, maxWidth: 256 }}
+        style={{ width: 240, minWidth: 200, maxWidth: 260 }}
       >
         {/* Background — dark green gradient + grid như hero section */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07]">
@@ -248,22 +424,23 @@ export default function AccountPage() {
 
         {selected ? (
           <>
-            {/* 3D Model — fixed height, không co giãn */}
-            <div className="relative z-10 w-full flex-1 min-h-0" style={{ minHeight: 320 }}>
+            {/* 3D Model — flex-1 để chiếm hết không gian còn lại */}
+            <div className="relative z-10 w-full flex-1 min-h-0">
               <PlayerModel3D
                 uuid={selected.uuid}
                 username={selected.username}
                 slim={slim}
+                customSkinUrl={appliedSkinUrl}
               />
             </div>
 
-            {/* Info + slim toggle */}
-            <div className="relative z-10 text-center px-4 pb-4 flex-shrink-0">
-              <p className="text-base font-bold text-white">{selected.username}</p>
+            {/* Info + slim toggle — cố định ở dưới */}
+            <div className="relative z-10 text-center px-4 py-3 flex-shrink-0 border-t border-white/5">
+              <p className="text-sm font-bold text-white truncate">{selected.username}</p>
 
               {/* UUID với show/hide + copy */}
               <div className="flex items-center justify-center gap-1.5 mt-1">
-                <p className="text-[10px] text-white/30 font-mono">
+                <p className="text-[10px] text-white/30 font-mono truncate max-w-[120px]">
                   {showUuid
                     ? selected.uuid
                     : selected.uuid.slice(0, 8) + '···'
@@ -326,11 +503,28 @@ export default function AccountPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal thêm tài khoản */}
       {showModal && (
         <AddAccountModal
           onClose={() => setShowModal(false)}
           onAdd={handleAdd}
+        />
+      )}
+
+      {/* Modal tuỳ chỉnh skin */}
+      {showSkinModal && (
+        <SkinCustomizeModal
+          account={selected}
+          cosmeticData={cosmeticData}
+          onClose={() => setShowSkinModal(false)}
+          onApply={({ type, url, skinType }) => {
+            if (type === 'skin') {
+              setAppliedSkinUrl(url)
+              if (skinType === 'slim') setSlim(true)
+              else setSlim(false)
+            }
+            toast({ type: 'success', title: 'Đã áp dụng', message: `${type} mới` })
+          }}
         />
       )}
     </div>

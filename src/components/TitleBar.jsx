@@ -125,8 +125,8 @@ export default function TitleBar({ instances = [], onKillInstance }) {
               <rect x="13" y="13" width="9" height="9" fill="#4ade80" rx="1"/>
             </svg>
           </div>
-          <span className="text-xs font-semibold text-white/70 tracking-widest uppercase">
-            VoxelXClient
+          <span className="text-ms font-black text-white tracking-tight">
+            VoxelX<span className="text-green-400">Client</span>
           </span>
         </div>
 

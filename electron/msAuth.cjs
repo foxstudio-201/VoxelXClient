@@ -1,11 +1,25 @@
 /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+/**
  * msAuth.cjs — Microsoft OAuth + Minecraft auth flow
  *
  * Flow: OAuth2 Authorization Code (loopback) → Xbox Live → XSTS → Minecraft
  *
- * Mở BrowserWindow để người dùng đăng nhập trực tiếp trên trang Microsoft.
- * Sau khi xác thực, redirect về localhost và bắt authorization code.
- * Lưu refresh_token để auto-renew — không cần đăng nhập lại.
+ * Opens a BrowserWindow for the user to log in directly on the Microsoft page.
+ * After authentication, redirects to localhost and captures the authorization code.
+ * Saves refresh_token for auto-renewal — no need to log in again.
  */
 
 'use strict'
@@ -15,7 +29,7 @@ const http    = require('http')
 const crypto  = require('crypto')
 const { BrowserWindow } = require('electron')
 
-// ─── OAuth config — dùng client ID của Minecraft Launcher chính thức ─────────
+// ─── OAuth config — using the official Minecraft Launcher client ID ───────────
 const CLIENT_ID    = '00000000402b5328'
 const REDIRECT_URI = 'https://login.live.com/oauth20_desktop.srf'
 const SCOPE        = 'XboxLive.signin offline_access'
@@ -60,11 +74,11 @@ function encodeForm(obj) {
     .join('&')
 }
 
-// ─── Step 1: Mở cửa sổ đăng nhập Microsoft ───────────────────────────────────
+// ─── Step 1: Open Microsoft login window ─────────────────────────────────────
 /**
- * Mở BrowserWindow với trang đăng nhập Microsoft.
- * Sau khi đăng nhập xong, Microsoft redirect về REDIRECT_URI với ?code=...
- * Ta bắt URL đó và lấy authorization code.
+ * Opens a BrowserWindow with the Microsoft login page.
+ * After login, Microsoft redirects to REDIRECT_URI with ?code=...
+ * We intercept that URL and extract the authorization code.
  */
 function openAuthWindow(parentWindow) {
   return new Promise((resolve, reject) => {
@@ -90,8 +104,8 @@ function openAuthWindow(parentWindow) {
         nodeIntegration:  false,
         contextIsolation: true,
         sandbox:          false,
-        webSecurity:      false,  // cho phép cross-origin trong auth window
-        partition:        'auth-window', // session riêng, không bị CSP inject
+        webSecurity:      false,  // allow cross-origin in auth window
+        partition:        'auth-window', // separate session, not affected by CSP injection
       },
     })
 
@@ -124,11 +138,11 @@ function openAuthWindow(parentWindow) {
       return false
     }
 
-    // Bắt redirect khi navigate
+    // Catch redirect on navigate
     win.webContents.on('will-redirect', (_e, url) => { handleRedirect(url) })
     win.webContents.on('will-navigate', (_e, url) => { handleRedirect(url) })
 
-    // Bắt redirect qua did-navigate (một số flow dùng cái này)
+    // Catch redirect via did-navigate (some flows use this)
     win.webContents.on('did-navigate', (_e, url) => { handleRedirect(url) })
 
     win.on('closed', () => {
@@ -139,7 +153,7 @@ function openAuthWindow(parentWindow) {
   })
 }
 
-// ─── Step 2: Đổi authorization code lấy tokens ───────────────────────────────
+// ─── Step 2: Exchange authorization code for tokens ──────────────────────────
 async function exchangeCodeForTokens(code) {
   const res = await httpsPost(TOKEN_URL, encodeForm({
     client_id:    CLIENT_ID,
@@ -182,7 +196,7 @@ async function authXboxLive(msAccessToken) {
   if (res.status !== 200) throw new Error(`XBL auth failed: ${res.status}`)
   const xblToken = res.body.Token
   const userHash = res.body.DisplayClaims?.xui?.[0]?.uhs
-  if (!xblToken || !userHash) throw new Error('XBL response thiếu token/userhash')
+  if (!xblToken || !userHash) throw new Error('XBL response missing token/userhash')
   return { xblToken, userHash }
 }
 
@@ -206,7 +220,7 @@ async function authXSTS(xblToken) {
   if (res.status !== 200) throw new Error(`XSTS auth failed: ${res.status}`)
   const xstsToken = res.body.Token
   const userHash  = res.body.DisplayClaims?.xui?.[0]?.uhs
-  if (!xstsToken || !userHash) throw new Error('XSTS response thiếu token/userhash')
+  if (!xstsToken || !userHash) throw new Error('XSTS response missing token/userhash')
   return { xstsToken, userHash }
 }
 
@@ -252,7 +266,7 @@ async function getMinecraftProfile(mcToken) {
   })
 }
 
-// ─── Full chain từ MS tokens → Minecraft profile ─────────────────────────────
+// ─── Full chain from MS tokens → Minecraft profile ───────────────────────────
 async function msTokensToMinecraft(msAccessToken, msRefreshToken) {
   const { xblToken }              = await authXboxLive(msAccessToken)
   const { xstsToken, userHash }   = await authXSTS(xblToken)
@@ -268,7 +282,7 @@ async function msTokensToMinecraft(msAccessToken, msRefreshToken) {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 /**
- * Mở cửa sổ đăng nhập Microsoft, hoàn thành toàn bộ auth chain.
+ * Opens the Microsoft login window and completes the full auth chain.
  * @param {BrowserWindow} parentWindow
  */
 async function loginWithWindow(parentWindow) {
@@ -278,7 +292,7 @@ async function loginWithWindow(parentWindow) {
 }
 
 /**
- * Refresh Minecraft token dùng MS refresh_token đã lưu.
+ * Refresh Minecraft token using the saved MS refresh_token.
  */
 async function refreshMinecraftToken(msRefreshToken) {
   const msTokens = await refreshAccessToken(msRefreshToken)

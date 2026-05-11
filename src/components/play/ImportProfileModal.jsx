@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import GroupSelect from '../ui/GroupSelect'
 import fabricIcon    from '../../assets/loader/fabric.png'
 import forgeIcon     from '../../assets/loader/forge.png'
 import neoforgeIcon  from '../../assets/loader/neoforge.png'
@@ -109,7 +110,7 @@ function PreviewCard({ source, meta }) {
 // Sidebar width = 68px, thêm 12px padding → minimized left = 80px
 const MINIMIZED_LEFT = 80
 
-export default function ImportProfileModal({ onClose, onCreate }) {
+export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
   const [activeSource, setActiveSource] = useState('curseforge')
   const [filePath, setFilePath]         = useState(null)
   const [fileName, setFileName]         = useState(null)
@@ -119,6 +120,7 @@ export default function ImportProfileModal({ onClose, onCreate }) {
   const [progress, setProgress]         = useState(null)
   const [isDragging, setIsDragging]     = useState(false)
   const [minimized, setMinimized]       = useState(false)
+  const [selectedGroupId, setSelectedGroupId] = useState('')
   const dropZoneRef                     = useRef(null)
   const dragCounter                     = useRef(0)
 
@@ -208,6 +210,7 @@ export default function ImportProfileModal({ onClose, onCreate }) {
         importSource:  activeSource,
         importIconUrl: iconUrl,
         importBgUrl:   meta.iconUrl || meta.iconBase64 || null,
+        groupId:       selectedGroupId || null,
       })
 
       if (createResult?.error) {
@@ -394,6 +397,21 @@ export default function ImportProfileModal({ onClose, onCreate }) {
 
         {/* ── Content ── */}
         <div className="px-5 pb-5 flex flex-col gap-4">
+          {/* Group selector */}
+          {groups.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
+                Group (tuỳ chọn)
+              </label>
+              <GroupSelect
+                groups={groups}
+                value={selectedGroupId}
+                onChange={setSelectedGroupId}
+                disabled={importing}
+              />
+            </div>
+          )}
+
           {/* File picker / preview */}
           {!filePath ? (
             <div

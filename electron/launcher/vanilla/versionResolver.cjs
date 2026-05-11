@@ -1,8 +1,22 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 'use strict'
 /**
  * versionResolver.cjs
- * Fetch và cache version manifest từ Mojang.
- * Trả về version JSON đầy đủ cho một game version cụ thể.
+ * Fetch and cache the version manifest from Mojang.
+ * Returns the full version JSON for a specific game version.
  */
 
 const https = require('https')
@@ -32,7 +46,7 @@ function httpsGet(url) {
 // ─── Cache manifest in memory ─────────────────────────────────────────────────
 let _manifestCache = null
 let _manifestTime  = 0
-const MANIFEST_TTL = 10 * 60 * 1000 // 10 phút
+const MANIFEST_TTL = 10 * 60 * 1000 // 10 minutes
 
 async function getManifest() {
   if (_manifestCache && Date.now() - _manifestTime < MANIFEST_TTL) return _manifestCache
@@ -42,13 +56,13 @@ async function getManifest() {
 }
 
 /**
- * Lấy version JSON đầy đủ cho một game version.
- * Cache vào disk để dùng offline.
+ * Get the full version JSON for a game version.
+ * Cached to disk for offline use.
  */
 async function resolveVersion(gameVersion, cacheDir) {
   const cacheFile = path.join(cacheDir, 'versions', gameVersion, `${gameVersion}.json`)
 
-  // Dùng cache nếu có
+  // Use cache if available
   if (fs.existsSync(cacheFile)) {
     try {
       return JSON.parse(fs.readFileSync(cacheFile, 'utf-8'))
@@ -72,7 +86,7 @@ async function resolveVersion(gameVersion, cacheDir) {
 }
 
 /**
- * Lấy danh sách tất cả versions từ manifest.
+ * Get the list of all versions from the manifest.
  */
 async function listVersions() {
   const manifest = await getManifest()

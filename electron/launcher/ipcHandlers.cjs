@@ -13,6 +13,9 @@ const { setupForge }          = require('./forge/forgeLoader.cjs')
 const { setupNeoForge }       = require('./neoforge/neoforgeLoader.cjs')
 const { ensureFabricMods }    = require('./modrinth/modrinthMods.cjs')
 const { searchProjects, getProject, getProjectVersions, installVersion, getGameVersions, getCategories } = require('./modrinth/modrinthSearch.cjs')
+const cfSearch = require('./curseforge/curseForgeSearch.cjs')
+const technicSearch = require('./technic/technicSearch.cjs')
+const ftbSearch = require('./ftb/ftbSearch.cjs')
 const { launchGame }          = require('./vanilla/gameRunner.cjs')
 const { startPlaytimeTracker, getProfileStats } = require('./statsTracker.cjs')
 
@@ -152,22 +155,31 @@ function registerLauncherHandlers(getTrustedWindow) {
       const versionJson = await resolveVersion(profile.gameVersion, sharedPath)
 
       sendProgressAndLog({ phase: 'java', log: 'Checking Java runtime...', percent: 5 })
-      const javaPath = await ensureJava(profile.gameVersion, runtimesDir, (p) => {
-        const pct = p.phase === 'java_download' ? 5 + Math.round((p.done / p.total) * 25) : 5
-        if (p.phase === 'java_download') {
-          sendProgressAndUpdate({
-            phase: 'java',
-            log: `Java ${p.javaVersion}: ${p.done}/${p.total} files (${p.percent}%)`,
-            percent: pct,
-            doneFiles: p.done,
-            totalFiles: p.total,
-          })
-        } else if (p.phase === 'java_ready') {
-          sendProgressAndLog({ phase: 'java', log: `Java ${p.javaVersion} ready`, percent: pct })
-        } else {
-          sendProgressAndLog({ phase: 'java', log: `Downloading Java ${p.javaVersion}...`, percent: pct })
-        }
-      }, versionJson)
+
+      // Ưu tiên Java do user chọn (lưu trong profile.javaPath = instancePath/jre/bin/java)
+      // Nếu không có thì dùng Mojang-managed Java
+      let javaPath
+      if (profile.javaPath && fs.existsSync(profile.javaPath)) {
+        javaPath = profile.javaPath
+        sendProgressAndLog({ phase: 'java', log: `Using custom Java: ${path.basename(path.dirname(path.dirname(profile.javaPath)))}`, percent: 8 })
+      } else {
+        javaPath = await ensureJava(profile.gameVersion, runtimesDir, (p) => {
+          const pct = p.phase === 'java_download' ? 5 + Math.round((p.done / p.total) * 25) : 5
+          if (p.phase === 'java_download') {
+            sendProgressAndUpdate({
+              phase: 'java',
+              log: `Java ${p.javaVersion}: ${p.done}/${p.total} files (${p.percent}%)`,
+              percent: pct,
+              doneFiles: p.done,
+              totalFiles: p.total,
+            })
+          } else if (p.phase === 'java_ready') {
+            sendProgressAndLog({ phase: 'java', log: `Java ${p.javaVersion} ready`, percent: pct })
+          } else {
+            sendProgressAndLog({ phase: 'java', log: `Downloading Java ${p.javaVersion}...`, percent: pct })
+          }
+        }, versionJson)
+      }
 
       sendProgressAndLog({ phase: 'assets', log: 'Checking game assets...', percent: 30 })
       let lastAssetPhase = ''
@@ -295,6 +307,101 @@ function registerLauncherHandlers(getTrustedWindow) {
         await ensureFabricMods(profile.gameVersion, modsDir, (p) => {
           sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97, doneFiles: p.done, totalFiles: p.total })
         })
+
+        // ── VoxelXSkin mod injection ──────────────────────────────────────
+        // Fabric supports loading extra mods via the JVM property:
+        //   -Dfabric.addMods=<path1>;<path2>
+        // This is the correct way to inject mods outside the mods/ folder.
+        // The jar is stored in instancePath/.vxc/ (hidden dir, not shown in mod list).
+        try {
+          const gameVer = profile.gameVersion
+          const mcMajor = gameVer?.split('.').slice(0, 2).join('.')
+          const modSkinDir = path.join(__dirname, '../../mod-skin')
+
+          // Find best matching JAR: exact version first, then major.minor fallback
+          let skinJarSrc = null
+          const exactJar = path.join(modSkinDir, `VoxelXSkin-${gameVer}.jar`)
+          const majorJar = path.join(modSkinDir, `VoxelXSkin-${mcMajor}.jar`)
+
+          if (fs.existsSync(exactJar))      skinJarSrc = exactJar
+          else if (fs.existsSync(majorJar)) skinJarSrc = majorJar
+
+          if (skinJarSrc) {
+            // Copy to hidden dir inside instancePath
+            const hiddenDir = path.join(instancePath, '.vxc')
+            if (!fs.existsSync(hiddenDir)) {
+              fs.mkdirSync(hiddenDir, { recursive: true })
+              if (process.platform === 'win32') {
+                try { require('child_process').execSync(`attrib +h "${hiddenDir}"`, { windowsHide: true }) } catch {}
+              }
+            }
+            const jarName    = path.basename(skinJarSrc)
+            const skinJarDest = path.join(hiddenDir, jarName)
+
+            // Copy only if missing or size changed
+            const srcStat  = fs.statSync(skinJarSrc)
+            const destStat = fs.existsSync(skinJarDest) ? fs.statSync(skinJarDest) : null
+            if (!destStat || destStat.size !== srcStat.size) {
+              fs.copyFileSync(skinJarSrc, skinJarDest)
+            }
+
+            // Inject via -Dfabric.addMods — Fabric's official extra-mod loading mechanism
+            // Multiple paths are separated by the OS path separator (; on Windows, : on Unix)
+            const sep = process.platform === 'win32' ? ';' : ':'
+            const existingAddMods = extraJvmArgs.find(a => typeof a === 'string' && a.startsWith('-Dfabric.addMods='))
+            if (existingAddMods) {
+              // Append to existing property
+              const idx = extraJvmArgs.indexOf(existingAddMods)
+              extraJvmArgs[idx] = existingAddMods + sep + skinJarDest
+            } else {
+              extraJvmArgs.push(`-Dfabric.addMods=${skinJarDest}`)
+            }
+
+            sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXSkin ${gameVer} injected via fabric.addMods.`, percent: 97 })
+
+            // Write launcher_profile.json so the mod knows which UUID to apply skin for
+            try {
+              const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
+              if (!fs.existsSync(vxcConfigDir)) fs.mkdirSync(vxcConfigDir, { recursive: true })
+              fs.writeFileSync(
+                path.join(vxcConfigDir, 'launcher_profile.json'),
+                JSON.stringify({ launcherUuid: account.uuid }, null, 2)
+              )
+            } catch (cfgErr) {
+              writeLog(`[WARN] VoxelXSkin config write failed: ${cfgErr.message}`)
+            }
+
+            // Write skins.json from saved skin preferences
+            try {
+              const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
+              const skinsPath = path.join(vxcConfigDir, 'skins.json')
+              let skinsMap = {}
+              if (fs.existsSync(skinsPath)) {
+                try { skinsMap = JSON.parse(fs.readFileSync(skinsPath, 'utf-8')) } catch {}
+              }
+              const skinPrefsPath = path.join(DATA_DIR, 'skin_prefs.json')
+              if (fs.existsSync(skinPrefsPath)) {
+                const prefs = JSON.parse(fs.readFileSync(skinPrefsPath, 'utf-8'))
+                const accountPrefs = prefs[account.uuid] || {}
+                if (accountPrefs.skinUrl || accountPrefs.capeUrl || accountPrefs.elytraUrl) {
+                  skinsMap[account.uuid] = {
+                    skinPath:   accountPrefs.skinUrl   || null,
+                    capePath:   accountPrefs.capeUrl   || null,
+                    elytraPath: accountPrefs.elytraUrl || null,
+                    playerName: account.username,
+                  }
+                  fs.writeFileSync(skinsPath, JSON.stringify(skinsMap, null, 2))
+                }
+              }
+            } catch (skinPrefErr) {
+              writeLog(`[WARN] VoxelXSkin skin prefs write failed: ${skinPrefErr.message}`)
+            }
+          } else {
+            writeLog(`[INFO] VoxelXSkin: no matching JAR for MC ${gameVer}, skipping.`)
+          }
+        } catch (skinErr) {
+          writeLog(`[WARN] VoxelXSkin injection failed: ${skinErr.message}`)
+        }
       }
 
       // ── Forge loader setup ───────────────────────────────────────────────
@@ -572,6 +679,66 @@ function registerLauncherHandlers(getTrustedWindow) {
     }
   })
 
+  // ── CurseForge search ───────────────────────────────────────────────────────
+  ipcMain.handle('curseforge:search', async (e, opts) => {
+    return await cfSearch.searchProjects(opts)
+  })
+  ipcMain.handle('curseforge:getProject', async (e, id) => {
+    return await cfSearch.getProject(id)
+  })
+  ipcMain.handle('curseforge:getVersions', async (e, id, filters) => {
+    return await cfSearch.getProjectVersions(id, filters)
+  })
+  ipcMain.handle('curseforge:getCategories', async (e, projectType) => {
+    return await cfSearch.getCategories(projectType)
+  })
+  ipcMain.handle('curseforge:install', async (e, opts) => {
+    return await cfSearch.installVersion(opts, (p) => {
+      const wins = require('electron').BrowserWindow.getAllWindows()
+      wins.forEach(w => {
+        if (!w.isDestroyed()) w.webContents.send('curseforge:installProgress', p)
+      })
+    })
+  })
+
+  // ── Technic search ──────────────────────────────────────────────────────────
+  ipcMain.handle('technic:search', async (e, opts) => {
+    return await technicSearch.searchProjects(opts)
+  })
+  ipcMain.handle('technic:getProject', async (e, id) => {
+    return await technicSearch.getProject(id)
+  })
+  ipcMain.handle('technic:getVersions', async (e, id, filters) => {
+    return await technicSearch.getProjectVersions(id)
+  })
+  ipcMain.handle('technic:install', async (e, opts) => {
+    return await technicSearch.installVersion(opts, (p) => {
+      const wins = require('electron').BrowserWindow.getAllWindows()
+      wins.forEach(w => {
+        if (!w.isDestroyed()) w.webContents.send('technic:installProgress', p)
+      })
+    })
+  })
+
+  // ── FTB search ──────────────────────────────────────────────────────────────
+  ipcMain.handle('ftb:search', async (e, opts) => {
+    return await ftbSearch.searchProjects(opts)
+  })
+  ipcMain.handle('ftb:getProject', async (e, id) => {
+    return await ftbSearch.getProject(id)
+  })
+  ipcMain.handle('ftb:getVersions', async (e, id) => {
+    return await ftbSearch.getProjectVersions(id)
+  })
+  ipcMain.handle('ftb:install', async (e, opts) => {
+    return await ftbSearch.installVersion(opts, (p) => {
+      const wins = require('electron').BrowserWindow.getAllWindows()
+      wins.forEach(w => {
+        if (!w.isDestroyed()) w.webContents.send('ftb:installProgress', p)
+      })
+    })
+  })
+
   // ── Modrinth search & install ─────────────────────────────────────────────
 
   ipcMain.handle('modrinth:search', async (e, opts) => {
@@ -615,6 +782,47 @@ function registerLauncherHandlers(getTrustedWindow) {
     if (!getTrustedWindow(e)) return []
     try { return await getCategories() }
     catch { return [] }
+  })
+  // ── VoxelXSkin skin preferences ──────────────────────────────────────────
+  // skin:savePrefs — save skin/cape/elytra URL for an account UUID
+  // Stored in DATA_DIR/skin_prefs.json, applied to skins.json on next launch
+  ipcMain.handle('skin:savePrefs', (e, { uuid, skinUrl, capeUrl, elytraUrl, skinPreview }) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (!uuid || typeof uuid !== 'string') return { error: 'Invalid UUID' }
+    try {
+      const skinPrefsPath = path.join(DATA_DIR, 'skin_prefs.json')
+      let prefs = {}
+      if (fs.existsSync(skinPrefsPath)) {
+        try { prefs = JSON.parse(fs.readFileSync(skinPrefsPath, 'utf-8')) } catch {}
+      }
+      prefs[uuid] = {
+        skinUrl:     skinUrl     || null,
+        capeUrl:     capeUrl     || null,
+        elytraUrl:   elytraUrl   || null,
+        skinPreview: skinPreview || prefs[uuid]?.skinPreview || null,
+        updatedAt:   new Date().toISOString(),
+      }
+      const tmp = skinPrefsPath + '.tmp'
+      fs.writeFileSync(tmp, JSON.stringify(prefs, null, 2), { mode: 0o600 })
+      fs.renameSync(tmp, skinPrefsPath)
+      return { ok: true }
+    } catch (err) {
+      return { error: err.message }
+    }
+  })
+
+  // skin:getPrefs — get saved skin prefs for an account UUID
+  ipcMain.handle('skin:getPrefs', (e, { uuid }) => {
+    if (!getTrustedWindow(e)) return null
+    if (!uuid) return null
+    try {
+      const skinPrefsPath = path.join(DATA_DIR, 'skin_prefs.json')
+      if (!fs.existsSync(skinPrefsPath)) return null
+      const prefs = JSON.parse(fs.readFileSync(skinPrefsPath, 'utf-8'))
+      return prefs[uuid] || null
+    } catch {
+      return null
+    }
   })
 }
 

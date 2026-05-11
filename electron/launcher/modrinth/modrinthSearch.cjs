@@ -184,11 +184,16 @@ async function installVersion(opts) {
 
 // ─── Get available game versions (for filter dropdown) ────────────────────────
 async function getGameVersions() {
-  return httpsGetJson('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
-    .then(data => data.versions
-      .filter(v => v.type === 'release')
-      .map(v => v.id)
-    )
+  try {
+    const versions = await httpsGetJson(`${BASE}/tag/game_version`)
+    // Return objects with version string and type for frontend filtering
+    // Modrinth returns: { version, version_type: 'release'|'snapshot'|'beta'|'alpha', ... }
+    return versions.map(v => ({ version: v.version, type: v.version_type || 'release' }))
+  } catch {
+    // Fallback to Mojang manifest
+    const data = await httpsGetJson('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
+    return data.versions.map(v => ({ version: v.id, type: v.type || 'release' }))
+  }
 }
 
 // ─── Get Modrinth categories (for filter) ─────────────────────────────────────

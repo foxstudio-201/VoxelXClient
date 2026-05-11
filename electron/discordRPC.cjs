@@ -1,22 +1,37 @@
 /**
- * Discord Rich Presence cho VoxelXClient.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * Để dùng được bạn cần:
- * 1. Vào https://discord.com/developers/applications
- * 2. Tạo application mới, đặt tên "VoxelXClient"
- * 3. Copy Application ID → thay vào CLIENT_ID bên dưới
- * 4. Vào tab "Rich Presence" → "Art Assets" → upload ảnh voxelxclient-logo.png
- *    đặt tên asset là "logo" (phải khớp với largeImageKey bên dưới)
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+/**
+ * Discord Rich Presence for VoxelXClient.
+ *
+ * To use this you need to:
+ * 1. Go to https://discord.com/developers/applications
+ * 2. Create a new application, name it "VoxelXClient"
+ * 3. Copy the Application ID → replace CLIENT_ID below
+ * 4. Go to the "Rich Presence" tab → "Art Assets" → upload voxelxclient-logo.png
+ *    name the asset "logo" (must match largeImageKey below)
  */
 
 const DiscordRPC = require('discord-rpc')
 
-// ── Thay bằng Application ID của bạn từ Discord Developer Portal ──────────────
+// ── Replace with your Application ID from the Discord Developer Portal ────────
 const CLIENT_ID = '1502586952040452249'
 
 let client    = null
 let connected = false
 let retryTimer = null
+let intentionalDisconnect = false
 
 const DEFAULT_ACTIVITY = {
   details:      'VoxelXClient Launcher',
@@ -33,7 +48,7 @@ let currentActivity = { ...DEFAULT_ACTIVITY }
 // ─── Connect ──────────────────────────────────────────────────────────────────
 async function connect() {
   if (CLIENT_ID === 'YOUR_DISCORD_CLIENT_ID') {
-    console.log('[Discord RPC] CLIENT_ID chưa được cấu hình — bỏ qua')
+    console.log('[Discord RPC] CLIENT_ID not configured — skipping')
     return
   }
 
@@ -50,7 +65,7 @@ async function connect() {
     client.on('disconnected', () => {
       connected = false
       console.log('[Discord RPC] Disconnected')
-      scheduleRetry()
+      if (!intentionalDisconnect) scheduleRetry()
     })
 
     await client.login({ clientId: CLIENT_ID })
@@ -66,7 +81,7 @@ function scheduleRetry() {
   retryTimer = setTimeout(() => {
     retryTimer = null
     connect()
-  }, 15000) // retry sau 15s
+  }, 15000)
 }
 
 // ─── Set activity ─────────────────────────────────────────────────────────────

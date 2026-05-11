@@ -30,7 +30,7 @@ export default function ModrinthGrid({ results, loading, error, view, onSelect, 
         style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}
       >
         {view === 'grid' ? (
-          <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 p-1">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 p-1">
             {results.map(p => (
               <ModrinthCard key={p.project_id} project={p} view="grid" onClick={onSelect} />
             ))}

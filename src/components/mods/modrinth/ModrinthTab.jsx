@@ -62,6 +62,8 @@ export default function ModrinthTab() {
       <ModrinthDetail
         projectId={selectedProject.id}
         projectType={selectedProject.type}
+        activeLoaders={filters.loaders}
+        activeGameVersions={filters.gameVersions}
         onBack={() => setProject(null)}
       />
     )
@@ -83,33 +85,58 @@ export default function ModrinthTab() {
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               placeholder={`Search ${filters.projectType}s...`}
-              className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white placeholder-white/25 focus:outline-none focus:border-green-500/50 transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-green-500/50 transition-colors"
             />
           </div>
           <ViewToggle view={view} onChange={setView} />
         </form>
 
-        {/* Result count */}
-        {!loading && total > 0 && (
-          <p className="text-[10px] text-white/25">{total.toLocaleString()} results</p>
-        )}
+        {/* Loading bar XOR Result count — swap nhau, căn giữa */}
+        <div className="flex items-center justify-center min-h-[18px]">
+          {loading ? (
+            /* Indeterminate loading bar */
+            <div className="w-full h-0.5 rounded-full overflow-hidden bg-white/5">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, #4ade80 40%, #22c55e 60%, transparent 100%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer-bar 1.4s linear infinite',
+                  width: '100%',
+                }}
+              />
+            </div>
+          ) : total > 0 ? (
+            /* Result count */
+            <p className="text-sm font-semibold text-white/75">
+              {total.toLocaleString()}
+              <span className="text-white/40 font-normal text-xs ml-1">results</span>
+            </p>
+          ) : null}
+        </div>
+
+        <style>{`
+          @keyframes shimmer-bar {
+            0%   { background-position: 200% center; }
+            100% { background-position: -200% center; }
+          }
+        `}</style>
       </div>
 
       {/* Main: filters + content */}
-      <div className="flex flex-1 overflow-hidden gap-0 relative">
-        {/* Loading overlay khi đổi sub-tab */}
-        <TabLoadingOverlay visible={tabLoading} />
+      <div className="flex flex-1 overflow-hidden gap-0">
 
-        {/* Left: filters panel */}
+        {/* Left: filters panel — position relative để dropdown tính toán vị trí */}
         <div
-          className="flex-shrink-0 w-36 border-r overflow-hidden"
+          className="flex-shrink-0 w-64 border-r relative"
           style={{ borderColor: 'rgba(255,255,255,0.06)' }}
         >
           <ModrinthFilters filters={filters} onChange={updateFilters} />
         </div>
 
         {/* Right: content */}
-        <div className="flex-1 overflow-hidden px-2 py-1">
+        <div className="flex-1 overflow-hidden px-2 py-1 relative" style={{ isolation: 'isolate' }}>
+          <TabLoadingOverlay visible={tabLoading} />
           <ModrinthGrid
             results={results}
             loading={loading}

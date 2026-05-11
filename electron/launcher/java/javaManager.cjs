@@ -1,14 +1,28 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 'use strict'
 /**
  * javaManager.cjs
- * Tự động chọn và tải Java runtime phù hợp theo game version.
+ * Automatically selects and downloads the appropriate Java runtime for the game version.
  *
  * Mapping:
  *   MC ≤ 1.16  → Java 8  (jre-legacy)
  *   MC 1.17-1.20 → Java 17 (java-runtime-gamma)
  *   MC ≥ 1.21  → Java 21 (java-runtime-delta)
  *
- * Tải từ Mojang JRE manifest, giải nén vào <dataDir>/runtimes/<component>/
+ * Downloads from Mojang JRE manifest, extracts to <dataDir>/runtimes/<component>/
  */
 
 const https  = require('https')
@@ -26,15 +40,14 @@ const JRE_MANIFEST_URL = 'https://launchermeta.mojang.com/v1/products/java-runti
 function getJavaComponent(gameVersion) {
   const parts = gameVersion.split('.')
   const minor = parseInt(parts[1] || '0', 10)
-  const patch = parseInt(parts[2] || '0', 10)
 
   if (minor <= 16) return 'jre-legacy'          // Java 8
   if (minor <= 20) return 'java-runtime-gamma'  // Java 17
-  return 'java-runtime-delta'                   // Java 21
+  return 'java-runtime-delta'                   // Java 21+
 }
 
 function getJavaVersion(component) {
-  if (component === 'jre-legacy')        return '8'
+  if (component === 'jre-legacy')         return '8'
   if (component === 'java-runtime-gamma') return '17'
   return '21'
 }
@@ -102,11 +115,11 @@ function downloadFile(url, destPath, onProgress) {
   })
 }
 
-// ─── Giải nén .tar.gz ─────────────────────────────────────────────────────────
+// ─── Extract .tar.gz ──────────────────────────────────────────────────────────
 async function extractTarGz(tarPath, destDir) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
-  // Dùng tar built-in của Node (child_process) hoặc manual extract
+  // Use Node's built-in tar (child_process) or manual extract
   const { spawn } = require('child_process')
   return new Promise((resolve, reject) => {
     const tar = spawn('tar', ['-xzf', tarPath, '-C', destDir, '--strip-components=1'], {
@@ -120,11 +133,11 @@ async function extractTarGz(tarPath, destDir) {
   })
 }
 
-// ─── Giải nén .zip (Windows) ─────────────────────────────────────────────────
+// ─── Extract .zip (Windows) ───────────────────────────────────────────────────
 async function extractZip(zipPath, destDir) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
-  // Dùng PowerShell trên Windows
+  // Use PowerShell on Windows
   const { spawn } = require('child_process')
   return new Promise((resolve, reject) => {
     const ps = spawn('powershell', [
@@ -141,11 +154,11 @@ async function extractZip(zipPath, destDir) {
 
 // ─── Main: ensure Java is available ──────────────────────────────────────────
 /**
- * Đảm bảo Java runtime cho gameVersion đã được tải.
- * Trả về đường dẫn đến java executable.
+ * Ensure the Java runtime for gameVersion is downloaded.
+ * Returns the path to the java executable.
  *
  * @param {string} gameVersion  - e.g. "1.21.4"
- * @param {string} runtimesDir  - thư mục lưu runtimes
+ * @param {string} runtimesDir  - directory to store runtimes
  * @param {function} onProgress - callback({ phase, component, javaVersion, downloaded, total, percent })
  */
 async function ensureJava(gameVersion, runtimesDir, onProgress) {
@@ -156,7 +169,7 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
 
   onProgress?.({ phase: 'java_check', component, javaVersion })
 
-  // Đã có rồi
+  // Already available
   if (fs.existsSync(javaExe)) {
     onProgress?.({ phase: 'java_ready', component, javaVersion, path: javaExe })
     return javaExe
@@ -168,11 +181,11 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
   const allManifest = await httpsGetRaw(JRE_MANIFEST_URL)
   const platform    = getMojangPlatform()
   const platformData = allManifest[platform]
-  if (!platformData) throw new Error(`Không hỗ trợ platform: ${platform}`)
+  if (!platformData) throw new Error(`Platform not supported: ${platform}`)
 
   const componentData = platformData[component]
   if (!componentData || !componentData.length) {
-    throw new Error(`Không tìm thấy Java ${javaVersion} (${component}) cho ${platform}`)
+    throw new Error(`Java ${javaVersion} (${component}) not found for ${platform}`)
   }
 
   const manifest = componentData[0].manifest
@@ -182,7 +195,7 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
   const fileManifest = await httpsGetRaw(manifest.url)
   const files = Object.entries(fileManifest.files)
 
-  // Tải từng file
+  // Download each file
   let done = 0
   const total = files.length
 
@@ -203,7 +216,7 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
     const destDir  = path.dirname(destPath)
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
-    // Skip nếu đã có và đúng size
+    // Skip if already present and correct size
     if (fs.existsSync(destPath)) {
       const stat = fs.statSync(destPath)
       if (stat.size === fileData.downloads.raw.size) {
@@ -215,7 +228,7 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
 
     await downloadFile(fileData.downloads.raw.url, destPath, null)
 
-    // Set executable bit trên Unix
+    // Set executable bit on Unix
     if (process.platform !== 'win32' && fileData.executable) {
       try { fs.chmodSync(destPath, 0o755) } catch {}
     }
@@ -225,11 +238,111 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
   }
 
   if (!fs.existsSync(javaExe)) {
-    throw new Error(`Java executable không tìm thấy sau khi tải: ${javaExe}`)
+    throw new Error(`Java executable not found after download: ${javaExe}`)
   }
 
   onProgress?.({ phase: 'java_ready', component, javaVersion, path: javaExe })
   return javaExe
 }
 
-module.exports = { ensureJava, getJavaComponent, getJavaVersion }
+module.exports = { ensureJava, getJavaComponent, getJavaVersion, findJavaInstallations }
+
+/**
+ * Find all Java installations on the machine:
+ * - Mojang-managed runtimes (downloaded by launcher)
+ * - JAVA_HOME env
+ * - PATH
+ * - Common paths on Windows/macOS/Linux
+ */
+async function findJavaInstallations() {
+  const { execFile } = require('child_process')
+  const results = []
+  const seen = new Set()
+
+  async function tryJava(javaPath) {
+    if (!javaPath || seen.has(javaPath)) return
+    if (!fs.existsSync(javaPath)) return
+    seen.add(javaPath)
+    return new Promise(resolve => {
+      execFile(javaPath, ['-version'], { timeout: 3000 }, (err, stdout, stderr) => {
+        const output = stderr || stdout || ''
+        // java -version prints to stderr: 'openjdk version "21.0.1" ...'
+        const match = output.match(/version "([^"]+)"/)
+        const version = match ? match[1] : null
+        const major = version ? parseInt(version.split('.')[0] === '1' ? version.split('.')[1] : version.split('.')[0], 10) : null
+        results.push({ path: javaPath, version: major ? String(major) : version || '?', fullVersion: version || '?' })
+        resolve()
+      })
+    })
+  }
+
+  const promises = []
+
+  // 1. Mojang-managed runtimes (downloaded by launcher)
+  const { app } = require('electron')
+  const runtimesDir = require('path').join(app.getPath('appData'), '.VoxelXClient', 'runtimes')
+  if (fs.existsSync(runtimesDir)) {
+    for (const comp of fs.readdirSync(runtimesDir)) {
+      const exe = getJavaExecutable(path.join(runtimesDir, comp))
+      promises.push(tryJava(exe))
+    }
+  }
+
+  // 2. JAVA_HOME
+  if (process.env.JAVA_HOME) {
+    const exe = process.platform === 'win32'
+      ? path.join(process.env.JAVA_HOME, 'bin', 'java.exe')
+      : path.join(process.env.JAVA_HOME, 'bin', 'java')
+    promises.push(tryJava(exe))
+  }
+
+  // 3. Common Windows paths
+  if (process.platform === 'win32') {
+    const roots = [
+      'C:\\Program Files\\Java',
+      'C:\\Program Files\\Eclipse Adoptium',
+      'C:\\Program Files\\Microsoft',
+      'C:\\Program Files\\BellSoft',
+      'C:\\Program Files\\Zulu',
+    ]
+    for (const root of roots) {
+      if (!fs.existsSync(root)) continue
+      for (const sub of fs.readdirSync(root)) {
+        promises.push(tryJava(path.join(root, sub, 'bin', 'java.exe')))
+      }
+    }
+  }
+
+  // 4. macOS
+  if (process.platform === 'darwin') {
+    const roots = ['/Library/Java/JavaVirtualMachines', '/usr/local/opt']
+    for (const root of roots) {
+      if (!fs.existsSync(root)) continue
+      for (const sub of fs.readdirSync(root)) {
+        promises.push(tryJava(path.join(root, sub, 'Contents', 'Home', 'bin', 'java')))
+        promises.push(tryJava(path.join(root, sub, 'bin', 'java')))
+      }
+    }
+  }
+
+  // 5. Linux
+  if (process.platform === 'linux') {
+    const roots = ['/usr/lib/jvm', '/usr/java']
+    for (const root of roots) {
+      if (!fs.existsSync(root)) continue
+      for (const sub of fs.readdirSync(root)) {
+        promises.push(tryJava(path.join(root, sub, 'bin', 'java')))
+      }
+    }
+  }
+
+  await Promise.allSettled(promises)
+
+  // Sort: Mojang-managed first, then by version descending
+  return results.sort((a, b) => {
+    const aManaged = a.path.includes('.VoxelXClient')
+    const bManaged = b.path.includes('.VoxelXClient')
+    if (aManaged !== bManaged) return aManaged ? -1 : 1
+    return parseInt(b.version) - parseInt(a.version)
+  })
+}

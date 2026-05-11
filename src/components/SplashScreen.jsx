@@ -34,17 +34,54 @@ export default function SplashScreen({ onDone }) {
 
       // ── Bước 2: Load settings (thật) ─────────────────────────────────
       setProgress(20, 'Tải cài đặt người dùng...')
+      let autoCheckUpdate = true
       if (isElectron) {
         try {
           const s = await window.electronAPI.getSettings()
           if (s?.background && !cancelled) {
             window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: s.background }))
           }
+          if (typeof s?.autoCheckUpdate === 'boolean') {
+            autoCheckUpdate = s.autoCheckUpdate
+          }
         } catch {}
       }
       await delay(100)
 
       if (cancelled) return
+
+      // ── Bước 2b: Kiểm tra cập nhật (nếu setting bật) ─────────────────
+      if (autoCheckUpdate && isElectron) {
+        setProgress(30, 'Kiểm tra cập nhật...')
+        try {
+          const updateResult = await window.electronAPI.checkUpdate()
+          if (!cancelled && updateResult?.hasUpdate && updateResult?.installerAsset) {
+            // Has update — download and install silently
+            setProgress(32, `Phiên bản mới ${updateResult.latestVersion} — đang tải...`)
+
+            const unsub = window.electronAPI.onDownloadProgress(p => {
+              if (!cancelled) {
+                const pct = 32 + Math.round((p.percent ?? 0) * 0.3) // 32–62%
+                setProgress(pct, `Tải cập nhật ${updateResult.latestVersion}... ${p.percent ?? 0}%`)
+              }
+            })
+
+            const dlResult = await window.electronAPI.downloadUpdate({
+              downloadUrl: updateResult.installerAsset.downloadUrl,
+              fileName:    updateResult.installerAsset.name,
+            })
+            unsub?.()
+
+            if (!cancelled && dlResult?.ok) {
+              setProgress(65, 'Đang cài đặt cập nhật...')
+              await delay(400)
+              // Install and quit — app will restart after installer runs
+              window.electronAPI.installUpdate({ filePath: dlResult.filePath })
+              return // Don't continue splash — app is quitting
+            }
+          }
+        } catch {}
+      }
 
       // ── Bước 3: Load accounts + auto-refresh MS tokens ──────────────
       setProgress(45, 'Tải dữ liệu tài khoản...')

@@ -1,0 +1,191 @@
+import {
+  DownloadSimple,
+  Heart,
+} from '@phosphor-icons/react'
+
+// CurseForgeCard — single project card in grid or list view
+function formatNumber(n) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
+
+const CATEGORY_COLORS = {
+  fabric:   'bg-purple-500/20 text-purple-300',
+  forge:    'bg-orange-500/20 text-orange-300',
+  neoforge: 'bg-rose-500/20 text-rose-300',
+  quilt:    'bg-blue-500/20 text-blue-300',
+  vanilla:  'bg-green-500/20 text-green-300',
+}
+
+// ─── Grid card — icon làm nền toàn card ───────────────────────────────────────
+function GridCard({ project, onClick }) {
+  const loaderBadges = (project.categories || [])
+    .filter(c => ['fabric','forge','neoforge','quilt','vanilla'].includes(c))
+    .slice(0, 3)
+
+  return (
+    <button
+      onClick={() => onClick(project)}
+      className="group text-left rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer relative"
+      style={{
+        border: '1px solid rgba(255,255,255,0.08)',
+        minHeight: 110,
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = 'rgba(74,222,128,0.35)'
+        e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.5)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+        e.currentTarget.style.boxShadow = 'none'
+      }}
+    >
+      {/* ── Background layer: icon stretched + blur ── */}
+      <div className="absolute inset-0 overflow-hidden rounded-xl">
+        {project.icon_url ? (
+          <>
+            {/* Icon stretched as bg — positioned to the RIGHT side */}
+            <img
+              src={project.icon_url}
+              alt=""
+              className="absolute right-0 top-0 h-full"
+              style={{
+                width: '60%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                filter: 'blur(6px)',
+                opacity: 0.8,
+                transform: 'scale(1.1)',
+                transformOrigin: 'right center',
+              }}
+              loading="lazy"
+            />
+            {/* Gradient: left = dark solid, right = transparent to show bg */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(to right, rgba(10,10,10,1) 0%, rgba(10,10,10,0.92) 35%, rgba(10,10,10,0.55) 65%, rgba(10,10,10,0.2) 100%)',
+              }}
+            />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-[#111]" />
+        )}
+      </div>
+
+      {/* ── Foreground content ── */}
+      <div className="relative z-10 p-3.5 flex gap-3 h-full">
+        {/* Icon */}
+        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-black/30 flex items-center justify-center ring-1 ring-white/10">
+          {project.icon_url
+            ? <img src={project.icon_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+            : <svg className="w-7 h-7 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+          }
+        </div>
+
+        {/* Text */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <p className="text-white text-sm font-semibold leading-snug line-clamp-1 mb-1 group-hover:text-green-400 transition-colors">
+              {project.title}
+            </p>
+            <p className="text-white/55 text-xs leading-relaxed line-clamp-2">
+              {project.description}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 mt-2">
+            {/* Loader badges */}
+            <div className="flex flex-wrap gap-1">
+              {loaderBadges.map(l => (
+                <span key={l} className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${CATEGORY_COLORS[l] || 'bg-white/10 text-white/40'}`}>
+                  {l}
+                </span>
+              ))}
+            </div>
+            {/* Stats */}
+            <div className="flex items-center gap-2 text-[10px] flex-shrink-0">
+              <span className="flex items-center gap-1 text-green-400/70">
+                <DownloadSimple size={12} weight="bold" />
+                {formatNumber(project.downloads)}
+              </span>
+              <span className="flex items-center gap-1 text-pink-400/70">
+                <Heart size={12} weight="bold" />
+                {formatNumber(project.follows)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+// ─── List card — taller, clearer, stats always visible ───────────────────────
+function ListCard({ project, onClick }) {
+  const loaderBadges = (project.categories || [])
+    .filter(c => ['fabric','forge','neoforge','quilt','vanilla'].includes(c))
+    .slice(0, 3)
+
+  return (
+    <button
+      onClick={() => onClick(project)}
+      className="group w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-150"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = 'rgba(74,222,128,0.25)'
+        e.currentTarget.style.background = 'rgba(74,222,128,0.04)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+      }}
+    >
+      {/* Icon */}
+      <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
+        {project.icon_url
+          ? <img src={project.icon_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+          : <svg className="w-6 h-6 text-white/20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        }
+      </div>
+
+      {/* Middle: title + desc + badges */}
+      <div className="flex-1 min-w-0">
+        <p className="text-white text-sm font-semibold truncate group-hover:text-green-400 transition-colors mb-0.5">
+          {project.title}
+        </p>
+        <p className="text-white/45 text-xs truncate mb-1.5">
+          {project.description}
+        </p>
+        {loaderBadges.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {loaderBadges.map(l => (
+              <span key={l} className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${CATEGORY_COLORS[l] || 'bg-white/10 text-white/40'}`}>{l}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Right: stats — fixed width, always visible */}
+      <div className="flex flex-col items-end gap-1.5 flex-shrink-0 w-16">
+        <span className="flex items-center gap-1 text-xs text-green-400/80">
+          <DownloadSimple size={14} weight="bold" className="flex-shrink-0" />
+          {formatNumber(project.downloads)}
+        </span>
+        <span className="flex items-center gap-1 text-xs text-pink-400/70">
+          <Heart size={14} weight="bold" className="flex-shrink-0" />
+          {formatNumber(project.follows)}
+        </span>
+      </div>
+    </button>
+  )
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+export default function CurseForgeCard({ project, view = 'grid', onClick }) {
+  if (view === 'grid') return <GridCard project={project} onClick={onClick} />
+  return <ListCard project={project} onClick={onClick} />
+}

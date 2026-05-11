@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useModrinthInstall } from '../modrinth/useModrinth'
-import VersionSelect from './VersionSelect'
+import { useCurseForgeInstall } from '../curseforge/useCurseForge'
+import { useTechnicInstall } from '../technic/useTechnic'
+import { useFtbInstall } from '../ftb/useFtb'
+import ModpackInstallModal from './ModpackInstallModal'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -92,20 +95,72 @@ function ProfileSelect({ profiles, value, onChange }) {
 }
 
 // ─── InstallModal ─────────────────────────────────────────────────────────────
-export default function InstallModal({ project, versions, projectType, onClose }) {
+export default function InstallModal({ project, versions, projectType, source = 'modrinth', onClose }) {
+  const [groups, setGroups] = useState([])
+
+  useEffect(() => {
+    if (!isElectron) return
+    window.electronAPI.getGroups?.().then(data => setGroups(data?.groups || [])).catch(() => {})
+  }, [])
+
+  // Modpacks get their own dedicated modal that creates a new profile
+  if (projectType === 'modpack') {
+    return (
+      <ModpackInstallModal
+        project={project}
+        version={versions?.[0]}
+        source={source}
+        groups={groups}
+        onClose={onClose}
+      />
+    )
+  }
   const [profiles, setProfiles]       = useState([])
   const [selectedProfile, setProfile] = useState(null)
   const [selectedVersion, setVersion] = useState(null)
-  const { install, installing, progress, error, done, reset } = useModrinthInstall()
+
+  const modrinthInstall = useModrinthInstall()
+  const curseforgeInstall = useCurseForgeInstall()
+  const technicInstall = useTechnicInstall()
+  const ftbInstall = useFtbInstall()
+
+  const installer = source === 'ftb' ? ftbInstall
+    : source === 'technic' ? technicInstall
+    : source === 'curseforge' ? curseforgeInstall
+    : modrinthInstall
+  const { install, installing, progress, error, done, reset } = installer
 
   useEffect(() => {
     if (!isElectron) return
     window.electronAPI.getProfiles().then(data => {
       const list = data?.profiles || []
-      setProfiles(list)
-      setProfile(list.find(p => p.id === data?.selectedProfileId) || list[0] || null)
+
+      // Shaders require a mod loader — always show all non-Vanilla profiles,
+      // ignore versionLoaders (which are shader-specific: iris, optifine, etc.)
+      const isShader = projectType === 'shader'
+      // Resource packs work with all loaders including Vanilla
+      const isResourcePack = projectType === 'resourcepack'
+
+      let displayList
+      if (isShader) {
+        displayList = list.filter(p => p.loader && p.loader !== 'vanilla')
+      } else if (isResourcePack) {
+        // Resource packs are loader-agnostic — show all profiles
+        displayList = list
+      } else {
+        const versionLoaders = versions?.find(v => v.id === selectedVersion?.id)?.loaders
+          || (selectedVersion?.loaders)
+          || []
+        const compatible = versionLoaders.length > 0
+          ? list.filter(p => versionLoaders.includes(p.loader) || p.loader === 'vanilla')
+          : list
+        displayList = compatible.length > 0 ? compatible : list
+      }
+
+      setProfiles(displayList)
+      setProfile(displayList.find(p => p.id === data?.selectedProfileId) || displayList[0] || null)
     })
-  }, [])
+  }, [selectedVersion, projectType])
 
   useEffect(() => {
     if (versions?.length > 0 && !selectedVersion) setVersion(versions[0])
@@ -150,17 +205,33 @@ export default function InstallModal({ project, versions, projectType, onClose }
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          {/* Version */}
-          <div>
-            <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
-              Version
-            </label>
-            <VersionSelect
-              versions={versions}
-              value={selectedVersion?.id || ''}
-              onChange={v => setVersion(v)}
-            />
-          </div>
+          {/* Version — display only, no dropdown */}
+          {selectedVersion && (
+            <div>
+              <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
+                Version
+              </label>
+              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-semibold truncate">{selectedVersion.version_number}</p>
+                  <p className="text-white/35 text-xs mt-0.5">
+                    {selectedVersion.game_versions?.slice(0, 3).join(', ')}
+                    {selectedVersion.loaders?.length > 0 && (
+                      <span className="ml-1.5 text-white/25">· {selectedVersion.loaders.join(', ')}</span>
+                    )}
+                  </p>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border flex-shrink-0 ${
+                  selectedVersion.version_type === 'release' ? 'bg-green-500/15 text-green-400 border-green-500/25' :
+                  selectedVersion.version_type === 'beta'    ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25' :
+                  'bg-red-500/15 text-red-400 border-red-500/25'
+                }`}>
+                  {selectedVersion.version_type}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Profile */}
           <div>

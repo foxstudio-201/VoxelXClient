@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import GroupSelect from '../ui/GroupSelect'
 
 // ─── Assets ───────────────────────────────────────────────────────────────────
 import vanillaIcon   from '../../assets/loader/vanilla.png'
@@ -641,12 +642,13 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
 }
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
-export default function CreateProfileModal({ onClose, onCreate }) {
+export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
   const [loader, setLoader]               = useState('vanilla')
   const [gameVersion, setGameVersion]     = useState('')
   const [loaderVersion, setLoaderVersion] = useState('')
   const [name, setName]                   = useState('')
   const [instancePath, setInstancePath]   = useState('')
+  const [selectedGroupId, setSelectedGroupId] = useState('')
   const [submitting, setSubmitting]       = useState(false)
   const [versionGroups, setVersionGroups] = useState({ releaseGroups: RELEASE_GROUPS_FALLBACK, vanillaGroups: null })
 
@@ -688,6 +690,7 @@ export default function CreateProfileModal({ onClose, onCreate }) {
         gameVersion,
         loaderVersion: loader === 'vanilla' ? '' : loaderVersion,
         instancePath,
+        groupId: selectedGroupId || null,
       })
     } finally {
       setSubmitting(false)
@@ -789,6 +792,20 @@ export default function CreateProfileModal({ onClose, onCreate }) {
               )}
             </div>
           </div>
+
+          {/* Group selector */}
+          {groups.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
+                Group (tuỳ chọn)
+              </label>
+              <GroupSelect
+                groups={groups}
+                value={selectedGroupId}
+                onChange={setSelectedGroupId}
+              />
+            </div>
+          )}
 
           {/* ── Loader selector — dưới thư mục game ── */}
           <div className="flex flex-col gap-1.5">

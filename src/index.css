@@ -62,6 +62,51 @@
   }
 }
 
+/* ── Markdown renderer styles ─────────────────────────────────────────────── */
+.md-h1 { font-size: 1.25rem; font-weight: 700; color: #fff; margin: 1rem 0 0.5rem; }
+.md-h2 { font-size: 1.1rem;  font-weight: 700; color: #fff; margin: 0.9rem 0 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.25rem; }
+.md-h3 { font-size: 1rem;    font-weight: 600; color: rgba(255,255,255,0.85); margin: 0.75rem 0 0.35rem; }
+.md-h4, .md-h5, .md-h6 { font-size: 0.875rem; font-weight: 600; color: rgba(255,255,255,0.75); margin: 0.6rem 0 0.3rem; }
+.md-p  { font-size: 0.8125rem; color: rgba(255,255,255,0.6); line-height: 1.65; margin: 0.35rem 0; }
+.md-strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+.md-em     { color: rgba(255,255,255,0.7); font-style: italic; }
+.md-link   { color: #4ade80; text-decoration: underline; text-underline-offset: 2px; }
+.md-link:hover { color: #86efac; }
+.md-ul     { list-style: disc; padding-left: 1.25rem; margin: 0.4rem 0; }
+.md-li     { font-size: 0.8125rem; color: rgba(255,255,255,0.6); line-height: 1.6; margin: 0.15rem 0; }
+.md-blockquote { border-left: 3px solid rgba(74,222,128,0.4); padding-left: 0.75rem; color: rgba(255,255,255,0.45); font-style: italic; margin: 0.5rem 0; }
+.md-hr     { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.75rem 0; }
+.md-pre    { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem 1rem; margin: 0.5rem 0; overflow-x: auto; }
+.md-code   { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.75rem; color: #86efac; white-space: pre; }
+.md-inline-code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.75rem; color: #86efac; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); border-radius: 4px; padding: 0.1rem 0.35rem; }
+.md-img    { max-width: 100%; border-radius: 8px; margin: 0.5rem 0; }
+
+/* md-content: style all HTML tags inside the container (Modrinth body) */
+.md-content { font-size: 0.8125rem; color: rgba(255,255,255,0.6); line-height: 1.65; }
+.md-content h1 { font-size: 1.2rem; font-weight: 700; color: #fff; margin: 1rem 0 0.5rem; }
+.md-content h2 { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0.9rem 0 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.25rem; }
+.md-content h3 { font-size: 0.95rem; font-weight: 600; color: rgba(255,255,255,0.85); margin: 0.75rem 0 0.3rem; }
+.md-content h4, .md-content h5, .md-content h6 { font-size: 0.875rem; font-weight: 600; color: rgba(255,255,255,0.75); margin: 0.6rem 0 0.25rem; }
+.md-content p { margin: 0.4rem 0; color: rgba(255,255,255,0.6); }
+.md-content strong, .md-content b { color: rgba(255,255,255,0.85); font-weight: 600; }
+.md-content em, .md-content i { color: rgba(255,255,255,0.65); font-style: italic; }
+.md-content a { color: #4ade80; text-decoration: underline; text-underline-offset: 2px; }
+.md-content a:hover { color: #86efac; }
+.md-content ul, .md-content ol { padding-left: 1.25rem; margin: 0.4rem 0; }
+.md-content ul { list-style: disc; }
+.md-content ol { list-style: decimal; }
+.md-content li { margin: 0.15rem 0; color: rgba(255,255,255,0.6); }
+.md-content blockquote { border-left: 3px solid rgba(74,222,128,0.4); padding-left: 0.75rem; color: rgba(255,255,255,0.45); font-style: italic; margin: 0.5rem 0; }
+.md-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.75rem 0; }
+.md-content pre { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem 1rem; margin: 0.5rem 0; overflow-x: auto; }
+.md-content code { font-family: 'Consolas','Monaco',monospace; font-size: 0.75rem; color: #86efac; }
+.md-content pre code { background: none; border: none; padding: 0; white-space: pre; }
+.md-content :not(pre) > code { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); border-radius: 4px; padding: 0.1rem 0.35rem; }
+.md-content img { max-width: 100%; border-radius: 8px; margin: 0.5rem 0; display: block; }
+.md-content table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.75rem; }
+.md-content th { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); font-weight: 600; padding: 0.4rem 0.6rem; border: 1px solid rgba(255,255,255,0.08); text-align: left; }
+.md-content td { padding: 0.35rem 0.6rem; border: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
+
 @keyframes toast-bar {
   from { width: 100%; }
   to   { width: 0%; }

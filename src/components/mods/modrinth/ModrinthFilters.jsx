@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -18,43 +18,187 @@ const LOADER_OPTIONS = [
   { value: 'vanilla',  label: 'Vanilla',  color: 'text-green-400' },
 ]
 
-// Category groups from Modrinth
-const CATEGORY_GROUPS = {
-  'Gameplay': ['adventure','cursed','decoration','economy','equipment','food','game-mechanics','magic','management','minigame','mobs','optimization','social','storage','technology','transportation','utility','worldgen'],
-  'Performance': ['optimization'],
-  'Visual': ['decoration','shader'],
-}
-
+// ─── CheckItem ────────────────────────────────────────────────────────────────
 function CheckItem({ label, checked, onChange, color }) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer group py-0.5">
-      <div
-        onClick={onChange}
-        className={`w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'bg-green-500' : 'bg-white/8 border border-white/15 group-hover:border-white/30'}`}
-      >
-        {checked && (
-          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-          </svg>
-        )}
+    <label className="flex items-center gap-2 cursor-pointer group py-1 px-1 rounded-lg transition-colors hover:bg-white/4" onClick={onChange}>
+      <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+        checked ? 'bg-green-500' : 'bg-white/8 border border-white/15 group-hover:border-white/30'
+      }`}>
+        {checked && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
       </div>
-      <span className={`text-xs transition-colors ${checked ? (color || 'text-white/80') : 'text-white/40 group-hover:text-white/60'}`}>
+      <span className={`text-sm transition-colors leading-none ${checked ? (color || 'text-white/90') : 'text-white/50 group-hover:text-white/75'}`}>
         {label}
       </span>
     </label>
   )
 }
 
+// ─── VersionGroupDropdown — group by major version (1.21.x, 1.20.x...) ────────
+function VersionGroupDropdown({ value, onChange, groups }) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos]   = useState({ top: 0, left: 0, maxHeight: 320 })
+  const btnRef          = useRef(null)
+  const menuRef         = useRef(null)
+
+  const label = value === 'all' ? 'All' : value
+
+  useEffect(() => {
+    function handler(e) {
+      if (!btnRef.current?.contains(e.target) && !menuRef.current?.contains(e.target))
+        setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  function handleToggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      const menuWidth   = 180
+      const PADDING     = 8   // khoảng cách với cạnh dưới
+      const MAX_HEIGHT  = 320 // giới hạn tối đa khi cửa sổ lớn
+
+      // Horizontal: căn phải nếu không đủ chỗ
+      const left = r.left + menuWidth > window.innerWidth
+        ? Math.max(4, r.right - menuWidth)
+        : r.left
+
+      // Vertical: tính không gian còn lại bên dưới button
+      const spaceBelow  = window.innerHeight - r.bottom - PADDING
+      const maxHeight   = Math.min(MAX_HEIGHT, Math.max(80, spaceBelow))
+
+      setPos({ top: r.bottom + 4, left, maxHeight })
+    }
+    setOpen(v => !v)
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={handleToggle}
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+          value !== 'all'
+            ? 'bg-green-500/15 border border-green-500/30 text-green-400'
+            : 'bg-white/5 border border-white/10 text-white/50 hover:text-white/70 hover:bg-white/8'
+        }`}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+        </svg>
+        <span>{label}</span>
+        <svg className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          className="rounded-xl overflow-hidden"
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            zIndex: 9999,
+            minWidth: 180,
+            maxHeight: pos.maxHeight || 320,
+            overflowY: 'auto',
+            background: 'rgba(16,16,16,0.98)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(16px)',
+            scrollbarColor: 'rgba(255,255,255,0.10) transparent',
+          }}
+        >
+          <div className="py-1">
+            {/* All option */}
+            <button
+              type="button"
+              onClick={() => { onChange('all'); setOpen(false) }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-all"
+              style={{
+                background: value === 'all' ? 'rgba(74,222,128,0.1)' : 'transparent',
+                color: value === 'all' ? '#4ade80' : 'rgba(255,255,255,0.65)',
+              }}
+              onMouseEnter={e => { if (value !== 'all') e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+              onMouseLeave={e => { if (value !== 'all') e.currentTarget.style.background = 'transparent' }}
+            >
+              <span className="w-2 h-2 rounded-full bg-white/30 flex-shrink-0" />
+              <span className="text-white/60">All versions</span>
+              {value === 'all' && <svg className="w-3 h-3 ml-auto text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+            </button>
+
+            {/* Divider */}
+            <div className="h-px bg-white/5 mx-2 my-1" />
+
+            {/* Version groups */}
+            {groups.map(group => (
+              <button
+                key={group.key}
+                type="button"
+                onClick={() => { onChange(group.key); setOpen(false) }}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-all"
+                style={{
+                  background: value === group.key ? 'rgba(74,222,128,0.1)' : 'transparent',
+                  color: value === group.key ? '#4ade80' : 'rgba(255,255,255,0.65)',
+                }}
+                onMouseEnter={e => { if (value !== group.key) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                onMouseLeave={e => { if (value !== group.key) e.currentTarget.style.background = 'transparent' }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-green-400/60 flex-shrink-0" />
+                  <span className="font-semibold">{group.key}.x</span>
+                </div>
+                <span className="text-[10px] text-white/30 flex-shrink-0">{group.count}</span>
+                {value === group.key && <svg className="w-3 h-3 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function ModrinthFilters({ filters, onChange }) {
-  const [gameVersions, setGameVersions] = useState([])
-  const [expanded, setExpanded]         = useState({ loaders: true, versions: true, sort: true })
+  const [allVersions, setAllVersions]     = useState([])  // [{version, type}]
+  const [versionGroup, setVersionGroup]   = useState('all') // 'all' | '1.21' | '1.20' ...
+  const [versionSearch, setVersionSearch] = useState('')
+  const [showVersions, setShowVersions]   = useState(true)
 
   useEffect(() => {
     if (!isElectron) return
     window.electronAPI.modrinthGetGameVersions()
-      .then(v => setGameVersions((v || []).slice(0, 30)))
+      .then(v => setAllVersions(v || []))
       .catch(() => {})
   }, [])
+
+  // Build version groups from release versions only (e.g. 1.21, 1.20, 1.19...)
+  const versionGroups = useMemo(() => {
+    const groupMap = new Map()
+    allVersions.forEach(item => {
+      const v = item.version || item
+      const t = item.version_type || item.type || 'release'
+      // Bỏ qua các bản không phải chính thức (pre, rc, snapshot...)
+      if (t !== 'release' || v.includes('-rc') || v.includes('-pre') || v.match(/w\d+[a-z]?/i)) return
+      // Extract major.minor (e.g. "1.21" from "1.21.4")
+      const match = v.match(/^(\d+\.\d+)/)
+      if (!match) return
+      const key = match[1]
+      groupMap.set(key, (groupMap.get(key) || 0) + 1)
+    })
+    return Array.from(groupMap.entries())
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => {
+        const [aMaj, aMin] = a.key.split('.').map(Number)
+        const [bMaj, bMin] = b.key.split('.').map(Number)
+        return bMaj !== aMaj ? bMaj - aMaj : bMin - aMin
+      })
+  }, [allVersions])
 
   function toggleLoader(loader) {
     const cur = filters.loaders || []
@@ -66,107 +210,128 @@ export default function ModrinthFilters({ filters, onChange }) {
     onChange({ gameVersions: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] })
   }
 
-  function toggleSection(key) {
-    setExpanded(prev => ({ ...prev, [key]: !prev[key] }))
-  }
+  // Filter versions by group + search
+  const filteredVersions = allVersions.filter(item => {
+    const vStr = item.version || item
+    const type = item.version_type || item.type || 'release'
+    
+    // Ẩn các bản rc, pre, snapshot khỏi danh sách
+    if (type !== 'release' || vStr.includes('-rc') || vStr.includes('-pre') || vStr.match(/w\d+[a-z]?/i)) {
+      return false
+    }
+
+    const matchSearch = !versionSearch || vStr.toLowerCase().includes(versionSearch.toLowerCase())
+    if (!matchSearch) return false
+    if (versionGroup === 'all') return true
+    // Show versions that belong to this group (chỉ lấy dấu chấm, không lấy dấu gạch ngang vì đã lọc hết rc/pre)
+    return vStr === versionGroup || vStr.startsWith(versionGroup + '.')
+  })
+
+  const selectedVersions = filters.gameVersions || []
+  const selectedLoaders  = filters.loaders || []
 
   return (
-    <div
-      className="flex flex-col gap-0 overflow-y-auto h-full"
-      style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}
-    >
+    <div className="flex flex-col h-full overflow-y-auto"
+      style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
 
-      {/* Sort */}
-      <div className="border-b border-white/5">
-        <button
-          onClick={() => toggleSection('sort')}
-          className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-white/50 hover:text-white/70 transition-colors"
-        >
-          Sort by
-          <svg className={`w-3 h-3 transition-transform ${expanded.sort ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
-          </svg>
-        </button>
-        {expanded.sort && (
-          <div className="px-3 pb-3 flex flex-col gap-0.5">
+      {/* ── Loaders + Sort side by side ── */}
+      <div className="flex border-b border-white/5">
+        {/* Loaders */}
+        <div className="flex-1 border-r border-white/5 px-3 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-white/60 uppercase tracking-widest">Loaders</p>
+            {selectedLoaders.length > 0 && (
+              <button onClick={() => onChange({ loaders: [] })} className="text-[10px] text-red-400/60 hover:text-red-400 transition-colors">✕</button>
+            )}
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {LOADER_OPTIONS.map(opt => (
+              <CheckItem key={opt.value} label={opt.label} color={opt.color}
+                checked={selectedLoaders.includes(opt.value)} onChange={() => toggleLoader(opt.value)} />
+            ))}
+          </div>
+        </div>
+
+        {/* Sort */}
+        <div className="flex-1 px-3 py-3">
+          <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Sort</p>
+          <div className="flex flex-col gap-0.5">
             {SORT_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => onChange({ sortBy: opt.value })}
-                className={`text-left text-xs px-2 py-1.5 rounded-lg transition-all ${filters.sortBy === opt.value ? 'bg-green-500/15 text-green-400' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
-              >
+              <button key={opt.value} onClick={() => onChange({ sortBy: opt.value })}
+                className={`text-left text-sm px-2 py-1 rounded-lg transition-all ${
+                  filters.sortBy === opt.value
+                    ? 'bg-green-500/15 text-green-400 font-semibold'
+                    : 'text-white/45 hover:text-white/75 hover:bg-white/5'
+                }`}>
                 {opt.label}
               </button>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Loaders */}
-      <div className="border-b border-white/5">
-        <button
-          onClick={() => toggleSection('loaders')}
-          className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-white/50 hover:text-white/70 transition-colors"
-        >
-          Loaders
-          <svg className={`w-3 h-3 transition-transform ${expanded.loaders ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
-          </svg>
-        </button>
-        {expanded.loaders && (
-          <div className="px-3 pb-3 flex flex-col gap-0.5">
-            {LOADER_OPTIONS.map(opt => (
-              <CheckItem
-                key={opt.value}
-                label={opt.label}
-                color={opt.color}
-                checked={(filters.loaders || []).includes(opt.value)}
-                onChange={() => toggleLoader(opt.value)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Game versions */}
-      <div className="border-b border-white/5">
-        <button
-          onClick={() => toggleSection('versions')}
-          className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-white/50 hover:text-white/70 transition-colors"
-        >
-          Game Version
-          <svg className={`w-3 h-3 transition-transform ${expanded.versions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
-          </svg>
-        </button>
-        {expanded.versions && (
-          <div className="px-3 pb-3 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-            {gameVersions.length === 0 && (
-              <p className="text-white/20 text-xs py-2">Loading...</p>
-            )}
-            {gameVersions.map(v => (
-              <CheckItem
-                key={v}
-                label={v}
-                checked={(filters.gameVersions || []).includes(v)}
-                onChange={() => toggleVersion(v)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Clear filters */}
-      {((filters.loaders?.length || 0) + (filters.gameVersions?.length || 0)) > 0 && (
-        <div className="px-3 py-2">
-          <button
-            onClick={() => onChange({ loaders: [], gameVersions: [] })}
-            className="w-full text-xs text-red-400/70 hover:text-red-400 transition-colors py-1.5 rounded-lg hover:bg-red-500/8"
-          >
-            Clear filters
-          </button>
         </div>
-      )}
+      </div>
+
+      {/* ── Game Version ── */}
+      <div className="flex flex-col flex-1 min-h-0 px-3 py-3">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-2 flex-shrink-0">
+          <button onClick={() => setShowVersions(v => !v)}
+            className="flex items-center gap-1.5 text-xs font-bold text-white/60 uppercase tracking-widest hover:text-white/80 transition-colors">
+            Game Version
+            <svg className={`w-3 h-3 transition-transform ${showVersions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+
+          <div className="flex items-center gap-1.5 ml-auto">
+            <VersionGroupDropdown
+              value={versionGroup}
+              onChange={setVersionGroup}
+              groups={versionGroups}
+            />
+            {selectedVersions.length > 0 && (
+              <button onClick={() => onChange({ gameVersions: [] })}
+                className="flex items-center gap-1 text-[11px] text-red-400/70 hover:text-red-400 transition-colors px-1.5 py-1 rounded-lg hover:bg-red-500/8">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                {selectedVersions.length}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {showVersions && (
+          <>
+            {/* Search */}
+            <div className="relative mb-2 flex-shrink-0">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+              </svg>
+              <input type="text" value={versionSearch} onChange={e => setVersionSearch(e.target.value)}
+                placeholder="Search versions..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-green-500/40" />
+            </div>
+
+            {/* Version list */}
+            <div className="flex flex-col gap-0.5 overflow-y-auto flex-1"
+              style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
+              {filteredVersions.length === 0 && (
+                <p className="text-white/20 text-sm py-3 text-center">
+                  {allVersions.length === 0 ? 'Loading...' : 'No match'}
+                </p>
+              )}
+              {filteredVersions.map(item => {
+                const vStr = item.version || item
+                return (
+                  <CheckItem key={vStr} label={vStr}
+                    checked={selectedVersions.includes(vStr)}
+                    onChange={() => toggleVersion(vStr)} />
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

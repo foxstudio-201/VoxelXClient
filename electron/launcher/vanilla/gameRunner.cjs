@@ -1,8 +1,22 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 'use strict'
 /**
  * gameRunner.cjs
- * Build launch arguments và spawn Minecraft process.
- * Hỗ trợ Vanilla, Fabric, Forge.
+ * Build launch arguments and spawn the Minecraft process.
+ * Supports Vanilla, Fabric, Forge.
  */
 
 const { spawn } = require('child_process')
@@ -125,6 +139,10 @@ function launchGame(opts) {
     `-Djava.library.path=${nativesDir}`,
     `-Dminecraft.launcher.brand=VoxelXClient`,
     `-Dminecraft.launcher.version=1.0.0`,
+    // Force UTF-8 output on all platforms (especially Windows CP1252)
+    '-Dfile.encoding=UTF-8',
+    '-Dstdout.encoding=UTF-8',
+    '-Dstderr.encoding=UTF-8',
     '-Djava.util.logging.config.file=',
     '-XX:+UseG1GC',
     '-XX:+ParallelRefProcEnabled',
@@ -233,11 +251,33 @@ function launchGame(opts) {
     detached: false,
   })
 
-  proc.stdout.on('data', d => {
-    d.toString().split('\n').filter(Boolean).forEach(line => onLog?.(line))
+  // Use StringDecoder to correctly handle multi-byte UTF-8 characters
+  const { StringDecoder } = require('string_decoder')
+  const outDecoder = new StringDecoder('utf8')
+  const errDecoder = new StringDecoder('utf8')
+  let outBuf = ''
+  let errBuf = ''
+
+  proc.stdout.on('data', chunk => {
+    outBuf += outDecoder.write(chunk)
+    const lines = outBuf.split('\n')
+    outBuf = lines.pop()
+    lines.filter(Boolean).forEach(line => onLog?.(line))
   })
-  proc.stderr.on('data', d => {
-    d.toString().split('\n').filter(Boolean).forEach(line => onLog?.(`[ERR] ${line}`))
+  proc.stdout.on('end', () => {
+    const rem = outDecoder.end()
+    if (outBuf + rem) onLog?.(outBuf + rem)
+  })
+
+  proc.stderr.on('data', chunk => {
+    errBuf += errDecoder.write(chunk)
+    const lines = errBuf.split('\n')
+    errBuf = lines.pop()
+    lines.filter(Boolean).forEach(line => onLog?.(`[ERR] ${line}`))
+  })
+  proc.stderr.on('end', () => {
+    const rem = errDecoder.end()
+    if (errBuf + rem) onLog?.(`[ERR] ${errBuf + rem}`)
   })
   proc.on('close', code => {
     onLog?.(`[Launcher] Game exited with code ${code}`)

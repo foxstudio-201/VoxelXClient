@@ -10,8 +10,8 @@ export default function TabLoadingOverlay({ visible }) {
     <div
       className="absolute inset-0 z-20 flex items-center justify-center"
       style={{
-        background: 'rgba(8,8,8,0.85)',
-        backdropFilter: 'blur(4px)',
+        background: 'rgba(10,10,10,0.12)',
+        backdropFilter: 'blur(6px)',
         animation: 'tab-overlay-in 0.15s ease-out',
       }}
     >

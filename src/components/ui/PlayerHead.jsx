@@ -20,14 +20,15 @@ function buildSrcs(uuid, username) {
   return srcs
 }
 
-export default function PlayerHead({ uuid, username, size = 32, className = '' }) {
+export default function PlayerHead({ uuid, username, size = 32, customSkinUrl = null, className = '' }) {
   const srcs = buildSrcs(uuid, username)
   const [idx, setIdx] = useState(0)
 
   // Reset khi uuid/username thay đổi
   const key = `${uuid}-${username}`
 
-  const src = srcs[idx] ?? null
+  // customSkinUrl takes priority
+  const src = customSkinUrl || (srcs[idx] ?? null)
   const initial = username?.[0]?.toUpperCase() ?? '?'
   const rounded = Math.round(size * 0.2)
 

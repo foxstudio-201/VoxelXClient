@@ -1,12 +1,26 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 'use strict'
 /**
  * assetManager.cjs
- * Tải và verify:
+ * Download and verify:
  *   - client.jar
  *   - libraries (natives + classpath)
  *   - assets (index + objects)
  *
- * Chỉ tải file chưa có hoặc sai hash → offline-safe sau lần đầu.
+ * Only downloads files that are missing or have wrong hash → offline-safe after first run.
  */
 
 const https  = require('https')
@@ -120,7 +134,7 @@ function libraryApplies(lib) {
   return allow
 }
 
-// ─── Download queue với concurrency ──────────────────────────────────────────
+// ─── Download queue with concurrency ─────────────────────────────────────────
 async function downloadQueue(tasks, concurrency, onEach) {
   let idx = 0
   let done = 0
@@ -162,10 +176,10 @@ class SpeedTracker {
 
 // ─── Main download function ───────────────────────────────────────────────────
 /**
- * Tải tất cả tài nguyên cho một version.
+ * Download all resources for a version.
  *
- * @param {object} versionJson  - version JSON từ Mojang
- * @param {string} gameDir      - thư mục game chính (.VoxelXClient)
+ * @param {object} versionJson  - version JSON from Mojang
+ * @param {string} gameDir      - main game directory (.VoxelXClient)
  * @param {function} onProgress - callback(progress)
  * @returns {{ clientJar, libraries, nativesDir, assetsDir, assetIndex }}
  */
@@ -194,9 +208,9 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
   const clientJar = path.join(versionsDir, `${versionJson.id}.jar`)
   const clientDl  = versionJson.downloads?.client
   if (clientDl) {
-    emit('client_jar', { log: `Kiểm tra client.jar...` })
+    emit('client_jar', { log: `Checking client.jar...` })
     if (await needsDownload(clientJar, clientDl.sha1, clientDl.size)) {
-      emit('client_jar', { log: `Tải client.jar (${(clientDl.size / 1024 / 1024).toFixed(1)} MB)...` })
+      emit('client_jar', { log: `Downloading client.jar (${(clientDl.size / 1024 / 1024).toFixed(1)} MB)...` })
       await downloadFile(clientDl.url, clientJar, ({ downloaded, total }) => {
         speedTracker.add(downloaded)
         emit('client_jar', { downloaded, total, log: `client.jar ${(downloaded/1024/1024).toFixed(1)}/${(total/1024/1024).toFixed(1)} MB` })
@@ -319,7 +333,7 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
   }
 
   totalFiles += libTasks.length
-  emit('libraries', { log: `Tải ${libTasks.length} libraries...` })
+  emit('libraries', { log: `Downloading ${libTasks.length} libraries...` })
 
   await downloadQueue(libTasks, 8, (done, total) => {
     doneFiles = done
@@ -334,7 +348,7 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
   if (!fs.existsSync(assetIndexDir)) fs.mkdirSync(assetIndexDir, { recursive: true })
 
   if (await needsDownload(assetIndexFile, assetIndexInfo.sha1, assetIndexInfo.size)) {
-    emit('assets', { log: `Tải asset index...` })
+    emit('assets', { log: `Downloading asset index...` })
     await downloadFile(assetIndexInfo.url, assetIndexFile, null)
   }
 
@@ -362,14 +376,14 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
 
   totalFiles += assetTasks.length
   doneFiles = 0
-  emit('assets', { log: `Tải ${assetTasks.length} assets...` })
+  emit('assets', { log: `Downloading ${assetTasks.length} assets...` })
 
   await downloadQueue(assetTasks, 16, (done, total) => {
     doneFiles = done
     emit('assets', { log: `Assets: ${done}/${total}`, percent: Math.round(done / total * 100) })
   })
 
-  emit('done', { log: 'Tải xong tất cả tài nguyên.' })
+  emit('done', { log: 'All resources downloaded.' })
 
   return {
     clientJar,

@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
 import PlayerHead from './ui/PlayerHead'
+import ProfileSettingsPanel from './home/ProfileSettingsPanel'
 
-import vanillaIcon    from '../assets/loader/vanilla.png'
-import fabricIcon     from '../assets/loader/fabric.png'
-import forgeIcon      from '../assets/loader/forge.png'
-import neoforgeIcon   from '../assets/loader/neoforge.png'
+import vanillaIcon from '../assets/loader/vanilla.png'
+import fabricIcon from '../assets/loader/fabric.png'
+import forgeIcon from '../assets/loader/forge.png'
+import neoforgeIcon from '../assets/loader/neoforge.png'
 import curseforgeIcon from '../assets/loader/curseforge.png'
-import modrinthIcon   from '../assets/loader/modrinth.png'
-import defaultBg      from '../assets/minecraft-versions/default.png'
+import modrinthIcon from '../assets/loader/modrinth.png'
+import defaultBg from '../assets/minecraft-versions/default.png'
 import v112 from '../assets/minecraft-versions/1.12.png'
 import v115 from '../assets/minecraft-versions/1.15.png'
 import v116 from '../assets/minecraft-versions/1.16.png'
@@ -19,17 +20,17 @@ import v120 from '../assets/minecraft-versions/1.20.png'
 import v121 from '../assets/minecraft-versions/1.21.png'
 
 const VERSION_IMAGES = { '1.12': v112, '1.15': v115, '1.16': v116, '1.17': v117, '1.18': v118, '1.19': v119, '1.20': v120, '1.21': v121 }
-const LOADER_ICONS  = { vanilla: vanillaIcon, fabric: fabricIcon, forge: forgeIcon, neoforge: neoforgeIcon }
+const LOADER_ICONS = { vanilla: vanillaIcon, fabric: fabricIcon, forge: forgeIcon, neoforge: neoforgeIcon }
 const LOADER_COLORS = { vanilla: 'text-green-400', fabric: 'text-purple-400', forge: 'text-orange-400', neoforge: 'text-rose-400' }
-const LOADER_BG     = {
-  vanilla:  'bg-green-500/15 border-green-500/25',
-  fabric:   'bg-purple-500/15 border-purple-500/25',
-  forge:    'bg-orange-500/15 border-orange-500/25',
+const LOADER_BG = {
+  vanilla: 'bg-green-500/15 border-green-500/25',
+  fabric: 'bg-purple-500/15 border-purple-500/25',
+  forge: 'bg-orange-500/15 border-orange-500/25',
   neoforge: 'bg-rose-500/15 border-rose-500/25',
 }
 const IMPORT_SOURCE = {
   curseforge: { label: 'CurseForge', icon: curseforgeIcon, color: '#f97316' },
-  modrinth:   { label: 'Modrinth',   icon: modrinthIcon,   color: '#22c55e' },
+  modrinth: { label: 'Modrinth', icon: modrinthIcon, color: '#22c55e' },
 }
 
 function getMajorVersion(v) {
@@ -113,7 +114,7 @@ function NewsPanel() {
                 </div>
                 <div className="w-16 h-14 rounded-lg bg-white/5 flex-shrink-0 flex items-center justify-center">
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white/10">
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                   </svg>
                 </div>
               </div>
@@ -142,19 +143,19 @@ function InstanceLogPanel({ instance, onKill }) {
   }, [logs, autoScroll])
 
   function parseLevel(line) {
-    if (/\/(INFO)\]/.test(line))  return 'INFO'
-    if (/\/(WARN)\]/.test(line))  return 'WARN'
+    if (/\/(INFO)\]/.test(line)) return 'INFO'
+    if (/\/(WARN)\]/.test(line)) return 'WARN'
     if (/\/(ERROR)\]/.test(line)) return 'ERROR'
     if (/\/(DEBUG)\]/.test(line)) return 'DEBUG'
     if (/\/(FATAL)\]/.test(line)) return 'FATAL'
-    if (line.startsWith('[ERR]'))  return 'ERROR'
+    if (line.startsWith('[ERR]')) return 'ERROR'
     if (line.startsWith('[Launcher]')) return 'DEBUG'
     return 'OTHER'
   }
 
   const levelColor = {
-    INFO:  'text-green-400',
-    WARN:  'text-yellow-400',
+    INFO: 'text-green-400',
+    WARN: 'text-yellow-400',
     ERROR: 'text-red-400',
     DEBUG: 'text-blue-400',
     FATAL: 'text-pink-400',
@@ -196,12 +197,12 @@ function InstanceLogPanel({ instance, onKill }) {
         <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 bg-black/20">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-white/50">
-              {progress.phase === 'java'   ? 'Installing Java...' :
-               progress.phase === 'assets' ? 'Downloading assets...' :
-               progress.phase === 'launching' ? 'Launching...' : 'Preparing...'}
+              {progress.phase === 'java' ? 'Installing Java...' :
+                progress.phase === 'assets' ? 'Downloading assets...' :
+                  progress.phase === 'launching' ? 'Launching...' : 'Preparing...'}
             </span>
             <div className="flex items-center gap-3 text-[10px] text-white/30">
-              {progress.speed > 0 && <span>{(progress.speed/1024/1024).toFixed(1)} MB/s</span>}
+              {progress.speed > 0 && <span>{(progress.speed / 1024 / 1024).toFixed(1)} MB/s</span>}
               {progress.totalFiles > 0 && <span>{progress.doneFiles ?? 0}/{progress.totalFiles}</span>}
               {progress.percent > 0 && <span className="font-mono font-bold text-white/50">{progress.percent}%</span>}
             </div>
@@ -217,7 +218,7 @@ function InstanceLogPanel({ instance, onKill }) {
       {errorLines.length > 0 && (
         <div className="flex-shrink-0 flex items-start gap-2 px-3 py-2 bg-red-500/8 border-b border-red-500/20">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold text-red-400">{errorLines.length} error{errorLines.length > 1 ? 's' : ''} detected</p>
@@ -228,7 +229,7 @@ function InstanceLogPanel({ instance, onKill }) {
             className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded bg-red-500/15 border border-red-500/25 text-red-400 text-[10px] font-semibold hover:bg-red-500/25 transition-all"
           >
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
             </svg>
             Copy errors
           </button>
@@ -261,12 +262,12 @@ function InstanceLogPanel({ instance, onKill }) {
         >
           {copiedFilter ? (
             <>
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
               Copied
             </>
           ) : (
             <>
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" /></svg>
               Copy
             </>
           )}
@@ -288,12 +289,12 @@ function InstanceLogPanel({ instance, onKill }) {
           <p className="text-white/20 text-center py-8">
             {instance.state === 'downloading'
               ? <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-3 h-3 text-green-400/50" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  Đang khởi động...
-                </span>
+                <svg className="animate-spin w-3 h-3 text-green-400/50" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Đang khởi động...
+              </span>
               : 'No logs yet'
             }
           </p>
@@ -313,12 +314,11 @@ function InstanceLogPanel({ instance, onKill }) {
                 <span className={`flex-shrink-0 font-bold min-w-[36px] text-right ${levelColor[level] ?? 'text-white/30'}`}>
                   {level === 'OTHER' ? '' : level}
                 </span>
-                <span className={`flex-1 break-all ${
-                  isError               ? 'text-red-300/90' :
-                  level === 'WARN'      ? 'text-yellow-200/70' :
-                  level === 'DEBUG'     ? 'text-blue-300/60' :
-                  'text-white/55'
-                }`}>{line}</span>
+                <span className={`flex-1 break-all ${isError ? 'text-red-300/90' :
+                  level === 'WARN' ? 'text-yellow-200/70' :
+                    level === 'DEBUG' ? 'text-blue-300/60' :
+                      'text-white/55'
+                  }`}>{line}</span>
                 {/* Copy indicator */}
                 <span className={`flex-shrink-0 text-[9px] transition-all duration-150
                   ${copiedLine === i ? 'text-green-400 opacity-100' : 'text-white/20 opacity-0 group-hover:opacity-100'}`}>
@@ -334,15 +334,15 @@ function InstanceLogPanel({ instance, onKill }) {
       {/* Status bar */}
       <div className="flex-shrink-0 flex items-center justify-between px-3 py-1 border-t border-white/5 bg-black/20 text-[10px]">
         <span className={
-          instance.state === 'running'     ? 'text-green-400' :
-          instance.state === 'stopped'     ? 'text-white/30' :
-          instance.state === 'error'       ? 'text-red-400' :
-          instance.state === 'downloading' ? 'text-yellow-400' : 'text-white/30'
+          instance.state === 'running' ? 'text-green-400' :
+            instance.state === 'stopped' ? 'text-white/30' :
+              instance.state === 'error' ? 'text-red-400' :
+                instance.state === 'downloading' ? 'text-yellow-400' : 'text-white/30'
         }>
-          {instance.state === 'running'     ? '● Running' :
-           instance.state === 'stopped'     ? '■ Stopped' :
-           instance.state === 'error'       ? '✕ Error' :
-           instance.state === 'downloading' ? '⟳ Loading...' : ''}
+          {instance.state === 'running' ? '● Running' :
+            instance.state === 'stopped' ? '■ Stopped' :
+              instance.state === 'error' ? '✕ Error' :
+                instance.state === 'downloading' ? '⟳ Loading...' : ''}
         </span>
         <div className="flex items-center gap-3">
           <span className="text-white/20">{instance.profileName} @ {instance.accountName}</span>
@@ -352,7 +352,7 @@ function InstanceLogPanel({ instance, onKill }) {
               className="flex items-center gap-1 px-2 py-0.5 rounded bg-red-500/15 border border-red-500/20 text-red-400 text-[10px] font-semibold hover:bg-red-500/25 transition-all"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
               Kill
             </button>
@@ -368,10 +368,25 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const [activeLogTab, setActiveLogTab] = useState(null)
   const [logPanelOpen, setLogPanelOpen] = useState(false)
   const [logDropdownOpen, setLogDropdownOpen] = useState(false)
-  const [savedLog, setSavedLog] = useState(null)   // { lines, profileName, filename, mtime }
+  const [savedLog, setSavedLog] = useState(null)
   const [savedLogLoading, setSavedLogLoading] = useState(false)
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
   const logDropdownRef = useRef(null)
   const ramSaveTimer = useRef(null)
+
+  // Cleanup ramSaveTimer khi unmount để tránh setState trên unmounted component
+  useEffect(() => () => clearTimeout(ramSaveTimer.current), [])
+
+  // Pre-compute particle values once on mount — prevents re-randomizing on every re-render
+  // (which caused shimmer to speed up whenever progress.percent changed)
+  const particles = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
+    size: Math.random() * 3 + 1.5,
+    left: Math.random() * 100,
+    durationY: Math.random() * 5 + 4,
+    durationX: Math.random() * 2 + 2,
+    delay: Math.random() * 5,
+    swayClass: `sway-${i % 3}`,
+  })), [])
 
   // Close log dropdown when clicking outside
   useEffect(() => {
@@ -390,7 +405,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     if (ramSaveTimer.current) clearTimeout(ramSaveTimer.current)
     ramSaveTimer.current = setTimeout(() => {
       if (selectedProfile && isElectron) {
-        window.electronAPI.updateProfileRam(selectedProfile.id, newRam).catch(() => {})
+        window.electronAPI.updateProfileRam(selectedProfile.id, newRam).catch(() => { })
       }
     }, 500)
   }
@@ -398,7 +413,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
 
   // ── Selected profile ──
   const [selectedProfile, setSelectedProfile] = useState(null)
-  const [profileStats, setProfileStats]       = useState(null)
+  const [profileStats, setProfileStats] = useState(null)
 
   // Auto-select first instance tab when instances appear
   useEffect(() => {
@@ -439,11 +454,11 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     if (launchState === 'idle' && selectedProfile && isElectron) {
       window.electronAPI.getProfileStats({ profileId: selectedProfile.id })
         .then(stats => setProfileStats(stats))
-        .catch(() => {})
+        .catch(() => { })
     }
   }, [launchState, selectedProfile])
 
-  const username    = selectedAccount?.username ?? null
+  const username = selectedAccount?.username ?? null
   const accountType = selectedAccount?.type === 'microsoft' ? 'Microsoft' : 'Offline Mode'
 
   function handleLaunch() {
@@ -455,19 +470,19 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   // Loader color
   const loaderKey = selectedProfile?.loader ?? 'vanilla'
   const launchColor = {
-    vanilla:  'bg-green-500 hover:bg-green-400 shadow-green-500/20',
-    fabric:   'bg-purple-500 hover:bg-purple-400 shadow-purple-500/20',
-    forge:    'bg-orange-500 hover:bg-orange-400 shadow-orange-500/20',
+    vanilla: 'bg-green-500 hover:bg-green-400 shadow-green-500/20',
+    fabric: 'bg-purple-500 hover:bg-purple-400 shadow-purple-500/20',
+    forge: 'bg-orange-500 hover:bg-orange-400 shadow-orange-500/20',
     neoforge: 'bg-rose-500 hover:bg-rose-400 shadow-rose-500/20',
   }[loaderKey] ?? 'bg-green-500 hover:bg-green-400 shadow-green-500/20'
 
   const isDownloading = launchState === 'downloading'
-  const isRunning     = launchState === 'running'
-  const isError       = launchState === 'error'
+  const isRunning = launchState === 'running'
+  const isError = launchState === 'error'
   // Stats display
   const hoursPlayed = profileStats ? Math.floor((profileStats.playtimeSeconds || 0) / 3600) : 0
-  const worldCount  = profileStats?.worldCount ?? 0
-  const modCount    = profileStats?.modCount   ?? 0
+  const worldCount = profileStats?.worldCount ?? 0
+  const modCount = profileStats?.modCount ?? 0
 
   return (
     <div className="flex flex-col h-full overflow-hidden relative">      {/* Hero section */}
@@ -501,8 +516,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   background: i % 3 === 0
                     ? '#4ade80'
                     : i % 3 === 1
-                    ? '#22c55e'
-                    : '#16a34a',
+                      ? '#22c55e'
+                      : '#16a34a',
                   opacity: 0.6 + (i % 3) * 0.2,
                 }}
               />
@@ -510,8 +525,52 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           </div>
         </div>
 
+        {/* Hiệu ứng hạt sáng long lanh bay lên */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          {particles.map((p, i) => (
+            <div
+              key={`particle-${i}`}
+              className="absolute -bottom-4"
+              style={{
+                left: `${p.left}%`,
+                animation: `float-up ${p.durationY}s linear ${p.delay}s infinite`,
+                opacity: 0,
+              }}
+            >
+              <div
+                className="rounded-full bg-white/70 shadow-[0_0_10px_rgba(74,222,128,0.9)]"
+                style={{
+                  width: p.size,
+                  height: p.size,
+                  animation: `${p.swayClass} ${p.durationX}s ease-in-out infinite alternate`,
+                }}
+              />
+            </div>
+          ))}
+          <style>{`
+            @keyframes float-up {
+              0% { transform: translateY(0) scale(0.5); opacity: 0; }
+              10% { opacity: 0.9; transform: translateY(-20px) scale(1); }
+              85% { opacity: 0.9; transform: translateY(-200px) scale(1); }
+              100% { transform: translateY(-250px) scale(0.5); opacity: 0; }
+            }
+            @keyframes sway-0 {
+              0% { transform: translateX(-15px); }
+              100% { transform: translateX(15px); }
+            }
+            @keyframes sway-1 {
+              0% { transform: translateX(20px); }
+              100% { transform: translateX(-20px); }
+            }
+            @keyframes sway-2 {
+              0% { transform: translateX(-25px); }
+              100% { transform: translateX(25px); }
+            }
+          `}</style>
+        </div>
+
         {/* Hero content */}
-        <div className="relative flex flex-col justify-center h-full px-8">
+        <div className="relative flex flex-col justify-center h-full px-8 z-10">
           {/* ── Luôn hiện: Welcome back + username ── */}
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-semibold tracking-widest text-green-400/70 uppercase">
@@ -537,8 +596,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               ) : (
                 <span className="flex items-center gap-2 text-white/40">
                   <svg className="animate-spin w-3 h-3 text-green-400/70 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   {progress?.log ?? 'Đang chuẩn bị...'}
                 </span>
@@ -562,10 +621,10 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 {/* Phase + speed + files + % */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white/50 uppercase tracking-widest">
-                    {progress?.phase === 'java'      ? 'Cài đặt Java Runtime' :
-                     progress?.phase === 'assets'    ? 'Tải tài nguyên Minecraft' :
-                     progress?.phase === 'launching' ? 'Khởi động game' :
-                     progress?.phase === 'resolve'   ? 'Tải thông tin version' : 'Chuẩn bị'}
+                    {progress?.phase === 'java' ? 'Cài đặt Java Runtime' :
+                      progress?.phase === 'assets' ? 'Tải tài nguyên Minecraft' :
+                        progress?.phase === 'launching' ? 'Khởi động game' :
+                          progress?.phase === 'resolve' ? 'Tải thông tin version' : 'Chuẩn bị'}
                   </span>
                   <div className="flex items-center gap-3 text-xs text-white/30">
                     {progress?.speed > 0 && (
@@ -592,8 +651,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               <div className="flex gap-6">
                 {[
                   { label: 'Hours Played', value: hoursPlayed > 0 ? hoursPlayed.toLocaleString() : '0' },
-                  { label: 'Worlds',       value: worldCount.toString() },
-                  { label: 'Mods Active',  value: modCount.toString() },
+                  { label: 'Worlds', value: worldCount.toString() },
+                  { label: 'Mods Active', value: modCount.toString() },
                 ].map((stat) => (
                   <div key={stat.label}>
                     <div className="text-lg font-bold text-green-400">{stat.value}</div>
@@ -628,7 +687,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     title="Previous instance"
                   >
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
                     </svg>
                   </button>
                 )}
@@ -643,7 +702,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                       className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-t-lg text-xs font-semibold border-t border-l border-r transition-all duration-150 relative bg-[#141414] border-white/8 text-white -mb-px z-10"
                     >
                       <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-white/40 flex-shrink-0">
-                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/>
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" />
                       </svg>
                       <span className="truncate max-w-[120px]">{savedLog.profileName}</span>
                       <span className="text-[9px] text-white/30">saved</span>
@@ -669,29 +728,32 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         {inst.state === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />}
                         {inst.state === 'downloading' && (
                           <svg className="animate-spin w-3 h-3 text-yellow-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
                         )}
                         {inst.state === 'stopped' && <span className="w-1.5 h-1.5 rounded-full bg-white/20 flex-shrink-0" />}
-                        {inst.state === 'error'   && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
+                        {inst.state === 'error' && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
                         <span className="truncate max-w-[120px]">{inst.profileName || 'Profile'}</span>
                         {inst.accountName && (
                           <span className={`text-[9px] ${isActive ? 'text-white/40' : 'text-white/20'}`}>
                             @{inst.accountName}
                           </span>
                         )}
-                        {/* Kill button */}
+                        {/* Kill button — dùng div thay button để tránh button lồng button */}
                         {isActive && (inst.state === 'running' || inst.state === 'downloading') && (
-                          <button
+                          <div
+                            role="button"
+                            tabIndex={0}
                             onClick={e => { e.stopPropagation(); onKillInstance?.(inst.key) }}
-                            className="ml-1 w-4 h-4 flex items-center justify-center rounded text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all flex-shrink-0"
+                            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onKillInstance?.(inst.key) } }}
+                            className="ml-1 w-4 h-4 flex items-center justify-center rounded text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all flex-shrink-0 cursor-pointer"
                             title="Kill instance"
                           >
                             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                             </svg>
-                          </button>
+                          </div>
                         )}
                       </button>
                     )
@@ -711,7 +773,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     title="Next instance"
                   >
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
                     </svg>
                   </button>
                 )}
@@ -722,7 +784,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   title="Đóng log"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                   </svg>
                 </button>
               </div>
@@ -735,8 +797,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     if (savedLogLoading) return (
                       <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
                         <svg className="animate-spin w-5 h-5 text-green-400/50" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
                         <p className="text-xs">Đang tải log...</p>
                       </div>
@@ -744,7 +806,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     if (!savedLog) return (
                       <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 opacity-30">
-                          <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                          <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                         </svg>
                         <p className="text-xs">Chưa có log nào cho profile này</p>
                       </div>
@@ -765,7 +827,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   if (!inst && instances.length === 0) return (
                     <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
                       <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 opacity-30">
-                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                       </svg>
                       <p className="text-xs">Không có instance nào đang chạy</p>
                     </div>
@@ -776,9 +838,22 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               </div>
             </div>
           ) : (
-            /* ── Default: News feed ── */
-            <div className="flex-1 overflow-y-auto">
-              <NewsPanel />
+            /* ── Default: News feed hoặc Profile Settings ── */
+            <div className="flex-1 overflow-hidden">
+              {profileSettingsOpen && selectedProfile ? (
+                <ProfileSettingsPanel
+                  profile={selectedProfile}
+                  onClose={() => setProfileSettingsOpen(false)}
+                  onProfileUpdated={(updated) => {
+                    setSelectedProfile(updated)
+                    setRam(updated.ramGb ?? ram)
+                  }}
+                />
+              ) : (
+                <div className="overflow-y-auto h-full">
+                  <NewsPanel />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -804,7 +879,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   title="Xem logs"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                   </svg>
                   Logs
                   {instances.length > 0 && (
@@ -833,6 +908,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                               setSavedLog(null)
                               setLogPanelOpen(true)
                               setLogDropdownOpen(false)
+                              setProfileSettingsOpen(false)
                             }}
                             className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all
                               ${activeLogTab === inst.key && logPanelOpen && !savedLog ? 'bg-white/5' : ''}`}
@@ -847,7 +923,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                             </div>
                             {activeLogTab === inst.key && logPanelOpen && !savedLog && (
                               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                               </svg>
                             )}
                           </button>
@@ -864,6 +940,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                                 setActiveLogTab(null)
                                 setSavedLog(null)
                                 setSavedLogLoading(true)
+                                setProfileSettingsOpen(false)
                                 try {
                                   const result = isElectron
                                     ? await window.electronAPI.getLatestLog({ profileId: selectedProfile.id })
@@ -879,7 +956,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                                 ${logPanelOpen && savedLog ? 'bg-white/5' : ''}`}
                             >
                               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-white/30 flex-shrink-0">
-                                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                               </svg>
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs text-white/80 font-semibold truncate">{selectedProfile.name}</p>
@@ -887,7 +964,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                               </div>
                               {logPanelOpen && savedLog && (
                                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
-                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                                 </svg>
                               )}
                             </button>
@@ -904,7 +981,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                           className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all text-white/30 hover:text-white/60"
                         >
                           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                           </svg>
                           <span className="text-[11px]">Đóng log panel</span>
                         </button>
@@ -950,7 +1027,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     {selectedProfile.importSource && (
                       <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm bg-black/50 border border-white/20 text-white/70">
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
-                          <path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.06 15.94 0 13.36 0c-1.46 0-2.75.67-3.6 1.72L9 3 8.24 1.72C7.39.67 6.1 0 4.64 0 2.06 0 0 2.06 0 4.64c0 .48.11.92.18 1.36H0v2h20V6zm-9.5-3.5c.55-.67 1.38-1.1 2.36-1.1 1.58 0 2.64 1.06 2.64 2.64 0 .48-.13.92-.32 1.36H11V3.5l-.5-1zm-5.86 0C5.19 2.5 6.06 2 7 2c.98 0 1.81.43 2.36 1.1L10 4.5H6.68c-.19-.44-.32-.88-.32-1.36 0-.24.04-.47.1-.68l-.82.04zM0 8v14h20V8H0zm9 11H2v-2h7v2zm0-4H2v-2h7v2zm0-4H2v-2h7v2zm9 8h-7v-2h7v2zm0-4h-7v-2h7v2zm0-4h-7v-2h7v2z"/>
+                          <path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.06 15.94 0 13.36 0c-1.46 0-2.75.67-3.6 1.72L9 3 8.24 1.72C7.39.67 6.1 0 4.64 0 2.06 0 0 2.06 0 4.64c0 .48.11.92.18 1.36H0v2h20V6zm-9.5-3.5c.55-.67 1.38-1.1 2.36-1.1 1.58 0 2.64 1.06 2.64 2.64 0 .48-.13.92-.32 1.36H11V3.5l-.5-1zm-5.86 0C5.19 2.5 6.06 2 7 2c.98 0 1.81.43 2.36 1.1L10 4.5H6.68c-.19-.44-.32-.88-.32-1.36 0-.24.04-.47.1-.68l-.82.04zM0 8v14h20V8H0zm9 11H2v-2h7v2zm0-4H2v-2h7v2zm0-4H2v-2h7v2zm9 8h-7v-2h7v2zm0-4h-7v-2h7v2zm0-4h-7v-2h7v2z" />
                         </svg>
                         Modpack
                       </span>
@@ -986,7 +1063,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 className="w-full flex items-center gap-2 bg-white/3 border border-dashed border-white/10 rounded-xl px-3 py-4 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs justify-center flex-col gap-1.5"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 opacity-40">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg>
                 <span>Tạo profile để chơi</span>
               </button>
@@ -1017,27 +1094,33 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 className="w-full flex items-center gap-2 bg-white/3 border border-dashed border-white/10 rounded-xl px-3 py-2.5 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg>
                 Thêm tài khoản
               </button>
             )}
           </div>
 
-          {/* ── RAM slider ── */}
-          <div>
-            <label className="text-xs font-semibold text-white/40 uppercase tracking-widest block mb-2">
-              RAM: <span className="text-green-400">{ram} GB</span>
-            </label>
-            <input
-              type="range" min="1" max="16" value={ram}
-              onChange={e => handleRamChange(Number(e.target.value))}
-              className="w-full accent-green-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-[10px] text-white/20 mt-1">
-              <span>1 GB</span><span>16 GB</span>
-            </div>
-          </div>
+          {/* ── Profile Settings button ── */}
+          {selectedProfile && (
+            <button
+              onClick={() => {
+                setProfileSettingsOpen(v => !v)
+                if (logPanelOpen) setLogPanelOpen(false)
+              }}
+              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${profileSettingsOpen
+                ? 'bg-green-500/15 border-green-500/25 text-green-400'
+                : 'bg-white/3 border-white/8 text-white/40 hover:text-white/70 hover:bg-white/6 hover:border-white/15'
+                }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 flex-shrink-0">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {profileSettingsOpen ? 'Đóng cài đặt' : 'Cài đặt profile'}
+              <span className="ml-auto text-[10px] text-white/20">{selectedProfile.ramGb ?? 4} GB RAM</span>
+            </button>
+          )}
 
           <div className="flex-1" />
 
@@ -1063,8 +1146,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             {isDownloading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
                 Đang tải...
               </span>
@@ -1076,18 +1159,18 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             ) : isError ? (
               <span className="flex items-center justify-center gap-2">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                 </svg>
                 Thử lại
               </span>
             ) : !selectedProfile ? (
               <span className="flex items-center justify-center gap-2">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z" /></svg>
                 Chọn profile
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z"/></svg>
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z" /></svg>
                 PLAY
               </span>
             )}

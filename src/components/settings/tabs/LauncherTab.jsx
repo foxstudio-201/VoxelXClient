@@ -411,88 +411,189 @@ function BgTab({ settings, onChange }) {
 }
 
 // ── Update check inline ────────────────────────────────────────────────────────
+function formatBytes(b) {
+  if (!b) return ''
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`
+  return `${(b / 1024 / 1024).toFixed(1)} MB`
+}
+
 function UpdateChecker() {
-  const [status, setStatus] = useState('idle') // idle | checking | done
-  const [result, setResult] = useState(null)
+  const [status, setStatus]       = useState('idle') // idle | checking | updateAvailable | downloading | installing | upToDate | noRelease | error
+  const [result, setResult]       = useState(null)
+  const [dlProgress, setDlProgress] = useState(null)
+  const [errorMsg, setErrorMsg]   = useState('')
+  const unsubRef = useState(null)
 
   async function handleCheck() {
     setStatus('checking')
     setResult(null)
+    setErrorMsg('')
+    setDlProgress(null)
     try {
       const res = isElectron
         ? await window.electronAPI.checkUpdate()
-        : await new Promise(r => setTimeout(() => r({
-            hasUpdate: false,
-            currentVersion: '1.0.0',
-            latestVersion: '1.0.0',
-            message: 'Bạn đang dùng phiên bản mới nhất.',
-          }), 1500))
+        : { hasUpdate: false, currentVersion: '1.0.0', latestVersion: '1.0.0', message: 'Bạn đang dùng phiên bản mới nhất.' }
+
       setResult(res)
-    } catch {
-      setResult({ error: true, message: 'Không thể kiểm tra cập nhật. Vui lòng thử lại.' })
+      if (res.error) {
+        setErrorMsg(res.message)
+        setStatus('error')
+      } else if (res.noRelease) {
+        setStatus('noRelease')
+      } else if (res.hasUpdate) {
+        setStatus('updateAvailable')
+        handleDownload(res)
+      } else {
+        setStatus('upToDate')
+      }
+    } catch (err) {
+      setErrorMsg('Không thể kiểm tra cập nhật.')
+      setStatus('error')
     }
-    setStatus('done')
+  }
+
+  async function handleDownload(checkResult) {
+    const r = checkResult || result
+    if (!r?.installerAsset) {
+      setErrorMsg('Không tìm thấy file cài đặt cho hệ điều hành này.')
+      setStatus('error')
+      return
+    }
+
+    setStatus('downloading')
+    setDlProgress({ percent: 0, downloaded: 0, total: r.installerAsset.size || 0, speed: 0 })
+
+    // Subscribe to progress
+    const unsub = isElectron
+      ? window.electronAPI.onDownloadProgress(p => setDlProgress(p))
+      : null
+    unsubRef[0] = unsub
+
+    try {
+      const res = isElectron
+        ? await window.electronAPI.downloadUpdate({
+            downloadUrl: r.installerAsset.downloadUrl,
+            fileName:    r.installerAsset.name,
+          })
+        : { ok: true, filePath: '/tmp/fake.exe' }
+
+      unsub?.()
+
+      if (res?.error) {
+        setErrorMsg(`Tải thất bại: ${res.error}`)
+        setStatus('error')
+        return
+      }
+
+      setStatus('installing')
+      await new Promise(r => setTimeout(r, 500))
+
+      const installRes = isElectron
+        ? await window.electronAPI.installUpdate({ filePath: res.filePath })
+        : { ok: true }
+
+      if (installRes?.error) {
+        setErrorMsg(`Cài đặt thất bại: ${installRes.error}`)
+        setStatus('error')
+      }
+    } catch (err) {
+      unsub?.()
+      setErrorMsg(err.message)
+      setStatus('error')
+    }
   }
 
   return (
     <div className="py-3 space-y-3">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleCheck}
-          disabled={status === 'checking'}
-          className="
-            flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold
-            bg-green-500 hover:bg-green-400 text-white
-            transition-all duration-150 active:scale-95
-            disabled:opacity-50 disabled:cursor-not-allowed
-          "
-        >
-          {status === 'checking' ? (
-            <>
-              <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+      {/* Check button — only when idle/upToDate/noRelease/error */}
+      {['idle', 'upToDate', 'noRelease', 'error'].includes(status) && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={handleCheck}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-green-500 hover:bg-green-400 text-white transition-all duration-150 active:scale-95"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            Kiểm tra cập nhật
+          </button>
+
+          {status === 'upToDate' && (
+            <span className="text-xs text-white/40 flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+              Đang dùng phiên bản mới nhất
+            </span>
+          )}
+          {status === 'noRelease' && (
+            <span className="text-xs text-yellow-400/60">Chưa có bản phát hành nào</span>
+          )}
+          {status === 'error' && (
+            <span className="text-xs text-red-400/80">{errorMsg}</span>
+          )}
+        </div>
+      )}
+
+      {/* Checking */}
+      {status === 'checking' && (
+        <div className="flex items-center gap-2 text-xs text-white/40">
+          <svg className="animate-spin w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          Đang kiểm tra GitHub Releases...
+        </div>
+      )}
+
+      {/* Update available — brief state before download */}
+      {status === 'updateAvailable' && result && (
+        <div className="rounded-xl border border-green-500/20 bg-green-500/8 px-3 py-2.5 flex items-center gap-2">
+          <svg className="animate-spin w-3.5 h-3.5 text-green-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span className="text-xs text-green-400">
+            Phiên bản mới <span className="font-mono font-bold">{result.latestVersion}</span> — đang chuẩn bị tải...
+          </span>
+        </div>
+      )}
+
+      {/* Downloading */}
+      {status === 'downloading' && (
+        <div className="rounded-xl border border-green-500/20 bg-green-500/8 px-3 py-3 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-green-400 font-semibold flex items-center gap-1.5">
+              <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              Đang kiểm tra...
-            </>
-          ) : (
-            <>
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-              </svg>
-              Kiểm tra cập nhật ngay
-            </>
-          )}
-        </button>
-
-        {status === 'done' && result && !result.error && !result.hasUpdate && (
-          <span className="text-xs text-white/40 flex items-center gap-1">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-            </svg>
-            Đang dùng phiên bản mới nhất
-          </span>
-        )}
-      </div>
-
-      {status === 'done' && result && (result.error || result.hasUpdate) && (
-        <div className={`
-          rounded-xl border p-3 text-sm
-          ${result.error
-            ? 'bg-red-500/10 border-red-500/20 text-red-400'
-            : 'bg-green-500/10 border-green-500/20 text-green-400'
-          }
-        `}>
-          {result.error ? (
-            result.message
-          ) : (
-            <span>
-              Có phiên bản mới: <span className="font-mono font-bold">{result.latestVersion}</span>
-              {result.currentVersion && (
-                <span className="text-white/30 ml-1">(hiện tại: {result.currentVersion})</span>
-              )}
+              Đang tải bản cập nhật...
             </span>
-          )}
+            <span className="text-white/40 font-mono">{dlProgress?.percent ?? 0}%</span>
+          </div>
+          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-green-400 rounded-full transition-all duration-300"
+              style={{ width: `${dlProgress?.percent ?? 0}%` }} />
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-white/30">
+            <span>
+              {dlProgress?.downloaded ? formatBytes(dlProgress.downloaded) : '0 KB'}
+              {dlProgress?.total ? ` / ${formatBytes(dlProgress.total)}` : ''}
+            </span>
+            {dlProgress?.speed > 0 && <span>{formatBytes(dlProgress.speed)}/s</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Installing */}
+      {status === 'installing' && (
+        <div className="rounded-xl border border-green-500/20 bg-green-500/8 px-3 py-2.5 flex items-center gap-2">
+          <svg className="animate-spin w-3.5 h-3.5 text-green-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span className="text-xs text-green-400">Đang khởi chạy trình cài đặt — ứng dụng sẽ đóng...</span>
         </div>
       )}
     </div>
