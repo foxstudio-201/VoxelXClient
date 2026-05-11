@@ -215,7 +215,6 @@ function createMainWindow() {
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
-    mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
 
   mainWindow.on('close', (e) => {
