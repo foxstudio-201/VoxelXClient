@@ -12,6 +12,37 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
+ */
+
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef } from 'react'
 import adoptiumIcon from '../../assets/java-icon/adoptium.png'
 import azulIcon     from '../../assets/java-icon/azul.png'
@@ -20,8 +51,6 @@ import paperIcon    from '../../assets/server-icon/paper-server.png'
 import purpurIcon   from '../../assets/server-icon/purpur-server.png'
 import foliaIcon    from '../../assets/server-icon/Folia-server.png'
 import fabricIcon   from '../../assets/server-icon/fabric-server.png'
-import forgeIcon    from '../../assets/server-icon/forge-server.png'
-import neoforgeIcon from '../../assets/server-icon/neoforge-server.png'
 import mohistIcon   from '../../assets/server-icon/mohist-server.png'
 import spongeIcon   from '../../assets/server-icon/sponge-server.png'
 import arclightIcon from '../../assets/server-icon/Arclight.png'
@@ -35,8 +64,6 @@ const SERVER_TYPES = [
   { id: 'purpur',   label: 'Purpur',    icon: purpurIcon,   desc: 'Paper fork with extras' },
   { id: 'folia',    label: 'Folia',     icon: foliaIcon,    desc: 'Regionized multithreading' },
   { id: 'fabric',   label: 'Fabric',    icon: fabricIcon,   desc: 'Lightweight mod loader' },
-  { id: 'forge',    label: 'Forge',     icon: forgeIcon,    desc: 'Classic mod loader' },
-  { id: 'neoforge', label: 'NeoForge',  icon: neoforgeIcon, desc: 'Modern Forge fork' },
   { id: 'mohist',   label: 'Mohist',    icon: mohistIcon,   desc: 'Forge + Bukkit hybrid' },
   { id: 'arclight', label: 'Arclight',  icon: arclightIcon, desc: 'Forge + Paper hybrid' },
   { id: 'magma',    label: 'Magma',     icon: magmaIcon,    desc: 'Forge + Bukkit/Spigot' },
@@ -108,7 +135,7 @@ function JavaDropdown({ value, onChange }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4 text-white/25 flex-shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
-            <span className="text-white/35 flex-1">Mặc định (tự động phát hiện)</span>
+            <span className="text-white/35 flex-1">Chọn Java runtime...</span>
             <svg viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 text-white/25 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
               <path d="M7 10l5 5 5-5z"/>
             </svg>
@@ -143,19 +170,6 @@ function JavaDropdown({ value, onChange }) {
           </div>
 
           {}
-          <button type="button" onClick={() => { onChange(null); setOpen(false) }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-white/5 transition-all border-b border-white/5">
-            <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center flex-shrink-0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5 text-white/30">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-white/60 font-semibold">Mặc định</p>
-              <p className="text-[10px] text-white/30">Tự động phát hiện Java</p>
-            </div>
-          </button>
-
           {step === 'distro' ? (
 
             Object.values(JAVA_DISTROS).map(d => (
@@ -388,6 +402,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
   const [step, setStep]           = useState(1)
   const [selectedType, setType]   = useState(null)
   const [versions, setVersions]   = useState([])
+  const [versionBuildStatus, setVersionBuildStatus] = useState({})
   const [versionsLoading, setVersionsLoading] = useState(false)
   const [versionOpen, setVersionOpen] = useState(false)
   const versionRef = useRef(null)
@@ -410,15 +425,40 @@ export default function CreateServerModal({ onClose, onCreate }) {
 
   useEffect(() => {
     if (!isElectron || !selectedType) return
+    let cancelled = false
     setVersions([])
+    setVersionBuildStatus({})
     setVersionsLoading(true)
     set('gameVersion', '')
     const api = window.electronAPI.serverGetVersionsForType
       ? window.electronAPI.serverGetVersionsForType(selectedType.id)
       : window.electronAPI.serverGetVersions()
-    api.then(r => {
-      if (r?.ok) setVersions(r.versions)
-    }).catch(() => {}).finally(() => setVersionsLoading(false))
+    api.then(async (r) => {
+      if (!r?.ok || cancelled) return
+      const nextVersions = r.versions || []
+      setVersions(nextVersions)
+
+      if (!window.electronAPI.serverCheckBuildAvailable || nextVersions.length === 0) return
+
+      const checks = await Promise.all(
+        nextVersions.map(async (version) => {
+          try {
+            const result = await window.electronAPI.serverCheckBuildAvailable(selectedType.id, version)
+            return [version, !!result?.available]
+          } catch {
+            return [version, true]
+          }
+        })
+      )
+
+      if (!cancelled) {
+        setVersionBuildStatus(Object.fromEntries(checks))
+      }
+    }).catch(() => {}).finally(() => {
+      if (!cancelled) setVersionsLoading(false)
+    })
+
+    return () => { cancelled = true }
   }, [selectedType?.id])
 
   useEffect(() => {
@@ -445,9 +485,10 @@ export default function CreateServerModal({ onClose, onCreate }) {
   }
 
   async function handleCreate() {
-    if (!form.name.trim()) { setError('Vui lòng nhập tên server'); return }
-    if (!form.gameVersion)  { setError('Vui lòng chọn phiên bản'); return }
-    if (!form.acceptEula)   { setError('Bạn phải chấp nhận EULA của Minecraft'); return }
+    if (!form.name.trim())     { setError('Vui lòng nhập tên server'); return }
+    if (!form.gameVersion)     { setError('Vui lòng chọn phiên bản'); return }
+    if (!selectedJavaPkg)      { setError('Chưa chọn Java'); return }
+    if (!form.acceptEula)      { setError('Bạn phải chấp nhận EULA của Minecraft'); return }
 
     setCreating(true)
     setError('')
@@ -521,44 +562,56 @@ export default function CreateServerModal({ onClose, onCreate }) {
 
         {}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
-          {step === 1 ? (
+           {step === 1 ? (
 
-            <div className="p-5">
-              <div className="grid grid-cols-3 gap-3">
-                {SERVER_TYPES.map(t => (
-                  <button key={t.id} onClick={() => { setType(t); setStep(2) }}
-                    className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all text-left hover:-translate-y-0.5"
-                    style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.35)'; e.currentTarget.style.background = 'rgba(74,222,128,0.05)' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-                  >
-                    <img src={t.icon} alt={t.label} className="w-12 h-12 rounded-xl object-contain" />
-                    <div className="text-center">
-                      <p className="text-sm font-bold text-white/90">{t.label}</p>
-                      <p className="text-[10px] text-white/35 mt-0.5">{t.desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+             <div className="p-5">
+               <div className="grid grid-cols-3 gap-3">
+                 {SERVER_TYPES.map(t => (
+                   <button key={t.id} onClick={() => { setType(t); setStep(2) }}
+                     className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border transition-all text-left hover:-translate-y-0.5"
+                     style={{
+                       background: 'rgba(255,255,255,0.03)',
+                       border: '1px solid rgba(255,255,255,0.08)',
+                     }}
+                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.35)'; e.currentTarget.style.background = 'rgba(74,222,128,0.05)' }}
+                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                   >
+                     <img src={t.icon} alt={t.label} className="w-12 h-12 rounded-xl object-contain" />
+                     <div className="text-center">
+                       <p className="text-sm font-bold text-white/90">{t.label}</p>
+                       <p className="text-[10px] text-white/35 mt-0.5">{t.desc}</p>
+                     </div>
+                   </button>
+                 ))}
+               </div>
+             </div>
           ) : (
 
             <div className="p-5 flex flex-col gap-4">
-              {}
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
-                <img src={selectedType.icon} alt={selectedType.label} className="w-10 h-10 rounded-lg object-contain" />
-                <div>
-                  <p className="text-sm font-bold text-white/90">{selectedType.label}</p>
-                  <p className="text-xs text-white/35">{selectedType.desc}</p>
-                </div>
-                <button onClick={() => setStep(1)}
-                  className="ml-auto text-xs text-white/30 hover:text-white/60 transition-colors">
-                  Đổi
-                </button>
-              </div>
+               {}
+               <div className="flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
+                 <img src={selectedType.icon} alt={selectedType.label} className="w-10 h-10 rounded-lg object-contain" />
+                 <div>
+                   <p className="text-sm font-bold text-white/90">{selectedType.label}</p>
+                   <p className="text-xs text-white/35">{selectedType.desc}</p>
+                 </div>
+                 <button onClick={() => setStep(1)}
+                   className="ml-auto text-xs text-white/30 hover:text-white/60 transition-colors">
+                   Đổi
+                 </button>
+               </div>
+
+               {}
+               {form.gameVersion && versions.length === 0 && !versionsLoading && (
+                 <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border border-red-500/30 bg-red-500/8">
+                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5">
+                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                   </svg>
+                   <p className="text-xs text-red-300/80 leading-relaxed">
+                     <span className="font-bold">{selectedType.label}</span> không hỗ trợ phiên bản <span className="font-bold">{form.gameVersion}</span>. Vui lòng chọn loại server khác hoặc phiên bản khác.
+                   </p>
+                 </div>
+               )}
 
               {}
               <div>
@@ -596,20 +649,29 @@ export default function CreateServerModal({ onClose, onCreate }) {
                       ) : versions.length === 0 ? (
                         <div className="px-3 py-3 text-xs text-white/30 text-center">Không có phiên bản nào</div>
                       ) : (
-                        versions.map(v => (
-                          <button
-                            key={v}
-                            type="button"
-                            onClick={() => { set('gameVersion', v); setVersionOpen(false) }}
-                            className={`w-full text-left px-3 py-2 text-sm transition-all ${
-                              form.gameVersion === v
-                                ? 'bg-green-500/15 text-green-400 font-semibold'
-                                : 'text-white/70 hover:bg-white/6 hover:text-white'
-                            }`}
-                          >
-                            {v}
-                          </button>
-                        ))
+                        versions.map(v => {
+                          const hasBuild = versionBuildStatus[v] !== false
+                          const isSelected = form.gameVersion === v
+                          return (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => { set('gameVersion', v); setVersionOpen(false) }}
+                              className={`w-full text-left px-3 py-2 text-sm transition-all flex items-center justify-between gap-3 ${
+                                isSelected
+                                  ? 'bg-green-500/15 text-green-400 font-semibold'
+                                  : 'text-white/70 hover:bg-white/6 hover:text-white'
+                              }`}
+                            >
+                              <span>{v}</span>
+                              {!hasBuild && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-orange-500/15 text-orange-300 border border-orange-500/25 flex-shrink-0">
+                                  Chưa có build
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })
                       )}
                     </div>
                   )}
@@ -694,7 +756,9 @@ export default function CreateServerModal({ onClose, onCreate }) {
               <div>
                 <label className={labelCls}>Java Runtime</label>
                 <JavaDropdown value={selectedJavaPkg} onChange={setSelectedJavaPkg} />
-                <p className="text-[10px] text-white/20 mt-1">Java sẽ được tải vào thư mục server sau khi tạo xong.</p>
+                <p className="text-[10px] text-white/20 mt-1">
+                  Hãy chọn Java runtime trước khi tạo server. Java sẽ được tải vào thư mục server sau khi tạo xong.
+                </p>
               </div>
 
               {}

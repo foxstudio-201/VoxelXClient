@@ -12,6 +12,37 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
+ */
+
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState } from 'react'
 import { BG_THEMES } from '../../AppBackground'
 
@@ -115,6 +146,7 @@ function applyBorder(radius, color) {
 function FontTab({ settings, onChange }) {
   const weight     = settings.fontWeight ?? 400
   const fontId     = settings.fontId     ?? 'system'
+  const fontSize   = settings.fontSize   ?? 100
   const WEIGHTS    = [100, 200, 300, 400, 500, 600, 700, 800, 900]
   const activeFont = FONTS.find(f => f.id === fontId) ?? FONTS[0]
 
@@ -123,8 +155,34 @@ function FontTab({ settings, onChange }) {
     applyFont(id)
   }
 
+  // Apply font size (percentage, default 100%)
+  function handleFontSizeChange(size) {
+    onChange({ fontSize: size })
+    document.documentElement.style.setProperty('--app-font-size', `${size}%`)
+  }
+
   return (
     <div className="py-4 space-y-5">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-white/40 uppercase tracking-widest">Cỡ chữ</p>
+          <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md">{fontSize}%</span>
+        </div>
+        <input
+          type="range" min={80} max={120} step={1} value={fontSize}
+          onChange={e => handleFontSizeChange(Number(e.target.value))}
+          className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-white/10
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
+            [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
+            [&::-webkit-slider-thumb]:bg-green-400 [&::-webkit-slider-thumb]:cursor-pointer"
+        />
+        <div className="flex justify-between mt-1">
+          {[80, 90, 100, 110, 120].map(w => (
+            <span key={w} className={`text-[9px] ${w === fontSize ? 'text-green-400' : 'text-white/20'}`}>{w}%</span>
+          ))}
+        </div>
+      </div>
+
       {}
       <div>
         <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Font chữ</p>
@@ -177,15 +235,17 @@ function FontTab({ settings, onChange }) {
       {}
       <div className="rounded-xl border border-white/5 bg-white/3 p-4">
         <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">Preview</p>
-        <p style={{ fontFamily: activeFont.stack, fontWeight: weight }} className="text-white text-base">
+        <div 
+          style={{
+            fontFamily: activeFont.stack, fontWeight: weight,
+            fontSize: `${fontSize}%`
+          }}
+          className="text-white text-base"
+        >
           VoxelXClient Launcher
-        </p>
-        <p style={{ fontFamily: activeFont.stack, fontWeight: weight }} className="text-white/50 text-sm mt-1">
-          The quick brown fox jumps over the lazy dog
-        </p>
-        <p style={{ fontFamily: activeFont.stack, fontWeight: weight }} className="text-white/30 text-xs mt-1 font-mono">
-          0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ
-        </p>
+          <div className="text-white/50 text-sm mt-1">The quick brown fox jumps over the lazy dog</div>
+          <div className="text-white/30 text-xs mt-1 font-mono">0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ</div>
+        </div>
       </div>
     </div>
   )

@@ -12,6 +12,37 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
+ */
+
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import CreateServerModal from './CreateServerModal'
 import ServerConsole from './ServerConsole'
@@ -21,8 +52,6 @@ import paperIcon    from '../../assets/server-icon/paper-server.png'
 import purpurIcon   from '../../assets/server-icon/purpur-server.png'
 import foliaIcon    from '../../assets/server-icon/Folia-server.png'
 import fabricIcon   from '../../assets/server-icon/fabric-server.png'
-import forgeIcon    from '../../assets/server-icon/forge-server.png'
-import neoforgeIcon from '../../assets/server-icon/neoforge-server.png'
 import mohistIcon   from '../../assets/server-icon/mohist-server.png'
 import spongeIcon   from '../../assets/server-icon/sponge-server.png'
 import arclightIcon from '../../assets/server-icon/Arclight.png'
@@ -32,9 +61,8 @@ const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 const SERVER_ICONS = {
   vanilla: vanillaIcon, paper: paperIcon, purpur: purpurIcon,
-  folia: foliaIcon, fabric: fabricIcon, forge: forgeIcon,
-  neoforge: neoforgeIcon, mohist: mohistIcon, sponge: spongeIcon,
-  arclight: arclightIcon, magma: magmaIcon,
+  folia: foliaIcon, fabric: fabricIcon, mohist: mohistIcon,
+  sponge: spongeIcon, arclight: arclightIcon, magma: magmaIcon,
 }
 
 function getGridCols(count) {

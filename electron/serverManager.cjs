@@ -12,6 +12,37 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
+ */
+
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 'use strict'
 
 const { ipcMain, dialog } = require('electron')
@@ -32,8 +63,6 @@ const SERVER_DOWNLOAD_URLS = {
   purpur:    (ver) => `https://api.purpurmc.org/v2/purpur/${ver}/latest/download`,
   folia:     (ver) => `https://api.papermc.io/v2/projects/folia/versions/${ver}/builds`,
   fabric:    (ver) => `https://meta.fabricmc.net/v2/versions/loader/${ver}`,
-  forge:     (ver) => `https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json`,
-  neoforge:  (ver) => `https://maven.neoforged.net/releases/net/neoforged/neoforge/`,
   mohist:    (ver) => `https://mohistmc.com/api/v2/projects/mohist/${ver}/builds`,
   sponge:    (ver) => `https://dl.spongepowered.org/api/v2/downloads/`,
 }
@@ -138,11 +167,35 @@ async function resolveServerJarUrl(type, gameVersion) {
         const jar   = latest.downloads?.application?.name
         return `https://api.papermc.io/v2/projects/folia/versions/${gameVersion}/builds/${build}/downloads/${jar}`
       }
-      case 'mohist': {
-        const builds = await httpsGet(`https://mohistmc.com/api/v2/projects/mohist/${gameVersion}/builds`)
-        const latest = builds?.builds?.slice(-1)[0]
-        return latest?.url || null
+      case 'fabric': {
+        const loaders = await httpsGet(`https://meta.fabricmc.net/v2/versions/loader/${gameVersion}`)
+        const loaderVersion = (loaders || []).find(v => v?.loader?.version)?.loader?.version
+        if (!loaderVersion) return null
+
+        const installers = await httpsGet('https://meta.fabricmc.net/v2/versions/installer')
+        const installerVersion = (installers || []).find(v => v?.version)?.version
+        if (!installerVersion) return null
+
+        return `https://meta.fabricmc.net/v2/versions/loader/${gameVersion}/${loaderVersion}/${installerVersion}/server/jar`
       }
+case 'mohist': {
+  try {
+    const buildsResp = await httpsGet(`https://mohistmc.com/api/v2/projects/mohist/${gameVersion}/builds`);
+    if (!buildsResp || !buildsResp.builds || buildsResp.builds.length === 0) {
+      console.warn(`[Server] No Mohist builds found for ${gameVersion}`);
+      return null;
+    }
+    const latestBuild = buildsResp.builds.sort((a, b) => b.number - a.number)[0];
+    if (!latestBuild || !latestBuild.url) {
+      console.warn(`[Server] Latest Mohist build for ${gameVersion} has no URL.`);
+      return null;
+    }
+    return latestBuild.url;
+  } catch (error) {
+    console.error(`[Server] Error fetching Mohist JAR URL for ${gameVersion}:`, error);
+    return null;
+  }
+}
       case 'arclight': {
 
         const releases = await httpsGet(`https://api.github.com/repos/IzzelAliz/Arclight/releases/latest`)
@@ -273,10 +326,10 @@ function registerServerHandlers(getTrustedWindow) {
     const jarUrl = await resolveServerJarUrl(server.type, server.gameVersion)
     if (!jarUrl) return { error: `Không tìm thấy server jar cho ${server.type} ${server.gameVersion}` }
 
-    const jarName = `${server.type}-${server.gameVersion}.jar`
-    const jarPath = path.join(server.serverDir, jarName)
-
     try {
+      const jarName = `${server.type}-${server.gameVersion}.jar`
+      const jarPath = path.join(server.serverDir, jarName)
+
       await downloadFile(jarUrl, jarPath, (p) => {
         win.webContents.send('server:downloadProgress', { serverId, ...p })
       })
@@ -442,7 +495,7 @@ function registerServerHandlers(getTrustedWindow) {
       `-Xms${Math.min(512, ramMb)}m`,
     ]
 
-    const args = [
+    let args = [
       ...memArgs,
       ...jvmArgs,
 
@@ -556,6 +609,7 @@ function registerServerHandlers(getTrustedWindow) {
     sendStatus('starting')
     sendLog(`[Server] Java: ${javaExe}`)
     sendLog(`[Server] Jar: ${jarPath}`)
+    sendLog(`[Server] Args: ${args.join(' ')}`)
     return { ok: true }
   })
 
@@ -1218,32 +1272,6 @@ function registerServerHandlers(getTrustedWindow) {
           const versions = (data || []).filter(v => v.stable).map(v => v.version).slice(0, 30)
           return { ok: true, versions }
         }
-        case 'forge': {
-
-          const data = await httpsGet('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json')
-          const promos = data?.promos || {}
-          const versions = [...new Set(
-            Object.keys(promos)
-              .map(k => k.split('-')[0])
-              .filter(v => /^\d+\.\d+/.test(v))
-          )].sort((a, b) => {
-            const pa = a.split('.').map(Number)
-            const pb = b.split('.').map(Number)
-            for (let i = 0; i < 3; i++) { if ((pb[i]||0) !== (pa[i]||0)) return (pb[i]||0) - (pa[i]||0) }
-            return 0
-          })
-          return { ok: true, versions }
-        }
-        case 'neoforge': {
-
-          const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
-          const all = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id)
-          const versions = all.filter(v => {
-            const parts = v.split('.').map(Number)
-            return parts[1] > 20 || (parts[1] === 20 && (parts[2] || 0) >= 1)
-          })
-          return { ok: true, versions }
-        }
         case 'mohist': {
           const data = await httpsGet('https://mohistmc.com/api/v2/projects/mohist')
           const versions = (data?.versions || []).reverse()
@@ -1277,6 +1305,16 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) {
 
       return { ok: true, versions: ['1.21.4', '1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2'] }
+    }
+  })
+
+  ipcMain.handle('server:checkBuildAvailable', async (e, serverType, version) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    try {
+      const jarUrl = await resolveServerJarUrl(serverType, version)
+      return { ok: true, available: !!jarUrl }
+    } catch (err) {
+      return { ok: true, available: false }
     }
   })
 

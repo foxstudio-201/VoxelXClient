@@ -12,6 +12,37 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
+ */
+
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell } = require('electron')
 const path = require('path')
 const fs   = require('fs')
@@ -127,6 +158,7 @@ const DEFAULT_SETTINGS = {
   showLogWindow:        true,
   discordRPC:           false,
   fontWeight:           400,
+  fontSize:             100,
   colorAccent:          '#4ade80',
   colorHover:           '#86efac',
   colorActive:          '#22c55e',
@@ -269,11 +301,21 @@ function createTray() {
     tray = new Tray(trayIcon)
     tray.setToolTip('VoxelXClient')
 
+    const openMainWindow = () => {
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        createMainWindow()
+        return
+      }
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+
     const menuIcon = fs.existsSync(ICON_PATH)
       ? nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 })
       : undefined
 
-    tray.setContextMenu(Menu.buildFromTemplate([
+    const trayMenu = Menu.buildFromTemplate([
       {
         label: 'VoxelXClient', enabled: false,
         ...(menuIcon ? { icon: menuIcon } : {}),
@@ -281,10 +323,7 @@ function createTray() {
       { type: 'separator' },
       {
         label: 'Mở VoxelXClient',
-        click: () => {
-          if (mainWindow) { mainWindow.show(); mainWindow.focus() }
-          else createMainWindow()
-        },
+        click: () => openMainWindow(),
       },
       {
         label: 'Kiểm tra cập nhật...',
@@ -295,16 +334,18 @@ function createTray() {
         label: 'Thoát',
         click: () => { app.isQuitting = true; app.quit() },
       },
-    ]))
+    ])
 
     tray.on('click', () => {
-      if (mainWindow) { mainWindow.show(); mainWindow.focus() }
-      else createMainWindow()
+      openMainWindow()
     })
 
     tray.on('double-click', () => {
-      if (mainWindow) { mainWindow.show(); mainWindow.focus() }
-      else createMainWindow()
+      openMainWindow()
+    })
+
+    tray.on('right-click', () => {
+      tray.popUpContextMenu(trayMenu)
     })
   } catch (err) {
     console.error('[Tray] Failed to create tray:', err.message)
@@ -640,6 +681,76 @@ function compareVersions(a, b) {
   return 0
 }
 
+function fetchGitHubReleaseByTag(repo, tag, currentVersion) {
+  const https = require('https')
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      `https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`,
+      {
+        headers: {
+          'User-Agent': 'VoxelXClient/' + currentVersion,
+          'Accept': 'application/vnd.github+json',
+        },
+        timeout: 8000,
+      },
+      (res) => {
+        let body = ''
+        res.on('data', c => { body += c })
+        res.on('end', () => {
+          if (res.statusCode === 404) {
+            resolve(null)
+            return
+          }
+          if (res.statusCode !== 200) {
+            reject(new Error(`GitHub API returned HTTP ${res.statusCode}`))
+            return
+          }
+          try { resolve(JSON.parse(body)) }
+          catch { reject(new Error('Invalid JSON from GitHub API')) }
+        })
+      }
+    )
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')) })
+  })
+}
+
+ipcMain.handle('patchnotes:getCurrentVersion', async (e) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+
+  const currentVersion = app.getVersion()
+
+  try {
+    const release =
+      await fetchGitHubReleaseByTag(GITHUB_REPO, `v${currentVersion}`, currentVersion) ||
+      await fetchGitHubReleaseByTag(GITHUB_REPO, currentVersion, currentVersion)
+
+    if (!release) {
+      return {
+        ok: false,
+        currentVersion,
+        message: 'Không tìm thấy patch note cho phiên bản hiện tại.',
+      }
+    }
+
+    return {
+      ok: true,
+      currentVersion,
+      version: (release.tag_name || currentVersion).replace(/^v/, ''),
+      title: release.name || `VoxelXClient ${currentVersion}`,
+      body: release.body || '',
+      htmlUrl: release.html_url || `https://github.com/${GITHUB_REPO}/releases`,
+      publishedAt: release.published_at || null,
+    }
+  } catch (err) {
+    return {
+      ok: false,
+      currentVersion,
+      message: `Không thể tải patch note: ${err.message}`,
+    }
+  }
+})
+
 ipcMain.handle('app:version', (e) => {
   if (!getTrustedWindow(e)) return null
   return app.getVersion()
@@ -816,109 +927,6 @@ ipcMain.handle('fabric:getLoaderVersions', async (e, gameVersion) => {
       }).on('error', reject)
     })
     return { ok: true, data: data.map(item => ({ version: item.loader.version, stable: item.loader.stable })) }
-  } catch (err) {
-    return { error: err.message }
-  }
-})
-
-// ─── Forge Meta API IPC ───────────────────────────────────────────────────────
-ipcMain.handle('forge:getVersions', async (e, gameVersion) => {
-  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-  if (typeof gameVersion !== 'string' || !/^[a-zA-Z0-9._+\-]+$/.test(gameVersion)) {
-    return { error: 'Invalid game version' }
-  }
-  try {
-    const https = require('https')
-
-    function httpsGet(url) {
-      return new Promise((resolve, reject) => {
-        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
-          let body = ''
-          res.on('data', chunk => { body += chunk })
-          res.on('end', () => {
-            if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
-            resolve(body)
-          })
-        }).on('error', reject)
-      })
-    }
-    const [xmlBody, promoBody] = await Promise.all([
-      httpsGet('https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml'),
-      httpsGet('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json'),
-    ])
-
-    const allVersions = []
-    const versionRe = /<version>([^<]+)<\/version>/g
-    let m
-    while ((m = versionRe.exec(xmlBody)) !== null) {
-      allVersions.push(m[1])
-    }
-
-    const prefix = gameVersion + '-'
-    const filtered = allVersions
-      .filter(v => v.startsWith(prefix))
-      .map(v => v.slice(prefix.length))
-
-    const promos = JSON.parse(promoBody).promos || {}
-    const recommended = promos[`${gameVersion}-recommended`] || null
-    const latest      = promos[`${gameVersion}-latest`]      || null
-
-    return { ok: true, data: { versions: filtered, recommended, latest } }
-  } catch (err) {
-    return { error: err.message }
-  }
-})
-
-// ─── NeoForge Meta API IPC ────────────────────────────────────────────────────
-ipcMain.handle('neoforge:getVersions', async (e, gameVersion) => {
-  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-  if (typeof gameVersion !== 'string' || !/^[a-zA-Z0-9._+\-]+$/.test(gameVersion)) {
-    return { error: 'Invalid game version' }
-  }
-  try {
-    const https = require('https')
-
-    function httpsGet(url) {
-      return new Promise((resolve, reject) => {
-        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
-          let body = ''
-          res.on('data', chunk => { body += chunk })
-          res.on('end', () => {
-            if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
-            resolve(body)
-          })
-        }).on('error', reject)
-      })
-    }
-
-    const mcParts = gameVersion.split('.')
-
-    const mcMinor = mcParts[1] ?? '0'
-    const mcPatch = mcParts[2] ?? '0'
-    const prefix  = `${mcMinor}.${mcPatch}.`
-
-    const dirRe = /href="\.\/([\d]+\.[\d]+\.[\d]+)\/"/g
-    const allVersions = []
-    let m
-    while ((m = dirRe.exec(html)) !== null) {
-      allVersions.push(m[1])
-    }
-
-    const filtered = allVersions
-      .filter(v => v.startsWith(prefix))
-      .sort((a, b) => {
-        const aParts = a.split('.').map(Number)
-        const bParts = b.split('.').map(Number)
-        for (let i = 0; i < 3; i++) {
-          const diff = (bParts[i] ?? 0) - (aParts[i] ?? 0)
-          if (diff !== 0) return diff
-        }
-        return 0
-      })
-
-    const latest = filtered[0] || null
-
-    return { ok: true, data: { versions: filtered, latest } }
   } catch (err) {
     return { error: err.message }
   }

@@ -12,6 +12,37 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
+ */
+
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { parseColors, getLineLevel, getLineColor } from './serverColorUtils.jsx'
 import ServerFileManager from './ServerFileManager'
@@ -66,6 +97,9 @@ export default function ServerConsole({ server, onBack }) {
     const unsubDl = window.electronAPI.onServerDownloadProgress(data => {
       if (data.serverId !== server.id) return
       setDlProgress(data)
+      if ((data?.percent ?? 0) >= 100) {
+        setDownloading(false)
+      }
     })
 
     const unsubTunnel = window.electronAPI.onServerTunnelLog?.((data) => {
@@ -111,16 +145,45 @@ export default function ServerConsole({ server, onBack }) {
 
   async function handleStart() {
     if (!isElectron) return
-    if (!server.jarFile) {
-      setDownloading(true)
-      setDlProgress({ percent: 0 })
-      const r = await window.electronAPI.serverDownloadJar(server.id)
+
+    try {
+      if (!server.jarFile) {
+        setDownloading(true)
+        setDlProgress({ percent: 0 })
+        setLogs(prev => [...prev, '[Server] Đang tải server jar...'])
+
+        const r = await window.electronAPI.serverDownloadJar(server.id)
+
+        setDownloading(false)
+        setDlProgress(null)
+
+        if (r?.error) {
+          setLogs(prev => [...prev, `[ERR] ${r.error}`])
+          return
+        }
+
+        server.jarFile = r.jarPath?.split(/[\\/]/).pop()
+        setLogs(prev => [...prev, `[Server] Tải xong: ${server.jarFile || 'server.jar'}`])
+      }
+
+      setStatus('starting')
+      setLogs(prev => [...prev, '[Server] Đang khởi động server...'])
+
+      const startResult = await window.electronAPI.serverStart(server.id)
+      if (startResult?.error) {
+        setStatus('offline')
+        setLogs(prev => [...prev, `[ERR] ${startResult.error}`])
+        return
+      }
+
       setDownloading(false)
       setDlProgress(null)
-      if (r?.error) { setLogs(prev => [...prev, `[ERR] ${r.error}`]); return }
-      server.jarFile = r.jarPath?.split(/[\\/]/).pop()
+    } catch (err) {
+      setDownloading(false)
+      setDlProgress(null)
+      setStatus('offline')
+      setLogs(prev => [...prev, `[ERR] ${err?.message || 'Không thể khởi động server'}`])
     }
-    window.electronAPI.serverStart(server.id)
   }
 
   async function handleStop() {
