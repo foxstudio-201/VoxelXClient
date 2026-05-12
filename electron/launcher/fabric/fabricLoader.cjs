@@ -1,16 +1,18 @@
-'use strict'
 /**
- * fabricLoader.cjs
- * Download Fabric loader profile and merge with vanilla version JSON.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * Fabric launch flow:
- *  1. Fetch loader profile: GET /v2/versions/loader/{mcVersion}/{loaderVersion}/profile/json
- *  2. The profile JSON contains:
- *     - mainClass (net.fabricmc.loader.impl.launch.knot.KnotClient)
- *     - libraries[] with Fabric + Intermediary jars
- *  3. Download all Fabric libraries from Maven
- *  4. Merge: vanilla libraries + Fabric libraries, use Fabric mainClass
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const https  = require('https')
 const http   = require('http')
@@ -64,7 +66,6 @@ function downloadFile(url, destPath) {
   })
 }
 
-// Convert Maven coordinate to path: "net.fabricmc:fabric-loader:0.16.9" -> "net/fabricmc/fabric-loader/0.16.9/fabric-loader-0.16.9.jar"
 function mavenToPath(name) {
   const parts = name.split(':')
   if (parts.length < 3) return null
@@ -74,17 +75,9 @@ function mavenToPath(name) {
 }
 
 // ─── Main: setup Fabric ───────────────────────────────────────────────────────
-/**
- * Fetch Fabric loader profile, download libraries, return merged launch info.
- *
- * @param {string} mcVersion      - e.g. "1.21.4"
- * @param {string} loaderVersion  - e.g. "0.16.9"
- * @param {string} librariesDir   - where to store downloaded jars
- * @param {function} onProgress   - callback({ done, total, log })
- * @returns {{ mainClass, extraLibraries }}
- */
+
 async function setupFabric(mcVersion, loaderVersion, librariesDir, onProgress) {
-  // 1. Fetch Fabric loader profile JSON
+
   const profileUrl = `${FABRIC_META}/v2/versions/loader/${encodeURIComponent(mcVersion)}/${encodeURIComponent(loaderVersion)}/profile/json`
   onProgress?.({ log: `Fetching Fabric profile for ${mcVersion} + loader ${loaderVersion}...`, done: 0, total: 0 })
 
@@ -93,15 +86,13 @@ async function setupFabric(mcVersion, loaderVersion, librariesDir, onProgress) {
   const mainClass = fabricProfile.mainClass
   if (!mainClass) throw new Error('Fabric profile missing mainClass')
 
-  // 2. Collect Fabric libraries
   const fabricLibs = fabricProfile.libraries || []
   const libPaths = []
   let done = 0
   const total = fabricLibs.length
 
   for (const lib of fabricLibs) {
-    // lib.name = "net.fabricmc:fabric-loader:0.16.9"
-    // lib.url  = "https://maven.fabricmc.net/" (base URL)
+
     const relPath = mavenToPath(lib.name)
     if (!relPath) { done++; continue }
 
@@ -109,7 +100,7 @@ async function setupFabric(mcVersion, loaderVersion, librariesDir, onProgress) {
     libPaths.push(destPath)
 
     if (!fs.existsSync(destPath)) {
-      // Try lib.url first, fallback to Fabric Maven
+
       const baseUrl = (lib.url || FABRIC_MAVEN + '/').replace(/\/$/, '')
       const downloadUrl = `${baseUrl}/${relPath}`
 
@@ -125,3 +116,4 @@ async function setupFabric(mcVersion, loaderVersion, librariesDir, onProgress) {
 }
 
 module.exports = { setupFabric }
+

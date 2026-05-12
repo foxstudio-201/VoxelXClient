@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useToast } from '../../hooks/useToast'
 import ProfileCard from './ProfileCard'
@@ -20,17 +34,17 @@ const LOADER_FILTERS = [
 ]
 // ─── Inline splash logo ────────────────────────────────────────────────────────
 function SplashLogoInline({ size = 64, label }) {
-  const s = size / 4.5 // block size
-  const d1 = size * 0.14 // close position
-  const d2 = size * 0.30 // expanded position
+  const s = size / 4.5
+  const d1 = size * 0.14
+  const d2 = size * 0.30
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-        {/* Glow */}
+        {}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="bg-green-500/15 rounded-full blur-2xl" style={{ width: size * 0.8, height: size * 0.8, animation: 'play-logo-glow 3s ease-in-out infinite' }} />
         </div>
-        {/* 4 blocks */}
+        {}
         <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#4ade80', boxShadow: '0 0 10px #4ade8099', animation: 'play-logo-tl 3s ease-in-out 0s infinite' }} />
         <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#22c55e', boxShadow: '0 0 10px #22c55e99', animation: 'play-logo-tr 3s ease-in-out 0.06s infinite' }} />
         <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#16a34a', boxShadow: '0 0 10px #16a34a99', animation: 'play-logo-bl 3s ease-in-out 0.12s infinite' }} />
@@ -167,10 +181,10 @@ function GroupCard({ group, onOpen, onDelete }) {
       className="flex flex-col rounded-2xl overflow-hidden border border-white/5 hover:border-white/10 bg-[#141414] transition-all duration-200 cursor-pointer group"
       onClick={() => onOpen(group.id)}
     >
-      {/* 2x2 icon grid */}
+      {}
       <div className="grid grid-cols-2 gap-0.5 p-3 pb-2">
         {previewProfiles.map(p => {
-          // importIconUrl (modpack) > loader icon (manual profile)
+
           const icon = p.importIconUrl || LOADER_ICONS_MAP[p.loader] || null
           const isLoaderIcon = !p.importIconUrl && !!icon
           return (
@@ -198,7 +212,7 @@ function GroupCard({ group, onOpen, onDelete }) {
         ))}
       </div>
 
-      {/* Info */}
+      {}
       <div className="flex items-center gap-2 px-3 pb-3">
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm text-white truncate">{group.name}</p>
@@ -290,7 +304,7 @@ function CreateGroupModal({ onClose, onCreate }) {
 function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSelect, onDelete, onCancelDelete, onRemoveFromGroup }) {
   return (
     <div className="flex flex-col h-full">
-      {/* Back header */}
+      {}
       <div className="flex-shrink-0 flex items-center gap-3 px-6 pt-4 pb-3">
         <button onClick={onBack}
           className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
@@ -358,7 +372,7 @@ export default function PlayPage() {
   const [showDropdown, setShowDropdown]           = useState(false)
   const [showCreateGroup, setShowCreateGroup]     = useState(false)
   const [deleteConfirm, setDeleteConfirm]         = useState(null)
-  const [activeTab, setActiveTab]                 = useState('profiles') // 'profiles' | 'groups'
+  const [activeTab, setActiveTab]                 = useState('profiles')
   const [loaderFilter, setLoaderFilter]           = useState('all')
   const [selectedGroupId, setSelectedGroupId]     = useState(null)
   const dropdownRef                               = useRef(null)
@@ -383,7 +397,6 @@ export default function PlayPage() {
 
   useEffect(() => { loadProfiles() }, [loadProfiles])
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -423,7 +436,7 @@ export default function PlayPage() {
     setDeleteConfirm(null)
     setProfiles(result.data.profiles || [])
     setSelectedProfileId(result.data.selectedProfileId || null)
-    // Reload groups to reflect removed profileId
+
     if (isElectron) {
       const gd = await window.electronAPI.getGroups()
       setGroups(gd.groups || [])
@@ -439,7 +452,7 @@ export default function PlayPage() {
     }
     setProfiles(result.data.profiles || [])
     setSelectedProfileId(result.data.selectedProfileId || null)
-    // Add to group if groupId provided
+
     if (profileData.groupId && isElectron) {
       await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
       const gd = await window.electronAPI.getGroups()
@@ -504,7 +517,6 @@ export default function PlayPage() {
     setGroups(gd.groups || [])
   }
 
-  // Filtered profiles for "All Profiles" tab
   const filteredProfiles = profiles.filter(p => {
     if (loaderFilter === 'all') return true
     if (loaderFilter === 'modpack') return !!p.importSource
@@ -515,10 +527,10 @@ export default function PlayPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header — bỏ chữ "Play", chỉ giữ buttons */}
+      {}
       <div className="flex-shrink-0 flex items-center justify-between px-6 pt-5 pb-3">
         <div className="flex items-center gap-2">
-          {/* Subtabs — to hơn, nằm trong header */}
+          {}
           <button
             onClick={() => { setActiveTab('profiles'); setSelectedGroupId(null) }}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -545,7 +557,7 @@ export default function PlayPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* New Group button — only in groups tab */}
+          {}
           {activeTab === 'groups' && !selectedGroupId && (
             <button
               onClick={() => setShowCreateGroup(true)}
@@ -557,7 +569,7 @@ export default function PlayPage() {
               New Group
             </button>
           )}
-          {/* Create profile dropdown */}
+          {}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(v => !v)}
@@ -598,7 +610,7 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {/* Loader filter pills — only in profiles tab, to hơn */}
+      {}
       {activeTab === 'profiles' && (
         <div className="flex-shrink-0 flex items-center gap-2 px-6 pb-3 flex-wrap">
           {LOADER_FILTERS.map(f => {
@@ -616,7 +628,7 @@ export default function PlayPage() {
                 {f.icon
                   ? <img src={f.icon} alt={f.label} className="w-4 h-4 object-contain" />
                   : f.id === 'modpack'
-                    ? /* Modpack: icon hộp/package rõ hơn */
+                    ?
                       <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4" style={{ color: isActive ? f.color : 'rgba(255,255,255,0.4)' }}>
                         <path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A1 1 0 013 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9M12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15M5 15.91l6 3.38v-6.71L5 9.21v6.7m14 0v-6.7l-6 3.37v6.71l6-3.38z"/>
                       </svg>
@@ -633,9 +645,9 @@ export default function PlayPage() {
 
       <div className="border-t border-white/5 flex-shrink-0" />
 
-      {/* Content */}
+      {}
       {activeTab === 'groups' && selectedGroup ? (
-        /* Group detail view */
+
         <GroupDetailView
           group={selectedGroup}
           selectedProfileId={selectedProfileId}
@@ -647,7 +659,7 @@ export default function PlayPage() {
           onRemoveFromGroup={handleRemoveFromGroup}
         />
       ) : activeTab === 'groups' ? (
-        /* Groups grid */
+
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {loading ? (
             <div className="flex items-center justify-center h-48">
@@ -685,7 +697,7 @@ export default function PlayPage() {
           )}
         </div>
       ) : (
-        /* Profiles tab */
+
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
           {loading ? (
             <div className="flex items-center justify-center h-48">
@@ -733,7 +745,7 @@ export default function PlayPage() {
         </div>
       )}
 
-      {/* Create profile modal */}
+      {}
       {showCreate && (
         <CreateProfileModal
           groups={groups}
@@ -742,7 +754,7 @@ export default function PlayPage() {
         />
       )}
 
-      {/* Import modal */}
+      {}
       {showImport && (
         <ImportProfileModal
           groups={groups}
@@ -751,7 +763,7 @@ export default function PlayPage() {
         />
       )}
 
-      {/* Create group modal */}
+      {}
       {showCreateGroup && (
         <CreateGroupModal
           onClose={() => setShowCreateGroup(false)}
@@ -761,3 +773,4 @@ export default function PlayPage() {
     </div>
   )
 }
+

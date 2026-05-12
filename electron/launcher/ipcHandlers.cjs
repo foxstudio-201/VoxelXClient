@@ -1,4 +1,18 @@
-﻿'use strict'
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+'use strict'
 
 const { ipcMain } = require('electron')
 const path = require('path')
@@ -37,22 +51,16 @@ function readSettings() {
   catch { return {} }
 }
 
-// Track running game processes
-// Key: `${profileId}::${accountId}` - allows same profile with different accounts
 const runningGames = new Map()
 
 function makeKey(profileId, accountId) {
   return `${profileId}::${accountId}`
 }
 
-
 const { createLogWindow } = require('./logWindow.cjs')
 
-
-// --- IPC Handlers ---
 function registerLauncherHandlers(getTrustedWindow) {
 
-  // launcher:launch
   ipcMain.handle('launcher:launch', async (e, { profileId, ramMb }) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -81,7 +89,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     const instancePath = profile.instancePath
     if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
 
-    // Create launcher_profiles.json if missing — required by Forge installer
     const launcherProfilesPath = path.join(instancePath, 'launcher_profiles.json')
     if (!fs.existsSync(launcherProfilesPath)) {
       fs.writeFileSync(launcherProfilesPath, JSON.stringify({
@@ -93,12 +100,6 @@ function registerLauncherHandlers(getTrustedWindow) {
       }, null, 2))
     }
 
-    // All game files stored inside the profile's instancePath:
-    //   instancePath/runtimes/   <- Java runtime (per-profile)
-    //   instancePath/versions/   <- version JSON + client.jar
-    //   instancePath/libraries/  <- classpath libraries
-    //   instancePath/assets/     <- textures, sounds
-    //   instancePath/accounts/<accountId>/  <- saves, options (per-account)
     const sharedPath  = instancePath
     const runtimesDir = path.join(instancePath, 'runtimes')
     const gameDataDir = path.join(instancePath, 'accounts', account.id)
@@ -108,23 +109,20 @@ function registerLauncherHandlers(getTrustedWindow) {
       if (!win.isDestroyed()) win.webContents.send('launcher:progress', data)
     }
 
-    // ── Log file setup (trước khi bắt đầu download) ─────────────────────
     const logsDir = path.join(profile.instancePath, 'logs')
     if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true })
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19)
     const logFilePath = path.join(logsDir, `${timestamp}.log`)
     const logStream = fs.createWriteStream(logFilePath, { flags: 'a', encoding: 'utf-8' })
-    logStream.on('error', () => {}) // prevent unhandled error events
+    logStream.on('error', () => {})
 
     function writeLog(line) {
       if (!win.isDestroyed()) win.webContents.send('launcher:log', { line })
       if (logStream.writable) { try { logStream.write(line + '\n') } catch {} }
-      // Also forward to log window if it exists
+
       if (logWinRef && !logWinRef.isDestroyed()) logWinRef.webContents.send('launcher:log', { line })
     }
 
-    // writeLogUpdate — replaces the last line in the log panel (for progress updates)
-    // Throttles file writes to avoid spam — only writes to file every 1 second
     let lastFileWriteTime = 0
     function writeLogUpdate(line) {
       if (!win.isDestroyed()) win.webContents.send('launcher:logUpdate', { line })
@@ -136,7 +134,6 @@ function registerLauncherHandlers(getTrustedWindow) {
       if (logWinRef && !logWinRef.isDestroyed()) logWinRef.webContents.send('launcher:logUpdate', { line })
     }
 
-    // logWinRef is set after createLogWindow is called
     let logWinRef = null
 
     function sendProgressAndLog(data) {
@@ -144,7 +141,6 @@ function registerLauncherHandlers(getTrustedWindow) {
       if (data.log) writeLog(`[Launcher] ${data.log}`)
     }
 
-    // sendProgressAndUpdate — sends progress + updates last log line (no new line appended in UI)
     function sendProgressAndUpdate(data) {
       sendProgress(data)
       if (data.log) writeLogUpdate(`[Launcher] ${data.log}`)
@@ -156,8 +152,6 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       sendProgressAndLog({ phase: 'java', log: 'Checking Java runtime...', percent: 5 })
 
-      // Ưu tiên Java do user chọn (lưu trong profile.javaPath = instancePath/jre/bin/java)
-      // Nếu không có thì dùng Mojang-managed Java
       let javaPath
       if (profile.javaPath && fs.existsSync(profile.javaPath)) {
         javaPath = profile.javaPath
@@ -204,7 +198,7 @@ function registerLauncherHandlers(getTrustedWindow) {
         } else if (p.phase === 'done') {
           sendProgressAndLog({ phase: 'assets', log: p.log, percent: pct })
         } else {
-          // Same phase → update the last line (no new line in UI)
+
           sendProgressAndUpdate({
             phase: 'assets',
             log: p.log || `Assets: ${p.doneFiles}/${p.totalFiles}`,
@@ -218,7 +212,6 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       sendProgressAndLog({ phase: 'launching', log: `Launching as ${account.username}...`, percent: 98 })
 
-      // Auto-refresh Microsoft token nếu sắp hết hạn (< 5 phút)
       let accessToken = account.type === 'microsoft' ? (account.mcToken || '0') : '0'
       if (account.type === 'microsoft' && account.msRefreshToken) {
         const fiveMin = 5 * 60 * 1000
@@ -228,7 +221,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           try {
             const { refreshMinecraftToken } = require('../msAuth.cjs')
             const refreshed = await refreshMinecraftToken(account.msRefreshToken)
-            // Lưu token mới vào accounts.json
+
             const accountsPath = path.join(DATA_DIR, 'accounts.json')
             try {
               const accountsData2 = JSON.parse(fs.readFileSync(accountsPath, 'utf-8'))
@@ -253,7 +246,6 @@ function registerLauncherHandlers(getTrustedWindow) {
         }
       }
 
-      // ── Fabric loader setup ──────────────────────────────────────────────
       let mainClassOverride = null
       let extraLibraries    = []
       let extraJvmArgs      = []
@@ -276,49 +268,38 @@ function registerLauncherHandlers(getTrustedWindow) {
         )
         mainClassOverride = fabricResult.mainClass
 
-        // Deduplicate: Fabric libs take priority over vanilla libs with same artifact
-        // Extract artifact id (groupId:artifactId) from jar path to detect duplicates
         function getArtifactKey(jarPath) {
-          // e.g. .../org/ow2/asm/asm/9.6/asm-9.6.jar -> "org/ow2/asm/asm"
+
           const normalized = jarPath.replace(/\\/g, '/')
           const match = normalized.match(/libraries\/(.+)\/[^/]+\/[^/]+\.jar$/)
           return match ? match[1] : jarPath
         }
 
-        // Build set of artifact keys from Fabric libs
         const fabricKeys = new Set(fabricResult.extraLibraries.map(getArtifactKey))
 
-        // Filter vanilla libs — remove any that conflict with Fabric libs
         const filteredVanillaLibs = assets.libraries.filter(lib => {
           const key = getArtifactKey(lib)
           return !fabricKeys.has(key)
         })
 
         extraLibraries = fabricResult.extraLibraries
-        // Fabric libs go FIRST in classpath so they take precedence
+
         assets.libraries = [...extraLibraries, ...filteredVanillaLibs]
-        extraLibraries = [] // already merged into assets.libraries
+        extraLibraries = []
 
         sendProgressAndLog({ phase: 'fabric', log: `Fabric ready. Main: ${mainClassOverride}`, percent: 97 })
 
-        // Auto-install Fabric API + Mod Menu from Modrinth
         sendProgressAndLog({ phase: 'fabric_mods', log: 'Checking Fabric mods (Fabric API, Mod Menu)...', percent: 97 })
         const modsDir = path.join(gameDataDir, 'mods')
         await ensureFabricMods(profile.gameVersion, modsDir, (p) => {
           sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97, doneFiles: p.done, totalFiles: p.total })
         })
 
-        // ── VoxelXSkin mod injection ──────────────────────────────────────
-        // Fabric supports loading extra mods via the JVM property:
-        //   -Dfabric.addMods=<path1>;<path2>
-        // This is the correct way to inject mods outside the mods/ folder.
-        // The jar is stored in instancePath/.vxc/ (hidden dir, not shown in mod list).
         try {
           const gameVer = profile.gameVersion
           const mcMajor = gameVer?.split('.').slice(0, 2).join('.')
           const modSkinDir = path.join(__dirname, '../../mod-skin')
 
-          // Find best matching JAR: exact version first, then major.minor fallback
           let skinJarSrc = null
           const exactJar = path.join(modSkinDir, `VoxelXSkin-${gameVer}.jar`)
           const majorJar = path.join(modSkinDir, `VoxelXSkin-${mcMajor}.jar`)
@@ -327,7 +308,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           else if (fs.existsSync(majorJar)) skinJarSrc = majorJar
 
           if (skinJarSrc) {
-            // Copy to hidden dir inside instancePath
+
             const hiddenDir = path.join(instancePath, '.vxc')
             if (!fs.existsSync(hiddenDir)) {
               fs.mkdirSync(hiddenDir, { recursive: true })
@@ -338,19 +319,16 @@ function registerLauncherHandlers(getTrustedWindow) {
             const jarName    = path.basename(skinJarSrc)
             const skinJarDest = path.join(hiddenDir, jarName)
 
-            // Copy only if missing or size changed
             const srcStat  = fs.statSync(skinJarSrc)
             const destStat = fs.existsSync(skinJarDest) ? fs.statSync(skinJarDest) : null
             if (!destStat || destStat.size !== srcStat.size) {
               fs.copyFileSync(skinJarSrc, skinJarDest)
             }
 
-            // Inject via -Dfabric.addMods — Fabric's official extra-mod loading mechanism
-            // Multiple paths are separated by the OS path separator (; on Windows, : on Unix)
             const sep = process.platform === 'win32' ? ';' : ':'
             const existingAddMods = extraJvmArgs.find(a => typeof a === 'string' && a.startsWith('-Dfabric.addMods='))
             if (existingAddMods) {
-              // Append to existing property
+
               const idx = extraJvmArgs.indexOf(existingAddMods)
               extraJvmArgs[idx] = existingAddMods + sep + skinJarDest
             } else {
@@ -359,7 +337,6 @@ function registerLauncherHandlers(getTrustedWindow) {
 
             sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXSkin ${gameVer} injected via fabric.addMods.`, percent: 97 })
 
-            // Write launcher_profile.json so the mod knows which UUID to apply skin for
             try {
               const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
               if (!fs.existsSync(vxcConfigDir)) fs.mkdirSync(vxcConfigDir, { recursive: true })
@@ -371,7 +348,6 @@ function registerLauncherHandlers(getTrustedWindow) {
               writeLog(`[WARN] VoxelXSkin config write failed: ${cfgErr.message}`)
             }
 
-            // Write skins.json from saved skin preferences
             try {
               const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
               const skinsPath = path.join(vxcConfigDir, 'skins.json')
@@ -404,7 +380,6 @@ function registerLauncherHandlers(getTrustedWindow) {
         }
       }
 
-      // ── Forge loader setup ───────────────────────────────────────────────
       if (profile.loader === 'forge' && profile.loaderVersion) {
         sendProgressAndLog({ phase: 'forge', log: `Setting up Forge ${profile.loaderVersion}...`, percent: 93 })
         const forgeLibsDir = path.join(sharedPath, 'libraries')
@@ -416,7 +391,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           forgeLibsDir,
           assets.clientJar,
           javaPath,
-          sharedPath,   // instanceRoot — for {ROOT} variable in processors
+          sharedPath,
           (p) => {
             const phaseChanged = p.phase !== lastForgePhase
             if (phaseChanged) {
@@ -442,16 +417,12 @@ function registerLauncherHandlers(getTrustedWindow) {
         const forgeKeys = new Set(forgeResult.extraLibraries.map(getArtifactKey))
         const filteredVanillaLibs = assets.libraries.filter(lib => !forgeKeys.has(getArtifactKey(lib)))
 
-        // Forge libs go FIRST in classpath
         assets.libraries = [...forgeResult.extraLibraries, ...filteredVanillaLibs]
 
-        // Use forge-client.jar as custom client JAR (xvl_src approach)
-        // forge-client.jar is the patched Minecraft client that includes Forge's module setup
         if (forgeResult.customClientJar) {
           assets.clientJar = forgeResult.customClientJar
         }
 
-        // Forge 1.17+ uses module system — needs vanilla -cp without clientJar
         if (forgeResult.needsVanillaClasspath) {
           extraJvmArgs = [...extraJvmArgs, '__needsVanillaClasspath__']
         }
@@ -459,7 +430,6 @@ function registerLauncherHandlers(getTrustedWindow) {
         sendProgressAndLog({ phase: 'forge', log: `Forge ready. Main: ${mainClassOverride}`, percent: 97 })
       }
 
-      // ── NeoForge loader setup ────────────────────────────────────────────
       if (profile.loader === 'neoforge' && profile.loaderVersion) {
         sendProgressAndLog({ phase: 'neoforge', log: `Setting up NeoForge ${profile.loaderVersion}...`, percent: 93 })
         const neoforgeLibsDir = path.join(sharedPath, 'libraries')
@@ -503,7 +473,6 @@ function registerLauncherHandlers(getTrustedWindow) {
           assets.clientJar = neoforgeResult.customClientJar
         }
 
-        // NeoForge needs vanilla classpath (-cp) from versionJson — flag it
         if (neoforgeResult.needsVanillaClasspath) {
           extraJvmArgs = [...extraJvmArgs, '__needsVanillaClasspath__']
         }
@@ -513,7 +482,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       sendProgressAndLog({ phase: 'launching', log: `Launching as ${account.username}...`, percent: 98 })
       const logWin = showLog ? createLogWindow(win, profile.name, account.username) : null
-      // Set logWinRef so writeLog/writeLogUpdate can forward to log window
+
       logWinRef = logWin
 
       const proc = launchGame({
@@ -540,7 +509,7 @@ function registerLauncherHandlers(getTrustedWindow) {
         },
         onExit: (code) => {
           try { logStream.end() } catch {}
-          logWinRef = null  // clear reference after game exits
+          logWinRef = null
           const game = runningGames.get(gameKey)
           if (game) {
             const elapsed = game.stopTracker()
@@ -557,7 +526,6 @@ function registerLauncherHandlers(getTrustedWindow) {
         },
       })
 
-      // Hide launcher if setting enabled
       if (hideLauncher && !win.isDestroyed()) {
         win.hide()
       }
@@ -576,7 +544,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     }
   })
 
-  // launcher:stop
   ipcMain.handle('launcher:stop', (e, { profileId, accountId }) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const key = accountId ? makeKey(profileId, accountId) : null
@@ -596,7 +563,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     return stopped > 0 ? { ok: true, stopped } : { error: 'Game is not running' }
   })
 
-  // launcher:isRunning
   ipcMain.handle('launcher:isRunning', (e, { profileId, accountId }) => {
     if (!getTrustedWindow(e)) return false
     if (accountId) return runningGames.has(makeKey(profileId, accountId))
@@ -606,7 +572,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     return false
   })
 
-  // launcher:listRunning
   ipcMain.handle('launcher:listRunning', (e) => {
     if (!getTrustedWindow(e)) return []
     return Array.from(runningGames.keys()).map(key => {
@@ -615,7 +580,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     })
   })
 
-  // launcher:getStats
   ipcMain.handle('launcher:getStats', (e, { profileId }) => {
     if (!getTrustedWindow(e)) return null
     const profilesData = readProfiles()
@@ -624,7 +588,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     return getProfileStats(profile)
   })
 
-  // launcher:getLatestLog — đọc file log mới nhất của profile theo tên
   ipcMain.handle('launcher:getLatestLog', (e, { profileId }) => {
     if (!getTrustedWindow(e)) return null
     const profilesData = readProfiles()
@@ -656,7 +619,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     }
   })
 
-  // launcher:listLogs — liệt kê tất cả log files của profile
   ipcMain.handle('launcher:listLogs', (e, { profileId }) => {
     if (!getTrustedWindow(e)) return []
     const profilesData = readProfiles()
@@ -679,7 +641,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     }
   })
 
-  // ── CurseForge search ───────────────────────────────────────────────────────
   ipcMain.handle('curseforge:search', async (e, opts) => {
     return await cfSearch.searchProjects(opts)
   })
@@ -701,7 +662,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     })
   })
 
-  // ── Technic search ──────────────────────────────────────────────────────────
   ipcMain.handle('technic:search', async (e, opts) => {
     return await technicSearch.searchProjects(opts)
   })
@@ -720,7 +680,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     })
   })
 
-  // ── FTB search ──────────────────────────────────────────────────────────────
   ipcMain.handle('ftb:search', async (e, opts) => {
     return await ftbSearch.searchProjects(opts)
   })
@@ -739,15 +698,12 @@ function registerLauncherHandlers(getTrustedWindow) {
     })
   })
 
-  // ── Modrinth search & install ─────────────────────────────────────────────
-
   ipcMain.handle('modrinth:search', async (e, opts) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     try { return await searchProjects(opts) }
     catch (err) { return { error: err.message } }
   })
 
-  // ── Spiget (SpigotMC) search ──────────────────────────────────────────────
   ipcMain.handle('spiget:search', async (e, opts) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const { query = '', size = 20, page = 1 } = opts || {}
@@ -755,7 +711,7 @@ function registerLauncherHandlers(getTrustedWindow) {
     try {
       const data = await new Promise((resolve, reject) => {
         const encoded = encodeURIComponent(query || '*')
-        // If no query, list popular free resources sorted by downloads
+
         const url = query
           ? `https://api.spiget.org/v2/search/resources/${encoded}?size=${size}&page=${page}&sort=-downloads&fields=id,name,tag,icon,downloads,rating,testedVersions,premium,file`
           : `https://api.spiget.org/v2/resources/free?size=${size}&page=${page}&sort=-downloads&fields=id,name,tag,icon,downloads,rating,testedVersions,premium,file`
@@ -767,9 +723,9 @@ function registerLauncherHandlers(getTrustedWindow) {
           })
         }).on('error', reject).on('timeout', reject)
       })
-      // Normalize to array
+
       const list = Array.isArray(data) ? data : (data?.results || [])
-      // Attach icon URL
+
       const results = list.map(r => ({
         ...r,
         icon_url: r.icon?.url ? `https://www.spigotmc.org/${r.icon.url}` : null,
@@ -820,9 +776,7 @@ function registerLauncherHandlers(getTrustedWindow) {
     try { return await getCategories() }
     catch { return [] }
   })
-  // ── VoxelXSkin skin preferences ──────────────────────────────────────────
-  // skin:savePrefs — save skin/cape/elytra URL for an account UUID
-  // Stored in DATA_DIR/skin_prefs.json, applied to skins.json on next launch
+
   ipcMain.handle('skin:savePrefs', (e, { uuid, skinUrl, capeUrl, elytraUrl, skinPreview }) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!uuid || typeof uuid !== 'string') return { error: 'Invalid UUID' }
@@ -848,7 +802,6 @@ function registerLauncherHandlers(getTrustedWindow) {
     }
   })
 
-  // skin:getPrefs — get saved skin prefs for an account UUID
   ipcMain.handle('skin:getPrefs', (e, { uuid }) => {
     if (!getTrustedWindow(e)) return null
     if (!uuid) return null
@@ -864,3 +817,4 @@ function registerLauncherHandlers(getTrustedWindow) {
 }
 
 module.exports = { registerLauncherHandlers }
+

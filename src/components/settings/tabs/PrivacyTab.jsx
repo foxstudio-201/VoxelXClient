@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState } from 'react'
 
 const TOS_TEXT = `Chào mừng bạn đến với VoxelXClient. Bằng cách sử dụng phần mềm này, bạn đồng ý tuân thủ các điều khoản và điều kiện được nêu dưới đây. Vui lòng đọc kỹ trước khi tiếp tục sử dụng.
@@ -70,7 +84,7 @@ Nếu bạn có câu hỏi về Chính sách Quyền riêng tư này hoặc mu�
 function PolicySection({ title, badge, badgeColor, content, agreedKey, agreed, onAgree }) {
   return (
     <div className="mb-6">
-      {/* Header */}
+      {}
       <div className="flex items-center gap-2 mb-3">
         <p className="text-xs uppercase tracking-widest text-white/40">{title}</p>
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeColor}`}>
@@ -78,7 +92,7 @@ function PolicySection({ title, badge, badgeColor, content, agreedKey, agreed, o
         </span>
       </div>
 
-      {/* Content box */}
+      {}
       <div className="rounded-xl border border-white/5 bg-white/2 overflow-hidden">
         <div
           className="p-4 overflow-y-auto text-xs text-white/50 leading-relaxed whitespace-pre-line"
@@ -87,7 +101,7 @@ function PolicySection({ title, badge, badgeColor, content, agreedKey, agreed, o
           {content}
         </div>
 
-        {/* Agree checkbox */}
+        {}
         <div className="border-t border-white/5 px-4 py-3 flex items-center gap-3 bg-white/1">
           <button
             onClick={() => onAgree(agreedKey, !agreed)}
@@ -153,7 +167,7 @@ export default function PrivacyTab({ settings, onChange }) {
         onAgree={handleAgree}
       />
 
-      {/* Status banner */}
+      {}
       <div className={`
         rounded-xl border p-3 flex items-center gap-3 transition-all duration-300
         ${bothAgreed
@@ -190,3 +204,4 @@ export default function PrivacyTab({ settings, onChange }) {
     </div>
   )
 }
+

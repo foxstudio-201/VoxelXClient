@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useEffect, useRef } from 'react'
 import notifySound from '../assets/sound/notify.mp3'
 
@@ -54,16 +68,15 @@ const STYLES = {
 export default function Toast({ toast, visible, onDismiss }) {
   const audioRef = useRef(null)
 
-  // Play sound whenever toast becomes visible
   useEffect(() => {
     if (visible && toast) {
       if (!audioRef.current) {
         audioRef.current = new Audio(notifySound)
         audioRef.current.volume = 0.5
       }
-      // Reset and play
+
       audioRef.current.currentTime = 0
-      audioRef.current.play().catch(() => {/* autoplay blocked — silent fail */})
+      audioRef.current.play().catch(() => {})
     }
   }, [visible, toast?.id])
 
@@ -88,19 +101,19 @@ export default function Toast({ toast, visible, onDismiss }) {
         shadow-2xl shadow-black/50
         backdrop-blur-sm
       `}>
-        {/* Progress bar */}
+        {}
         <div
           className={`absolute top-0 left-0 h-[2px] ${s.bar} ${visible ? 'animate-toast-bar' : ''}`}
           style={{ width: visible ? '0%' : '100%' }}
         />
 
         <div className="flex items-start gap-3 px-4 py-3.5">
-          {/* Icon */}
+          {}
           <div className={`w-7 h-7 rounded-lg ${s.iconBg} ${s.icon} flex items-center justify-center flex-shrink-0 mt-0.5`}>
             {ICONS[toast.type]}
           </div>
 
-          {/* Text */}
+          {}
           <div className="flex-1 min-w-0 pt-0.5">
             {toast.title && (
               <p className="text-sm font-semibold text-white leading-tight">{toast.title}</p>
@@ -112,7 +125,7 @@ export default function Toast({ toast, visible, onDismiss }) {
             )}
           </div>
 
-          {/* Dismiss */}
+          {}
           <button
             onClick={onDismiss}
             className="w-5 h-5 flex items-center justify-center rounded text-white/20 hover:text-white/60 transition-colors flex-shrink-0 mt-0.5"
@@ -127,3 +140,4 @@ export default function Toast({ toast, visible, onDismiss }) {
     </div>
   )
 }
+

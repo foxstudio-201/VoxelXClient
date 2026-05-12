@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -45,7 +59,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
       if (r?.ok) { setLocalIp(r.localIp); setPublicIp(r.publicIp); setPort(r.port || '25565') }
       setLoadingIp(false)
     }).catch(() => setLoadingIp(false))
-    // NOTE: tunnel events are subscribed in ServerConsole to persist across tab switches
+
   }, [server?.id])
 
   useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [tunnelLog])
@@ -77,7 +91,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 
-      {/* LAN */}
+      {}
       <div>
         <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">Mạng nội bộ (LAN)</p>
         <div className="grid grid-cols-2 gap-2">
@@ -96,7 +110,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
         )}
       </div>
 
-      {/* Public IP */}
+      {}
       <div>
         <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">IP công cộng</p>
         <InfoCard label="IP công cộng" value={loadingIp ? 'Đang tải...' : publicIp} sub="Cần mở port trên router để dùng" />
@@ -112,7 +126,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
         </div>
       </div>
 
-      {/* bore tunnel */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -123,7 +137,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
             className="text-[10px] text-green-400/60 hover:text-green-400 transition-colors">bore →</a>
         </div>
 
-        {/* Tunnel address */}
+        {}
         {tunnelAddr && (
           <div className="mb-3">
             <InfoCard label="Địa chỉ tunnel — chia sẻ cho bạn bè" value={tunnelAddr}
@@ -131,7 +145,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
           </div>
         )}
 
-        {/* Controls */}
+        {}
         <div className="rounded-xl border border-white/8 bg-white/3 p-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -165,7 +179,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
             </div>
           </div>
 
-          {/* Log */}
+          {}
           {tunnelLog.length > 0 && (
             <div className="relative">
               <button onClick={() => navigator.clipboard.writeText(tunnelLog.join('\n'))}
@@ -191,7 +205,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
           )}
         </div>
 
-          {/* Defender warning */}
+          {}
           {tunnelStatus === 'error' && tunnelLog.some(l => l.includes('Defender') || l.includes('exclusion') || l.includes('UNKNOWN')) && (
             <div className="mt-2 rounded-xl p-3 border border-red-500/20 bg-red-500/5">
               <p className="text-xs text-red-400 font-semibold mb-1">⚠️ Windows Defender chặn bore.exe</p>
@@ -227,3 +241,4 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
     </div>
   )
 }
+

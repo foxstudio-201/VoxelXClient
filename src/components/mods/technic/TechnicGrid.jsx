@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import TechnicCard from './TechnicCard'
 
 export default function TechnicGrid({ results, loading, error, view, onSelect, hasMore, onLoadMore }) {
@@ -60,7 +74,7 @@ export default function TechnicGrid({ results, loading, error, view, onSelect, h
           </div>
         )}
 
-        {/* Load more */}
+        {}
         {hasMore && !loading && (
           <div className="flex justify-center py-4">
             <button
@@ -76,3 +90,4 @@ export default function TechnicGrid({ results, loading, error, view, onSelect, h
     </div>
   )
 }
+

@@ -26,25 +26,19 @@ const isDev = process.env.NODE_ENV === 'development'
 app.setAppUserModelId('com.voxelxclient.launcher')
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
-// In production (asar), public/ files are inside the asar archive and cannot be
-// accessed via fs.existsSync. We need to use process.resourcesPath for icons.
+
 function resolveIconPath() {
-  // Dev: relative to electron/main.cjs → ../public/icon.ico
+
   const devPath = path.join(__dirname, '../public/icon.ico')
   if (isDev && fs.existsSync(devPath)) return devPath
 
-  // Production: electron-builder copies extraResources to resources/
-  // but public/ is inside asar. Use __dirname which points to app.asar/electron/
-  // The asar-extracted path for resources is process.resourcesPath
   const resourcesIcon = path.join(process.resourcesPath, 'icon.ico')
   if (fs.existsSync(resourcesIcon)) return resourcesIcon
 
-  // Fallback: try next to the exe (portable build)
   const exeDir = path.dirname(process.execPath)
   const exeIcon = path.join(exeDir, 'resources', 'icon.ico')
   if (fs.existsSync(exeIcon)) return exeIcon
 
-  // Last resort: dev path even in prod (works if asar:false)
   return devPath
 }
 
@@ -83,7 +77,7 @@ function validateAccount(account) {
   if (typeof account.username !== 'string') return 'Username không hợp lệ'
   if (!USERNAME_RE.test(account.username)) return 'Username chỉ được chứa chữ, số và _ (3-16 ký tự)'
   if (typeof account.uuid !== 'string' || !/^[0-9a-f-]{36}$/.test(account.uuid)) return 'UUID không hợp lệ'
-  return null // ok
+  return null
 }
 
 function sanitizeAccount(account) {
@@ -165,13 +159,12 @@ let tray         = null
 function secureWebPrefs() {
   return {
     preload:                     path.join(__dirname, 'preload.cjs'),
-    contextIsolation:            true,   // renderer cannot access Node
-    nodeIntegration:             false,  // renderer cannot use Node APIs
+    contextIsolation:            true,
+    nodeIntegration:             false,
     nodeIntegrationInWorker:     false,
     nodeIntegrationInSubFrames:  false,
-    // sandbox: true — disabled on Windows due to GPU cache permission bug
-    // contextIsolation + nodeIntegration:false is sufficient security
-    webSecurity:                 true,   // enforce same-origin
+
+    webSecurity:                 true,
     allowRunningInsecureContent: false,
     experimentalFeatures:        false,
   }
@@ -269,7 +262,7 @@ function createTray() {
     if (fs.existsSync(ICON_PATH)) {
       trayIcon = nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 })
     } else {
-      // Fallback: empty icon so tray still works
+
       trayIcon = nativeImage.createEmpty()
     }
 
@@ -304,6 +297,11 @@ function createTray() {
       },
     ]))
 
+    tray.on('click', () => {
+      if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+      else createMainWindow()
+    })
+
     tray.on('double-click', () => {
       if (mainWindow) { mainWindow.show(); mainWindow.focus() }
       else createMainWindow()
@@ -315,8 +313,7 @@ function createTray() {
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
-  // Clean up any leftover update installers from previous sessions
-  // This prevents re-download loop if installer was cancelled or failed
+
   try {
     const os = require('os')
     const updateDir = path.join(os.tmpdir(), 'VoxelXClient-update')
@@ -371,7 +368,7 @@ app.whenReady().then(() => {
   })
 })
 
-app.on('window-all-closed', () => { /* run in tray */ })
+app.on('window-all-closed', () => {  })
 app.on('before-quit', () => { app.isQuitting = true })
 
 // ─── Window controls IPC ──────────────────────────────────────────────────────
@@ -399,22 +396,20 @@ ipcMain.on('window-close', (e) => {
 // ─── Updater IPC ──────────────────────────────────────────────────────────────
 const GITHUB_REPO = 'foxstudio-201/VoxelXClient'
 
-// updater:openUpdateWindow — open update window with pre-fetched check result
-// Called from splash when update is detected, hides main window
 ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-  // Hide main window (splash is part of main window)
+
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide()
-  // Open update window
+
   createUpdateWindow()
-  // Send the check result to update window once it's ready
+
   if (updateWindow && !updateWindow.isDestroyed()) {
     updateWindow.webContents.once('did-finish-load', () => {
       if (!updateWindow.isDestroyed()) {
         updateWindow.webContents.send('updater:preloadResult', checkResult)
       }
     })
-    // If already loaded, send immediately
+
     if (updateWindow.webContents.getURL() !== '') {
       setTimeout(() => {
         if (updateWindow && !updateWindow.isDestroyed()) {
@@ -448,7 +443,7 @@ ipcMain.handle('updater:check', async (e) => {
           let body = ''
           res.on('data', c => { body += c })
           res.on('end', () => {
-            // 404 = no releases yet
+
             if (res.statusCode === 404) {
               resolve(null)
               return
@@ -466,7 +461,6 @@ ipcMain.handle('updater:check', async (e) => {
       req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')) })
     })
 
-    // No releases published yet
     if (!data) {
       return {
         hasUpdate:      false,
@@ -482,27 +476,22 @@ ipcMain.handle('updater:check', async (e) => {
     const hasUpdate = latestVersion && latestVersion !== currentVersion
       && compareVersions(latestVersion, currentVersion) > 0
 
-    // Find the installer asset for current platform
     const assets = (data.assets || []).map(a => ({
       name:        a.name,
       downloadUrl: a.browser_download_url,
       size:        a.size,
     }))
 
-    // Pick best installer asset for current platform
-    // Windows: prefer "Setup" installer over portable exe
-    // If running as portable (not installed), skip auto-update — user must download manually
     let installerAsset = null
     if (process.platform === 'win32') {
-      // Detect if running as portable: portable exe is typically in Downloads, Desktop, or same dir as exe
-      // Installed version is in Program Files or AppData
+
       const exePath = process.execPath || ''
       const isInstalled = /program files/i.test(exePath) || /appdata/i.test(exePath)
       if (isInstalled) {
-        // Only auto-update installed version with Setup installer
+
         installerAsset = assets.find(a => /setup/i.test(a.name) && /\.exe$/i.test(a.name))
       }
-      // Portable: no auto-update (installerAsset stays null → hasUpdate still true but no download)
+
     } else if (process.platform === 'darwin') {
       installerAsset = assets.find(a => /\.dmg$/i.test(a.name))
     } else {
@@ -533,7 +522,6 @@ ipcMain.handle('updater:check', async (e) => {
   }
 })
 
-// updater:download — download installer to temp dir, report progress
 ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (typeof downloadUrl !== 'string' || !downloadUrl.startsWith('https://')) {
@@ -548,16 +536,15 @@ ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
 
   if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
-  // If file already fully downloaded, skip re-download
   if (fs.existsSync(tmpFile)) {
     const stat = fs.statSync(tmpFile)
-    if (stat.size > 1024 * 1024) { // > 1MB = likely complete
+    if (stat.size > 1024 * 1024) {
       if (!win.isDestroyed()) {
         win.webContents.send('updater:downloadProgress', { downloaded: stat.size, total: stat.size, percent: 100, speed: 0 })
       }
       return { ok: true, filePath: tmpFile, cached: true }
     }
-    // Incomplete file — delete and re-download
+
     try { fs.unlinkSync(tmpFile) } catch {}
   }
 
@@ -565,7 +552,7 @@ ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
     await new Promise((resolve, reject) => {
       function doGet(url) {
         https.get(url, { headers: { 'User-Agent': 'VoxelXClient/' + app.getVersion() } }, (res) => {
-          // Follow redirects (GitHub uses redirects for asset downloads)
+
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             return doGet(res.headers.location)
           }
@@ -596,19 +583,17 @@ ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
 
     return { ok: true, filePath: tmpFile }
   } catch (err) {
-    // Clean up partial download
+
     try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile) } catch {}
     return { error: err.message }
   }
 })
 
-// updater:install — run the downloaded installer and quit the app
 ipcMain.handle('updater:install', async (e, { filePath }) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (typeof filePath !== 'string') return { error: 'Invalid file path' }
   if (!fs.existsSync(filePath)) return { error: 'Installer file not found' }
 
-  // Validate path is inside temp dir
   const os = require('os')
   const tmpDir = path.join(os.tmpdir(), 'VoxelXClient-update')
   if (!filePath.startsWith(tmpDir)) return { error: 'Invalid installer path' }
@@ -616,11 +601,10 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
   try {
     const { spawn } = require('child_process')
 
-    // Wait a moment to ensure file is fully written and not locked by antivirus
     await new Promise(r => setTimeout(r, 1500))
 
     if (process.platform === 'win32') {
-      // Just run the NSIS installer directly — NSIS handles closing the old app
+
       spawn(filePath, [], {
         detached: true,
         stdio:    'ignore',
@@ -628,12 +612,11 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
     } else if (process.platform === 'darwin') {
       spawn('open', [filePath], { detached: true, stdio: 'ignore' }).unref()
     } else {
-      // Linux: make executable then run
+
       fs.chmodSync(filePath, 0o755)
       spawn(filePath, [], { detached: true, stdio: 'ignore' }).unref()
     }
 
-    // Delete installer file after launching to prevent re-install loop
     setTimeout(() => {
       try { fs.unlinkSync(filePath) } catch {}
       app.isQuitting = true
@@ -645,7 +628,6 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
   }
 })
 
-// Simple semver comparison: returns 1 if a > b, -1 if a < b, 0 if equal
 function compareVersions(a, b) {
   const pa = a.split('.').map(Number)
   const pb = b.split('.').map(Number)
@@ -875,7 +857,7 @@ ipcMain.handle('forge:getVersions', async (e, gameVersion) => {
     const prefix = gameVersion + '-'
     const filtered = allVersions
       .filter(v => v.startsWith(prefix))
-      .map(v => v.slice(prefix.length)) 
+      .map(v => v.slice(prefix.length))
 
     const promos = JSON.parse(promoBody).promos || {}
     const recommended = promos[`${gameVersion}-recommended`] || null
@@ -909,20 +891,12 @@ ipcMain.handle('neoforge:getVersions', async (e, gameVersion) => {
       })
     }
 
-    // NeoForge version format: <mcMinor>.<mcPatch>.<build>
-    // e.g. MC 1.21   → prefix "21.0."
-    //      MC 1.21.1 → prefix "21.1."
-    //      MC 1.21.4 → prefix "21.4."
-    //      MC 1.20.2 → prefix "20.2."
     const mcParts = gameVersion.split('.')
-    // mcParts: ["1","21"] or ["1","21","4"]
+
     const mcMinor = mcParts[1] ?? '0'
     const mcPatch = mcParts[2] ?? '0'
     const prefix  = `${mcMinor}.${mcPatch}.`
 
-    // NeoForge does NOT have maven-metadata.xml — scrape directory listing instead    const html = await httpsGet('https://maven.neoforged.net/releases/net/neoforged/neoforge/')
-
-    // Extract version directories: href="./21.4.0/"
     const dirRe = /href="\.\/([\d]+\.[\d]+\.[\d]+)\/"/g
     const allVersions = []
     let m
@@ -1029,8 +1003,8 @@ ipcMain.handle('modpack:readMeta', async (e, filePath) => {
 
     const baseName = path.basename(filePath).replace(/\.(zip|mrpack)$/i, '')
     let name = baseName, gameVersion = '', loader = '', loaderVersion = ''
-    let iconBase64 = null  // data:image/png;base64,... from icon.png inside zip
-    let iconUrl    = null  // URL from manifest (CurseForge image field)
+    let iconBase64 = null
+    let iconUrl    = null
 
     const manifestData = readZipEntry('manifest.json')
     if (manifestData) {
@@ -1079,7 +1053,6 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
   if (!filePath || !fs.existsSync(filePath)) return { error: 'File không tồn tại' }
   if (!['curseforge', 'modrinth'].includes(source)) return { error: 'Source không hợp lệ' }
 
-  // Get instance path from profile  const DATA_DIR_IMPORT = require('path').join(require('electron').app.getPath('appData'), '.VoxelXClient')
   const PROFILES_FILE_IMPORT = require('path').join(DATA_DIR_IMPORT, 'profiles.json')
   let profilesData
   try { profilesData = JSON.parse(fs.readFileSync(PROFILES_FILE_IMPORT, 'utf-8')) }
@@ -1104,7 +1077,6 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
       result = await importCurseForgePack(filePath, instancePath, sendProgress)
     }
 
-    // Update profile with actual metadata from manifest (gameVersion, loader, loaderVersion, name)
     try {
       const latestData = JSON.parse(fs.readFileSync(PROFILES_FILE_IMPORT, 'utf-8'))
       const idx = latestData.profiles.findIndex(p => p.id === profileId)
@@ -1115,9 +1087,9 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
         if (result.name && !latestData.profiles[idx].name.trim()) {
           latestData.profiles[idx].name = result.name
         }
-        // Save import metadata for display on ProfileCard
+
         latestData.profiles[idx].importSource  = source
-        // Only overwrite if importer returns a new value — keep value from profiles:create if importer returns null
+
         if (result.iconUrl) {
           latestData.profiles[idx].importIconUrl = result.iconUrl
           latestData.profiles[idx].importBgUrl   = result.iconUrl
@@ -1154,8 +1126,7 @@ ipcMain.handle('profiles:saveTempFile', async (e, { name, buffer }) => {
 })
 
 // ─── modpack:downloadAndImport ────────────────────────────────────────────────
-// Download a modpack file from URL, create a profile, then import it.
-// Used by the Mods browser (Modrinth/CurseForge/Technic) when projectType === 'modpack'.
+
 ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, source, profileMeta, groupId }) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
@@ -1170,7 +1141,6 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
     if (!win.isDestroyed()) win.webContents.send('import:progress', data)
   }
 
-  // 1. Download file to temp
   const tmpPath = path.join(os.tmpdir(), `vxc-modpack-${Date.now()}-${filename}`)
   sendProgress({ phase: 'download', log: `Đang tải ${filename}...`, percent: 2 })
 
@@ -1212,11 +1182,10 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
 
   sendProgress({ phase: 'read', log: 'Đọc metadata modpack...', percent: 20 })
 
-  // 2. Read metadata from downloaded file
   let meta = {}
   try {
     const { ipcMain: _ipc, BrowserWindow } = require('electron')
-    // Re-use the readMeta logic inline
+
     const zlib = require('zlib')
     const buf = fs.readFileSync(tmpPath)
 
@@ -1290,7 +1259,6 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
 
   sendProgress({ phase: 'create', log: 'Tạo profile...', percent: 22 })
 
-  // 3. Create profile
   const DATA_DIR_DL = path.join(require('electron').app.getPath('appData'), '.VoxelXClient')
   const PROFILES_FILE_DL = path.join(DATA_DIR_DL, 'profiles.json')
 
@@ -1333,7 +1301,6 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
 
   sendProgress({ phase: 'start', log: 'Bắt đầu import modpack...', percent: 25 })
 
-  // 4. Import modpack
   try {
     let result
     if (source === 'modrinth') {
@@ -1343,11 +1310,10 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
       const { importCurseForgePack } = require('./launcher/curseforge/curseforgeImporter.cjs')
       result = await importCurseForgePack(tmpPath, instancePath, sendProgress)
     } else {
-      // Technic or unknown — just extract zip as-is
+
       result = { name: meta.name, gameVersion: meta.gameVersion, loader: meta.loader, loaderVersion: meta.loaderVersion }
     }
 
-    // 5. Update profile with actual metadata from manifest
     try {
       const latestData = JSON.parse(fs.readFileSync(PROFILES_FILE_DL, 'utf-8'))
       const idx = latestData.profiles.findIndex(p => p.id === profileId)
@@ -1366,10 +1332,8 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
       }
     } catch {}
 
-    // Cleanup temp file
     try { fs.unlinkSync(tmpPath) } catch {}
 
-    // Add profile to group if groupId provided
     if (groupId && typeof groupId === 'string' && /^[0-9a-f-]{36}$/.test(groupId)) {
       try {
         const GROUPS_FILE_DL = path.join(DATA_DIR_DL, 'groups.json')
@@ -1414,7 +1378,6 @@ ipcMain.handle('settings:save', (e, patch) => {
   const updated = { ...current, ...safe }
   writeSettings(updated)
 
-  // Toggle Discord RPC if setting changed
   if ('discordRPC' in safe) {
     if (safe.discordRPC) rpc.connect()
     else rpc.disconnect()
@@ -1422,3 +1385,4 @@ ipcMain.handle('settings:save', (e, patch) => {
 
   return { ok: true, data: updated }
 })
+

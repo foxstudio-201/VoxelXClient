@@ -1,12 +1,18 @@
-'use strict'
 /**
- * ftbSearch.cjs
- * FTB (Feed The Beast) API — search, project detail, versions
- * API base: https://api.modpacks.ch/public
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * Search returns an array of pack IDs, so we batch-fetch each pack's detail.
- * We cache pack details in memory to avoid redundant requests.
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const https = require('https')
 const http  = require('http')
@@ -14,7 +20,6 @@ const http  = require('http')
 const BASE = 'https://api.modpacks.ch/public'
 const UA   = 'VoxelXClient/1.0'
 
-// In-memory cache: id -> pack detail
 const packCache = new Map()
 
 // ─── HTTP helper ──────────────────────────────────────────────────────────────
@@ -41,15 +46,12 @@ function fetchJson(url) {
 function formatPack(p) {
   if (!p || !p.id) return null
 
-  // Art: prefer 'square' type, fallback to first
   const squareArt = p.art?.find(a => a.type === 'square') || p.art?.[0]
   const splashArt = p.art?.find(a => a.type === 'splash') || p.art?.find(a => a.type === 'background')
 
-  // Latest version
   const latestVersion = p.versions?.[p.versions.length - 1]
   const mcVersion = latestVersion?.targets?.find(t => t.type === 'game')?.version || ''
 
-  // Tags as categories
   const categories = (p.tags || []).map(t => t.name)
 
   return {
@@ -94,14 +96,13 @@ async function searchProjects(opts = {}) {
   const offset = opts.offset || 0
   const limit  = 20
 
-  // Use cached allIds for pagination
   let allIds = opts.allIds || null
 
   if (!allIds) {
     try {
       let ids = []
       if (!query || query === 'ftb') {
-        // No query → use popular/installs for a broader default list
+
         const data = await fetchJson(`${BASE}/modpack/popular/installs/100`)
         if (data?.status === 'success' && Array.isArray(data.packs)) {
           ids = data.packs.map(id => Number(id))
@@ -120,7 +121,6 @@ async function searchProjects(opts = {}) {
 
   const pageIds = allIds.slice(offset, offset + limit)
 
-  // Batch fetch pack details (parallel, max 5 at a time)
   const hits = []
   for (let i = 0; i < pageIds.length; i += 5) {
     const batch = pageIds.slice(i, i + 5)
@@ -178,7 +178,7 @@ async function getProjectVersions(idOrSlug) {
       _ftb_version_id: v.id,
       _specs:          v.specs,
     }
-  }).reverse() // newest first
+  }).reverse()
 }
 
 // ─── Install (placeholder — FTB install is complex, needs Solder-like logic) ──
@@ -187,3 +187,4 @@ async function installVersion(opts, onProgress) {
 }
 
 module.exports = { searchProjects, getProject, getProjectVersions, installVersion }
+

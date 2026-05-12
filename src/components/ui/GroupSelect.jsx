@@ -1,21 +1,25 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef } from 'react'
 
-/**
- * GroupSelect — custom dropdown thay thế <select> mặc định cho group picker.
- *
- * Props:
- *   groups    — array of { id, name }
- *   value     — selected group id ('' = none)
- *   onChange  — (id: string) => void
- *   disabled  — boolean
- */
 export default function GroupSelect({ groups = [], value = '', onChange, disabled = false }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
   const selected = groups.find(g => g.id === value) || null
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return
     function handler(e) {
@@ -25,7 +29,6 @@ export default function GroupSelect({ groups = [], value = '', onChange, disable
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  // Close on ESC
   useEffect(() => {
     if (!open) return
     function handler(e) { if (e.key === 'Escape') setOpen(false) }
@@ -40,7 +43,7 @@ export default function GroupSelect({ groups = [], value = '', onChange, disable
 
   return (
     <div ref={ref} className="relative">
-      {/* Trigger */}
+      {}
       <button
         type="button"
         disabled={disabled}
@@ -54,7 +57,7 @@ export default function GroupSelect({ groups = [], value = '', onChange, disable
         <span className="flex items-center gap-2 min-w-0 flex-1">
           {selected ? (
             <>
-              {/* Group icon */}
+              {}
               <span className="flex-shrink-0 w-5 h-5 rounded-md bg-blue-500/20 border border-blue-500/25 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-blue-400">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -81,7 +84,7 @@ export default function GroupSelect({ groups = [], value = '', onChange, disable
         </svg>
       </button>
 
-      {/* Dropdown */}
+      {}
       {open && (
         <div
           className="absolute left-0 right-0 top-full mt-1.5 z-[400] rounded-xl overflow-hidden"
@@ -93,7 +96,7 @@ export default function GroupSelect({ groups = [], value = '', onChange, disable
           }}
         >
           <div className="overflow-y-auto max-h-48 py-1">
-            {/* None option */}
+            {}
             <button
               type="button"
               onClick={() => select('')}
@@ -118,10 +121,10 @@ export default function GroupSelect({ groups = [], value = '', onChange, disable
               )}
             </button>
 
-            {/* Divider */}
+            {}
             {groups.length > 0 && <div className="h-px bg-white/5 mx-2 my-1" />}
 
-            {/* Group options */}
+            {}
             {groups.map(g => {
               const isSelected = g.id === value
               return (
@@ -163,3 +166,4 @@ export default function GroupSelect({ groups = [], value = '', onChange, disable
     </div>
   )
 }
+

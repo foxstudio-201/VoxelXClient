@@ -1,4 +1,18 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react'
 import modrinthIcon from '../../assets/server-icon/modrinth.png'
 import spigotIcon   from '../../assets/server-icon/spigot.png'
 
@@ -16,7 +30,6 @@ function fmtBytes(b) {
   return `${(b / 1024).toFixed(0)} KB`
 }
 
-// Server type -> loaders (tu dong nhan dien theo loai server)
 const SERVER_LOADERS = {
   paper:    ['paper', 'bukkit', 'spigot', 'folia', 'purpur'],
   purpur:   ['purpur', 'paper', 'bukkit', 'spigot', 'folia'],
@@ -52,7 +65,6 @@ function getLoaderStyle(loader) {
   return LOADER_COLOR[loader?.toLowerCase()] || { bg: 'rgba(255,255,255,0.08)', text: 'rgba(255,255,255,0.5)', border: 'rgba(255,255,255,0.15)' }
 }
 
-// Version Modal
 function VersionModal({ project, server, projectType, source, onClose }) {
   const [allVersions, setAllVersions] = useState([])
   const [versions, setVersions]   = useState([])
@@ -124,7 +136,7 @@ function VersionModal({ project, server, projectType, source, onClose }) {
       <div className="relative z-10 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'rgba(12,12,12,0.99)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 32px 80px rgba(0,0,0,0.8)', maxHeight: '85vh' }}>
 
-        {/* Header — cố định, không scroll */}
+        {}
         <div className="flex-shrink-0 border-b border-white/5">
           <div className="flex items-start gap-3 px-5 pt-5 pb-4">
             {iconUrl
@@ -147,7 +159,7 @@ function VersionModal({ project, server, projectType, source, onClose }) {
             </button>
           </div>
 
-          {/* Bộ lọc loại phiên bản — trong header */}
+          {}
           {!isSpigot && !loading && allVersions.length > 0 && (
             <div className="px-5 pb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -175,7 +187,7 @@ function VersionModal({ project, server, projectType, source, onClose }) {
           )}
         </div>
 
-        {/* Body — có thể scroll */}
+        {}
         <div className="flex-1 overflow-y-auto p-5" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           {isSpigot ? (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
@@ -258,7 +270,7 @@ function VersionModal({ project, server, projectType, source, onClose }) {
           )}
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex-shrink-0 p-5 border-t border-white/5 flex flex-col gap-2">
           {error && (
             <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
@@ -308,7 +320,6 @@ function VersionModal({ project, server, projectType, source, onClose }) {
   )
 }
 
-// Project Card
 function ProjectCard({ project, onClick }) {
   const title     = project.title || project.name || 'Unknown'
   const desc      = project.description || project.tag || ''
@@ -364,7 +375,6 @@ function ProjectCard({ project, onClick }) {
   )
 }
 
-// Main Tab Component
 export default function ServerPluginModTab({ server, projectType }) {
   const [source, setSource]     = useState('modrinth')
   const [query, setQuery]       = useState('')
@@ -427,7 +437,7 @@ export default function ServerPluginModTab({ server, projectType }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
 
-      {/* Sub-tabs — chỉ cho plugins */}
+      {}
       {isPlugin && (
         <div className="flex-shrink-0 flex items-center gap-2 px-3 pt-2.5 pb-0 border-b border-white/5">
           {[
@@ -447,7 +457,7 @@ export default function ServerPluginModTab({ server, projectType }) {
         </div>
       )}
 
-      {/* Thanh tìm kiếm */}
+      {}
       <div className="flex-shrink-0 px-3 py-2.5 border-b border-white/5 bg-black/10">
         <div className="relative">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -473,7 +483,7 @@ export default function ServerPluginModTab({ server, projectType }) {
         </p>
       </div>
 
-      {/* Danh sách kết quả */}
+      {}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5"
         style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 
@@ -516,7 +526,7 @@ export default function ServerPluginModTab({ server, projectType }) {
         )}
       </div>
 
-      {/* Modal chọn phiên bản */}
+      {}
       {selected && (
         <VersionModal
           project={selected}
@@ -529,3 +539,4 @@ export default function ServerPluginModTab({ server, projectType }) {
     </div>
   )
 }
+

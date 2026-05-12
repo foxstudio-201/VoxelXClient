@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -11,12 +25,12 @@ function InstanceModal({ instances, onKill, onClose }) {
       className="fixed inset-0 z-[200] flex items-start justify-center pt-12"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      {/* Backdrop */}
+      {}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
+      {}
       <div className="relative z-10 w-[420px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
@@ -33,7 +47,7 @@ function InstanceModal({ instances, onKill, onClose }) {
           </button>
         </div>
 
-        {/* List */}
+        {}
         <div className="px-3 py-3 flex flex-col gap-2 max-h-80 overflow-y-auto">
           {instances.length === 0 ? (
             <p className="text-xs text-white/25 text-center py-6">No instances running</p>
@@ -47,7 +61,7 @@ function InstanceModal({ instances, onKill, onClose }) {
               return (
                 <div key={inst.key}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/4 border border-white/5">
-                  {/* Status indicator */}
+                  {}
                   <div className="flex-shrink-0">
                     {isRunning && <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse block" />}
                     {isLoading && (
@@ -60,7 +74,7 @@ function InstanceModal({ instances, onKill, onClose }) {
                     {isError   && <span className="w-2.5 h-2.5 rounded-full bg-red-400 block" />}
                   </div>
 
-                  {/* Info */}
+                  {}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{inst.profileName}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -79,7 +93,7 @@ function InstanceModal({ instances, onKill, onClose }) {
                     </div>
                   </div>
 
-                  {/* Kill button */}
+                  {}
                   {(isRunning || isLoading) && (
                     <button
                       onClick={() => onKill(inst.key)}
@@ -115,7 +129,7 @@ export default function TitleBar({ instances = [], onKillInstance }) {
   return (
     <>
       <div className="drag-region flex items-center justify-between h-9 px-4 bg-black/40 backdrop-blur-sm border-b border-white/5 absolute top-0 left-0 right-0 z-50">
-        {/* Logo / App name */}
+        {}
         <div className="flex items-center gap-2 no-drag">
           <div className="w-5 h-5">
             <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
@@ -130,7 +144,7 @@ export default function TitleBar({ instances = [], onKillInstance }) {
           </span>
         </div>
 
-        {/* Center — instance status badge */}
+        {}
         <div className="absolute left-1/2 -translate-x-1/2 no-drag">
           {runningCount > 0 ? (
             <button
@@ -154,7 +168,7 @@ export default function TitleBar({ instances = [], onKillInstance }) {
           ) : null}
         </div>
 
-        {/* Window controls */}
+        {}
         <div className="no-drag flex items-center gap-1">
           <button onClick={handleMinimize}
             className="w-8 h-7 flex items-center justify-center rounded hover:bg-white/10 transition-colors text-white/50 hover:text-white/90"
@@ -179,7 +193,7 @@ export default function TitleBar({ instances = [], onKillInstance }) {
         </div>
       </div>
 
-      {/* Instance modal */}
+      {}
       {showModal && (
         <InstanceModal
           instances={instances}
@@ -190,3 +204,4 @@ export default function TitleBar({ instances = [], onKillInstance }) {
     </>
   )
 }
+

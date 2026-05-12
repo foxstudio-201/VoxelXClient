@@ -13,15 +13,6 @@
  */
 
 'use strict'
-/**
- * assetManager.cjs
- * Download and verify:
- *   - client.jar
- *   - libraries (natives + classpath)
- *   - assets (index + objects)
- *
- * Only downloads files that are missing or have wrong hash → offline-safe after first run.
- */
 
 const https  = require('https')
 const http   = require('http')
@@ -49,7 +40,6 @@ function downloadFile(url, destPath, onProgress) {
     const tmpPath = destPath + '.' + process.pid + '.tmp'
     const destDir = path.dirname(destPath)
 
-    // Ensure dir exists before writing
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
     client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
@@ -71,19 +61,19 @@ function downloadFile(url, destPath, onProgress) {
       })
       res.pipe(out)
       out.on('finish', () => {
-        // Re-ensure dir (race condition with concurrent downloads)
+
         if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
         try {
           fs.renameSync(tmpPath, destPath)
           resolve()
         } catch {
-          // Fallback: copy + delete (handles Windows file lock / cross-device)
+
           try {
             fs.copyFileSync(tmpPath, destPath)
             try { fs.unlinkSync(tmpPath) } catch {}
             resolve()
           } catch (copyErr) {
-            // If dest already exists and is valid, treat as success
+
             if (fs.existsSync(destPath) && fs.statSync(destPath).size > 0) {
               try { fs.unlinkSync(tmpPath) } catch {}
               resolve()
@@ -125,11 +115,11 @@ function libraryApplies(lib) {
   let allow = false
   for (const rule of lib.rules) {
     const osMatches = !rule.os || rule.os.name === getCurrentOS()
-    // Only apply rule if it matches current OS (or has no OS condition)
+
     if (osMatches) {
       allow = rule.action === 'allow'
     }
-    // If rule has OS condition and doesn't match current OS → skip entirely
+
   }
   return allow
 }
@@ -175,14 +165,7 @@ class SpeedTracker {
 }
 
 // ─── Main download function ───────────────────────────────────────────────────
-/**
- * Download all resources for a version.
- *
- * @param {object} versionJson  - version JSON from Mojang
- * @param {string} gameDir      - main game directory (.VoxelXClient)
- * @param {function} onProgress - callback(progress)
- * @returns {{ clientJar, libraries, nativesDir, assetsDir, assetIndex }}
- */
+
 async function downloadAssets(versionJson, gameDir, onProgress) {
   const os = getCurrentOS()
   const versionsDir  = path.join(gameDir, 'versions', versionJson.id)
@@ -204,7 +187,6 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
     onProgress?.({ phase, doneFiles, totalFiles, speed, ...extra })
   }
 
-  // ── 1. Client JAR ──────────────────────────────────────────────────────────
   const clientJar = path.join(versionsDir, `${versionJson.id}.jar`)
   const clientDl  = versionJson.downloads?.client
   if (clientDl) {
@@ -218,13 +200,10 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
     }
   }
 
-  // ── 2. Libraries ───────────────────────────────────────────────────────────
   const libs = (versionJson.libraries || []).filter(libraryApplies)
   const libPaths = []
   const libTasks = []
 
-  // Helper: convert Maven name to relative path
-  // "net.fabricmc:fabric-loader:0.16.9" -> "net/fabricmc/fabric-loader/0.16.9/fabric-loader-0.16.9.jar"
   function mavenNameToPath(name) {
     const parts = name.split(':')
     if (parts.length < 3) return null
@@ -233,13 +212,12 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
   }
 
   for (const lib of libs) {
-    // ── Modern format: lib.downloads.artifact ──
+
     const artifact = lib.downloads?.artifact
     if (artifact) {
       const libPath = path.join(librariesDir, artifact.path)
       const isNative = artifact.path.includes('natives-')
-      // Determine if this native JAR applies to current platform/arch
-      // Skip arch-specific natives that don't match (e.g. arm64, x86 on x64 system)
+
       const isWrongArch = isNative && (
         artifact.path.includes('natives-windows-arm64') ||
         artifact.path.includes('natives-windows-x86') ||
@@ -247,26 +225,26 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
         artifact.path.includes('natives-linux-arm32') ||
         artifact.path.includes('natives-macos-arm64')
       )
-      // Native JARs are extracted to nativesDir, not added to classpath
+
       if (!isNative) libPaths.push(libPath)
       libTasks.push(async () => {
         if (await needsDownload(libPath, artifact.sha1, artifact.size)) {
           await downloadFile(artifact.url, libPath, ({ downloaded }) => speedTracker.add(downloaded))
         }
-        // Extract native DLLs — skip wrong-arch natives
+
         if (isNative && !isWrongArch && fs.existsSync(libPath)) {
           await extractZipNode(libPath, nativesDir, lib.extract?.exclude || [])
         }
       })
     } else if (lib.name) {
-      // ── Legacy/Fabric format: only name + url (Maven base) ──
+
       const relPath = mavenNameToPath(lib.name)
       if (relPath) {
         const libPath = path.join(librariesDir, relPath)
         libPaths.push(libPath)
         libTasks.push(async () => {
           if (!fs.existsSync(libPath)) {
-            // Try lib.url as base, fallback to Maven Central
+
             const bases = []
             if (lib.url) bases.push(lib.url.replace(/\/$/, ''))
             bases.push('https://libraries.minecraft.net')
@@ -279,7 +257,7 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
                 downloaded = true
                 break
               } catch {
-                // try next base
+
               }
             }
             if (!downloaded) {
@@ -290,12 +268,11 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
       }
     }
 
-    // Natives — old format: lib.natives.windows = "natives-windows"
     const nativeKey = lib.natives?.[os]
     if (nativeKey) {
       const nativeClassifier = lib.downloads?.classifiers?.[nativeKey]
       if (nativeClassifier) {
-        // Modern format: classifier info in downloads.classifiers
+
         const nativePath = path.join(librariesDir, nativeClassifier.path)
         libTasks.push(async () => {
           if (await needsDownload(nativePath, nativeClassifier.sha1, nativeClassifier.size)) {
@@ -304,9 +281,7 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
           await extractZipNode(nativePath, nativesDir, lib.extract?.exclude || [])
         })
       } else if (lib.name) {
-        // Legacy format: no classifiers — build URL from Maven coords + classifier
-        // e.g. org.lwjgl:lwjgl:3.2.2 + "natives-windows"
-        //   → org/lwjgl/lwjgl/3.2.2/lwjgl-3.2.2-natives-windows.jar
+
         const parts = lib.name.split(':')
         if (parts.length >= 3) {
           const [group, artifact, version] = parts
@@ -320,7 +295,7 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
               try {
                 await downloadFile(nativeUrl, nativePath, ({ downloaded }) => speedTracker.add(downloaded))
               } catch {
-                // Non-fatal — native may not exist for this platform
+
               }
             }
             if (fs.existsSync(nativePath) && fs.statSync(nativePath).size > 0) {
@@ -340,7 +315,6 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
     emit('libraries', { log: `Libraries: ${done}/${total}` })
   })
 
-  // ── 3. Asset index ─────────────────────────────────────────────────────────
   const assetIndexInfo = versionJson.assetIndex
   const assetIndexDir  = path.join(assetsDir, 'indexes')
   const assetIndexFile = path.join(assetIndexDir, `${assetIndexInfo.id}.json`)
@@ -355,7 +329,6 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
   const assetIndex = JSON.parse(fs.readFileSync(assetIndexFile, 'utf-8'))
   const assetObjects = Object.entries(assetIndex.objects)
 
-  // ── 4. Asset objects ───────────────────────────────────────────────────────
   const objectsDir = path.join(assetsDir, 'objects')
   const assetTasks = []
 
@@ -417,12 +390,12 @@ async function extractNative(jarPath, destDir, excludes) {
 }
 
 async function extractZipNode(jarPath, destDir, excludes) {
-  // Use PowerShell on Windows for reliable ZIP extraction
+
   const { spawn } = require('child_process')
   const nativeExts = ['dll', 'so', 'dylib', 'jnilib']
 
   return new Promise((resolve) => {
-    // PowerShell script: open ZIP, extract only native files
+
     const script = `
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead('${jarPath.replace(/'/g, "''")}')
@@ -443,3 +416,4 @@ $zip.Dispose()
 }
 
 module.exports = { downloadAssets }
+

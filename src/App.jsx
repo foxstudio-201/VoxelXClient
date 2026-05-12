@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import TitleBar from './components/TitleBar'
 import Sidebar from './components/Sidebar'
@@ -34,16 +48,14 @@ function AppInner() {
   const [activePage, setActivePage] = useState('home')
   const { selectedAccount, accounts, loading } = useAccounts()
 
-  // ── Multi-instance launch state ──
-  // instances: Map<key, { key, profileId, accountId, profileName, accountName, state, progress, logs }>
   const [instances, setInstances] = useState(new Map())
-  // Single-profile launch state (for the currently selected profile's progress in hero)
+
   const [launchState, setLaunchState] = useState('idle')
   const [progress, setProgress]       = useState(null)
   const [launchError, setLaunchError] = useState(null)
   const [activeKey, setActiveKey]     = useState(null)
-  // Server Java download progress — persists across page navigation
-  const [serverJavaProgress, setServerJavaProgress] = useState({}) // key of profile being launched
+
+  const [serverJavaProgress, setServerJavaProgress] = useState({})
   const cleanupRef = useRef([])
 
   const updateInstance = useCallback((key, patch) => {
@@ -55,11 +67,9 @@ function AppInner() {
     })
   }, [])
 
-  // Subscribe IPC listeners once at App level
   useEffect(() => {
     if (!isElectron) return
 
-    // Cleanup any previous listeners before registering new ones
     cleanupRef.current.forEach(fn => fn?.())
     cleanupRef.current = []
 
@@ -72,7 +82,7 @@ function AppInner() {
         setLaunchState('error')
         setLaunchError(data.error || data.log)
       }
-      // Update progress in instance — use functional update to always get latest activeKey
+
       setActiveKey(currentKey => {
         if (currentKey) {
           setInstances(prev => {
@@ -81,7 +91,7 @@ function AppInner() {
             if (cur) {
               const newState = data.phase === 'error'   ? 'error'       :
                                data.phase === 'running'  ? 'running'     : 'downloading'
-              // Also append error/warning log lines from progress events
+
               const extraLog = (data.phase === 'error' && (data.error || data.log))
                 ? [`[ERR] ${data.error || data.log}`]
                 : []
@@ -125,7 +135,7 @@ function AppInner() {
             const cur  = next.get(currentKey)
             if (cur) {
               const logs = cur.logs || []
-              // Replace the last line if it exists, otherwise append
+
               const updated = logs.length > 0
                 ? [...logs.slice(0, -1), data.line]
                 : [data.line]
@@ -139,7 +149,7 @@ function AppInner() {
     })
 
     const unsubStop = window.electronAPI.onGameStopped((data) => {
-      // The real key from main process: profileId::accountId
+
       const realKey = data?.profileId && data?.accountId
         ? `${data.profileId}::${data.accountId}`
         : null
@@ -147,14 +157,12 @@ function AppInner() {
       setInstances(prev => {
         const next = new Map(prev)
 
-        // Try real key first
         if (realKey && next.has(realKey)) {
           next.set(realKey, { ...next.get(realKey), state: 'stopped' })
           setTimeout(() => setInstances(p => { const n = new Map(p); n.delete(realKey); return n }), 3000)
           return next
         }
 
-        // Fallback: find by profileId (handles pending key case)
         if (data?.profileId) {
           for (const [k, inst] of next) {
             if (inst.profileId === data.profileId) {
@@ -167,7 +175,6 @@ function AppInner() {
         return next
       })
 
-      // Reset hero state
       setLaunchState('idle')
       setProgress(null)
       setLaunchError(null)
@@ -176,7 +183,7 @@ function AppInner() {
 
     cleanupRef.current = [unsubProgress, unsubLog, unsubLogUpdate, unsubStop]
     return () => { cleanupRef.current.forEach(fn => fn?.()) }
-  }, []) // no deps — uses functional setState to always get latest values
+  }, [])
 
   const handleLaunch = useCallback(async (profileId, ramMb, profileName, accountName) => {
     if (!isElectron) return
@@ -184,8 +191,6 @@ function AppInner() {
     setLaunchError(null)
     setProgress({ phase: 'starting', log: 'Preparing...', percent: 0 })
 
-    // We don't know accountId yet — will be set when progress comes back
-    // Use a temp key based on profileId
     const tempKey = `${profileId}::pending`
     setActiveKey(tempKey)
     setInstances(prev => {
@@ -231,12 +236,10 @@ function AppInner() {
   const showHint = !loading && accounts.length === 0 && activePage === 'home'
   const instanceList = Array.from(instances.values())
 
-  // AccountPage chứa WebGL Canvas — giữ mount thường trực, chỉ ẩn/hiện bằng CSS
-  // để tránh "Context Lost" khi unmount Canvas đột ngột
   function renderPage() {
     return (
       <>
-        {/* Pages không có WebGL — mount/unmount bình thường */}
+        {}
         {activePage === 'home' && (
           <HomePage
             onNavigate={setActivePage}
@@ -254,7 +257,7 @@ function AppInner() {
         {activePage === 'worlds'   && <ServerPage serverJavaProgress={serverJavaProgress} onServerJavaProgress={setServerJavaProgress} />}
         {activePage === 'settings' && <SettingsPage />}
 
-        {/* AccountPage — luôn mount, ẩn bằng CSS khi không active */}
+        {}
         <div
           style={{ display: activePage === 'account' ? 'flex' : 'none' }}
           className="flex-1 h-full overflow-hidden"
@@ -290,7 +293,6 @@ export default function App() {
   const [splashDone, setSplashDone] = useState(false)
   const [bgId, setBgId] = useState('dark')
 
-  // Load bgId từ settings khi mount
   useEffect(() => {
     const isElectron = typeof window !== 'undefined' && window.electronAPI
     if (isElectron) {
@@ -303,7 +305,7 @@ export default function App() {
         if (raw) { const s = JSON.parse(raw); if (s.background) setBgId(s.background) }
       } catch {}
     }
-    // Lắng nghe thay đổi từ SettingsPage qua custom event
+
     const handler = (e) => setBgId(e.detail)
     window.addEventListener('vxc-bg-change', handler)
     return () => window.removeEventListener('vxc-bg-change', handler)
@@ -332,3 +334,4 @@ export default function App() {
     </AccountsProvider>
   )
 }
+

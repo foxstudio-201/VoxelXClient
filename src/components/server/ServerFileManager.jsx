@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import ServerCodeEditor, { getFileExt } from './ServerCodeEditor'
 
@@ -60,7 +74,6 @@ export default function ServerFileManager({ server }) {
   const hasSelection = selectedArr.length > 0
   const anyZip = hasSelection && selectedArr.some(p => p.toLowerCase().endsWith('.zip'))
 
-  // Load directory entries (both dirs and files at any depth)
   const loadDir = useCallback(async (subPath = '') => {
     if (!isElectron) return
     setLoading(true)
@@ -138,7 +151,6 @@ export default function ServerFileManager({ server }) {
     } finally { setBusy(false) }
   }, [anyZip, selectedArr, server?.id, currentPath, loadDir])
 
-  // Upload files (from input or drag-drop)
   const uploadFiles = useCallback(async (fileList) => {
     if (!isElectron || !fileList?.length) return
     setUploading(true)
@@ -153,7 +165,6 @@ export default function ServerFileManager({ server }) {
     } finally { setUploading(false) }
   }, [server?.id, currentPath, loadDir])
 
-  // Drag-drop handlers
   const onDragOver = useCallback((e) => { e.preventDefault(); setDragOver(true) }, [])
   const onDragLeave = useCallback(() => setDragOver(false), [])
   const onDrop = useCallback((e) => {
@@ -165,14 +176,14 @@ export default function ServerFileManager({ server }) {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* File list panel */}
+      {}
       <div
         className={`flex flex-col overflow-hidden border-r border-white/5 transition-all ${openedFile ? 'w-[42%] min-w-[220px]' : 'flex-1'} ${dragOver ? 'ring-2 ring-inset ring-green-500/40' : ''}`}
         onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
       >
-        {/* Toolbar */}
+        {}
         <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 border-b border-white/5 bg-black/20 flex-wrap">
-          {/* Breadcrumb */}
+          {}
           <div className="flex items-center gap-1 text-[10px] flex-1 min-w-0 overflow-hidden">
             <button onClick={() => loadDir('')} className="text-white/40 hover:text-white/70 transition-colors flex-shrink-0">root</button>
             {breadcrumbs.map((part, i, arr) => (
@@ -186,7 +197,7 @@ export default function ServerFileManager({ server }) {
             ))}
           </div>
 
-          {/* Reload */}
+          {}
           <button onClick={() => loadDir(currentPath)} disabled={loading || busy}
             className="w-6 h-6 flex items-center justify-center rounded text-white/30 hover:text-white/60 hover:bg-white/5 transition-all disabled:opacity-30" title="Tải lại">
             <svg viewBox="0 0 24 24" fill="currentColor" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}>
@@ -196,7 +207,7 @@ export default function ServerFileManager({ server }) {
 
           <div className="w-px h-4 bg-white/10 flex-shrink-0" />
 
-          {/* Upload / Add */}
+          {}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || busy}
@@ -216,7 +227,7 @@ export default function ServerFileManager({ server }) {
           <input ref={fileInputRef} type="file" multiple className="hidden"
             onChange={e => { uploadFiles(e.target.files); e.target.value = '' }} />
 
-          {/* Delete */}
+          {}
           <button onClick={deleteSelected} disabled={!hasSelection || busy}
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold bg-red-500/10 text-red-400/70 hover:bg-red-500/20 hover:text-red-400 border border-red-500/15 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
@@ -225,7 +236,7 @@ export default function ServerFileManager({ server }) {
             Xóa
           </button>
 
-          {/* Compress */}
+          {}
           {showZipInput ? (
             <div className="flex items-center gap-1">
               <input autoFocus value={zipName} onChange={e => setZipName(e.target.value)}
@@ -247,7 +258,7 @@ export default function ServerFileManager({ server }) {
             </button>
           )}
 
-          {/* Extract */}
+          {}
           <button onClick={extractSelected} disabled={!anyZip || busy}
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70 border border-white/8 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
@@ -257,7 +268,7 @@ export default function ServerFileManager({ server }) {
           </button>
         </div>
 
-        {/* Drag-drop hint */}
+        {}
         {dragOver && (
           <div className="flex-shrink-0 flex items-center justify-center gap-2 py-2 bg-green-500/10 border-b border-green-500/20 text-xs text-green-400">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -267,7 +278,7 @@ export default function ServerFileManager({ server }) {
           </div>
         )}
 
-        {/* File list */}
+        {}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -277,7 +288,7 @@ export default function ServerFileManager({ server }) {
             </div>
           ) : (
             <div className="p-2 flex flex-col gap-0.5">
-              {/* Select all */}
+              {}
               {entries.length > 0 && (
                 <div className="flex items-center gap-2 px-2 py-1 mb-1">
                   <input type="checkbox" checked={selectedFiles.size === entries.length && entries.length > 0}
@@ -288,7 +299,7 @@ export default function ServerFileManager({ server }) {
                 </div>
               )}
 
-              {/* Back */}
+              {}
               {currentPath && (
                 <button onClick={() => loadDir(breadcrumbs.slice(0, -1).join('/'))}
                   className="flex items-center gap-2 px-2 py-2 rounded-lg text-white/35 hover:text-white/60 hover:bg-white/5 transition-all text-xs">
@@ -344,7 +355,7 @@ export default function ServerFileManager({ server }) {
         </div>
       </div>
 
-      {/* Code editor panel */}
+      {}
       {openedFile && (
         <div className="flex-1 overflow-hidden" style={{ animation: 'slideInRight 0.22s cubic-bezier(0,0,0.2,1) forwards' }}>
           <style>{`@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
@@ -361,3 +372,4 @@ export default function ServerFileManager({ server }) {
     </div>
   )
 }
+

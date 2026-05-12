@@ -1,9 +1,19 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef } from 'react'
 
-/**
- * VersionSelect — custom dropdown thay thế <select> native
- * Dùng cho chọn phiên bản mod trong ModrinthDetail và InstallModal
- */
 export default function VersionSelect({ versions, value, onChange, loading, placeholder }) {
   const [open, setOpen]   = useState(false)
   const ref               = useRef(null)
@@ -11,7 +21,6 @@ export default function VersionSelect({ versions, value, onChange, loading, plac
 
   const selected = versions?.find(v => v.id === value)
 
-  // Close on outside click
   useEffect(() => {
     function handler(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false)
@@ -20,7 +29,6 @@ export default function VersionSelect({ versions, value, onChange, loading, plac
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  // Scroll selected item into view when opening
   useEffect(() => {
     if (open && listRef.current && selected) {
       const el = listRef.current.querySelector('[data-selected="true"]')
@@ -36,7 +44,7 @@ export default function VersionSelect({ versions, value, onChange, loading, plac
 
   return (
     <div ref={ref} className="relative flex-1">
-      {/* Trigger button */}
+      {}
       <button
         type="button"
         onClick={() => !loading && setOpen(v => !v)}
@@ -72,7 +80,7 @@ export default function VersionSelect({ versions, value, onChange, loading, plac
         </svg>
       </button>
 
-      {/* Dropdown list */}
+      {}
       {open && (
         <div
           className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl overflow-hidden"
@@ -106,22 +114,22 @@ export default function VersionSelect({ versions, value, onChange, loading, plac
                   onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
                   onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
                 >
-                  {/* Version number */}
+                  {}
                   <span className="text-xs font-semibold truncate flex-1 min-w-0">
                     {v.version_number}
                   </span>
 
-                  {/* Type badge */}
+                  {}
                   <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 ${getTypeColor(v.version_type)}`}>
                     {v.version_type}
                   </span>
 
-                  {/* Game versions */}
+                  {}
                   <span className="text-[10px] text-white/25 flex-shrink-0 hidden sm:inline">
                     {v.game_versions?.slice(0, 2).join(', ')}
                   </span>
 
-                  {/* Checkmark */}
+                  {}
                   {isSelected && (
                     <svg className="w-3 h-3 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
@@ -136,3 +144,4 @@ export default function VersionSelect({ versions, value, onChange, loading, plac
     </div>
   )
 }
+

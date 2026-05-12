@@ -1,13 +1,18 @@
-'use strict'
 /**
- * modrinthImporter.cjs
- * Import a Modrinth modpack (.mrpack) into a profile instance.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * .mrpack is a ZIP containing:
- *   modrinth.index.json  — metadata + file list with direct download URLs
- *   overrides/           — files to copy directly into the instance
- *   client-overrides/    — client-only overrides
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const https  = require('https')
 const http   = require('http')
@@ -119,18 +124,12 @@ function downloadFile(url, destPath) {
 }
 
 // ─── Main import function ─────────────────────────────────────────────────────
-/**
- * @param {string}   mrpackPath   path to .mrpack file
- * @param {string}   instancePath destination instance directory
- * @param {function} onProgress   callback({ phase, log, done, total, percent })
- * @returns {{ name, gameVersion, loader, loaderVersion }}
- */
+
 async function importModrinthPack(mrpackPath, instancePath, onProgress) {
   onProgress?.({ phase: 'read', log: 'Đọc file modpack...', percent: 2 })
 
   const buf = fs.readFileSync(mrpackPath)
 
-  // 1. Read index
   const indexData = readZipEntry(buf, 'modrinth.index.json')
   if (!indexData) throw new Error('modrinth.index.json không tìm thấy trong file')
 
@@ -144,7 +143,6 @@ async function importModrinthPack(mrpackPath, instancePath, onProgress) {
   else if (index.dependencies?.['neoforge'])    { loader = 'neoforge'; loaderVersion = index.dependencies['neoforge'] }
   else if (index.dependencies?.['quilt-loader']){ loader = 'quilt';    loaderVersion = index.dependencies['quilt-loader'] }
 
-  // 2. Download mods listed in index
   const files = (index.files || []).filter(f =>
     !f.env || f.env.client !== 'unsupported'
   )
@@ -177,7 +175,6 @@ async function importModrinthPack(mrpackPath, instancePath, onProgress) {
     }
   }
 
-  // 3. Extract overrides
   onProgress?.({ phase: 'overrides', log: 'Giải nén overrides...', percent: 87 })
 
   const overridePrefixes = ['overrides/', 'client-overrides/']
@@ -198,9 +195,8 @@ async function importModrinthPack(mrpackPath, instancePath, onProgress) {
 
   onProgress?.({ phase: 'done', log: `Import hoàn tất: ${name}`, percent: 100 })
 
-  // Modrinth icon URL: https://cdn.modrinth.com/data/<project_id>/icon.png
-  // index.json không có project_id trực tiếp, dùng null — sẽ được fetch sau nếu cần
   return { name, gameVersion, loader, loaderVersion, iconUrl: null, bgUrl: null }
 }
 
 module.exports = { importModrinthPack }
+

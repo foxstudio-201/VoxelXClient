@@ -1,9 +1,22 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import {
   DownloadSimple,
   Heart,
 } from '@phosphor-icons/react'
 
-// CurseForgeCard — single project card in grid or list view
 function formatNumber(n) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
@@ -41,11 +54,11 @@ function GridCard({ project, onClick }) {
         e.currentTarget.style.boxShadow = 'none'
       }}
     >
-      {/* ── Background layer: icon stretched + blur ── */}
+      {}
       <div className="absolute inset-0 overflow-hidden rounded-xl">
         {project.icon_url ? (
           <>
-            {/* Icon stretched as bg — positioned to the RIGHT side */}
+            {}
             <img
               src={project.icon_url}
               alt=""
@@ -61,7 +74,7 @@ function GridCard({ project, onClick }) {
               }}
               loading="lazy"
             />
-            {/* Gradient: left = dark solid, right = transparent to show bg */}
+            {}
             <div
               className="absolute inset-0"
               style={{
@@ -74,9 +87,9 @@ function GridCard({ project, onClick }) {
         )}
       </div>
 
-      {/* ── Foreground content ── */}
+      {}
       <div className="relative z-10 p-3.5 flex gap-3 h-full">
-        {/* Icon */}
+        {}
         <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-black/30 flex items-center justify-center ring-1 ring-white/10">
           {project.icon_url
             ? <img src={project.icon_url} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -86,7 +99,7 @@ function GridCard({ project, onClick }) {
           }
         </div>
 
-        {/* Text */}
+        {}
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div>
             <p className="text-white text-sm font-semibold leading-snug line-clamp-1 mb-1 group-hover:text-green-400 transition-colors">
@@ -98,7 +111,7 @@ function GridCard({ project, onClick }) {
           </div>
 
           <div className="flex items-center justify-between gap-2 mt-2">
-            {/* Loader badges */}
+            {}
             <div className="flex flex-wrap gap-1">
               {loaderBadges.map(l => (
                 <span key={l} className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${CATEGORY_COLORS[l] || 'bg-white/10 text-white/40'}`}>
@@ -106,7 +119,7 @@ function GridCard({ project, onClick }) {
                 </span>
               ))}
             </div>
-            {/* Stats */}
+            {}
             <div className="flex items-center gap-2 text-[10px] flex-shrink-0">
               <span className="flex items-center gap-1 text-green-400/70">
                 <DownloadSimple size={12} weight="bold" />
@@ -144,7 +157,7 @@ function ListCard({ project, onClick }) {
         e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
       }}
     >
-      {/* Icon */}
+      {}
       <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
         {project.icon_url
           ? <img src={project.icon_url} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -152,7 +165,7 @@ function ListCard({ project, onClick }) {
         }
       </div>
 
-      {/* Middle: title + desc + badges */}
+      {}
       <div className="flex-1 min-w-0">
         <p className="text-white text-sm font-semibold truncate group-hover:text-green-400 transition-colors mb-0.5">
           {project.title}
@@ -169,7 +182,7 @@ function ListCard({ project, onClick }) {
         )}
       </div>
 
-      {/* Right: stats — fixed width, always visible */}
+      {}
       <div className="flex flex-col items-end gap-1.5 flex-shrink-0 w-16">
         <span className="flex items-center gap-1 text-xs text-green-400/80">
           <DownloadSimple size={14} weight="bold" className="flex-shrink-0" />
@@ -189,3 +202,4 @@ export default function CurseForgeCard({ project, view = 'grid', onClick }) {
   if (view === 'grid') return <GridCard project={project} onClick={onClick} />
   return <ListCard project={project} onClick={onClick} />
 }
+

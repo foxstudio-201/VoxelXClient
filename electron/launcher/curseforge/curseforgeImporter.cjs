@@ -1,16 +1,18 @@
-'use strict'
 /**
- * curseforgeImporter.cjs
- * Import a CurseForge modpack (.zip) into a profile instance.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * CurseForge .zip contains:
- *   manifest.json   — metadata + mod list (projectID + fileID)
- *   overrides/      — files to copy directly into the instance
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
  *
- * NOTE: CurseForge API requires an API key to get download URLs.
- * We use the open proxy at https://api.curse.tools (no key needed)
- * as a fallback, or the official API if a key is configured.
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const https  = require('https')
 const http   = require('http')
@@ -19,7 +21,7 @@ const path   = require('path')
 const zlib   = require('zlib')
 
 const CF_API_BASE  = 'https://api.curseforge.com/v1'
-const CF_PROXY     = 'https://api.curse.tools/v1/cf'  // open proxy, no key needed
+const CF_PROXY     = 'https://api.curse.tools/v1/cf'
 
 // ─── ZIP reader (same as modrinthImporter) ────────────────────────────────────
 function readZipEntry(buf, entryName) {
@@ -142,7 +144,7 @@ function downloadFile(url, destPath, headers = {}) {
 
 // ─── Get mod download URL ─────────────────────────────────────────────────────
 async function getModDownloadUrl(projectId, fileId, apiKey) {
-  // Try official API first if key available
+
   if (apiKey) {
     try {
       const data = await httpsGetJson(
@@ -153,31 +155,21 @@ async function getModDownloadUrl(projectId, fileId, apiKey) {
     } catch {}
   }
 
-  // Fallback: open proxy (no key needed)
   try {
     const data = await httpsGetJson(`${CF_PROXY}/mods/${projectId}/files/${fileId}/download-url`)
     if (data?.data) return data.data
   } catch {}
 
-  // Last resort: construct CDN URL directly (works for many mods)
-  // Format: https://edge.forgecdn.net/files/{fileId/1000}/{fileId%1000}/{filename}
   return null
 }
 
 // ─── Main import function ─────────────────────────────────────────────────────
-/**
- * @param {string}   zipPath      path to CurseForge .zip file
- * @param {string}   instancePath destination instance directory
- * @param {function} onProgress   callback({ phase, log, done, total, percent })
- * @param {string}   [apiKey]     optional CurseForge API key
- * @returns {{ name, gameVersion, loader, loaderVersion }}
- */
+
 async function importCurseForgePack(zipPath, instancePath, onProgress, apiKey) {
   onProgress?.({ phase: 'read', log: 'Đọc file modpack...', percent: 2 })
 
   const buf = fs.readFileSync(zipPath)
 
-  // 1. Read manifest
   const manifestData = readZipEntry(buf, 'manifest.json')
   if (!manifestData) throw new Error('manifest.json không tìm thấy trong file')
 
@@ -186,14 +178,13 @@ async function importCurseForgePack(zipPath, instancePath, onProgress, apiKey) {
   const gameVersion = manifest.minecraft?.version || ''
   const loaderArr   = manifest.minecraft?.modLoaders || []
   const loaderRaw   = loaderArr[0]?.id || ''
-  const iconUrl     = manifest.image || null   // CurseForge avatar URL
+  const iconUrl     = manifest.image || null
 
   let loader = 'forge', loaderVersion = ''
   if (loaderRaw.startsWith('forge-'))     { loader = 'forge';    loaderVersion = loaderRaw.replace('forge-', '') }
   else if (loaderRaw.startsWith('fabric-'))   { loader = 'fabric';   loaderVersion = loaderRaw.replace('fabric-', '') }
   else if (loaderRaw.startsWith('neoforge-')) { loader = 'neoforge'; loaderVersion = loaderRaw.replace('neoforge-', '') }
 
-  // 2. Download mods
   const mods  = manifest.files || []
   const total = mods.length
   const modsDir = path.join(instancePath, 'mods')
@@ -232,7 +223,6 @@ async function importCurseForgePack(zipPath, instancePath, onProgress, apiKey) {
     }
   }
 
-  // 3. Extract overrides
   onProgress?.({ phase: 'overrides', log: 'Giải nén overrides...', percent: 87 })
 
   iterZipEntries(buf, (fileName, getData) => {
@@ -257,3 +247,4 @@ async function importCurseForgePack(zipPath, instancePath, onProgress, apiKey) {
 }
 
 module.exports = { importCurseForgePack }
+

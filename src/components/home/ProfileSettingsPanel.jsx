@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import JavaManagerModal from './JavaManagerModal'
 
@@ -174,7 +188,7 @@ function GeneralTab({ profile, onProfileUpdated }) {
       }
       await window.electronAPI.profileUpdate(profile.id, patch)
       setSaved(true)
-      // Pass updated profile back so HomePage doesn't lose selectedProfile
+
       onProfileUpdated?.({ ...profile, ...patch })
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
       saveTimerRef.current = setTimeout(() => setSaved(false), 2000)
@@ -191,7 +205,7 @@ function GeneralTab({ profile, onProfileUpdated }) {
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      {/* Profile Name */}
+      {}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-white/50">Tên profile</label>
         <input
@@ -203,14 +217,14 @@ function GeneralTab({ profile, onProfileUpdated }) {
         />
       </div>
 
-      {/* RAM — custom step buttons + visual bar */}
+      {}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-white/50">RAM tối đa</label>
           <span className="text-xs font-bold text-green-400">{ram} GB</span>
         </div>
 
-        {/* Custom track: marks as clickable segments */}
+        {}
         <div className="relative flex items-center gap-0 h-6">
           {ramMarks.map((m, i) => {
             const isActive = m <= ram
@@ -223,11 +237,11 @@ function GeneralTab({ profile, onProfileUpdated }) {
                 className="relative flex-1 flex flex-col items-center gap-1 group"
                 title={`${m} GB`}
               >
-                {/* Track segment */}
+                {}
                 <div className={`w-full h-1.5 transition-all ${
                   isLast ? 'rounded-r-full' : i === 0 ? 'rounded-l-full' : ''
                 } ${isActive ? 'bg-green-500' : 'bg-white/10 group-hover:bg-white/20'}`} />
-                {/* Thumb dot on current */}
+                {}
                 {isCurrent && (
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-green-400 shadow-lg shadow-green-500/40 ring-2 ring-green-400/30 z-10" />
                 )}
@@ -236,7 +250,7 @@ function GeneralTab({ profile, onProfileUpdated }) {
           })}
         </div>
 
-        {/* Mark labels */}
+        {}
         <div className="flex">
           {ramMarks.map(m => (
             <button
@@ -252,7 +266,7 @@ function GeneralTab({ profile, onProfileUpdated }) {
         </div>
       </div>
 
-      {/* Window Size */}
+      {}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-white/50">Kích thước cửa sổ</label>
         <div className="flex items-center gap-2">
@@ -285,7 +299,7 @@ function GeneralTab({ profile, onProfileUpdated }) {
         </div>
       </div>
 
-      {/* JVM Args */}
+      {}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-white/50">JVM Arguments</label>
         <textarea
@@ -297,7 +311,7 @@ function GeneralTab({ profile, onProfileUpdated }) {
         />
       </div>
 
-      {/* Java Runtime */}
+      {}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-white/50">Java Runtime</label>
         <div className="flex items-center gap-2">
@@ -338,7 +352,7 @@ function GeneralTab({ profile, onProfileUpdated }) {
         )}
       </div>
 
-      {/* Save Button */}
+      {}
       <button
         onClick={handleSave}
         disabled={saving}
@@ -406,7 +420,7 @@ function WorldsTab({ profile }) {
           key={w.folderName || w.folder || w.name}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/3 border border-white/5 hover:bg-white/5 hover:border-white/8 transition-all group"
         >
-          {/* World Icon */}
+          {}
           <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 border border-white/8 flex items-center justify-center">
             {w.iconBase64 ? (
               <img src={w.iconBase64} alt={w.name || w.folderName} className="w-full h-full object-cover" />
@@ -415,7 +429,7 @@ function WorldsTab({ profile }) {
             )}
           </div>
 
-          {/* Info */}
+          {}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white/80 truncate">{w.displayName || w.name || w.folderName}</p>
             <div className="flex items-center gap-2 mt-0.5">
@@ -431,7 +445,7 @@ function WorldsTab({ profile }) {
             </div>
           </div>
 
-          {/* Delete */}
+          {}
           {confirmDelete === (w.folderName || w.folder) ? (
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className="text-[10px] text-red-400/70">Xóa?</span>
@@ -487,7 +501,6 @@ function ModsTab({ profile }) {
 
   useEffect(() => { load() }, [load])
 
-  // Fetch meta for visible mods
   useEffect(() => {
     if (!isElectron || mods.length === 0) return
     for (const mod of mods) {
@@ -516,7 +529,7 @@ function ModsTab({ profile }) {
             ? { ...m, fileName: r.newFileName, enabled: r.enabled }
             : m
         ))
-        // Update meta cache key
+
         if (r.newFileName !== mod.fileName) {
           setMetaCache(prev => {
             const next = { ...prev }
@@ -554,7 +567,7 @@ function ModsTab({ profile }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
+      {}
       <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
         <span className="text-xs text-white/30">{mods.length} mod</span>
         <ViewToggle view={view} onChange={setView} />
@@ -571,7 +584,7 @@ function ModsTab({ profile }) {
                   key={mod.fileName}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all group ${mod.enabled ? 'bg-white/3 border-white/5 hover:bg-white/5 hover:border-white/8' : 'bg-white/1 border-white/3 opacity-50 hover:opacity-70'}`}
                 >
-                  {/* Icon */}
+                  {}
                   <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white/5 border border-white/8 flex items-center justify-center">
                     {iconUrl ? (
                       <img src={iconUrl} alt="" className="w-full h-full object-cover" />
@@ -580,7 +593,7 @@ function ModsTab({ profile }) {
                     )}
                   </div>
 
-                  {/* Info */}
+                  {}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white/80 truncate">
                       {meta?.name || mod.displayName}
@@ -591,7 +604,7 @@ function ModsTab({ profile }) {
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {confirmDelete === mod.fileName ? (
                       <>
@@ -612,7 +625,7 @@ function ModsTab({ profile }) {
                       </>
                     ) : (
                       <>
-                        {/* Toggle */}
+                        {}
                         <button
                           onClick={() => handleToggle(mod)}
                           disabled={toggling === mod.fileName}
@@ -621,7 +634,7 @@ function ModsTab({ profile }) {
                         >
                           <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${mod.enabled ? 'left-[18px]' : 'left-0.5'}`} />
                         </button>
-                        {/* Delete */}
+                        {}
                         <button
                           onClick={() => setConfirmDelete(mod.fileName)}
                           className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all"
@@ -637,7 +650,7 @@ function ModsTab({ profile }) {
             })}
           </div>
         ) : (
-          /* Grid view */
+
           <div className="grid grid-cols-3 gap-2 p-2.5">
             {mods.map(mod => {
               const meta = metaCache[mod.fileName]
@@ -647,7 +660,7 @@ function ModsTab({ profile }) {
                   key={mod.fileName}
                   className={`relative rounded-xl border overflow-hidden transition-all group ${mod.enabled ? 'bg-white/3 border-white/8 hover:border-white/15' : 'bg-white/1 border-white/4 opacity-50 hover:opacity-70'}`}
                 >
-                  {/* Blurred background icon */}
+                  {}
                   <div className="relative w-full overflow-hidden" style={{ paddingBottom: '55%' }}>
                     {iconUrl && (
                       <img
@@ -665,7 +678,7 @@ function ModsTab({ profile }) {
                         )}
                       </div>
                     </div>
-                    {/* Toggle button top-right */}
+                    {}
                     <button
                       onClick={() => handleToggle(mod)}
                       disabled={toggling === mod.fileName}
@@ -676,7 +689,7 @@ function ModsTab({ profile }) {
                     </button>
                   </div>
 
-                  {/* Info + delete */}
+                  {}
                   <div className="px-2 py-1.5">
                     <p className="text-[10px] font-medium text-white/70 truncate leading-tight">
                       {meta?.name || mod.displayName}
@@ -1148,7 +1161,6 @@ const ALL_TABS = [
 export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdated }) {
   const isVanilla = !profile?.loader || profile.loader === 'vanilla'
 
-  // Filter out shaders tab for vanilla profiles
   const tabs = ALL_TABS.filter(t => {
     if (t.id === 'shaders' && isVanilla) return false
     return true
@@ -1156,12 +1168,10 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
 
   const [activeTab, setActiveTab] = useState('general')
 
-  // Reset to general tab when profile changes
   useEffect(() => {
     setActiveTab('general')
   }, [profile?.id])
 
-  // ESC to close
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose?.() }
     window.addEventListener('keydown', handler)
@@ -1175,7 +1185,7 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
+      {}
       <div className="flex-shrink-0 flex items-center gap-2 px-4 py-3 border-b border-white/5">
         <button
           onClick={onClose}
@@ -1195,7 +1205,7 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
         </div>
       </div>
 
-      {/* Tab bar */}
+      {}
       <div className="flex-shrink-0 flex items-center gap-0.5 px-3 py-2 border-b border-white/5 overflow-x-auto"
         style={{ scrollbarWidth: 'none' }}>
         {tabs.map(tab => (
@@ -1216,7 +1226,7 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
         ))}
       </div>
 
-      {/* Tab content */}
+      {}
       <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
         {TabComponent && (
           <TabComponent
@@ -1228,3 +1238,4 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
     </div>
   )
 }
+

@@ -1,8 +1,17 @@
 /**
- * TabLoadingOverlay
- * Hiển thị overlay loading với animation logo từ SplashScreen
- * khi chuyển giữa các sub-tab để tránh flash nội dung cũ
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
 export default function TabLoadingOverlay({ visible }) {
   if (!visible) return null
 
@@ -54,9 +63,9 @@ export default function TabLoadingOverlay({ visible }) {
         }
       `}</style>
 
-      {/* Logo animation — thu nhỏ so với splash */}
+      {}
       <div className="relative flex items-center justify-center" style={{ width: 80, height: 80 }}>
-        {/* Glow */}
+        {}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
           style={{ animation: 'tab-glow 3s ease-in-out infinite' }}
@@ -64,7 +73,7 @@ export default function TabLoadingOverlay({ visible }) {
           <div className="w-16 h-16 bg-green-500/25 rounded-full blur-2xl" />
         </div>
 
-        {/* 4 blocks */}
+        {}
         <div className="absolute rounded-lg" style={{
           width: 18, height: 18,
           background: '#4ade80',
@@ -93,3 +102,4 @@ export default function TabLoadingOverlay({ visible }) {
     </div>
   )
 }
+

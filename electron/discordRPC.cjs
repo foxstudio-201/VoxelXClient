@@ -12,20 +12,8 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
-/**
- * Discord Rich Presence for VoxelXClient.
- *
- * To use this you need to:
- * 1. Go to https://discord.com/developers/applications
- * 2. Create a new application, name it "VoxelXClient"
- * 3. Copy the Application ID → replace CLIENT_ID below
- * 4. Go to the "Rich Presence" tab → "Art Assets" → upload voxelxclient-logo.png
- *    name the asset "logo" (must match largeImageKey below)
- */
-
 const DiscordRPC = require('discord-rpc')
 
-// ── Replace with your Application ID from the Discord Developer Portal ────────
 const CLIENT_ID = '1502586952040452249'
 
 let client    = null
@@ -130,3 +118,4 @@ const PRESETS = {
 }
 
 module.exports = { connect, disconnect, setActivity, PRESETS }
+

@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -8,12 +22,11 @@ function formatBytes(b) {
   return `${(b / 1024 / 1024).toFixed(1)} MB`
 }
 
-// status: idle | checking | upToDate | noRelease | updateAvailable | downloading | installing | error
 export default function UpdateWindow() {
   const [status, setStatus]     = useState('idle')
-  const [result, setResult]     = useState(null)   // check result
+  const [result, setResult]     = useState(null)
   const [version, setVersion]   = useState('')
-  const [dlProgress, setDlProgress] = useState(null) // { percent, downloaded, total, speed }
+  const [dlProgress, setDlProgress] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const unsubRef = useRef(null)
 
@@ -21,19 +34,17 @@ export default function UpdateWindow() {
     if (isElectron) window.electronAPI.getVersion().then(setVersion)
     else setVersion('1.0.0')
 
-    // Subscribe to download progress
     if (isElectron) {
       unsubRef.current = window.electronAPI.onDownloadProgress(p => setDlProgress(p))
     }
 
-    // Listen for pre-loaded check result from splash (auto-start download)
     let unsubPreload = null
     if (isElectron && window.electronAPI.onUpdaterPreloadResult) {
       unsubPreload = window.electronAPI.onUpdaterPreloadResult((res) => {
         setResult(res)
         if (res?.hasUpdate) {
           setStatus('updateAvailable')
-          // Auto-start download immediately
+
           handleDownload(res)
         } else {
           setStatus('upToDate')
@@ -47,9 +58,8 @@ export default function UpdateWindow() {
     }
   }, [])
 
-  // Auto-check on open only if not opened from splash (no preload result)
   useEffect(() => {
-    // Small delay to allow preload result to arrive first
+
     const t = setTimeout(() => {
       if (status === 'idle') handleCheck()
     }, 800)
@@ -74,7 +84,7 @@ export default function UpdateWindow() {
         setStatus('noRelease')
       } else if (res.hasUpdate) {
         setStatus('updateAvailable')
-        // Do NOT auto-download — let user click the button
+
       } else {
         setStatus('upToDate')
       }
@@ -109,9 +119,8 @@ export default function UpdateWindow() {
         return
       }
 
-      // Download done — install immediately
       setStatus('installing')
-      await new Promise(r => setTimeout(r, 600)) // brief pause for UI
+      await new Promise(r => setTimeout(r, 600))
 
       const installRes = isElectron
         ? await window.electronAPI.installUpdate({ filePath: res.filePath })
@@ -121,7 +130,7 @@ export default function UpdateWindow() {
         setErrorMsg(`Cài đặt thất bại: ${installRes.error}`)
         setStatus('error')
       }
-      // App will quit and installer will run — no further UI needed
+
     } catch (err) {
       setErrorMsg(err.message)
       setStatus('error')
@@ -139,7 +148,7 @@ export default function UpdateWindow() {
 
   return (
     <div className="w-screen h-screen flex flex-col bg-[#0f0f0f] overflow-hidden select-none">
-      {/* Title bar */}
+      {}
       <div className="drag-region flex items-center justify-between h-9 px-4 bg-black/40 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-2 no-drag">
           <div className="w-4 h-4">
@@ -162,9 +171,9 @@ export default function UpdateWindow() {
         </button>
       </div>
 
-      {/* Content */}
+      {}
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6 overflow-y-auto py-8">
-        {/* Logo */}
+        {}
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-400/20 to-emerald-600/20 border border-green-500/20 flex items-center justify-center flex-shrink-0">
           <svg viewBox="0 0 24 24" fill="none" className="w-9 h-9">
             <rect x="2"  y="2"  width="9" height="9" fill="#4ade80" rx="1.5"/>
@@ -181,10 +190,10 @@ export default function UpdateWindow() {
           </p>
         </div>
 
-        {/* Status card */}
+        {}
         <div className="w-full max-w-sm">
 
-          {/* Checking */}
+          {}
           {status === 'checking' && (
             <div className="flex flex-col items-center gap-3 py-4">
               <svg className="animate-spin w-7 h-7 text-green-400" viewBox="0 0 24 24" fill="none">
@@ -195,7 +204,7 @@ export default function UpdateWindow() {
             </div>
           )}
 
-          {/* Up to date */}
+          {}
           {status === 'upToDate' && (
             <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-center">
               <div className="w-10 h-10 rounded-full bg-green-500/15 border border-green-500/25 flex items-center justify-center mx-auto mb-3">
@@ -208,7 +217,7 @@ export default function UpdateWindow() {
             </div>
           )}
 
-          {/* No release yet */}
+          {}
           {status === 'noRelease' && (
             <div className="rounded-xl border border-yellow-500/15 bg-yellow-500/5 p-5 text-center">
               <p className="text-sm text-yellow-400/80 font-semibold">Chưa có bản phát hành nào</p>
@@ -216,7 +225,7 @@ export default function UpdateWindow() {
             </div>
           )}
 
-          {/* Update available — user clicks to download */}
+          {}
           {status === 'updateAvailable' && result && (
             <div className="rounded-xl border border-green-500/20 bg-green-500/8 p-5">
               <div className="flex items-center gap-3 mb-4">
@@ -254,7 +263,7 @@ export default function UpdateWindow() {
             </div>
           )}
 
-          {/* Downloading */}
+          {}
           {status === 'downloading' && (
             <div className="rounded-xl border border-green-500/20 bg-green-500/8 p-5">
               <div className="flex items-center gap-2 mb-4">
@@ -265,7 +274,7 @@ export default function UpdateWindow() {
                 <p className="text-sm font-semibold text-white/80">Đang tải bản cập nhật...</p>
               </div>
 
-              {/* Progress bar */}
+              {}
               <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-2">
                 <div className="h-full bg-green-400 rounded-full transition-all duration-300"
                   style={{ width: `${dlProgress?.percent ?? 0}%` }} />
@@ -290,7 +299,7 @@ export default function UpdateWindow() {
             </div>
           )}
 
-          {/* Installing */}
+          {}
           {status === 'installing' && (
             <div className="rounded-xl border border-green-500/20 bg-green-500/8 p-5 text-center">
               <svg className="animate-spin w-7 h-7 text-green-400 mx-auto mb-3" viewBox="0 0 24 24" fill="none">
@@ -302,7 +311,7 @@ export default function UpdateWindow() {
             </div>
           )}
 
-          {/* Error */}
+          {}
           {status === 'error' && (
             <div className="rounded-xl border border-red-500/20 bg-red-500/8 p-5 text-center">
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-red-400 mx-auto mb-2">
@@ -317,7 +326,7 @@ export default function UpdateWindow() {
           )}
         </div>
 
-        {/* Manual check button — only show when idle/error/upToDate/noRelease */}
+        {}
         {['idle', 'upToDate', 'noRelease', 'error'].includes(status) && (
           <button onClick={handleCheck}
             className="px-8 py-2.5 rounded-xl text-sm font-bold bg-green-500 hover:bg-green-400 text-white transition-all duration-200 active:scale-95 flex-shrink-0">
@@ -325,7 +334,7 @@ export default function UpdateWindow() {
           </button>
         )}
 
-        {/* Source link */}
+        {}
         <button onClick={() => openUrl('https://github.com/foxstudio-201/VoxelXClient')}
           className="text-[10px] text-white/15 hover:text-white/35 transition-colors flex-shrink-0">
           foxstudio-201/VoxelXClient
@@ -334,3 +343,4 @@ export default function UpdateWindow() {
     </div>
   )
 }
+

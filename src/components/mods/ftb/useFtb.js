@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -77,7 +91,7 @@ export function useFtbSearch(filters) {
       cancelledRef.current = true
       loadingRef.current = false
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [filters.query])
 
   const loadMore = useCallback(() => {
@@ -173,3 +187,4 @@ export function useFtbInstall() {
 
   return { install, installing, progress, error, done, reset }
 }
+

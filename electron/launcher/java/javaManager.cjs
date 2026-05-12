@@ -13,17 +13,6 @@
  */
 
 'use strict'
-/**
- * javaManager.cjs
- * Automatically selects and downloads the appropriate Java runtime for the game version.
- *
- * Mapping:
- *   MC ≤ 1.16  → Java 8  (jre-legacy)
- *   MC 1.17-1.20 → Java 17 (java-runtime-gamma)
- *   MC ≥ 1.21  → Java 21 (java-runtime-delta)
- *
- * Downloads from Mojang JRE manifest, extracts to <dataDir>/runtimes/<component>/
- */
 
 const https  = require('https')
 const http   = require('http')
@@ -41,9 +30,9 @@ function getJavaComponent(gameVersion) {
   const parts = gameVersion.split('.')
   const minor = parseInt(parts[1] || '0', 10)
 
-  if (minor <= 16) return 'jre-legacy'          // Java 8
-  if (minor <= 20) return 'java-runtime-gamma'  // Java 17
-  return 'java-runtime-delta'                   // Java 21+
+  if (minor <= 16) return 'jre-legacy'
+  if (minor <= 20) return 'java-runtime-gamma'
+  return 'java-runtime-delta'
 }
 
 function getJavaVersion(component) {
@@ -119,7 +108,6 @@ function downloadFile(url, destPath, onProgress) {
 async function extractTarGz(tarPath, destDir) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
-  // Use Node's built-in tar (child_process) or manual extract
   const { spawn } = require('child_process')
   return new Promise((resolve, reject) => {
     const tar = spawn('tar', ['-xzf', tarPath, '-C', destDir, '--strip-components=1'], {
@@ -137,7 +125,6 @@ async function extractTarGz(tarPath, destDir) {
 async function extractZip(zipPath, destDir) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
-  // Use PowerShell on Windows
   const { spawn } = require('child_process')
   return new Promise((resolve, reject) => {
     const ps = spawn('powershell', [
@@ -153,14 +140,7 @@ async function extractZip(zipPath, destDir) {
 }
 
 // ─── Main: ensure Java is available ──────────────────────────────────────────
-/**
- * Ensure the Java runtime for gameVersion is downloaded.
- * Returns the path to the java executable.
- *
- * @param {string} gameVersion  - e.g. "1.21.4"
- * @param {string} runtimesDir  - directory to store runtimes
- * @param {function} onProgress - callback({ phase, component, javaVersion, downloaded, total, percent })
- */
+
 async function ensureJava(gameVersion, runtimesDir, onProgress) {
   const component   = getJavaComponent(gameVersion)
   const javaVersion = getJavaVersion(component)
@@ -169,7 +149,6 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
 
   onProgress?.({ phase: 'java_check', component, javaVersion })
 
-  // Already available
   if (fs.existsSync(javaExe)) {
     onProgress?.({ phase: 'java_ready', component, javaVersion, path: javaExe })
     return javaExe
@@ -177,7 +156,6 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
 
   onProgress?.({ phase: 'java_fetch_manifest', component, javaVersion })
 
-  // Fetch JRE manifest
   const allManifest = await httpsGetRaw(JRE_MANIFEST_URL)
   const platform    = getMojangPlatform()
   const platformData = allManifest[platform]
@@ -191,11 +169,9 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
   const manifest = componentData[0].manifest
   onProgress?.({ phase: 'java_fetch_files', component, javaVersion })
 
-  // Fetch file list
   const fileManifest = await httpsGetRaw(manifest.url)
   const files = Object.entries(fileManifest.files)
 
-  // Download each file
   let done = 0
   const total = files.length
 
@@ -216,7 +192,6 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
     const destDir  = path.dirname(destPath)
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
-    // Skip if already present and correct size
     if (fs.existsSync(destPath)) {
       const stat = fs.statSync(destPath)
       if (stat.size === fileData.downloads.raw.size) {
@@ -228,7 +203,6 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
 
     await downloadFile(fileData.downloads.raw.url, destPath, null)
 
-    // Set executable bit on Unix
     if (process.platform !== 'win32' && fileData.executable) {
       try { fs.chmodSync(destPath, 0o755) } catch {}
     }
@@ -247,13 +221,6 @@ async function ensureJava(gameVersion, runtimesDir, onProgress) {
 
 module.exports = { ensureJava, getJavaComponent, getJavaVersion, findJavaInstallations }
 
-/**
- * Find all Java installations on the machine:
- * - Mojang-managed runtimes (downloaded by launcher)
- * - JAVA_HOME env
- * - PATH
- * - Common paths on Windows/macOS/Linux
- */
 async function findJavaInstallations() {
   const { execFile } = require('child_process')
   const results = []
@@ -266,7 +233,7 @@ async function findJavaInstallations() {
     return new Promise(resolve => {
       execFile(javaPath, ['-version'], { timeout: 3000 }, (err, stdout, stderr) => {
         const output = stderr || stdout || ''
-        // java -version prints to stderr: 'openjdk version "21.0.1" ...'
+
         const match = output.match(/version "([^"]+)"/)
         const version = match ? match[1] : null
         const major = version ? parseInt(version.split('.')[0] === '1' ? version.split('.')[1] : version.split('.')[0], 10) : null
@@ -278,7 +245,6 @@ async function findJavaInstallations() {
 
   const promises = []
 
-  // 1. Mojang-managed runtimes (downloaded by launcher)
   const { app } = require('electron')
   const runtimesDir = require('path').join(app.getPath('appData'), '.VoxelXClient', 'runtimes')
   if (fs.existsSync(runtimesDir)) {
@@ -288,7 +254,6 @@ async function findJavaInstallations() {
     }
   }
 
-  // 2. JAVA_HOME
   if (process.env.JAVA_HOME) {
     const exe = process.platform === 'win32'
       ? path.join(process.env.JAVA_HOME, 'bin', 'java.exe')
@@ -296,7 +261,6 @@ async function findJavaInstallations() {
     promises.push(tryJava(exe))
   }
 
-  // 3. Common Windows paths
   if (process.platform === 'win32') {
     const roots = [
       'C:\\Program Files\\Java',
@@ -313,7 +277,6 @@ async function findJavaInstallations() {
     }
   }
 
-  // 4. macOS
   if (process.platform === 'darwin') {
     const roots = ['/Library/Java/JavaVirtualMachines', '/usr/local/opt']
     for (const root of roots) {
@@ -325,7 +288,6 @@ async function findJavaInstallations() {
     }
   }
 
-  // 5. Linux
   if (process.platform === 'linux') {
     const roots = ['/usr/lib/jvm', '/usr/java']
     for (const root of roots) {
@@ -338,7 +300,6 @@ async function findJavaInstallations() {
 
   await Promise.allSettled(promises)
 
-  // Sort: Mojang-managed first, then by version descending
   return results.sort((a, b) => {
     const aManaged = a.path.includes('.VoxelXClient')
     const bManaged = b.path.includes('.VoxelXClient')
@@ -346,3 +307,4 @@ async function findJavaInstallations() {
     return parseInt(b.version) - parseInt(a.version)
   })
 }
+

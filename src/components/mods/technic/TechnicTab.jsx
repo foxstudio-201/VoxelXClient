@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import TechnicGrid from './TechnicGrid'
 import TechnicDetail from './TechnicDetail'
@@ -6,7 +20,7 @@ import TabLoadingOverlay from '../shared/TabLoadingOverlay'
 import { useTechnicSearch } from './useTechnic'
 
 const DEFAULT_FILTERS = {
-  query:        'tekkit', // Default search to show something
+  query:        'tekkit',
 }
 
 export default function TechnicTab() {
@@ -19,7 +33,6 @@ export default function TechnicTab() {
 
   const { results, total, loading, error, loadMore, hasMore } = useTechnicSearch(filters)
 
-  // Hide overlay when loading finishes
   useEffect(() => {
     if (!loading && tabLoading) {
       tabLoadingTimer.current = setTimeout(() => setTabLoading(false), 120)
@@ -37,7 +50,6 @@ export default function TechnicTab() {
     setProject({ id: project.slug, type: 'modpack' })
   }
 
-  // If a project is selected, show detail view
   if (selectedProject) {
     return (
       <TechnicDetail
@@ -50,7 +62,7 @@ export default function TechnicTab() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header + search bar */}
+      {}
       <div className="flex-shrink-0 px-4 pt-3 pb-2 space-y-2">
         <form onSubmit={handleSearch} className="flex items-center gap-2">
           <div className="flex-1 relative">
@@ -68,7 +80,7 @@ export default function TechnicTab() {
           <ViewToggle view={view} onChange={setView} />
         </form>
 
-        {/* Loading bar XOR Result count */}
+        {}
         <div className="flex items-center justify-center min-h-[18px]">
           {loading ? (
             <div className="w-full h-0.5 rounded-full overflow-hidden bg-white/5">
@@ -98,7 +110,7 @@ export default function TechnicTab() {
         `}</style>
       </div>
 
-      {/* Main content */}
+      {}
       <div className="flex flex-1 overflow-hidden gap-0">
         <div className="flex-1 overflow-hidden px-2 py-1 relative" style={{ isolation: 'isolate' }}>
           <TabLoadingOverlay visible={tabLoading} />
@@ -116,3 +128,4 @@ export default function TechnicTab() {
     </div>
   )
 }
+

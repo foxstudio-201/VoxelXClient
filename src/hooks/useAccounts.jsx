@@ -1,4 +1,18 @@
-﻿import { useState, useEffect, useCallback, createContext, useContext } from 'react'
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+import { useState, useEffect, useCallback, createContext, useContext } from 'react'
 import { offlineUUID } from '../utils/offlineUUID'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -31,7 +45,7 @@ export function AccountsProvider({ children }) {
   }, [])
 
   const addAccount = useCallback(async (account) => {
-    // Microsoft account đã được lưu bởi main process — chỉ cần reload
+
     if (account._msAlreadySaved) {
       const data = isElectron
         ? await window.electronAPI.getAccounts()
@@ -110,3 +124,4 @@ export function useAccounts() {
   if (!ctx) throw new Error('useAccounts must be used inside AccountsProvider')
   return ctx
 }
+

@@ -1,18 +1,18 @@
-'use strict'
 /**
- * neoforgeLoader.cjs — NeoForge setup
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * NeoForge is a fork of Forge maintained by the community (post-1.20.1).
- * It uses its own Maven repository and installer format, but the install
- * flow is identical to Forge: download installer → run --installClient.
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
  *
- * Supported versions: 1.20.2+ (NeoForge starts at 1.20.2)
- * Version format: <neoforge-version>  e.g. "21.4.0"  (no MC prefix in artifact)
- *
- * Maven coords:
- *   net.neoforged:neoforge:<version>:installer
- *   https://maven.neoforged.net/releases/net/neoforged/neoforge/<version>/neoforge-<version>-installer.jar
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const https  = require('https')
 const http   = require('http')
@@ -74,7 +74,7 @@ function mavenToPath(coord) {
 function resolveJvmArgs(rawArgs, librariesDir, versionName) {
   if (!Array.isArray(rawArgs)) return []
   const sep = process.platform === 'win32' ? ';' : ':'
-  // NeoForge uses forward slashes in -p module path even on Windows
+
   const libDirFwd = librariesDir.replace(/\\/g, '/')
   const result = []
   for (const arg of rawArgs) {
@@ -124,7 +124,6 @@ async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, jav
 
   if (!fs.existsSync(installerDir)) fs.mkdirSync(installerDir, { recursive: true })
 
-  // 1. Download installer
   if (!fs.existsSync(installerPath) || fs.statSync(installerPath).size === 0) {
     onProgress?.({ phase: 'neoforge_download', log: `Downloading NeoForge ${neoVersion} installer...`, done: 0, total: 1 })
     try {
@@ -141,7 +140,6 @@ async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, jav
     onProgress?.({ phase: 'neoforge_download', log: 'NeoForge installer already cached.', done: 1, total: 1 })
   }
 
-  // 2. Ensure vanilla client.jar is at the expected location for the installer
   const vanillaVersionDir = path.join(instanceRoot, 'versions', mcVersion)
   const vanillaJarDest    = path.join(vanillaVersionDir, `${mcVersion}.jar`)
   if (!fs.existsSync(vanillaJarDest) && clientJar && fs.existsSync(clientJar)) {
@@ -150,12 +148,10 @@ async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, jav
     onProgress?.({ phase: 'neoforge_install', log: 'Placed vanilla client.jar for installer.' })
   }
 
-  // NeoForge version JSON id: neoforge-<neoVersion>
   const versionId       = `neoforge-${neoVersion}`
   const versionDir      = path.join(instanceRoot, 'versions', versionId)
   const versionJsonPath = path.join(versionDir, `${versionId}.json`)
 
-  // 3. Run installer --installClient
   if (!fs.existsSync(versionJsonPath)) {
     onProgress?.({ phase: 'neoforge_install', log: 'Running NeoForge installer (this may take a minute)...', done: 0, total: 1 })
 
@@ -191,7 +187,6 @@ async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, jav
     onProgress?.({ phase: 'neoforge_install', log: 'NeoForge already installed, skipping installer.', done: 1, total: 1 })
   }
 
-  // 4. Read generated version JSON
   if (!fs.existsSync(versionJsonPath)) {
     throw new Error(`NeoForge version JSON not found after install: ${versionJsonPath}`)
   }
@@ -200,7 +195,6 @@ async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, jav
   const mainClass = profile.mainClass
   if (!mainClass) throw new Error('NeoForge version JSON missing mainClass')
 
-  // 5. Collect library paths
   const instLibDir     = path.join(instanceRoot, 'libraries')
   const extraLibraries = []
 
@@ -218,12 +212,10 @@ async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, jav
     }
   }
 
-  // 6. JVM args — dùng profile.id làm version_name (e.g. "neoforge-21.1.228")
   const effectiveLibDir = fs.existsSync(instLibDir) ? instLibDir : librariesDir
   const versionName = profile.id || `neoforge-${neoVersion}`
   const jvmArgs = resolveJvmArgs(profile.arguments?.jvm || [], effectiveLibDir, versionName)
 
-  // 7. Game args
   const gameArgs = Array.isArray(profile.arguments?.game)
     ? profile.arguments.game.filter(a => typeof a === 'string')
     : []
@@ -237,8 +229,9 @@ async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, jav
     gameArgs,
     shimJar:              null,
     customClientJar:      null,
-    needsVanillaClasspath: true,  // NeoForge relies on vanilla's -cp via inheritsFrom
+    needsVanillaClasspath: true,
   }
 }
 
 module.exports = { setupNeoForge }
+

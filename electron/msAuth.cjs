@@ -12,16 +12,6 @@
  *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
-/**
- * msAuth.cjs — Microsoft OAuth + Minecraft auth flow
- *
- * Flow: OAuth2 Authorization Code (loopback) → Xbox Live → XSTS → Minecraft
- *
- * Opens a BrowserWindow for the user to log in directly on the Microsoft page.
- * After authentication, redirects to localhost and captures the authorization code.
- * Saves refresh_token for auto-renewal — no need to log in again.
- */
-
 'use strict'
 
 const https   = require('https')
@@ -75,11 +65,7 @@ function encodeForm(obj) {
 }
 
 // ─── Step 1: Open Microsoft login window ─────────────────────────────────────
-/**
- * Opens a BrowserWindow with the Microsoft login page.
- * After login, Microsoft redirects to REDIRECT_URI with ?code=...
- * We intercept that URL and extract the authorization code.
- */
+
 function openAuthWindow(parentWindow) {
   return new Promise((resolve, reject) => {
     const state = crypto.randomBytes(16).toString('hex')
@@ -104,8 +90,8 @@ function openAuthWindow(parentWindow) {
         nodeIntegration:  false,
         contextIsolation: true,
         sandbox:          false,
-        webSecurity:      false,  // allow cross-origin in auth window
-        partition:        'auth-window', // separate session, not affected by CSP injection
+        webSecurity:      false,
+        partition:        'auth-window',
       },
     })
 
@@ -138,11 +124,9 @@ function openAuthWindow(parentWindow) {
       return false
     }
 
-    // Catch redirect on navigate
     win.webContents.on('will-redirect', (_e, url) => { handleRedirect(url) })
     win.webContents.on('will-navigate', (_e, url) => { handleRedirect(url) })
 
-    // Catch redirect via did-navigate (some flows use this)
     win.webContents.on('did-navigate', (_e, url) => { handleRedirect(url) })
 
     win.on('closed', () => {
@@ -165,7 +149,7 @@ async function exchangeCodeForTokens(code) {
   if (!res.body.access_token) {
     throw new Error(res.body.error_description || res.body.error || `Token exchange failed: ${res.status}`)
   }
-  return res.body // { access_token, refresh_token, expires_in, ... }
+  return res.body
 }
 
 // ─── Step 3: Refresh access token ────────────────────────────────────────────
@@ -281,22 +265,17 @@ async function msTokensToMinecraft(msAccessToken, msRefreshToken) {
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
-/**
- * Opens the Microsoft login window and completes the full auth chain.
- * @param {BrowserWindow} parentWindow
- */
+
 async function loginWithWindow(parentWindow) {
   const code     = await openAuthWindow(parentWindow)
   const msTokens = await exchangeCodeForTokens(code)
   return msTokensToMinecraft(msTokens.access_token, msTokens.refresh_token)
 }
 
-/**
- * Refresh Minecraft token using the saved MS refresh_token.
- */
 async function refreshMinecraftToken(msRefreshToken) {
   const msTokens = await refreshAccessToken(msRefreshToken)
   return msTokensToMinecraft(msTokens.access_token, msTokens.refresh_token || msRefreshToken)
 }
 
 module.exports = { loginWithWindow, refreshMinecraftToken }
+

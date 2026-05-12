@@ -1,12 +1,22 @@
 /**
- * AppBackground — render nền động cho toàn app
- * Được mount trong App.jsx, đọc setting từ CSS variable --app-bg-id
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
 import { useEffect, useState } from 'react'
 
 // ─── Danh sách nền ────────────────────────────────────────────────────────────
 export const BG_THEMES = [
-  // ── Static ──
+
   {
     id: 'dark',
     label: 'Dark',
@@ -29,7 +39,6 @@ export const BG_THEMES = [
     baseColor: '#0f0f0f',
   },
 
-  // ── Nature ──
   {
     id: 'forest',
     label: 'Forest',
@@ -52,7 +61,6 @@ export const BG_THEMES = [
     baseColor: '#071a14',
   },
 
-  // ── Vivid ──
   {
     id: 'sunset',
     label: 'Sunset',
@@ -75,7 +83,6 @@ export const BG_THEMES = [
     baseColor: '#080818',
   },
 
-  // ── Animated ──
   {
     id: 'anim-pulse',
     label: 'Pulse',
@@ -124,7 +131,7 @@ function PulseBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: '#080f08' }} />
-      {/* Breathing orbs */}
+      {}
       <div
         className="absolute rounded-full"
         style={{
@@ -152,7 +159,7 @@ function PulseBackground() {
           animation: 'bg-pulse-3 6s ease-in-out infinite',
         }}
       />
-      {/* Subtle grid */}
+      {}
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
@@ -168,7 +175,7 @@ function AuroraBorealisBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: '#060d10' }} />
-      {/* Aurora bands */}
+      {}
       <div
         className="absolute"
         style={{
@@ -199,7 +206,7 @@ function AuroraBorealisBackground() {
           filter: 'blur(30px)',
         }}
       />
-      {/* Stars */}
+      {}
       <div className="absolute inset-0" style={{ opacity: 0.4 }}>
         {Array.from({ length: 60 }).map((_, i) => (
           <div
@@ -235,7 +242,7 @@ function StarfieldBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#050510 0%,#0a0a1a 100%)' }} />
-      {/* Milky way glow */}
+      {}
       <div
         className="absolute"
         style={{
@@ -245,7 +252,7 @@ function StarfieldBackground() {
           transform: 'rotate(-15deg)',
         }}
       />
-      {/* Stars */}
+      {}
       {stars.map(s => (
         <div
           key={s.id}
@@ -259,7 +266,7 @@ function StarfieldBackground() {
           }}
         />
       ))}
-      {/* Shooting star */}
+      {}
       <div
         className="absolute"
         style={{
@@ -278,14 +285,14 @@ function MatrixBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: '#000a00' }} />
-      {/* Scanlines */}
+      {}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.015) 2px, rgba(0,255,0,0.015) 4px)',
         }}
       />
-      {/* Glow columns */}
+      {}
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
@@ -299,7 +306,7 @@ function MatrixBackground() {
           }}
         />
       ))}
-      {/* Center glow */}
+      {}
       <div
         className="absolute inset-0"
         style={{
@@ -315,7 +322,7 @@ function EmberBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,#100300 0%,#1a0500 100%)' }} />
-      {/* Ember glow pools */}
+      {}
       <div
         className="absolute rounded-full"
         style={{
@@ -337,7 +344,7 @@ function EmberBackground() {
           filter: 'blur(30px)',
         }}
       />
-      {/* Floating embers */}
+      {}
       {Array.from({ length: 12 }).map((_, i) => (
         <div
           key={i}
@@ -380,7 +387,6 @@ export default function AppBackground({ bgId }) {
     )
   }
 
-  // Static gradient
   return (
     <div
       className="fixed inset-0 z-0 pointer-events-none"
@@ -388,3 +394,4 @@ export default function AppBackground({ bgId }) {
     />
   )
 }
+

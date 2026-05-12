@@ -1,12 +1,19 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState } from 'react'
 
-/**
- * Fallback chain — ưu tiên username để lấy đúng skin premium:
- * 1. minotar.net/avatar/<username>  — nhận username trực tiếp, không cần UUID
- * 2. crafthead.net/avatar/<username>
- * 3. crafthead.net/avatar/<uuid>    — fallback UUID offline
- * 4. Chữ cái đầu
- */
 function buildSrcs(uuid, username) {
   const srcs = []
   if (username) {
@@ -24,10 +31,8 @@ export default function PlayerHead({ uuid, username, size = 32, customSkinUrl = 
   const srcs = buildSrcs(uuid, username)
   const [idx, setIdx] = useState(0)
 
-  // Reset khi uuid/username thay đổi
   const key = `${uuid}-${username}`
 
-  // customSkinUrl takes priority
   const src = customSkinUrl || (srcs[idx] ?? null)
   const initial = username?.[0]?.toUpperCase() ?? '?'
   const rounded = Math.round(size * 0.2)
@@ -71,3 +76,4 @@ export default function PlayerHead({ uuid, username, size = 32, customSkinUrl = 
     </div>
   )
 }
+

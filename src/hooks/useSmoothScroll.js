@@ -1,16 +1,23 @@
 /**
- * Smooth scroll — ease-to-target.
- * Mỗi nấc wheel thêm vào target, animation lerp từ current → target,
- * giảm dần và dừng chính xác tại target.
- * Cảm giác: trượt mượt, giảm dần, không overshoot.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
 export function initGlobalSmoothScroll() {
-  // Pixel mỗi nấc wheel (deltaY thường = 100 hoặc 120)
+
   const STEP   = 100
-  // Lerp factor mỗi frame: 0.12 = mượt vừa (~350ms để đến đích)
+
   const LERP   = 0.12
-  // Dừng khi còn cách đích < ngưỡng này
+
   const SNAP   = 0.5
 
   const states = new WeakMap()
@@ -44,14 +51,13 @@ export function initGlobalSmoothScroll() {
     const dist = s.target - s.current
 
     if (Math.abs(dist) < SNAP) {
-      // Snap đến đích chính xác
+
       s.current  = s.target
       el.scrollTop = s.target
       s.rafId    = null
       return
     }
 
-    // Lerp: tiến gần target theo tỉ lệ LERP mỗi frame
     s.current   += dist * LERP
     el.scrollTop = s.current
     s.rafId      = requestAnimationFrame(() => tick(el))
@@ -61,7 +67,6 @@ export function initGlobalSmoothScroll() {
     const scrollEl = getScrollParent(el)
     if (!scrollEl) return null
 
-    // Sync current với scrollTop thực tế (phòng trường hợp user dùng scrollbar)
     const s = getState(scrollEl)
     if (Math.abs(scrollEl.scrollTop - s.current) > 2) {
       s.current = scrollEl.scrollTop
@@ -80,13 +85,10 @@ export function initGlobalSmoothScroll() {
     e.preventDefault()
     e.stopPropagation()
 
-    // Normalize delta → số nấc
     let delta = e.deltaY
-    if (e.deltaMode === 1) delta *= 20    // line mode
-    if (e.deltaMode === 2) delta *= 300   // page mode
+    if (e.deltaMode === 1) delta *= 20
+    if (e.deltaMode === 2) delta *= 300
 
-    // Chuẩn hóa về STEP pixel mỗi nấc
-    // deltaY thường là 100 hoặc 120 → normalize về 1 nấc = STEP px
     const normalized = (delta / 100) * STEP
 
     const s   = getState(scrollEl)
@@ -104,3 +106,4 @@ export function initGlobalSmoothScroll() {
 }
 
 export function useSmoothScroll() {}
+

@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useMemo } from 'react'
 import { DownloadSimple, Heart, CalendarBlank, ArrowLeft, ArrowSquareOut } from '@phosphor-icons/react'
 import { useFtbProject, useFtbVersions } from './useFtb'
@@ -95,7 +109,7 @@ export default function FtbDetail({ projectId, onBack }) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
+      {}
       <div className="flex-shrink-0 px-4 pt-3 pb-0">
         <button onClick={onBack}
           className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors mb-3">
@@ -129,7 +143,7 @@ export default function FtbDetail({ projectId, onBack }) {
           </div>
         </div>
 
-        {/* Stats */}
+        {}
         <div className="flex items-center gap-4 mb-3 text-sm">
           <span className="flex items-center gap-1.5 text-green-400/80">
             <DownloadSimple size={15} weight="bold" />
@@ -147,7 +161,7 @@ export default function FtbDetail({ projectId, onBack }) {
           </span>
         </div>
 
-        {/* Tags */}
+        {}
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {tags.map(t => (
@@ -161,7 +175,7 @@ export default function FtbDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* Sub tabs */}
+        {}
         <div className="flex gap-0 border-b border-white/5 mt-2">
           {DETAIL_TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -178,10 +192,10 @@ export default function FtbDetail({ projectId, onBack }) {
         </div>
       </div>
 
-      {/* Tab content */}
+      {}
       <div className="flex-1 overflow-y-auto px-4 py-3" style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
 
-        {/* Description */}
+        {}
         {activeTab === 'description' && (
           <div className="flex flex-col gap-4">
             {project.background_url && (
@@ -230,7 +244,7 @@ export default function FtbDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* Versions */}
+        {}
         {activeTab === 'versions' && (
           <div className="flex flex-col gap-3">
             {vLoading && (
@@ -285,7 +299,7 @@ export default function FtbDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* Gallery */}
+        {}
         {activeTab === 'gallery' && (
           <div>
             {(!project.gallery || project.gallery.length === 0) ? (
@@ -303,7 +317,7 @@ export default function FtbDetail({ projectId, onBack }) {
         )}
       </div>
 
-      {/* Install modal */}
+      {}
       {showInstall && selectedVersion && (
         <InstallModal
           project={project}
@@ -316,3 +330,4 @@ export default function FtbDetail({ projectId, onBack }) {
     </div>
   )
 }
+

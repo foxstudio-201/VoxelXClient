@@ -1,8 +1,18 @@
-'use strict'
 /**
- * modrinthSearch.cjs
- * Modrinth API v2 — search, project detail, versions, install
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const https = require('https')
 const http  = require('http')
@@ -61,18 +71,7 @@ function downloadFile(url, destPath, onProgress) {
 }
 
 // ─── Search ───────────────────────────────────────────────────────────────────
-/**
- * Search Modrinth projects
- * @param {object} opts
- * @param {string} opts.query
- * @param {string} opts.projectType  - 'mod'|'modpack'|'shader'|'resourcepack'|'datapack'
- * @param {string[]} opts.gameVersions
- * @param {string[]} opts.loaders
- * @param {string[]} opts.categories
- * @param {string} opts.sortBy       - 'relevance'|'downloads'|'follows'|'newest'|'updated'
- * @param {number} opts.limit
- * @param {number} opts.offset
- */
+
 async function searchProjects(opts = {}) {
   const {
     query = '',
@@ -85,7 +84,6 @@ async function searchProjects(opts = {}) {
     offset = 0,
   } = opts
 
-  // Build facets array
   const facets = []
   facets.push([`project_type:${projectType}`])
   if (gameVersions.length > 0)
@@ -133,15 +131,7 @@ async function getProjects(ids) {
 }
 
 // ─── Install a version ────────────────────────────────────────────────────────
-/**
- * Download a mod/modpack/shader/resourcepack file into the correct folder
- * @param {object} opts
- * @param {string} opts.versionId     - Modrinth version ID
- * @param {string} opts.projectType   - 'mod'|'modpack'|'shader'|'resourcepack'|'datapack'
- * @param {string} opts.instancePath  - profile instancePath
- * @param {string} opts.accountId     - for per-account folders
- * @param {function} opts.onProgress  - ({ received, total, percent, log })
- */
+
 async function installVersion(opts) {
   const { versionId, projectType, instancePath, accountId, onProgress } = opts
 
@@ -149,7 +139,6 @@ async function installVersion(opts) {
   const primaryFile = version.files?.find(f => f.primary) || version.files?.[0]
   if (!primaryFile) throw new Error('No file found for this version')
 
-  // Determine destination folder based on project type
   const baseDir = accountId
     ? path.join(instancePath, 'accounts', accountId)
     : instancePath
@@ -167,7 +156,6 @@ async function installVersion(opts) {
 
   const destPath = path.join(destDir, primaryFile.filename)
 
-  // Skip if already installed
   if (fs.existsSync(destPath)) {
     onProgress?.({ log: `Already installed: ${primaryFile.filename}`, percent: 100 })
     return { ok: true, path: destPath, alreadyInstalled: true }
@@ -186,11 +174,10 @@ async function installVersion(opts) {
 async function getGameVersions() {
   try {
     const versions = await httpsGetJson(`${BASE}/tag/game_version`)
-    // Return objects with version string and type for frontend filtering
-    // Modrinth returns: { version, version_type: 'release'|'snapshot'|'beta'|'alpha', ... }
+
     return versions.map(v => ({ version: v.version, type: v.version_type || 'release' }))
   } catch {
-    // Fallback to Mojang manifest
+
     const data = await httpsGetJson('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
     return data.versions.map(v => ({ version: v.id, type: v.type || 'release' }))
   }
@@ -211,3 +198,4 @@ module.exports = {
   getGameVersions,
   getCategories,
 }
+

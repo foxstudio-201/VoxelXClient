@@ -1,6 +1,22 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+
+
 @import "tailwindcss";
 
-/* ── Custom scrollbar — outside @layer to ensure priority ── */
+
 ::-webkit-scrollbar {
   width: 4px !important;
   height: 4px !important;
@@ -44,7 +60,7 @@
 }
 
 @layer utilities {
-  /* drag region */
+  
   .drag-region {
     -webkit-app-region: drag;
   }
@@ -62,7 +78,7 @@
   }
 }
 
-/* ── Markdown renderer styles ─────────────────────────────────────────────── */
+
 .md-h1 { font-size: 1.25rem; font-weight: 700; color: #fff; margin: 1rem 0 0.5rem; }
 .md-h2 { font-size: 1.1rem;  font-weight: 700; color: #fff; margin: 0.9rem 0 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.25rem; }
 .md-h3 { font-size: 1rem;    font-weight: 600; color: rgba(255,255,255,0.85); margin: 0.75rem 0 0.35rem; }
@@ -81,7 +97,7 @@
 .md-inline-code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.75rem; color: #86efac; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); border-radius: 4px; padding: 0.1rem 0.35rem; }
 .md-img    { max-width: 100%; border-radius: 8px; margin: 0.5rem 0; }
 
-/* md-content: style all HTML tags inside the container (Modrinth body) */
+
 .md-content { font-size: 0.8125rem; color: rgba(255,255,255,0.6); line-height: 1.65; }
 .md-content h1 { font-size: 1.2rem; font-weight: 700; color: #fff; margin: 1rem 0 0.5rem; }
 .md-content h2 { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0.9rem 0 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.25rem; }
@@ -135,7 +151,7 @@
   50%       { transform: translateY(-8px); }
 }
 
-/* ── App Background Animations ─────────────────────────────────────────────── */
+
 @keyframes bg-pulse-1 {
   0%, 100% { transform: scale(1) translate(0, 0); opacity: 1; }
   50%       { transform: scale(1.15) translate(3%, 2%); opacity: 0.7; }

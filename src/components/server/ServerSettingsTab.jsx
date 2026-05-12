@@ -1,10 +1,23 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import PlayerHead from '../ui/PlayerHead'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 const inputCls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-green-500/50 transition-all placeholder-white/20'
 
-// ── Toggle ────────────────────────────────────────────────────────────────────
 function Toggle({ value, onChange, label, desc }) {
   return (
     <div className="flex items-center justify-between gap-4 py-2.5 border-b border-white/5 last:border-0">
@@ -22,7 +35,6 @@ function Toggle({ value, onChange, label, desc }) {
   )
 }
 
-// ── Field ─────────────────────────────────────────────────────────────────────
 function Field({ label, desc, children }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -33,7 +45,6 @@ function Field({ label, desc, children }) {
   )
 }
 
-// ── Custom Select ─────────────────────────────────────────────────────────────
 function Select({ value, onChange, options }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -79,7 +90,6 @@ function Select({ value, onChange, options }) {
   )
 }
 
-// ── Config Tab ────────────────────────────────────────────────────────────────
 function ConfigTab({ server, onServerUpdated }) {
   const [props, setProps]     = useState({})
   const [config, setConfig]   = useState({
@@ -246,7 +256,6 @@ function ConfigTab({ server, onServerUpdated }) {
   )
 }
 
-// ── Whitelist Tab ─────────────────────────────────────────────────────────────
 function WhitelistTab({ server }) {
   const [list, setList]         = useState([])
   const [loading, setLoading]   = useState(true)
@@ -364,7 +373,6 @@ function WhitelistTab({ server }) {
   )
 }
 
-// ── Banned Tab ────────────────────────────────────────────────────────────────
 function fmtCountdown(expires) {
   if (!expires || expires === 'forever') return null
   try {
@@ -396,7 +404,6 @@ function BannedTab({ server }) {
 
   useEffect(() => { load() }, [load])
 
-  // Tick every minute + auto-unban expired
   useEffect(() => {
     const id = setInterval(async () => {
       tick(n => n + 1)
@@ -507,7 +514,6 @@ function BannedTab({ server }) {
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export default function ServerSettingsTab({ server, onServerUpdated }) {
   const [activeTab, setActiveTab] = useState('config')
 
@@ -553,3 +559,4 @@ export default function ServerSettingsTab({ server, onServerUpdated }) {
     </div>
   )
 }
+

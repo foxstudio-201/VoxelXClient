@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
 import PlayerHead from './ui/PlayerHead'
@@ -89,7 +103,6 @@ const NEWS = [
   },
 ]
 
-
 // ─── NewsPanel ────────────────────────────────────────────────────────────────
 function NewsPanel() {
   return (
@@ -164,7 +177,6 @@ function InstanceLogPanel({ instance, onKill }) {
 
   const filteredLogs = filter === 'ALL' ? logs : logs.filter(l => parseLevel(l) === filter)
 
-  // Collect all ERROR/FATAL lines for the error panel
   const errorLines = logs.filter(l => { const lv = parseLevel(l); return lv === 'ERROR' || lv === 'FATAL' })
 
   const FILTERS = ['ALL', 'INFO', 'WARN', 'ERROR', 'DEBUG']
@@ -192,7 +204,7 @@ function InstanceLogPanel({ instance, onKill }) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-[#0a0a0a]/50">
-      {/* Progress bar if downloading */}
+      {}
       {(instance.state === 'downloading') && progress && (
         <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 bg-black/20">
           <div className="flex items-center justify-between mb-1.5">
@@ -214,7 +226,7 @@ function InstanceLogPanel({ instance, onKill }) {
         </div>
       )}
 
-      {/* Error summary banner — shown when there are errors */}
+      {}
       {errorLines.length > 0 && (
         <div className="flex-shrink-0 flex items-start gap-2 px-3 py-2 bg-red-500/8 border-b border-red-500/20">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5">
@@ -236,7 +248,7 @@ function InstanceLogPanel({ instance, onKill }) {
         </div>
       )}
 
-      {/* Filter bar */}
+      {}
       <div className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 border-b border-white/5 bg-black/10">
         {FILTERS.map(f => {
           const errCount = f === 'ERROR' ? errorLines.length : 0
@@ -279,7 +291,7 @@ function InstanceLogPanel({ instance, onKill }) {
         >↓</button>
       </div>
 
-      {/* Log lines */}
+      {}
       <div className="flex-1 overflow-y-auto px-3 py-2 font-mono text-[11px] leading-relaxed"
         onScroll={e => {
           const el = e.currentTarget
@@ -319,7 +331,7 @@ function InstanceLogPanel({ instance, onKill }) {
                     level === 'DEBUG' ? 'text-blue-300/60' :
                       'text-white/55'
                   }`}>{line}</span>
-                {/* Copy indicator */}
+                {}
                 <span className={`flex-shrink-0 text-[9px] transition-all duration-150
                   ${copiedLine === i ? 'text-green-400 opacity-100' : 'text-white/20 opacity-0 group-hover:opacity-100'}`}>
                   {copiedLine === i ? '✓' : '⎘'}
@@ -331,7 +343,7 @@ function InstanceLogPanel({ instance, onKill }) {
         <div ref={logEndRef} />
       </div>
 
-      {/* Status bar */}
+      {}
       <div className="flex-shrink-0 flex items-center justify-between px-3 py-1 border-t border-white/5 bg-black/20 text-[10px]">
         <span className={
           instance.state === 'running' ? 'text-green-400' :
@@ -374,11 +386,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const logDropdownRef = useRef(null)
   const ramSaveTimer = useRef(null)
 
-  // Cleanup ramSaveTimer khi unmount để tránh setState trên unmounted component
   useEffect(() => () => clearTimeout(ramSaveTimer.current), [])
 
-  // Pre-compute particle values once on mount — prevents re-randomizing on every re-render
-  // (which caused shimmer to speed up whenever progress.percent changed)
   const particles = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
     size: Math.random() * 3 + 1.5,
     left: Math.random() * 100,
@@ -388,7 +397,6 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     swayClass: `sway-${i % 3}`,
   })), [])
 
-  // Close log dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (logDropdownRef.current && !logDropdownRef.current.contains(e.target)) {
@@ -401,7 +409,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
 
   function handleRamChange(newRam) {
     setRam(newRam)
-    // Debounce save — chờ 500ms sau khi ngừng kéo mới lưu
+
     if (ramSaveTimer.current) clearTimeout(ramSaveTimer.current)
     ramSaveTimer.current = setTimeout(() => {
       if (selectedProfile && isElectron) {
@@ -411,17 +419,15 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   }
   const { selectedAccount } = useAccounts()
 
-  // ── Selected profile ──
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [profileStats, setProfileStats] = useState(null)
 
-  // Auto-select first instance tab when instances appear
   useEffect(() => {
     if (instances.length > 0 && !activeLogTab) {
       setActiveLogTab(instances[0].key)
       setLogPanelOpen(true)
     }
-    // Don't clear activeLogTab when instances disappear — keep logs visible
+
     if (activeLogTab && instances.length > 0 && !instances.find(i => i.key === activeLogTab)) {
       setActiveLogTab(instances[0]?.key ?? null)
     }
@@ -435,7 +441,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           : JSON.parse(localStorage.getItem('vxc_profiles') || '{"profiles":[],"selectedProfileId":null}')
         const profile = data.profiles?.find(p => p.id === data.selectedProfileId) ?? null
         setSelectedProfile(profile)
-        // Load RAM từ profile (default 4GB)
+
         setRam(profile?.ramGb ?? 4)
 
         if (profile && isElectron) {
@@ -449,7 +455,6 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     loadProfile()
   }, [])
 
-  // Reload stats when game stops
   useEffect(() => {
     if (launchState === 'idle' && selectedProfile && isElectron) {
       window.electronAPI.getProfileStats({ profileId: selectedProfile.id })
@@ -467,7 +472,6 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     onLaunch?.(selectedProfile.id, ram * 1024, selectedProfile.name, username || '')
   }
 
-  // Loader color
   const loaderKey = selectedProfile?.loader ?? 'vanilla'
   const launchColor = {
     vanilla: 'bg-green-500 hover:bg-green-400 shadow-green-500/20',
@@ -479,17 +483,17 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const isDownloading = launchState === 'downloading'
   const isRunning = launchState === 'running'
   const isError = launchState === 'error'
-  // Stats display
+
   const hoursPlayed = profileStats ? Math.floor((profileStats.playtimeSeconds || 0) / 3600) : 0
   const worldCount = profileStats?.worldCount ?? 0
   const modCount = profileStats?.modCount ?? 0
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative">      {/* Hero section */}
+    <div className="flex flex-col h-full overflow-hidden relative">      {}
       <div className="relative flex-shrink-0 h-56 overflow-hidden">
-        {/* Animated background */}
+        {}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07]">
-          {/* Grid pattern */}
+          {}
           <div
             className="absolute inset-0 opacity-10"
             style={{
@@ -500,12 +504,12 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               backgroundSize: '40px 40px',
             }}
           />
-          {/* Glow orbs */}
+          {}
           <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/10 rounded-full blur-3xl" />
           <div className="absolute top-1/2 right-1/4 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-emerald-400/8 rounded-full blur-3xl" />
         </div>
 
-        {/* Minecraft block decorations */}
+        {}
         <div className="absolute right-12 top-8 opacity-20">
           <div className="grid grid-cols-3 gap-1">
             {Array.from({ length: 9 }).map((_, i) => (
@@ -525,7 +529,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           </div>
         </div>
 
-        {/* Hiệu ứng hạt sáng long lanh bay lên */}
+        {}
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
           {particles.map((p, i) => (
             <div
@@ -569,9 +573,9 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           `}</style>
         </div>
 
-        {/* Hero content */}
+        {}
         <div className="relative flex flex-col justify-center h-full px-8 z-10">
-          {/* ── Luôn hiện: Welcome back + username ── */}
+          {}
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-semibold tracking-widest text-green-400/70 uppercase">
               Welcome back
@@ -583,7 +587,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             )}
           </h1>
 
-          {/* ── Dòng "Last played" — đổi nội dung khi đang tải ── */}
+          {}
           <p className="text-white/40 text-sm">
             {(isDownloading || isRunning || isError) ? (
               isRunning ? (
@@ -613,12 +617,12 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             )}
           </p>
 
-          {/* ── Phần dưới: stats HOẶC progress ── */}
+          {}
           <div className="mt-4">
             {(isDownloading || isError) ? (
-              /* Progress bar + info */
+
               <div className="flex flex-col gap-2 w-full max-w-lg">
-                {/* Phase + speed + files + % */}
+                {}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white/50 uppercase tracking-widest">
                     {progress?.phase === 'java' ? 'Cài đặt Java Runtime' :
@@ -638,7 +642,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     )}
                   </div>
                 </div>
-                {/* Bar */}
+                {}
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ease-out ${isError ? 'bg-red-500' : 'bg-green-400'}`}
@@ -647,7 +651,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 </div>
               </div>
             ) : (
-              /* Quick stats */
+
               <div className="flex gap-6">
                 {[
                   { label: 'Hours Played', value: hoursPlayed > 0 ? hoursPlayed.toLocaleString() : '0' },
@@ -665,16 +669,16 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         </div>
       </div>
 
-      {/* Main content */}
+      {}
       <div className="flex flex-1 overflow-hidden gap-0">
-        {/* Left: Log tabs when running/open, News feed when idle */}
+        {}
         <div className="flex-1 flex flex-col overflow-hidden">
           {(logPanelOpen && (instances.length > 0 || activeLogTab || savedLog || savedLogLoading)) ? (
-            /* ── Instance Log Panel ── */
+
             <div className="flex flex-col h-full overflow-hidden">
-              {/* Tab bar */}
+              {}
               <div className="flex-shrink-0 flex items-end border-b border-white/5">
-                {/* Prev arrow — only when multiple instances */}
+                {}
                 {instances.length > 1 && (
                   <button
                     onClick={() => {
@@ -692,11 +696,11 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   </button>
                 )}
 
-                {/* Scrollable instance tabs */}
+                {}
                 <div className="flex items-center gap-1 px-2 pt-4 pb-0 overflow-x-auto overflow-y-hidden flex-1 min-w-0 scrollbar-none"
                   style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                  {/* Saved log tab */}
+                  {}
                   {savedLog && (
                     <button
                       className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-t-lg text-xs font-semibold border-t border-l border-r transition-all duration-150 relative bg-[#141414] border-white/8 text-white -mb-px z-10"
@@ -709,7 +713,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     </button>
                   )}
 
-                  {/* Live instance tabs */}
+                  {}
                   {instances.map(inst => {
                     const isActive = activeLogTab === inst.key && !savedLog
                     return (
@@ -740,7 +744,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                             @{inst.accountName}
                           </span>
                         )}
-                        {/* Kill button — dùng div thay button để tránh button lồng button */}
+                        {}
                         {isActive && (inst.state === 'running' || inst.state === 'downloading') && (
                           <div
                             role="button"
@@ -760,7 +764,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   })}
                 </div>
 
-                {/* Next arrow — only when multiple instances */}
+                {}
                 {instances.length > 1 && (
                   <button
                     onClick={() => {
@@ -777,7 +781,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     </svg>
                   </button>
                 )}
-                {/* Close log panel button */}
+                {}
                 <button
                   onClick={() => { setLogPanelOpen(false); setSavedLog(null) }}
                   className="flex-shrink-0 w-7 h-8 flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/5 transition-all mr-1"
@@ -789,10 +793,10 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 </button>
               </div>
 
-              {/* Tab content */}
+              {}
               <div className="flex-1 overflow-hidden">
                 {(() => {
-                  // Saved log mode (no live instance selected)
+
                   if (savedLog || savedLogLoading) {
                     if (savedLogLoading) return (
                       <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
@@ -811,7 +815,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         <p className="text-xs">Chưa có log nào cho profile này</p>
                       </div>
                     )
-                    // Render saved log as a static InstanceLogPanel-like view
+
                     const fakeInstance = {
                       key: '__saved__',
                       state: 'stopped',
@@ -822,7 +826,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     }
                     return <InstanceLogPanel instance={fakeInstance} onKill={null} />
                   }
-                  // Live instance mode
+
                   const inst = instances.find(i => i.key === activeLogTab)
                   if (!inst && instances.length === 0) return (
                     <div className="flex flex-col items-center justify-center h-full gap-2 text-white/20">
@@ -838,7 +842,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               </div>
             </div>
           ) : (
-            /* ── Default: News feed hoặc Profile Settings ── */
+
             <div className="flex-1 overflow-hidden">
               {profileSettingsOpen && selectedProfile ? (
                 <ProfileSettingsPanel
@@ -858,16 +862,16 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           )}
         </div>
 
-        {/* Right: Launch panel */}
+        {}
         <div className="w-80 flex-shrink-0 border-l border-white/5 bg-black/20 p-5 flex flex-col gap-4">
 
-          {/* ── Selected Profile card ── */}
+          {}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
                 Profile
               </label>
-              {/* Log button — shows dropdown of instances */}
+              {}
               <div className="relative" ref={logDropdownRef}>
                 <button
                   onClick={() => setLogDropdownOpen(v => !v)}
@@ -889,7 +893,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   )}
                 </button>
 
-                {/* Dropdown list */}
+                {}
                 {logDropdownOpen && (
                   <div className="absolute right-0 top-full mt-1 w-52 bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
                     <div className="px-3 py-2 border-b border-white/5">
@@ -899,7 +903,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                       <div className="px-3 py-3 text-[11px] text-white/25 text-center">Không có instance nào</div>
                     ) : (
                       <>
-                        {/* Live instances */}
+                        {}
                         {instances.map(inst => (
                           <button
                             key={inst.key}
@@ -929,7 +933,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                           </button>
                         ))}
 
-                        {/* Selected profile — load latest saved log */}
+                        {}
                         {selectedProfile && (
                           <>
                             {instances.length > 0 && <div className="border-t border-white/5 my-1" />}
@@ -972,7 +976,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         )}
                       </>
                     )}
-                    {/* Option to close log panel if open */}
+                    {}
                     {logPanelOpen && (
                       <>
                         <div className="border-t border-white/5" />
@@ -996,7 +1000,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 className="relative rounded-xl overflow-hidden border border-white/8 cursor-pointer group"
                 onClick={() => onNavigate?.('play')}
               >
-                {/* Background: importBgUrl > version image */}
+                {}
                 <div className="relative h-20 overflow-hidden">
                   <img
                     src={selectedProfile.importBgUrl || getVersionImage(selectedProfile.gameVersion)}
@@ -1007,12 +1011,12 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                  {/* Bottom-left: version + import tags */}
+                  {}
                   <div className="absolute bottom-2 left-2.5 flex items-center gap-1 flex-wrap">
                     <span className="text-[10px] font-mono text-white/80 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded border border-white/10">
                       {selectedProfile.gameVersion}
                     </span>
-                    {/* Import source tag */}
+                    {}
                     {selectedProfile.importSource && IMPORT_SOURCE[selectedProfile.importSource] && (() => {
                       const src = IMPORT_SOURCE[selectedProfile.importSource]
                       return (
@@ -1023,7 +1027,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         </span>
                       )
                     })()}
-                    {/* Modpack tag */}
+                    {}
                     {selectedProfile.importSource && (
                       <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm bg-black/50 border border-white/20 text-white/70">
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
@@ -1034,7 +1038,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     )}
                   </div>
 
-                  {/* Top-right: loader badge */}
+                  {}
                   <div className={`absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md border backdrop-blur-sm ${LOADER_BG[selectedProfile.loader] || LOADER_BG.vanilla}`}>
                     <img
                       src={selectedProfile.importIconUrl || LOADER_ICONS[selectedProfile.loader] || vanillaIcon}
@@ -1048,7 +1052,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   </div>
                 </div>
 
-                {/* Profile info */}
+                {}
                 <div className="px-3 py-2.5 bg-white/3">
                   <p className="text-sm font-bold text-white truncate">{selectedProfile.name}</p>
                   <p className={`text-[10px] mt-0.5 ${LOADER_COLORS[selectedProfile.loader] || 'text-green-400'}`}>
@@ -1070,7 +1074,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             )}
           </div>
 
-          {/* ── Account ── */}
+          {}
           <div>
             <label className="text-xs font-semibold text-white/40 uppercase tracking-widest block mb-2">
               Account
@@ -1101,7 +1105,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             )}
           </div>
 
-          {/* ── Profile Settings button ── */}
+          {}
           {selectedProfile && (
             <button
               onClick={() => {
@@ -1124,7 +1128,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
 
           <div className="flex-1" />
 
-          {/* ── Launch button ── */}
+          {}
           <button
             onClick={isError ? () => onLaunchReset?.() : handleLaunch}
             disabled={isDownloading || isRunning || !selectedProfile}
@@ -1180,3 +1184,4 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     </div>
   )
 }
+

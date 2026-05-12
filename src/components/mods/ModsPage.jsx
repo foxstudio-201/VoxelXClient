@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState } from 'react'
 import ModrinthTab from './modrinth/ModrinthTab'
 import CurseForgeTab from './curseforge/CurseForgeTab'
@@ -21,7 +35,7 @@ export default function ModsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Platform tabs */}
+      {}
       <div className="flex-shrink-0 px-4 pt-3 pb-0">
         <div className="flex gap-1 border-b border-white/5">
           {PLATFORM_TABS.map(tab => (
@@ -48,7 +62,7 @@ export default function ModsPage() {
         </div>
       </div>
 
-      {/* Tab content */}
+      {}
       <div className="flex-1 overflow-hidden">
         {platform === 'modrinth'   && <ModrinthTab />}
         {platform === 'curseforge' && <CurseForgeTab />}
@@ -58,3 +72,4 @@ export default function ModsPage() {
     </div>
   )
 }
+

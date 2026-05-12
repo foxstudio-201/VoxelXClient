@@ -1,22 +1,29 @@
-'use strict'
 /**
- * statsTracker.cjs
- * Theo dõi thời gian chơi, đọc worlds và mods từ instance folder.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const fs   = require('fs')
 const path = require('path')
 
 // ─── Playtime ─────────────────────────────────────────────────────────────────
-/**
- * Bắt đầu đếm giờ chơi cho một profile.
- * Trả về hàm stop() để dừng và lưu.
- */
+
 function startPlaytimeTracker(profileId, profilesData, writeProfiles) {
   const startTime = Date.now()
 
   return function stop() {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000) // seconds
+    const elapsed = Math.floor((Date.now() - startTime) / 1000)
     const profile = profilesData.profiles.find(p => p.id === profileId)
     if (!profile) return
 
@@ -27,9 +34,6 @@ function startPlaytimeTracker(profileId, profilesData, writeProfiles) {
   }
 }
 
-/**
- * Format giờ chơi thành chuỗi dễ đọc.
- */
 function formatPlaytime(seconds) {
   if (!seconds || seconds < 60) return '< 1 phút'
   const h = Math.floor(seconds / 3600)
@@ -47,10 +51,7 @@ function formatPlaytimeShort(seconds) {
 }
 
 // ─── Worlds ───────────────────────────────────────────────────────────────────
-/**
- * Đọc danh sách worlds từ instance folder.
- * Minecraft lưu worlds trong <instancePath>/saves/
- */
+
 function getWorlds(instancePath) {
   const savesDir = path.join(instancePath, 'saves')
   if (!fs.existsSync(savesDir)) return []
@@ -92,10 +93,7 @@ function getWorlds(instancePath) {
 }
 
 // ─── Mods ─────────────────────────────────────────────────────────────────────
-/**
- * Đọc danh sách mods từ instance folder.
- * Minecraft lưu mods trong <instancePath>/mods/
- */
+
 function getMods(instancePath) {
   const modsDir = path.join(instancePath, 'mods')
   if (!fs.existsSync(modsDir)) return []
@@ -138,14 +136,9 @@ function getDirSize(dirPath) {
   return total
 }
 
-/**
- * Lấy stats tổng hợp cho một profile.
- * Worlds và mods được đọc từ tất cả account subdirs trong instancePath/accounts/
- */
 function getProfileStats(profile) {
   const instancePath = profile.instancePath
 
-  // Collect all account game dirs: instancePath/accounts/<accountId>/
   const accountsDir = path.join(instancePath, 'accounts')
   const gameDirs = []
 
@@ -160,16 +153,14 @@ function getProfileStats(profile) {
     } catch {}
   }
 
-  // Fallback: also check instancePath directly (legacy / custom path)
   if (gameDirs.length === 0) {
     gameDirs.push(instancePath)
   }
 
-  // Merge worlds from all account dirs (deduplicate by name)
   const worldMap = new Map()
   for (const dir of gameDirs) {
     for (const w of getWorlds(dir)) {
-      // Keep the most recently played version if duplicate name
+
       const existing = worldMap.get(w.name)
       if (!existing || (w.lastPlayed && (!existing.lastPlayed || w.lastPlayed > existing.lastPlayed))) {
         worldMap.set(w.name, w)
@@ -182,7 +173,6 @@ function getProfileStats(profile) {
     return new Date(b.lastPlayed) - new Date(a.lastPlayed)
   })
 
-  // Merge mods from all account dirs (deduplicate by filename)
   const modMap = new Map()
   for (const dir of gameDirs) {
     for (const m of getMods(dir)) {
@@ -211,3 +201,4 @@ module.exports = {
   getMods,
   getProfileStats,
 }
+

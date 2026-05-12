@@ -1,9 +1,22 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState } from 'react'
 import { BG_THEMES } from '../../AppBackground'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-// ── Toggle Switch ──────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange, id }) {
   return (
     <button
@@ -29,7 +42,6 @@ function Toggle({ checked, onChange, id }) {
   )
 }
 
-// ── Setting Row ────────────────────────────────────────────────────────────────
 function SettingRow({ label, description, children }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3">
@@ -42,7 +54,6 @@ function SettingRow({ label, description, children }) {
   )
 }
 
-// ── Section ────────────────────────────────────────────────────────────────────
 function Section({ title, children }) {
   return (
     <div className="mb-6">
@@ -54,21 +65,18 @@ function Section({ title, children }) {
   )
 }
 
-// ── Background options — dùng từ AppBackground ────────────────────────────────
 const BG_OPTIONS = BG_THEMES
 
 function applyBackground(bgId) {
   window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: bgId }))
 }
 
-// ── UI Sub-tabs ────────────────────────────────────────────────────────────────
 const UI_TABS = ['Kiểu chữ', 'Màu sắc', 'Đường viền', 'Nền']
 
-// ── Font list ──────────────────────────────────────────────────────────────────
 const FONTS = [
   { id: 'system',       label: 'System Default',  stack: 'system-ui, -apple-system, sans-serif',        google: null },
   { id: 'inter',        label: 'Inter',            stack: "'Inter', sans-serif",                          google: 'Inter:wght@300;400;500;600;700' },
-  { id: 'geist',        label: 'Geist',            stack: "'Geist', sans-serif",                          google: null }, // bundled
+  { id: 'geist',        label: 'Geist',            stack: "'Geist', sans-serif",                          google: null },
   { id: 'outfit',       label: 'Outfit',           stack: "'Outfit', sans-serif",                         google: 'Outfit:wght@300;400;500;600;700' },
   { id: 'plus-jakarta', label: 'Plus Jakarta Sans', stack: "'Plus Jakarta Sans', sans-serif",             google: 'Plus+Jakarta+Sans:wght@300;400;500;600;700' },
   { id: 'dm-sans',      label: 'DM Sans',          stack: "'DM Sans', sans-serif",                        google: 'DM+Sans:wght@300;400;500;600;700' },
@@ -117,7 +125,7 @@ function FontTab({ settings, onChange }) {
 
   return (
     <div className="py-4 space-y-5">
-      {/* Font list */}
+      {}
       <div>
         <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Font chữ</p>
         <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1">
@@ -145,7 +153,7 @@ function FontTab({ settings, onChange }) {
         </div>
       </div>
 
-      {/* Weight slider */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs text-white/40 uppercase tracking-widest">Độ dày</p>
@@ -166,7 +174,7 @@ function FontTab({ settings, onChange }) {
         </div>
       </div>
 
-      {/* Preview */}
+      {}
       <div className="rounded-xl border border-white/5 bg-white/3 p-4">
         <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">Preview</p>
         <p style={{ fontFamily: activeFont.stack, fontWeight: weight }} className="text-white text-base">
@@ -183,12 +191,10 @@ function FontTab({ settings, onChange }) {
   )
 }
 
-// ── Border Tab ─────────────────────────────────────────────────────────────────
 function BorderTab({ settings, onChange }) {
   const radius      = settings.borderRadius ?? 12
   const borderColor = settings.borderColor  ?? 'rgba(255,255,255,0.08)'
 
-  // Preset border colors
   const BORDER_PRESETS = [
     { label: 'Mặc định',  value: 'rgba(255,255,255,0.08)' },
     { label: 'Xanh lá',   value: 'rgba(74,222,128,0.25)'  },
@@ -214,7 +220,7 @@ function BorderTab({ settings, onChange }) {
 
   return (
     <div className="py-4 space-y-5">
-      {/* Radius slider */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs text-white/40 uppercase tracking-widest">Độ cong góc</p>
@@ -237,7 +243,7 @@ function BorderTab({ settings, onChange }) {
         </div>
       </div>
 
-      {/* Border color presets */}
+      {}
       <div>
         <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Màu viền</p>
         <div className="grid grid-cols-4 gap-2">
@@ -269,7 +275,7 @@ function BorderTab({ settings, onChange }) {
         </div>
       </div>
 
-      {/* Preview */}
+      {}
       <div>
         <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Preview</p>
         <div className="flex gap-3">
@@ -315,7 +321,7 @@ function ColorTab({ settings, onChange }) {
       {swatches.map(({ key, label, value }) => (
         <div key={key} className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            {/* Swatch preview */}
+            {}
             <div
               className="w-8 h-8 rounded-lg border border-white/10 flex-shrink-0 shadow-lg"
               style={{ background: value }}
@@ -335,7 +341,7 @@ function ColorTab({ settings, onChange }) {
         </div>
       ))}
 
-      {/* Preview bar */}
+      {}
       <div className="rounded-xl border border-white/5 bg-white/3 p-3 mt-2">
         <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">Preview</p>
         <div className="flex gap-2">
@@ -362,7 +368,6 @@ function BgTab({ settings, onChange }) {
     applyBackground(id)
   }
 
-  // Group theo category
   const categories = [...new Set(BG_OPTIONS.map(o => o.category))]
 
   return (
@@ -410,7 +415,6 @@ function BgTab({ settings, onChange }) {
   )
 }
 
-// ── Update check inline ────────────────────────────────────────────────────────
 function formatBytes(b) {
   if (!b) return ''
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`
@@ -418,7 +422,7 @@ function formatBytes(b) {
 }
 
 function UpdateChecker() {
-  const [status, setStatus]       = useState('idle') // idle | checking | updateAvailable | downloading | installing | upToDate | noRelease | error
+  const [status, setStatus]       = useState('idle')
   const [result, setResult]       = useState(null)
   const [dlProgress, setDlProgress] = useState(null)
   const [errorMsg, setErrorMsg]   = useState('')
@@ -463,7 +467,6 @@ function UpdateChecker() {
     setStatus('downloading')
     setDlProgress({ percent: 0, downloaded: 0, total: r.installerAsset.size || 0, speed: 0 })
 
-    // Subscribe to progress
     const unsub = isElectron
       ? window.electronAPI.onDownloadProgress(p => setDlProgress(p))
       : null
@@ -505,7 +508,7 @@ function UpdateChecker() {
 
   return (
     <div className="py-3 space-y-3">
-      {/* Check button — only when idle/upToDate/noRelease/error */}
+      {}
       {['idle', 'upToDate', 'noRelease', 'error'].includes(status) && (
         <div className="flex items-center gap-3 flex-wrap">
           <button
@@ -535,7 +538,7 @@ function UpdateChecker() {
         </div>
       )}
 
-      {/* Checking */}
+      {}
       {status === 'checking' && (
         <div className="flex items-center gap-2 text-xs text-white/40">
           <svg className="animate-spin w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none">
@@ -546,7 +549,7 @@ function UpdateChecker() {
         </div>
       )}
 
-      {/* Update available — brief state before download */}
+      {}
       {status === 'updateAvailable' && result && (
         <div className="rounded-xl border border-green-500/20 bg-green-500/8 px-3 py-2.5 flex items-center gap-2">
           <svg className="animate-spin w-3.5 h-3.5 text-green-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
@@ -559,7 +562,7 @@ function UpdateChecker() {
         </div>
       )}
 
-      {/* Downloading */}
+      {}
       {status === 'downloading' && (
         <div className="rounded-xl border border-green-500/20 bg-green-500/8 px-3 py-3 space-y-2">
           <div className="flex items-center justify-between text-xs">
@@ -586,7 +589,7 @@ function UpdateChecker() {
         </div>
       )}
 
-      {/* Installing */}
+      {}
       {status === 'installing' && (
         <div className="rounded-xl border border-green-500/20 bg-green-500/8 px-3 py-2.5 flex items-center gap-2">
           <svg className="animate-spin w-3.5 h-3.5 text-green-400 flex-shrink-0" viewBox="0 0 24 24" fill="none">
@@ -600,14 +603,13 @@ function UpdateChecker() {
   )
 }
 
-// ── Main LauncherTab ───────────────────────────────────────────────────────────
 export default function LauncherTab({ settings, onChange }) {
   const [uiTab, setUiTab] = useState(0)
 
   return (
     <div className="h-full overflow-y-auto px-6 py-5">
 
-      {/* Section: Cập nhật */}
+      {}
       <Section title="Cập nhật">
         <SettingRow
           label="Tự động kiểm tra cập nhật khi khởi động"
@@ -623,7 +625,7 @@ export default function LauncherTab({ settings, onChange }) {
         </div>
       </Section>
 
-      {/* Section: Trò chơi */}
+      {}
       <Section title="Trò chơi">
         <SettingRow
           label="Tự động ẩn launcher khi khởi chạy game"
@@ -654,10 +656,10 @@ export default function LauncherTab({ settings, onChange }) {
         </SettingRow>
       </Section>
 
-      {/* Section: Giao diện */}
+      {}
       <Section title="Giao diện">
         <div className="py-3">
-          {/* Sub-tabs */}
+          {}
           <div className="flex gap-1 p-1 rounded-xl bg-white/4 border border-white/5 mb-4">
             {UI_TABS.map((tab, i) => (
               <button
@@ -676,7 +678,7 @@ export default function LauncherTab({ settings, onChange }) {
             ))}
           </div>
 
-          {/* Sub-tab content */}
+          {}
           {uiTab === 0 && <FontTab settings={settings} onChange={onChange} />}
           {uiTab === 1 && <ColorTab settings={settings} onChange={onChange} />}
           {uiTab === 2 && <BorderTab settings={settings} onChange={onChange} />}
@@ -686,3 +688,4 @@ export default function LauncherTab({ settings, onChange }) {
     </div>
   )
 }
+

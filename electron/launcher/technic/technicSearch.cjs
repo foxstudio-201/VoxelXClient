@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 const BASE = 'https://api.technicpack.net'
 
 async function fetchJson(url) {
@@ -11,8 +25,6 @@ async function fetchJson(url) {
   }
 }
 
-// Technic API does not support real pagination — offset is ignored.
-// We fetch up to 500 results at once and do client-side pagination.
 const PAGE_SIZE = 20
 const MAX_FETCH = 500
 
@@ -20,9 +32,6 @@ async function searchProjects(opts) {
   const query  = opts.query || 'tekkit'
   const offset = opts.offset || 0
 
-  // Only fetch from the API on the first page (offset === 0).
-  // Subsequent pages are served from the cached allHits stored in the response.
-  // The caller (useTechnic.js) passes allHits back via opts.allHits for page 2+.
   let allHits = opts.allHits || null
 
   if (!allHits) {
@@ -34,7 +43,7 @@ async function searchProjects(opts) {
       project_id: p.id,
       slug: p.slug,
       title: p.name,
-      description: '',  // search API has no description — shown in detail page
+      description: '',
       author: 'Unknown',
       downloads: 0,
       follows: 0,
@@ -49,7 +58,7 @@ async function searchProjects(opts) {
   return {
     hits,
     total_hits: allHits.length,
-    allHits,  // pass back so caller can cache and avoid re-fetching
+    allHits,
   }
 }
 
@@ -59,7 +68,7 @@ async function getProject(slug) {
 
   return {
     project_id: data.id,
-    slug: data.name, // in detail API, 'name' is the slug, 'displayName' is the title
+    slug: data.name,
     title: data.displayName,
     description: data.description,
     body: data.description,
@@ -97,9 +106,8 @@ async function getProjectVersions(slug) {
 
   const versions = []
 
-  // Technic versions are mostly just the 'version' field if Solder is absent
   if (data.solder) {
-    // If it uses Solder, fetch builds
+
     const solderUrl = data.solder.endsWith('/') ? data.solder : data.solder + '/'
     const solderData = await fetchJson(`${solderUrl}modpack/${slug}`)
     if (solderData && solderData.builds) {
@@ -119,7 +127,7 @@ async function getProjectVersions(slug) {
       }
     }
   } else {
-    // Standard zip download
+
     versions.push({
       id: data.version,
       project_id: data.id,
@@ -136,9 +144,6 @@ async function getProjectVersions(slug) {
   return versions.reverse()
 }
 
-// Since installing Technic is extremely complex (solder parsing vs raw zip), 
-// we will just throw a NotImplemented error for now or do a dummy install if requested, 
-// to avoid breaking the scope. The prompt says "tương tự và đầy đủ", which means UI and flow.
 async function installVersion(opts, onProgress) {
   throw new Error("Technic modpack installation requires Solder API parsing which is not fully implemented yet.")
 }
@@ -149,3 +154,4 @@ module.exports = {
   getProjectVersions,
   installVersion
 }
+

@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -13,10 +27,9 @@ export function useTechnicSearch(filters) {
   const loadingRef   = useRef(false)
   const cancelledRef = useRef(false)
   const filtersRef   = useRef(filters)
-  const allHitsRef   = useRef(null)  // cache full result set from API
+  const allHitsRef   = useRef(null)
   filtersRef.current = filters
 
-  // ── Core fetch ──────────────────────────────────────────────────────────────
   const fetchPage = useCallback(async (offset, append) => {
     if (!isElectron) return
     if (loadingRef.current) return
@@ -30,14 +43,13 @@ export function useTechnicSearch(filters) {
       const data = await window.electronAPI.technicSearch({
         ...filtersRef.current,
         offset,
-        // Pass cached allHits so backend skips re-fetching from API on page 2+
+
         allHits: allHitsRef.current,
       })
 
       if (cancelledRef.current) return
       if (data?.error) { setError(data.error); return }
 
-      // Cache the full result set returned on first fetch
       if (data.allHits) allHitsRef.current = data.allHits
 
       const hits = data.hits || []
@@ -59,17 +71,15 @@ export function useTechnicSearch(filters) {
     }
   }, [])
 
-  // Stable serialized keys — chỉ thay đổi khi nội dung array thực sự thay đổi
   const gameVersionsKey = useMemo(() => JSON.stringify(filters.gameVersions), [filters.gameVersions])
   const loadersKey      = useMemo(() => JSON.stringify(filters.loaders),      [filters.loaders])
   const categoriesKey   = useMemo(() => JSON.stringify(filters.categories),   [filters.categories])
 
-  // ── Reset & search when filters change ──────────────────────────────────────
   useEffect(() => {
     cancelledRef.current = true
     loadingRef.current = false
     offsetRef.current = 0
-    allHitsRef.current = null  // clear cache on new search
+    allHitsRef.current = null
     setResults([])
     setTotal(0)
     setError(null)
@@ -94,7 +104,6 @@ export function useTechnicSearch(filters) {
     categoriesKey,
   ])
 
-  // ── Load more — slice next page from cached allHits ───────────────────────
   const loadMore = useCallback(() => {
     fetchPage(offsetRef.current, true)
   }, [fetchPage])
@@ -132,7 +141,6 @@ export function useTechnicVersions(idOrSlug, filters = {}) {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
 
-  // Stable key để tránh re-run effect mỗi render
   const filtersKey = useMemo(() => JSON.stringify(filters), [filters])
 
   useEffect(() => {
@@ -146,7 +154,7 @@ export function useTechnicVersions(idOrSlug, filters = {}) {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
-  }, [idOrSlug, filtersKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [idOrSlug, filtersKey])
 
   return { versions, loading, error }
 }
@@ -191,3 +199,4 @@ export function useTechnicInstall() {
 
   return { install, installing, progress, error, done, reset }
 }
+

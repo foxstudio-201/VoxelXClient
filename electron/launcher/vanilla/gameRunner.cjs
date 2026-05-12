@@ -13,11 +13,6 @@
  */
 
 'use strict'
-/**
- * gameRunner.cjs
- * Build launch arguments and spawn the Minecraft process.
- * Supports Vanilla, Fabric, Forge.
- */
 
 const { spawn } = require('child_process')
 const path  = require('path')
@@ -30,7 +25,7 @@ function substituteArgs(args, vars) {
     if (typeof arg === 'string') {
       return [arg.replace(/\$\{(\w+)\}/g, (_, k) => vars[k] ?? '')]
     }
-    // Rule-based arg (1.13+)
+
     if (arg.rules) {
       const allowed = arg.rules.every(rule => {
         if (rule.action === 'allow') {
@@ -66,7 +61,7 @@ function buildClasspath(libraries, clientJar) {
   const sep = process.platform === 'win32' ? ';' : ':'
   const normalize = p => p.replace(/\\/g, '/').toLowerCase()
   const clientNorm = normalize(clientJar)
-  // Only append clientJar if it's not already in libraries (Forge includes it)
+
   const libs = libraries.filter(l => fs.existsSync(l))
   const alreadyIncluded = libs.some(l => normalize(l) === clientNorm)
   const all = alreadyIncluded ? libs : [...libs, clientJar]
@@ -74,26 +69,7 @@ function buildClasspath(libraries, clientJar) {
 }
 
 // ─── Main launch function ─────────────────────────────────────────────────────
-/**
- * @param {object} opts
- * @param {string} opts.javaPath       - path to java executable
- * @param {string} opts.clientJar      - path to client.jar
- * @param {string[]} opts.libraries    - classpath libraries
- * @param {string} opts.nativesDir     - natives directory
- * @param {string} opts.assetsDir      - assets directory
- * @param {string} opts.assetIndex     - asset index id
- * @param {object} opts.versionJson    - full version JSON
- * @param {string} opts.instancePath   - game working directory
- * @param {string} opts.gameVersion    - e.g. "1.21.4"
- * @param {string} opts.username       - player username
- * @param {string} opts.uuid           - player UUID
- * @param {string} opts.accessToken    - MC access token (or "0" for offline)
- * @param {number} opts.ramMb          - RAM in MB
- * @param {string} opts.loader         - 'vanilla' | 'fabric' | 'forge' | 'neoforge'
- * @param {string} opts.loaderVersion  - loader version string
- * @param {function} opts.onLog        - callback(line: string)
- * @param {function} opts.onExit       - callback(code: number)
- */
+
 function launchGame(opts) {
   const {
     javaPath, clientJar, libraries, nativesDir, assetsDir, assetIndex,
@@ -106,10 +82,8 @@ function launchGame(opts) {
   const os = getOS()
   const classpath = buildClasspath(libraries, clientJar)
 
-  // Ensure game dir exists
   if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
 
-  // Template variables
   const vars = {
     _os:              os,
     _features:        { is_demo_user: false, has_custom_resolution: false },
@@ -127,19 +101,18 @@ function launchGame(opts) {
     launcher_name:    'VoxelXClient',
     launcher_version: '1.0.0',
     classpath,
-    // Resolution
+
     resolution_width:  '854',
     resolution_height: '480',
   }
 
-  // JVM args
   const jvmArgs = [
     `-Xmx${ramMb}m`,
     `-Xms${Math.min(512, ramMb)}m`,
     `-Djava.library.path=${nativesDir}`,
     `-Dminecraft.launcher.brand=VoxelXClient`,
     `-Dminecraft.launcher.version=1.0.0`,
-    // Force UTF-8 output on all platforms (especially Windows CP1252)
+
     '-Dfile.encoding=UTF-8',
     '-Dstdout.encoding=UTF-8',
     '-Dstderr.encoding=UTF-8',
@@ -163,11 +136,6 @@ function launchGame(opts) {
     '-XX:MaxTenuringThreshold=1',
   ]
 
-  // Version-specific JVM args from version JSON.
-  // For Forge: extraJvmArgs has everything (including -cp via module system), skip vanilla JVM args.
-  // For NeoForge: extraJvmArgs has module path args but NO -cp — needs vanilla's -cp.
-  //               Signaled by '__needsVanillaClasspath__' sentinel in extraJvmArgs.
-  // For Vanilla/Fabric: use versionJson.arguments.jvm which includes -cp.
   const needsVanillaCP = extraJvmArgs.includes('__needsVanillaClasspath__')
   const cleanExtraJvmArgs = extraJvmArgs.filter(a => a !== '__needsVanillaClasspath__')
 
@@ -182,10 +150,10 @@ function launchGame(opts) {
 
   let versionJvmArgs
   if (isForge) {
-    // Forge: extraJvmArgs has everything, skip vanilla JVM args entirely
+
     versionJvmArgs = []
   } else if (needsVanillaCP) {
-    // NeoForge: needs vanilla's -cp but WITHOUT clientJar (NeoForge loads it via module system)
+
     const sep = process.platform === 'win32' ? ';' : ':'
     const normalize = p => p.replace(/\\/g, '/').toLowerCase()
     const clientNorm = normalize(clientJar)
@@ -195,7 +163,7 @@ function launchGame(opts) {
     const vanillaArgs = versionJson.arguments?.jvm
       ? substituteArgs(versionJson.arguments.jvm, { ...vars, classpath: classpathNoClient })
       : [`-Djava.library.path=${nativesDir}`, '-cp', classpathNoClient]
-    // Extract just -cp <value> from vanilla args
+
     const cpIdx = vanillaArgs.indexOf('-cp')
     versionJvmArgs = cpIdx >= 0 ? ['-cp', vanillaArgs[cpIdx + 1]] : ['-cp', classpathNoClient]
   } else {
@@ -204,17 +172,14 @@ function launchGame(opts) {
       : [`-Djava.library.path=${nativesDir}`, '-cp', classpath]
   }
 
-  // Game args
   const gameArgs = versionJson.arguments?.game
     ? substituteArgs(versionJson.arguments.game, vars)
     : (versionJson.minecraftArguments || '').split(' ').map(a =>
         a.replace(/\$\{(\w+)\}/g, (_, k) => vars[k] ?? '')
       )
 
-  // Main class
   const mainClass = mainClassOverride || versionJson.mainClass
 
-  // Dedup game args — extraGameArgs take priority over vanilla game args
   let finalGameArgs = gameArgs
   if (extraGameArgs.length > 0) {
     const extraKeys = new Set()
@@ -224,7 +189,7 @@ function launchGame(opts) {
     finalGameArgs = []
     for (let i = 0; i < gameArgs.length; i++) {
       if (gameArgs[i].startsWith('--') && extraKeys.has(gameArgs[i])) {
-        i++ // skip value too
+        i++
       } else {
         finalGameArgs.push(gameArgs[i])
       }
@@ -251,7 +216,6 @@ function launchGame(opts) {
     detached: false,
   })
 
-  // Use StringDecoder to correctly handle multi-byte UTF-8 characters
   const { StringDecoder } = require('string_decoder')
   const outDecoder = new StringDecoder('utf8')
   const errDecoder = new StringDecoder('utf8')
@@ -292,3 +256,4 @@ function launchGame(opts) {
 }
 
 module.exports = { launchGame }
+

@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useRef, useCallback, useEffect } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -25,7 +39,6 @@ export default function SkinCustomizeModal({ account, cosmeticData = [], onClose
   const fileInputRef                      = useRef(null)
   const dragCounter                       = useRef(0)
 
-  // Reset khi đổi tab
   useEffect(() => {
     setSelectedFile(null)
     setPreviewUrl(null)
@@ -33,7 +46,6 @@ export default function SkinCustomizeModal({ account, cosmeticData = [], onClose
     setDone(false)
   }, [activeTab])
 
-  // Cleanup object URL
   useEffect(() => {
     return () => {
       if (previewUrl && previewUrl.startsWith('blob:')) {
@@ -42,7 +54,6 @@ export default function SkinCustomizeModal({ account, cosmeticData = [], onClose
     }
   }, [previewUrl])
 
-  // ESC to close
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
@@ -96,12 +107,11 @@ async function handleApply() {
     if (!url) return
     setApplying(true)
     try {
-      // Load existing prefs for this account
+
       const existing = isElectron
         ? (await window.electronAPI.getSkinPrefs({ uuid: account?.uuid })) || {}
         : {}
 
-      // Convert blob URL to data URL for persistence
       const persistUrl = url.startsWith('blob:')
         ? await new Promise((resolve, reject) => {
             const img = new Image()
@@ -128,7 +138,7 @@ async function handleApply() {
       if (isElectron) {
         await window.electronAPI.saveSkinPrefs(newPrefs)
       } else {
-        // Fallback: localStorage
+
         localStorage.setItem(`vxc_skin_prefs_${account?.uuid}`, JSON.stringify(newPrefs))
       }
 
@@ -140,7 +150,6 @@ async function handleApply() {
     }
   }
 
-  // Filter API items by tab
   const apiItems = cosmeticData.filter(item => {
     if (activeTab === 'skin')   return !!item.skinUrl
     if (activeTab === 'cape')   return !!item.capeUrl
@@ -166,7 +175,7 @@ async function handleApply() {
           maxHeight: '85vh',
         }}
       >
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
           <div>
             <h3 className="text-white font-bold text-sm">Tuỳ chỉnh Cosmetics</h3>
@@ -180,7 +189,7 @@ async function handleApply() {
           </button>
         </div>
 
-        {/* Tabs */}
+        {}
         <div className="flex gap-0 border-b border-white/5 flex-shrink-0 px-5">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -194,12 +203,12 @@ async function handleApply() {
           ))}
         </div>
 
-        {/* Body — layout cố định, chỉ phần thư viện scroll */}
+        {}
         <div className="flex flex-col flex-1 overflow-hidden">
 
-          {/* Phần cố định: skin type + upload */}
+          {}
           <div className="flex-shrink-0 px-5 pt-4 space-y-4">
-            {/* Skin type dropdown — only for skin tab */}
+            {}
             {activeTab === 'skin' && (
               <div>
                 <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-1.5 block">
@@ -220,7 +229,7 @@ async function handleApply() {
               </div>
             )}
 
-            {/* Upload zone */}
+            {}
             <div>
               <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-1.5 block">
                 Tải lên từ máy
@@ -268,7 +277,7 @@ async function handleApply() {
               <input ref={fileInputRef} type="file" accept="image/png,image/*" className="hidden" onChange={handleFileChange} />
             </div>
 
-            {/* Library label */}
+            {}
             {apiItems.length > 0 && (
               <div className="flex items-center justify-between">
                 <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
@@ -278,7 +287,7 @@ async function handleApply() {
             )}
           </div>
 
-          {/* Phần scroll: chỉ grid thư viện */}
+          {}
           <div className="flex-1 overflow-y-auto px-5 pb-4 mt-2"
             style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
             {apiItems.length > 0 ? (
@@ -311,7 +320,7 @@ async function handleApply() {
           </div>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex gap-2 px-5 py-4 border-t border-white/5 flex-shrink-0">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/50 hover:text-white transition-all border border-white/8 hover:bg-white/5">
@@ -332,3 +341,4 @@ async function handleApply() {
     </div>
   )
 }
+

@@ -69,7 +69,7 @@ function validateId(id) {
 function validateProfile(profile) {
   if (!profile || typeof profile !== 'object') return 'Dữ liệu không hợp lệ'
   if (!['vanilla', 'fabric', 'forge', 'neoforge'].includes(profile.loader)) return 'Loader không hợp lệ'
-  // gameVersion can be empty when importing a modpack (will be filled from manifest)
+
   if (typeof profile.gameVersion !== 'string') return 'Phiên bản game không hợp lệ'
   return null
 }
@@ -95,11 +95,11 @@ function getDirSizeBytes(dirPath) {
 
 // ─── IPC Handlers ─────────────────────────────────────────────────────────────
 function registerProfileHandlers(getTrustedWindow) {
-  // profiles:get
+
   ipcMain.handle('profiles:get', (e) => {
     if (!getTrustedWindow(e)) return { profiles: [], selectedProfileId: null }
     const data = readProfiles()
-    // Enrich with current size
+
     data.profiles = data.profiles.map(p => ({
       ...p,
       sizeBytes: getDirSizeBytes(p.instancePath),
@@ -107,7 +107,6 @@ function registerProfileHandlers(getTrustedWindow) {
     return data
   })
 
-  // profiles:create
   ipcMain.handle('profiles:create', (e, profileData) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 
@@ -117,7 +116,6 @@ function registerProfileHandlers(getTrustedWindow) {
     const id = generateUUID()
     const now = new Date().toISOString()
 
-    // Determine instance path
     let instancePath = profileData.instancePath
     let isCustomPath = false
 
@@ -129,14 +127,12 @@ function registerProfileHandlers(getTrustedWindow) {
       isCustomPath = false
     }
 
-    // Create instance directory
     try {
       ensureDir(instancePath)
     } catch (ex) {
       return { error: `Không thể tạo thư mục: ${ex.message}` }
     }
 
-    // Auto-generate name if empty
     const loaderLabel = profileData.loader.charAt(0).toUpperCase() + profileData.loader.slice(1)
     const name = (profileData.name && profileData.name.trim())
       ? profileData.name.trim()
@@ -153,10 +149,10 @@ function registerProfileHandlers(getTrustedWindow) {
       createdAt:     now,
       lastPlayed:    null,
       sizeBytes:     0,
-      // Import metadata (chỉ có khi import từ modpack)
-      importSource:  profileData.importSource  || null,  // 'curseforge' | 'modrinth' | null
-      importIconUrl: profileData.importIconUrl || null,  // modpack icon image URL
-      importBgUrl:   profileData.importBgUrl   || null,  // modpack background image URL
+
+      importSource:  profileData.importSource  || null,
+      importIconUrl: profileData.importIconUrl || null,
+      importBgUrl:   profileData.importBgUrl   || null,
     }
 
     const data = readProfiles()
@@ -167,7 +163,6 @@ function registerProfileHandlers(getTrustedWindow) {
     return { ok: true, profile, data }
   })
 
-  // profiles:delete
   ipcMain.handle('profiles:delete', (e, id) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -176,14 +171,13 @@ function registerProfileHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === id)
     if (!profile) return { error: 'Profile không tồn tại' }
 
-    // Remove instance folder only if it's the default path (inside our instances dir)
     if (!profile.isCustomPath && profile.instancePath.startsWith(INSTANCES_DIR)) {
       try {
         if (fs.existsSync(profile.instancePath)) {
           fs.rmSync(profile.instancePath, { recursive: true, force: true })
         }
       } catch (ex) {
-        // Non-fatal — still remove from list
+
         console.warn('[profileManager] Could not delete instance dir:', ex.message)
       }
     }
@@ -194,7 +188,6 @@ function registerProfileHandlers(getTrustedWindow) {
     }
     writeProfiles(data)
 
-    // Remove profileId from all groups
     try {
       const groupsData = readGroups()
       let changed = false
@@ -209,7 +202,6 @@ function registerProfileHandlers(getTrustedWindow) {
     return { ok: true, data }
   })
 
-  // profiles:select
   ipcMain.handle('profiles:select', (e, id) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -222,7 +214,6 @@ function registerProfileHandlers(getTrustedWindow) {
     return { ok: true, data }
   })
 
-  // profiles:browse — open folder picker dialog
   ipcMain.handle('profiles:browse', async (e) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -237,7 +228,6 @@ function registerProfileHandlers(getTrustedWindow) {
     return { ok: true, path: result.filePaths[0] }
   })
 
-  // profiles:updateRam — save RAM setting for profile
   ipcMain.handle('profiles:updateRam', (e, id, ramGb) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -252,7 +242,6 @@ function registerProfileHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // profiles:openFolder — open instance folder in File Explorer
   ipcMain.handle('profiles:openFolder', async (e, id) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -303,7 +292,7 @@ function writeGroups(data) {
 }
 
 function registerGroupHandlers(getTrustedWindow) {
-  // groups:get — read groups.json, enrich with profiles
+
   ipcMain.handle('groups:get', (e) => {
     if (!getTrustedWindow(e)) return { groups: [] }
     const groupsData   = readGroups()
@@ -325,7 +314,6 @@ function registerGroupHandlers(getTrustedWindow) {
     return { groups: enriched }
   })
 
-  // groups:create — create a new group
   ipcMain.handle('groups:create', (e, data) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!data || typeof data.name !== 'string' || !data.name.trim()) {
@@ -348,7 +336,6 @@ function registerGroupHandlers(getTrustedWindow) {
     return { ok: true, group }
   })
 
-  // groups:delete — delete group (does not delete profiles)
   ipcMain.handle('groups:delete', (e, id) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -360,7 +347,6 @@ function registerGroupHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // groups:addProfile — add profileId to group
   ipcMain.handle('groups:addProfile', (e, groupId, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(groupId))   return { error: 'Group ID không hợp lệ' }
@@ -378,7 +364,6 @@ function registerGroupHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // groups:removeProfile — remove profileId from group
   ipcMain.handle('groups:removeProfile', (e, groupId, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(groupId))   return { error: 'Group ID không hợp lệ' }
@@ -394,7 +379,6 @@ function registerGroupHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // groups:rename — rename group
   ipcMain.handle('groups:rename', (e, id, name) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -435,11 +419,10 @@ function registerProfileContentHandlers(getTrustedWindow) {
     })
   }
 
-  // Fetch mod metadata from Modrinth first, fallback to CurseForge
   async function fetchModMeta(fileName) {
-    // Try to extract project slug from filename (modrinth format: name-version.jar)
+
     const base = fileName.replace(/\.jar$/i, '').replace(/\.off$/i, '')
-    // Modrinth: search by name
+
     try {
       const slug = base.split('-')[0].toLowerCase()
       const data = await httpsGet(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(slug)}&limit=1&facets=[["project_type:mod"]]`)
@@ -456,7 +439,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
         }
       }
     } catch {}
-    // CurseForge fallback
+
     try {
       const data = await httpsGet(`https://api.curseforge.com/v1/mods/search?gameId=432&searchFilter=${encodeURIComponent(slug)}&pageSize=1`)
       if (data?.data?.[0]) {
@@ -475,7 +458,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return null
   }
 
-  // profile:listMods
   ipcMain.handle('profile:listMods', async (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -484,8 +466,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile không tồn tại' }
 
-    // Find all game directories (account subdirs or instancePath directly)
-    // Same logic as in statsTracker.cjs
     const instancePath = profile.instancePath
     const accountsDir = path.join(instancePath, 'accounts')
     const gameDirs = []
@@ -500,7 +480,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
     if (gameDirs.length === 0) gameDirs.push(instancePath)
 
-    // Collect mods from all game dirs, deduplicate by fileName
     const modMap = new Map()
     for (const gameDir of gameDirs) {
       const modsDir = path.join(gameDir, 'mods')
@@ -520,7 +499,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
             enabled,
             size: stat.size,
             mtime: stat.mtimeMs,
-            gameDir, // lưu để toggle/delete biết đường dẫn
+            gameDir,
           })
         }
       } catch {}
@@ -531,7 +510,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return { ok: true, mods }
   })
 
-  // profile:toggleMod — toggle .jar ↔ .jar.off
   ipcMain.handle('profile:toggleMod', (e, profileId, fileName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -543,7 +521,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile không tồn tại' }
 
-    // Tìm file trong tất cả gameDirs
     const instancePath = profile.instancePath
     const accountsDir = path.join(instancePath, 'accounts')
     const gameDirs = []
@@ -568,7 +545,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
 
       try {
         fs.renameSync(oldPath, newPath)
-        // newName là tên sau khi toggle — enabled nếu KHÔNG có đuôi .off/.disabled
+
         const nowEnabled = !(newName.endsWith('.off') || newName.endsWith('.disabled'))
         return { ok: true, newFileName: newName, enabled: nowEnabled }
       } catch (err) {
@@ -578,7 +555,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return { error: 'File không tồn tại' }
   })
 
-  // profile:deleteMod
   ipcMain.handle('profile:deleteMod', (e, profileId, fileName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -616,11 +592,9 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return { error: 'File không tồn tại' }
   })
 
-  // profile:getModMeta — fetch metadata from Modrinth/CurseForge, prioritize icon from jar
   ipcMain.handle('profile:getModMeta', async (e, profileId, fileName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 
-    // 1. Try reading icon directly from .jar file
     let jarIconBase64 = null
     try {
       const data = readProfiles()
@@ -642,7 +616,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
           if (!fs.existsSync(jarPath)) continue
           try {
             const buf = fs.readFileSync(jarPath)
-            // Try reading pack.png or icon.png from jar (zip format)
+
             for (const iconName of ['pack.png', 'icon.png', 'assets/icon.png']) {
               const iconData = readZipEntry(buf, iconName)
               if (iconData && iconData.length > 0) {
@@ -650,7 +624,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
                 break
               }
             }
-            // Try reading fabric.mod.json to get icon path
+
             if (!jarIconBase64) {
               const fabricMeta = readZipEntry(buf, 'fabric.mod.json')
               if (fabricMeta) {
@@ -663,7 +637,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
                 } catch {}
               }
             }
-            // Try reading META-INF/mods.toml (Forge)
+
             if (!jarIconBase64) {
               const forgeMeta = readZipEntry(buf, 'META-INF/mods.toml')
               if (forgeMeta) {
@@ -681,10 +655,8 @@ function registerProfileContentHandlers(getTrustedWindow) {
       }
     } catch {}
 
-    // 2. Fetch API metadata (Modrinth first, then CurseForge)
     const apiMeta = await fetchModMeta(fileName)
 
-    // Merge: prioritize icon from jar, fallback to API
     const finalMeta = apiMeta
       ? { ...apiMeta, iconUrl: jarIconBase64 || apiMeta.iconUrl }
       : jarIconBase64
@@ -694,16 +666,13 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return finalMeta ? { ok: true, meta: finalMeta } : { ok: true, meta: null }
   })
 
-  // profile:getShaderMeta — fetch shader metadata from Modrinth (project_type:shader)
   ipcMain.handle('profile:getShaderMeta', async (e, profileId, fileName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 
-    // Clean up filename to use as search query
-    // e.g. "ComplementaryReimagined_r5.7.1.zip" → "ComplementaryReimagined"
     const base = fileName
       .replace(/\.(zip|jar)$/i, '')
-      .replace(/_r?\d[\d.]*.*$/, '')   // strip version suffix like _r5.7.1
-      .replace(/-\d[\d.]*.*$/, '')     // strip version suffix like -1.2.3
+      .replace(/_r?\d[\d.]*.*$/, '')
+      .replace(/-\d[\d.]*.*$/, '')
       .replace(/[_-]/g, ' ')
       .trim()
 
@@ -731,11 +700,9 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return { ok: true, meta: null }
   })
 
-  // profile:getResourcePackMeta — fetch resource pack metadata from Modrinth (project_type:resourcepack)
   ipcMain.handle('profile:getResourcePackMeta', async (e, profileId, fileName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 
-    // Clean filename: "Faithful 32x-1.20.zip" → "Faithful 32x"
     const base = fileName
       .replace(/\.(zip|jar)$/i, '')
       .replace(/_r?\d[\d.]*.*$/, '')
@@ -743,7 +710,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
       .replace(/[_]/g, ' ')
       .trim()
 
-    // First try reading pack.png from the zip file itself
     let localIcon = null
     try {
       const data = readProfiles()
@@ -777,7 +743,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
 
     if (localIcon) return { ok: true, meta: { source: 'local', name: null, iconUrl: localIcon } }
 
-    // Fallback: search Modrinth
     try {
       const data = await httpsGet(
         `https://api.modrinth.com/v2/search?query=${encodeURIComponent(base)}&limit=1&facets=[["project_type:resourcepack"]]`
@@ -802,7 +767,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return { ok: true, meta: null }
   })
 
-  // profile:listShaders
   ipcMain.handle('profile:listShaders', async (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -811,7 +775,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile không tồn tại' }
 
-    // Shaders có thể ở shaderpacks/ hoặc shaders/
     const dirs = ['shaderpacks', 'shaders']
     let shaders = []
     for (const dir of dirs) {
@@ -834,7 +797,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return { ok: true, shaders }
   })
 
-  // profile:deleteShader
   ipcMain.handle('profile:deleteShader', (e, profileId, fileName, subDir) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -860,7 +822,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
   })
 
-  // profile:listResourcePacks
   ipcMain.handle('profile:listResourcePacks', async (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -880,7 +841,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
         const stat = fs.statSync(fullPath)
         let iconBase64 = null
         let description = ''
-        // Read pack.mcmeta and pack.png if it's a folder or zip
+
         if (stat.isDirectory()) {
           const metaPath = path.join(fullPath, 'pack.mcmeta')
           const iconPath = path.join(fullPath, 'pack.png')
@@ -896,7 +857,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
             } catch {}
           }
         } else if (/\.zip$/i.test(f)) {
-          // Read pack.png from zip
+
           try {
             const buf = fs.readFileSync(fullPath)
             const iconData = readZipEntry(buf, 'pack.png')
@@ -925,7 +886,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
   })
 
-  // profile:deleteResourcePack
   ipcMain.handle('profile:deleteResourcePack', (e, profileId, fileName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -950,7 +910,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
   })
 
-  // profile:listWorlds
   ipcMain.handle('profile:listWorlds', async (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -959,9 +918,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile không tồn tại' }
 
-    // Collect game dirs — same logic as statsTracker.getProfileStats:
-    // worlds live in instancePath/accounts/<accountId>/saves/
-    // with fallback to instancePath/saves/ (legacy)
     const instancePath = profile.instancePath
     const accountsDir = path.join(instancePath, 'accounts')
     const gameDirs = []
@@ -977,7 +933,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     if (gameDirs.length === 0) gameDirs.push(instancePath)
 
     try {
-      // Merge worlds from all account dirs, deduplicate by folderName
+
       const worldMap = new Map()
 
       for (const gameDir of gameDirs) {
@@ -1023,7 +979,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
   })
 
-  // profile:deleteWorld
   ipcMain.handle('profile:deleteWorld', (e, profileId, folderName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -1048,7 +1003,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
   })
 
-  // profile:update — update profile configuration (ram, jvm, windowSize, javaPath, name)
   ipcMain.handle('profile:update', (e, profileId, patch) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -1058,7 +1012,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile không tồn tại' }
 
-    // Whitelist các field được phép update
     const allowed = ['name', 'ramGb', 'jvmArgs', 'windowWidth', 'windowHeight', 'javaPath', 'gameVersion', 'loaderVersion']
     for (const key of allowed) {
       if (key in patch) {
@@ -1078,7 +1031,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
     return { ok: true, profile }
   })
 
-  // profile:listJavas — list known Java installations
   ipcMain.handle('profile:listJavas', async (e) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     try {
@@ -1091,7 +1043,6 @@ function registerProfileContentHandlers(getTrustedWindow) {
   })
 }
 
-// Helper: read entry from ZIP buffer (used for resourcepacks)
 function readZipEntry(buf, name) {
   try {
     const zlib = require('zlib')
@@ -1140,14 +1091,11 @@ function registerJavaDistroHandlers(getTrustedWindow) {
     return profile?.instancePath || null
   }
 
-  // java:fetchDistros — get version list from Adoptium/Azul/GraalVM
-  // Also includes info about Java installed in the profile (if any)
   ipcMain.handle('java:fetchDistros', async (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     try {
       const distros = await fetchAllDistros()
 
-      // Check Java installed in profile
       let installedInfo = null
       if (profileId && validateId(profileId)) {
         const instancePath = getProfileInstancePath(profileId)
@@ -1162,7 +1110,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
     }
   })
 
-  // java:getInstalled — check Java installed in profile
   ipcMain.handle('java:getInstalled', (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -1176,7 +1123,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
     }
   })
 
-  // java:install — download and install Java into the profile's jre/ directory
   ipcMain.handle('java:install', async (e, pkg, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!pkg || typeof pkg !== 'object') return { error: 'Dữ liệu không hợp lệ' }
@@ -1186,12 +1132,11 @@ function registerJavaDistroHandlers(getTrustedWindow) {
     const instancePath = getProfileInstancePath(profileId)
     if (!instancePath) return { error: 'Profile không tồn tại' }
 
-    // Install into <instancePath>/jre/
     const jreDir = path.join(instancePath, 'jre')
     const win = getTrustedWindow(e)
 
     try {
-      // Remove old Java if present (replace)
+
       if (fs.existsSync(jreDir)) {
         fs.rmSync(jreDir, { recursive: true, force: true })
       }
@@ -1200,7 +1145,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
         win?.webContents?.send('java:installProgress', progress)
       })
 
-      // Save metadata to know which distro/version is installed
       const metaPath = path.join(jreDir, '.vxc-java-meta.json')
       fs.writeFileSync(metaPath, JSON.stringify({
         distro:      pkg.distro,
@@ -1209,7 +1153,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
         installedAt: new Date().toISOString(),
       }, null, 2))
 
-      // Automatically update javaPath in profile
       const data = readProfiles()
       const profile = data.profiles.find(p => p.id === profileId)
       if (profile) {
@@ -1223,7 +1166,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
     }
   })
 
-  // java:delete — remove Java installed in profile
   ipcMain.handle('java:delete', (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -1235,7 +1177,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
       const jreDir = path.join(instancePath, 'jre')
       const deleted = deleteDistro(jreDir)
 
-      // Remove javaPath from profile
       if (deleted) {
         const data = readProfiles()
         const profile = data.profiles.find(p => p.id === profileId)
@@ -1251,8 +1192,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
     }
   })
 
-  // java:installToDir — install Java into any custom directory (used by server manager)
-  // Does NOT require a profile ID — installs into the provided installDir
   ipcMain.handle('java:installToDir', async (e, pkg, installDir) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!pkg || !pkg.downloadUrl) return { error: 'Thiếu thông tin package' }
@@ -1268,7 +1207,6 @@ function registerJavaDistroHandlers(getTrustedWindow) {
         win?.webContents?.send('java:installProgress', progress)
       })
 
-      // Mark as hidden on Windows
       if (process.platform === 'win32') {
         try { require('child_process').execSync(`attrib +h "${installDir}"`, { windowsHide: true }) } catch {}
       }
@@ -1281,3 +1219,4 @@ function registerJavaDistroHandlers(getTrustedWindow) {
 }
 
 module.exports = { registerProfileHandlers, registerGroupHandlers, registerProfileContentHandlers, registerJavaDistroHandlers }
+

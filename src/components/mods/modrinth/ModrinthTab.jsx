@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import ModrinthSubTabs from './ModrinthSubTabs'
 import ModrinthFilters from './ModrinthFilters'
@@ -26,10 +40,9 @@ export default function ModrinthTab() {
 
   const { results, total, loading, error, loadMore, hasMore, refresh } = useModrinthSearch(filters)
 
-  // Khi loading kết thúc → ẩn overlay
   useEffect(() => {
     if (!loading && tabLoading) {
-      // Delay nhỏ để tránh flash
+
       tabLoadingTimer.current = setTimeout(() => setTabLoading(false), 120)
     }
     return () => clearTimeout(tabLoadingTimer.current)
@@ -41,7 +54,7 @@ export default function ModrinthTab() {
   }
 
   function handleSubTab(type) {
-    setTabLoading(true)   // bật overlay ngay khi đổi tab
+    setTabLoading(true)
     setProject(null)
     setSearchInput('')
     setFilters(prev => ({ ...prev, projectType: type, query: '' }))
@@ -56,7 +69,6 @@ export default function ModrinthTab() {
     setProject({ id: project.project_id, type: filters.projectType })
   }
 
-  // If a project is selected, show detail view
   if (selectedProject) {
     return (
       <ModrinthDetail
@@ -71,7 +83,7 @@ export default function ModrinthTab() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Sub-tabs + search bar */}
+      {}
       <div className="flex-shrink-0 px-4 pt-3 pb-2 space-y-2">
         <ModrinthSubTabs active={filters.projectType} onChange={handleSubTab} />
 
@@ -91,10 +103,10 @@ export default function ModrinthTab() {
           <ViewToggle view={view} onChange={setView} />
         </form>
 
-        {/* Loading bar XOR Result count — swap nhau, căn giữa */}
+        {}
         <div className="flex items-center justify-center min-h-[18px]">
           {loading ? (
-            /* Indeterminate loading bar */
+
             <div className="w-full h-0.5 rounded-full overflow-hidden bg-white/5">
               <div
                 className="h-full rounded-full"
@@ -107,7 +119,7 @@ export default function ModrinthTab() {
               />
             </div>
           ) : total > 0 ? (
-            /* Result count */
+
             <p className="text-sm font-semibold text-white/75">
               {total.toLocaleString()}
               <span className="text-white/40 font-normal text-xs ml-1">results</span>
@@ -123,10 +135,10 @@ export default function ModrinthTab() {
         `}</style>
       </div>
 
-      {/* Main: filters + content */}
+      {}
       <div className="flex flex-1 overflow-hidden gap-0">
 
-        {/* Left: filters panel — position relative để dropdown tính toán vị trí */}
+        {}
         <div
           className="flex-shrink-0 w-64 border-r relative"
           style={{ borderColor: 'rgba(255,255,255,0.06)' }}
@@ -134,7 +146,7 @@ export default function ModrinthTab() {
           <ModrinthFilters filters={filters} onChange={updateFilters} />
         </div>
 
-        {/* Right: content */}
+        {}
         <div className="flex-1 overflow-hidden px-2 py-1 relative" style={{ isolation: 'isolate' }}>
           <TabLoadingOverlay visible={tabLoading} />
           <ModrinthGrid
@@ -151,3 +163,4 @@ export default function ModrinthTab() {
     </div>
   )
 }
+

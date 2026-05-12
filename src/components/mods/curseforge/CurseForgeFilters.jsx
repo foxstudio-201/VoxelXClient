@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef, useMemo } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -56,15 +70,13 @@ function VersionGroupDropdown({ value, onChange, groups }) {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
       const menuWidth   = 180
-      const PADDING     = 8   // khoảng cách với cạnh dưới
-      const MAX_HEIGHT  = 320 // giới hạn tối đa khi cửa sổ lớn
+      const PADDING     = 8
+      const MAX_HEIGHT  = 320
 
-      // Horizontal: căn phải nếu không đủ chỗ
       const left = r.left + menuWidth > window.innerWidth
         ? Math.max(4, r.right - menuWidth)
         : r.left
 
-      // Vertical: tính không gian còn lại bên dưới button
       const spaceBelow  = window.innerHeight - r.bottom - PADDING
       const maxHeight   = Math.min(MAX_HEIGHT, Math.max(80, spaceBelow))
 
@@ -114,7 +126,7 @@ function VersionGroupDropdown({ value, onChange, groups }) {
           }}
         >
           <div className="py-1">
-            {/* All option */}
+            {}
             <button
               type="button"
               onClick={() => { onChange('all'); setOpen(false) }}
@@ -131,10 +143,10 @@ function VersionGroupDropdown({ value, onChange, groups }) {
               {value === 'all' && <svg className="w-3 h-3 ml-auto text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
             </button>
 
-            {/* Divider */}
+            {}
             <div className="h-px bg-white/5 mx-2 my-1" />
 
-            {/* Version groups */}
+            {}
             {groups.map(group => (
               <button
                 key={group.key}
@@ -165,8 +177,8 @@ function VersionGroupDropdown({ value, onChange, groups }) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function CurseForgeFilters({ filters, onChange }) {
-  const [allVersions, setAllVersions]     = useState([])  // [{version, type}]
-  const [versionGroup, setVersionGroup]   = useState('all') // 'all' | '1.21' | '1.20' ...
+  const [allVersions, setAllVersions]     = useState([])
+  const [versionGroup, setVersionGroup]   = useState('all')
   const [versionSearch, setVersionSearch] = useState('')
   const [showVersions, setShowVersions]   = useState(true)
 
@@ -177,15 +189,14 @@ export default function CurseForgeFilters({ filters, onChange }) {
       .catch(() => {})
   }, [])
 
-  // Build version groups from release versions only (e.g. 1.21, 1.20, 1.19...)
   const versionGroups = useMemo(() => {
     const groupMap = new Map()
     allVersions.forEach(item => {
       const v = item.version || item
       const t = item.version_type || item.type || 'release'
-      // Bỏ qua các bản không phải chính thức (pre, rc, snapshot...)
+
       if (t !== 'release' || v.includes('-rc') || v.includes('-pre') || v.match(/w\d+[a-z]?/i)) return
-      // Extract major.minor (e.g. "1.21" from "1.21.4")
+
       const match = v.match(/^(\d+\.\d+)/)
       if (!match) return
       const key = match[1]
@@ -210,12 +221,10 @@ export default function CurseForgeFilters({ filters, onChange }) {
     onChange({ gameVersions: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] })
   }
 
-  // Filter versions by group + search
   const filteredVersions = allVersions.filter(item => {
     const vStr = item.version || item
     const type = item.version_type || item.type || 'release'
-    
-    // Ẩn các bản rc, pre, snapshot khỏi danh sách
+
     if (type !== 'release' || vStr.includes('-rc') || vStr.includes('-pre') || vStr.match(/w\d+[a-z]?/i)) {
       return false
     }
@@ -223,7 +232,7 @@ export default function CurseForgeFilters({ filters, onChange }) {
     const matchSearch = !versionSearch || vStr.toLowerCase().includes(versionSearch.toLowerCase())
     if (!matchSearch) return false
     if (versionGroup === 'all') return true
-    // Show versions that belong to this group (chỉ lấy dấu chấm, không lấy dấu gạch ngang vì đã lọc hết rc/pre)
+
     return vStr === versionGroup || vStr.startsWith(versionGroup + '.')
   })
 
@@ -234,9 +243,9 @@ export default function CurseForgeFilters({ filters, onChange }) {
     <div className="flex flex-col h-full overflow-y-auto"
       style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
 
-      {/* ── Loaders + Sort side by side ── */}
+      {}
       <div className="flex border-b border-white/5">
-        {/* Loaders */}
+        {}
         <div className="flex-1 border-r border-white/5 px-3 py-3">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-bold text-white/60 uppercase tracking-widest">Loaders</p>
@@ -252,7 +261,7 @@ export default function CurseForgeFilters({ filters, onChange }) {
           </div>
         </div>
 
-        {/* Sort */}
+        {}
         <div className="flex-1 px-3 py-3">
           <p className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Sort</p>
           <div className="flex flex-col gap-0.5">
@@ -270,9 +279,9 @@ export default function CurseForgeFilters({ filters, onChange }) {
         </div>
       </div>
 
-      {/* ── Game Version ── */}
+      {}
       <div className="flex flex-col flex-1 min-h-0 px-3 py-3">
-        {/* Header */}
+        {}
         <div className="flex items-center gap-2 mb-2 flex-shrink-0">
           <button onClick={() => setShowVersions(v => !v)}
             className="flex items-center gap-1.5 text-xs font-bold text-white/60 uppercase tracking-widest hover:text-white/80 transition-colors">
@@ -302,7 +311,7 @@ export default function CurseForgeFilters({ filters, onChange }) {
 
         {showVersions && (
           <>
-            {/* Search */}
+            {}
             <div className="relative mb-2 flex-shrink-0">
               <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
@@ -312,7 +321,7 @@ export default function CurseForgeFilters({ filters, onChange }) {
                 className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-green-500/40" />
             </div>
 
-            {/* Version list */}
+            {}
             <div className="flex flex-col gap-0.5 overflow-y-auto flex-1"
               style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
               {filteredVersions.length === 0 && (
@@ -335,3 +344,4 @@ export default function CurseForgeFilters({ filters, onChange }) {
     </div>
   )
 }
+

@@ -1,11 +1,24 @@
-﻿'use strict'
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+'use strict'
 
 const { BrowserWindow, app } = require('electron')
 const path = require('path')
 const fs   = require('fs')
 const { pathToFileURL } = require('url')
 
-// --- Shared log window (single window, multi-instance sidebar) ---
 let sharedLogWin = null
 
 function getOrCreateLogWindow() {
@@ -561,8 +574,6 @@ function getOrCreateLogWindow() {
 </body>
 </html>`
 
-  // Write HTML to a temp file and load via file:// URL
-  // data: URLs don't support ipcRenderer properly in Electron
   const tmpFile = path.join(app.getPath('temp'), 'voxelx-logwindow.html')
   fs.writeFileSync(tmpFile, html, 'utf-8')
   sharedLogWin.loadURL(pathToFileURL(tmpFile).href)
@@ -572,15 +583,12 @@ function getOrCreateLogWindow() {
   return sharedLogWin
 }
 
-// createLogWindow — registers a new instance in the shared log window
 function createLogWindow(parentWin, profileName, username) {
   const key = `${profileName}::${username}::${Date.now()}`
   const logWin = getOrCreateLogWindow()
 
-  // Show window immediately
   logWin.show()
 
-  // Queue lines that arrive before the window finishes loading
   const pendingLines = []
   let ready = false
 
@@ -597,19 +605,14 @@ function createLogWindow(parentWin, profileName, username) {
     console.log('[LogWindow] flushPending: sending log:register for key', key)
     console.log('[LogWindow] flushPending: sending', pendingLines.length, 'pending lines')
 
-    // Send register via IPC — renderer's ipcRenderer.on('log:register') listener
-    // is guaranteed to be set up by the time did-finish-load fires.
     logWin.webContents.send('log:register', { key, profileName, username })
 
-    // Send pending lines
     for (const line of pendingLines) {
       logWin.webContents.send('launcher:log', { key, line })
     }
     pendingLines.length = 0
   }
 
-  // Wait for the window to finish loading before flushing.
-  // Guard with a flag so flushPending is only called once per instance.
   let flushScheduled = false
   function scheduleFlush() {
     if (flushScheduled) return
@@ -656,3 +659,4 @@ function createLogWindow(parentWin, profileName, username) {
 }
 
 module.exports = { createLogWindow }
+

@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useRef, useCallback, useEffect, useState } from 'react'
 
 export function getFileExt(name) {
@@ -77,19 +91,17 @@ function highlightLine(line, ext) {
   return [{ text: line, color: '#e5e7eb' }]
 }
 
-const LINE_H = 20 // px per line — must match lineHeight below
+const LINE_H = 20
 
 export default function ServerCodeEditor({ fileName, content, onChange, onSave, onCancel, saving }) {
   const ext = getFileExt(fileName)
   const lines = content.split('\n')
 
-  // Shared scroll state
   const scrollTopRef   = useRef(0)
   const textareaRef    = useRef(null)
   const lineNumRef     = useRef(null)
   const highlightRef   = useRef(null)
 
-  // Slide-out animation state
   const [closing, setClosing] = useState(false)
 
   function handleClose(cb) {
@@ -97,7 +109,6 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
     setTimeout(() => { setClosing(false); cb() }, 220)
   }
 
-  // Sync all panels on scroll
   const onScroll = useCallback(() => {
     const top = textareaRef.current?.scrollTop ?? 0
     const left = textareaRef.current?.scrollLeft ?? 0
@@ -128,7 +139,7 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
         }
       `}</style>
 
-      {/* Header */}
+      {}
       <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-b border-white/5 bg-black/30">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 text-white/30 flex-shrink-0">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -149,10 +160,10 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
         </button>
       </div>
 
-      {/* Editor body — single scroll container */}
+      {}
       <div className="flex flex-1 overflow-hidden" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '12px', lineHeight: `${LINE_H}px` }}>
 
-        {/* Line numbers — scrolls in sync via ref, no own scrollbar */}
+        {}
         <div
           ref={lineNumRef}
           className="flex-shrink-0 w-10 bg-black/20 border-r border-white/5 select-none overflow-hidden"
@@ -165,9 +176,9 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
           ))}
         </div>
 
-        {/* Code area */}
+        {}
         <div className="relative flex-1 overflow-hidden">
-          {/* Syntax highlight layer */}
+          {}
           <pre
             ref={highlightRef}
             aria-hidden="true"
@@ -184,7 +195,7 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
             })}
           </pre>
 
-          {/* Editable textarea — transparent text so highlight shows through */}
+          {}
           <textarea
             ref={textareaRef}
             value={content}
@@ -205,7 +216,7 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
         </div>
       </div>
 
-      {/* Status bar */}
+      {}
       <div className="flex-shrink-0 flex items-center gap-3 px-3 py-1 border-t border-white/5 bg-black/20">
         <span className="text-[10px] text-white/25">{lines.length} dòng</span>
         <span className="text-[10px] text-white/25">{content.length} ký tự</span>
@@ -213,3 +224,4 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
     </div>
   )
 }
+

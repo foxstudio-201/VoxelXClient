@@ -1,4 +1,18 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { parseColors, getLineLevel, getLineColor } from './serverColorUtils.jsx'
 import ServerFileManager from './ServerFileManager'
 import ServerNetworkTab from './ServerNetworkTab'
@@ -19,12 +33,10 @@ export default function ServerConsole({ server, onBack }) {
   const [copied, setCopied]           = useState(false)
   const [folderPath, setFolderPath]   = useState('')
 
-  // Tunnel state — lifted here so it persists across tab switches
   const [tunnelStatus, setTunnelStatus] = useState('idle')
   const [tunnelAddr, setTunnelAddr]     = useState(null)
   const [tunnelLog, setTunnelLog]       = useState([])
 
-  // Realtime stats
   const [stats, setStats] = useState({ cpu: 0, ramMb: 0, xmxMb: (server?.ramGb || 2) * 1024, rssMb: 0 })
   const statsIntervalRef  = useRef(null)
 
@@ -55,7 +67,7 @@ export default function ServerConsole({ server, onBack }) {
       if (data.serverId !== server.id) return
       setDlProgress(data)
     })
-    // Subscribe tunnel events here so state persists across tab switches
+
     const unsubTunnel = window.electronAPI.onServerTunnelLog?.((data) => {
       if (data.serverId !== server.id) return
       if (data.status) setTunnelStatus(data.status)
@@ -70,7 +82,6 @@ export default function ServerConsole({ server, onBack }) {
     if (autoScroll && logEndRef.current) logEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [logs, autoScroll])
 
-  // Poll RAM/CPU stats every 2s when server is running
   useEffect(() => {
     clearInterval(statsIntervalRef.current)
     if (!isElectron || !server || status !== 'online') {
@@ -93,10 +104,10 @@ export default function ServerConsole({ server, onBack }) {
     return () => clearInterval(statsIntervalRef.current)
   }, [server?.id, status])
   useEffect(() => {
-    if (activeTab === 'files') {} // ServerFileManager handles its own loading
+    if (activeTab === 'files') {}
   }, [activeTab])
 
-  const loadFolders = useCallback(async (_sub = '') => {}, []) // kept for openFolder button compat
+  const loadFolders = useCallback(async (_sub = '') => {}, [])
 
   async function handleStart() {
     if (!isElectron) return
@@ -125,7 +136,7 @@ export default function ServerConsole({ server, onBack }) {
   async function handleSendCommand(e) {
     e?.preventDefault()
     if (!command.trim() || !isElectron) return
-    // Strip leading slash if user typed it — server doesn't need it
+
     const cmd = command.trim().replace(/^\//, '')
     await window.electronAPI.serverSendCommand(server.id, cmd)
     setLogs(prev => [...prev, `> /${cmd}`])
@@ -144,9 +155,9 @@ export default function ServerConsole({ server, onBack }) {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* LEFT */}
+      {}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/5">
-        {/* Toolbar */}
+        {}
         <div className="flex-shrink-0 flex items-center gap-1 px-3 py-2 border-b border-white/5 bg-black/20">
           <button onClick={onBack} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 transition-all flex-shrink-0">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
@@ -191,9 +202,9 @@ export default function ServerConsole({ server, onBack }) {
           )}
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1 overflow-hidden">
-          {/* Console tab */}
+          {}
           {activeTab === 'console' && (
             <div className="flex flex-col h-full">
               {(downloading || dlProgress) && (
@@ -239,10 +250,10 @@ export default function ServerConsole({ server, onBack }) {
             </div>
           )}
 
-          {/* Files tab */}
+          {}
           {activeTab === 'files' && <ServerFileManager server={server} />}
 
-          {/* Network tab */}
+          {}
           {activeTab === 'network' && (
             <ServerNetworkTab
               server={server}
@@ -255,21 +266,21 @@ export default function ServerConsole({ server, onBack }) {
             />
           )}
 
-          {/* Plugins tab */}
+          {}
           {activeTab === 'plugins' && <ServerPluginModTab server={server} projectType="plugin" />}
 
-          {/* Mods tab */}
+          {}
           {activeTab === 'mods' && <ServerPluginModTab server={server} projectType="mod" />}
 
-          {/* Settings tab */}
+          {}
           {activeTab === 'settings' && <ServerSettingsTab server={server} />}
         </div>
       </div>
 
-      {/* RIGHT: Server info panel */}
+      {}
       <div className="w-64 flex-shrink-0 flex flex-col overflow-hidden bg-black/15">
         <div className="flex-shrink-0 p-4 border-b border-white/5">
-          {/* Icon + name */}
+          {}
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-white/5">
               <ServerTypeIcon type={server.type} size={48} />
@@ -280,7 +291,7 @@ export default function ServerConsole({ server, onBack }) {
             </div>
           </div>
 
-          {/* Status */}
+          {}
           <div className="flex items-center gap-2 mb-3">
             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusDot}`} />
             <span className={`text-sm font-bold capitalize ${statusColor}`}>
@@ -288,10 +299,10 @@ export default function ServerConsole({ server, onBack }) {
             </span>
           </div>
 
-          {/* IP address — tunnel if active, else local */}
+          {}
           <IpDisplay tunnelAddr={tunnelAddr} tunnelStatus={tunnelStatus} server={server} />
 
-          {/* Start/Stop/Restart */}
+          {}
           <div className="flex gap-2 mt-3">
             {!isRunning ? (
               <button onClick={handleStart} disabled={downloading}
@@ -317,7 +328,7 @@ export default function ServerConsole({ server, onBack }) {
           </div>
         </div>
 
-        {/* Stats */}
+        {}
         <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -360,16 +371,15 @@ export default function ServerConsole({ server, onBack }) {
   )
 }
 
-// ── Minecraft command list for tab-complete ───────────────────────────────────
 const MC_COMMANDS = [
-  // Server management
+
   { cmd: 'stop',        desc: 'Dừng server' },
   { cmd: 'restart',     desc: 'Khởi động lại server' },
   { cmd: 'reload',      desc: 'Tải lại cấu hình' },
   { cmd: 'save-all',    desc: 'Lưu tất cả thế giới' },
   { cmd: 'save-on',     desc: 'Bật tự động lưu' },
   { cmd: 'save-off',    desc: 'Tắt tự động lưu' },
-  // Player management
+
   { cmd: 'kick',        desc: 'Kick player', args: '<player> [reason]' },
   { cmd: 'ban',         desc: 'Ban player', args: '<player> [reason]' },
   { cmd: 'ban-ip',      desc: 'Ban IP', args: '<ip|player>' },
@@ -384,7 +394,7 @@ const MC_COMMANDS = [
   { cmd: 'whitelist off',    desc: 'Tắt whitelist' },
   { cmd: 'whitelist reload', desc: 'Tải lại whitelist' },
   { cmd: 'list',        desc: 'Danh sách player online' },
-  // World
+
   { cmd: 'time set day',     desc: 'Đặt thời gian ban ngày' },
   { cmd: 'time set night',   desc: 'Đặt thời gian ban đêm' },
   { cmd: 'time set noon',    desc: 'Đặt thời gian buổi trưa' },
@@ -396,7 +406,7 @@ const MC_COMMANDS = [
   { cmd: 'gamerule',    desc: 'Xem/đặt game rule', args: '<rule> [value]' },
   { cmd: 'difficulty',  desc: 'Đặt độ khó', args: '<peaceful|easy|normal|hard>' },
   { cmd: 'gamemode',    desc: 'Đặt gamemode', args: '<mode> [player]' },
-  // Teleport / give
+
   { cmd: 'tp',          desc: 'Dịch chuyển', args: '<player> <target|x y z>' },
   { cmd: 'teleport',    desc: 'Dịch chuyển', args: '<player> <target|x y z>' },
   { cmd: 'give',        desc: 'Cho item', args: '<player> <item> [count]' },
@@ -408,13 +418,13 @@ const MC_COMMANDS = [
   { cmd: 'enchant',     desc: 'Enchant item', args: '<player> <enchantment> [level]' },
   { cmd: 'xp add',      desc: 'Thêm XP', args: '<player> <amount>' },
   { cmd: 'xp set',      desc: 'Đặt XP', args: '<player> <amount>' },
-  // Info
+
   { cmd: 'seed',        desc: 'Xem seed thế giới' },
   { cmd: 'tps',         desc: 'Xem TPS server (Paper)' },
   { cmd: 'version',     desc: 'Xem phiên bản server' },
   { cmd: 'plugins',     desc: 'Danh sách plugin (Bukkit)' },
   { cmd: 'help',        desc: 'Xem danh sách lệnh', args: '[command]' },
-  // Scoreboard / team
+
   { cmd: 'scoreboard',  desc: 'Quản lý scoreboard' },
   { cmd: 'team',        desc: 'Quản lý team' },
   { cmd: 'title',       desc: 'Hiển thị title', args: '<player> <title|subtitle|...>' },
@@ -436,7 +446,6 @@ function CommandInput({ value, onChange, onSubmit, disabled, isRunning, autoScro
   const inputRef = useRef(null)
   const sugRef   = useRef(null)
 
-  // Build suggestions from current input
   useEffect(() => {
     const raw = value.startsWith('/') ? value.slice(1) : value
     if (!raw.trim()) { setSuggestions([]); setShowSug(false); return }
@@ -475,17 +484,16 @@ function CommandInput({ value, onChange, onSubmit, disabled, isRunning, autoScro
     if (e.key === 'Enter') { e.preventDefault(); setShowSug(false); onSubmit() }
   }
 
-  // Strip leading slash when sending — server doesn't need it
   function handleChange(e) {
     let v = e.target.value
-    // Allow typing with or without slash — normalize internally without slash
+
     if (v.startsWith('/')) v = v.slice(1)
     onChange(v)
   }
 
   return (
     <div className="relative">
-      {/* Suggestions popup — above input */}
+      {}
       {showSug && suggestions.length > 0 && (
         <div ref={sugRef}
           className="absolute bottom-full left-0 right-0 mb-1 mx-3 rounded-xl border border-white/10 overflow-hidden"
@@ -509,7 +517,7 @@ function CommandInput({ value, onChange, onSubmit, disabled, isRunning, autoScro
         </div>
       )}
 
-      {/* Input row */}
+      {}
       <div className="flex items-center gap-2 px-3 py-2">
         <span className="text-green-400/60 font-mono text-xs flex-shrink-0">/</span>
         <input
@@ -538,7 +546,6 @@ function CommandInput({ value, onChange, onSubmit, disabled, isRunning, autoScro
   )
 }
 
-// ── IP Display — shows tunnel addr if active, else local IP:port ──────────────
 function IpDisplay({ tunnelAddr, tunnelStatus, server }) {
   const [localIp, setLocalIp]   = useState(null)
   const [port, setPort]         = useState('25565')
@@ -628,3 +635,4 @@ function ServerTypeIcon({ type, size = 32 }) {
   if (!src) return <div className="w-full h-full bg-white/5 rounded-xl" />
   return <img src={src} alt={type} style={{ width: size, height: size }} className="object-contain rounded-xl" />
 }
+

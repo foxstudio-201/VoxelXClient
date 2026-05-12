@@ -1,13 +1,18 @@
-'use strict'
 /**
- * modrinthMods.cjs
- * Auto-download essential Fabric mods from Modrinth:
- *   - Fabric API  (project id: P7dR8mSH)
- *   - Mod Menu    (project id: mOgUt4GM)
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * Only downloads if not already present for the given game version.
- * Saves to <instancePath>/accounts/<accountId>/mods/
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const https  = require('https')
 const http   = require('http')
@@ -16,7 +21,6 @@ const path   = require('path')
 
 const MODRINTH_API = 'https://api.modrinth.com/v2'
 
-// Mods to auto-install for Fabric profiles
 const FABRIC_AUTO_MODS = [
   { id: 'P7dR8mSH', name: 'Fabric API' },
   { id: 'mOgUt4GM', name: 'Mod Menu'   },
@@ -73,31 +77,18 @@ function downloadFile(url, destPath) {
 }
 
 // ─── Find best version for a mod ─────────────────────────────────────────────
-/**
- * Query Modrinth for the latest version of a mod compatible with:
- *   - game_versions: [mcVersion]
- *   - loaders: ['fabric']
- *
- * Returns the first matching version object, or null.
- */
+
 async function findModVersion(projectId, mcVersion) {
   const url = `${MODRINTH_API}/project/${projectId}/version?game_versions=["${mcVersion}"]&loaders=["fabric"]`
   const versions = await httpsGetJson(url)
   if (!Array.isArray(versions) || versions.length === 0) return null
 
-  // Sort by date_published descending, pick latest
   versions.sort((a, b) => new Date(b.date_published) - new Date(a.date_published))
   return versions[0]
 }
 
 // ─── Main: ensure mods are installed ─────────────────────────────────────────
-/**
- * Download Fabric API and Mod Menu into the mods folder if not already present.
- *
- * @param {string} mcVersion  - e.g. "1.21.4"
- * @param {string} modsDir    - path to mods folder (instancePath/accounts/<id>/mods)
- * @param {function} onProgress - callback({ log, done, total })
- */
+
 async function ensureFabricMods(mcVersion, modsDir, onProgress) {
   if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir, { recursive: true })
 
@@ -121,7 +112,6 @@ async function ensureFabricMods(mcVersion, modsDir, onProgress) {
       continue
     }
 
-    // Find the primary jar file
     const primaryFile = version.files?.find(f => f.primary) || version.files?.[0]
     if (!primaryFile) {
       onProgress?.({ log: `${mod.name}: no file found, skipping.`, done, total })
@@ -131,22 +121,17 @@ async function ensureFabricMods(mcVersion, modsDir, onProgress) {
     const fileName = primaryFile.filename
     const destPath = path.join(modsDir, fileName)
 
-    // Check if already downloaded (by filename — includes version in name)
     if (fs.existsSync(destPath)) {
       onProgress?.({ log: `${mod.name} already installed (${fileName}).`, done, total })
       continue
     }
 
-    // Remove old versions of this mod (same project, different version)
-    // Detect by checking if any existing jar starts with the mod's slug pattern
     try {
       const existing = fs.readdirSync(modsDir)
       for (const f of existing) {
-        // Modrinth filenames typically: modname-version+mcversion.jar
-        // We identify old versions by checking the version_id stored in a sidecar or
-        // simply by removing files that match the mod's known filename patterns
+
         if (f !== fileName && version.files?.some(vf => {
-          // If the existing file shares the same project slug prefix
+
           const slug = vf.filename.split('-')[0]
           return f.startsWith(slug + '-') && f.endsWith('.jar')
         })) {
@@ -167,3 +152,4 @@ async function ensureFabricMods(mcVersion, modsDir, onProgress) {
 }
 
 module.exports = { ensureFabricMods }
+

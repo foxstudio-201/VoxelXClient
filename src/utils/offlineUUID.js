@@ -1,40 +1,33 @@
 /**
- * Generate a Mojang-compatible offline UUID for a given username.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
  *
- * Mojang's algorithm (used by vanilla server for offline mode):
- *   UUID = UUID.nameUUIDFromBytes("OfflinePlayer:<username>".getBytes("UTF-8"))
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
  *
- * Which is UUID v3 (MD5-based) with a special namespace:
- *   namespace = 00000000-0000-0000-0000-000000000000  (null UUID / no namespace)
- *   BUT Mojang does NOT use a namespace — it hashes the raw bytes directly,
- *   then sets version=3 and variant=2 bits.
- *
- * Exact steps:
- *   1. UTF-8 encode "OfflinePlayer:<username>"
- *   2. MD5 hash the bytes
- *   3. Set bits: hash[6] = (hash[6] & 0x0f) | 0x30   → version 3
- *                hash[8] = (hash[8] & 0x3f) | 0x80   → variant 2 (RFC 4122)
- *   4. Format as 8-4-4-4-12 hex string
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
 
 // ─── Pure-JS MD5 (RFC 1321) ───────────────────────────────────────────────────
-// Compact implementation — no external deps
-function md5(input /* Uint8Array */) {
-  // Pre-processing: add padding bits
+
+function md5(input ) {
+
   const msgLen = input.length
   const bitLen = msgLen * 8
 
-  // Pad to 448 mod 512 bits, then append 64-bit length
   const padLen = ((msgLen % 64) < 56 ? 56 : 120) - (msgLen % 64)
   const padded = new Uint8Array(msgLen + padLen + 8)
   padded.set(input)
   padded[msgLen] = 0x80
-  // Append length as 64-bit little-endian
+
   const dv = new DataView(padded.buffer)
   dv.setUint32(msgLen + padLen,     bitLen >>> 0,        true)
   dv.setUint32(msgLen + padLen + 4, Math.floor(bitLen / 2**32), true)
 
-  // MD5 constants
   const T = new Uint32Array(64)
   for (let i = 0; i < 64; i++) T[i] = (Math.abs(Math.sin(i + 1)) * 2**32) >>> 0
 
@@ -77,7 +70,6 @@ function md5(input /* Uint8Array */) {
     d0 = (d0 + D) >>> 0
   }
 
-  // Output as Uint8Array (little-endian per word)
   const out = new Uint8Array(16)
   const odv = new DataView(out.buffer)
   odv.setUint32(0,  a0, true)
@@ -93,18 +85,13 @@ function utf8Encode(str) {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-/**
- * Returns the Mojang offline UUID for a username.
- * @param {string} username  e.g. "Steve"
- * @returns {string}         e.g. "61699b2e-d327-3932-9a6e-dc1f5b49b843"
- */
+
 export function offlineUUID(username) {
   const input = utf8Encode(`OfflinePlayer:${username}`)
   const hash  = md5(input)
 
-  // Set version = 3
   hash[6] = (hash[6] & 0x0f) | 0x30
-  // Set variant = RFC 4122 (10xx xxxx)
+
   hash[8] = (hash[8] & 0x3f) | 0x80
 
   const hex = Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('')
@@ -116,3 +103,4 @@ export function offlineUUID(username) {
     hex.slice(20, 32),
   ].join('-')
 }
+

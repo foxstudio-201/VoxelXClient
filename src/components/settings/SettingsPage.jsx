@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import LauncherTab from './tabs/LauncherTab'
 import PrivacyTab  from './tabs/PrivacyTab'
@@ -6,7 +20,6 @@ import { BG_THEMES } from '../AppBackground'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-// ── Default settings ───────────────────────────────────────────────────────────
 const DEFAULT_SETTINGS = {
   autoCheckUpdate:      true,
   hideLauncherOnLaunch: true,
@@ -23,7 +36,6 @@ const DEFAULT_SETTINGS = {
   agreedPrivacy:        false,
 }
 
-// ── Storage helpers — file (Electron) hoặc localStorage (browser dev) ─────────
 async function loadSettingsAsync() {
   if (isElectron) {
     try { return await window.electronAPI.getSettings() } catch {}
@@ -48,11 +60,10 @@ async function saveSettingsAsync(patch) {
 }
 
 function applyBgFromSettings(s) {
-  // Background
+
   const bgId = s.background ?? 'dark'
   window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: bgId }))
 
-  // Font
   if (s.fontId && s.fontId !== 'system') {
     const FONT_STACKS = {
       inter:          "'Inter', sans-serif",
@@ -74,7 +85,6 @@ function applyBgFromSettings(s) {
     }
   }
 
-  // Border
   if (s.borderRadius !== undefined) {
     document.documentElement.style.setProperty('--app-radius', `${s.borderRadius}px`)
   }
@@ -83,7 +93,6 @@ function applyBgFromSettings(s) {
   }
 }
 
-// ── Tab definitions ────────────────────────────────────────────────────────────
 const TABS = [
   {
     id: 'launcher',
@@ -114,23 +123,20 @@ const TABS = [
   },
 ]
 
-// ── SettingsPage ───────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('launcher')
   const [settings, setSettings]  = useState(DEFAULT_SETTINGS)
   const [loaded, setLoaded]      = useState(false)
 
-  // Load từ file khi mount
   useEffect(() => {
     loadSettingsAsync().then(s => {
       setSettings(s)
       setLoaded(true)
-      // Apply background ngay khi load xong
+
       applyBgFromSettings(s)
     })
   }, [])
 
-  // Save mỗi khi settings thay đổi (sau khi đã load xong)
   useEffect(() => {
     if (!loaded) return
     saveSettingsAsync(settings)
@@ -143,14 +149,14 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
 
-      {/* ── Header ── */}
+      {}
       <div className="flex-shrink-0 px-6 pt-6 pb-0">
         <div className="mb-4">
           <h1 className="text-lg font-bold text-white">Cài đặt</h1>
           <p className="text-xs text-white/30 mt-0.5">Tùy chỉnh VoxelXClient theo ý bạn</p>
         </div>
 
-        {/* Tab bar */}
+        {}
         <div className="flex gap-1 border-b border-white/5">
           {TABS.map(tab => (
             <button
@@ -174,7 +180,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ── Tab content ── */}
+      {}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'launcher' && (
           <LauncherTab settings={settings} onChange={handleChange} />
@@ -189,3 +195,4 @@ export default function SettingsPage() {
     </div>
   )
 }
+

@@ -1,4 +1,18 @@
-﻿import { useState, useEffect, useRef } from 'react'
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+import { useState, useEffect, useRef } from 'react'
 import adoptiumIcon from '../../assets/java-icon/adoptium.png'
 import azulIcon     from '../../assets/java-icon/azul.png'
 
@@ -32,7 +46,7 @@ const DISTROS = {
     id:    'graalvm',
     name:  'GraalVM Community',
     short: 'GraalVM',
-    icon:  null, // dùng SVG
+    icon:  null,
     color: '#a855f7',
     badge: 'Best Performance',
     badgeColor: 'bg-purple-500/20 text-purple-400',
@@ -41,7 +55,6 @@ const DISTROS = {
   },
 }
 
-// Java versions Minecraft cần
 const MC_JAVA_MAP = {
   8:  'MC ≤ 1.16',
   11: 'MC 1.17 (một số mod)',
@@ -69,18 +82,17 @@ function GraalIcon({ size = 20 }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function JavaManagerModal({ profile, onClose, onJavaSelected, serverId = null, installDir = null }) {
-  const [step, setStep]               = useState('distro')   // 'distro' | 'versions'
+  const [step, setStep]               = useState('distro')
   const [selectedDistro, setSelectedDistro] = useState(null)
   const [distros, setDistros]         = useState({ adoptium: [], azul: [], graalvm: [] })
   const [installed, setInstalled]     = useState([])
   const [loading, setLoading]         = useState(true)
   const [fetchError, setFetchError]   = useState(null)
-  const [installing, setInstalling]   = useState(null)  // { distro, javaVersion }
+  const [installing, setInstalling]   = useState(null)
   const [installProgress, setInstallProgress] = useState(null)
   const [installError, setInstallError] = useState(null)
   const unsubRef = useRef(null)
 
-  // Load distros on mount
   useEffect(() => {
     if (!isElectron) { setLoading(false); return }
     setLoading(true)
@@ -88,7 +100,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
       .then(r => {
         if (r?.ok) {
           setDistros(r.distros || { adoptium: [], azul: [], graalvm: [] })
-          // installedInfo: { distro, javaVersion, javaExe } hoặc null
+
           setInstalled(r.installedInfo ? [r.installedInfo] : [])
         } else {
           setFetchError(r?.error || 'Không thể tải danh sách Java')
@@ -98,7 +110,6 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
       .finally(() => setLoading(false))
   }, [])
 
-  // Subscribe to install progress
   useEffect(() => {
     if (!isElectron) return
     unsubRef.current = window.electronAPI.onJavaInstallProgress(p => {
@@ -107,7 +118,6 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
     return () => unsubRef.current?.()
   }, [])
 
-  // ESC to close
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -129,7 +139,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
     setInstallError(null)
 
     try {
-      // Priority: installDir > serverId > profile
+
       let r
       if (installDir) {
         r = await window.electronAPI.javaInstallToDir(pkg, installDir)
@@ -140,7 +150,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
       }
 
       if (r?.ok) {
-        // Refresh installed info
+
         if (!serverId) {
           const r2 = await window.electronAPI.javaGetInstalled(profile?.id)
           if (r2?.ok) setInstalled(r2.installedInfo ? [r2.installedInfo] : [])
@@ -189,7 +199,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
           maxHeight: '85vh',
         }}>
 
-        {/* Header */}
+        {}
         <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             {step === 'versions' && (
@@ -220,7 +230,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
           </button>
         </div>
 
-        {/* Body */}
+        {}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -242,7 +252,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                 className="text-xs text-white/40 hover:text-white/70 transition-colors">Thử lại</button>
             </div>
           ) : step === 'distro' ? (
-            /* ── Step 1: Chọn distro ── */
+
             <div className="p-4 flex flex-col gap-3">
               {distroList.map(d => {
                 const versions = distros[d.id] || []
@@ -251,7 +261,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                   <button key={d.id}
                     onClick={() => { setSelectedDistro(d.id); setStep('versions') }}
                     className="flex items-start gap-4 p-4 rounded-2xl border border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/15 transition-all text-left group">
-                    {/* Icon */}
+                    {}
                     <div className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
                       style={{ background: `${d.color}15`, border: `1px solid ${d.color}30` }}>
                       {d.icon
@@ -259,7 +269,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                         : <GraalIcon size={32} />
                       }
                     </div>
-                    {/* Info */}
+                    {}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="text-sm font-bold text-white/90">{d.name}</span>
@@ -277,7 +287,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                         ))}
                       </div>
                     </div>
-                    {/* Arrow */}
+                    {}
                     <div className="flex-shrink-0 flex items-center gap-2 mt-1">
                       {versions.length > 0 ? (
                         <span className="text-[10px] text-white/25">{versions.length} phiên bản</span>
@@ -293,7 +303,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
               })}
             </div>
           ) : (
-            /* ── Step 2: Chọn version ── */
+
             <div className="p-4">
               {currentVersions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -315,7 +325,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                           borderColor: alreadyInstalled ? `${d.color}30` : 'rgba(255,255,255,0.08)',
                         }}>
 
-                        {/* Top: version badge */}
+                        {}
                         <div className="px-4 pt-4 pb-3">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2">
@@ -337,7 +347,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                             )}
                           </div>
 
-                          {/* MC compatibility note */}
+                          {}
                           {mcNote && (
                             <div className="flex items-center gap-1.5 mb-3">
                               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400/60 flex-shrink-0">
@@ -347,12 +357,12 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                             </div>
                           )}
 
-                          {/* Size */}
+                          {}
                           {pkg.size > 0 && (
                             <p className="text-[10px] text-white/20 mb-3">{formatBytes(pkg.size)}</p>
                           )}
 
-                          {/* Progress bar khi đang tải */}
+                          {}
                           {isThisInstalling && installProgress && (
                             <div className="mb-3">
                               <div className="flex items-center justify-between mb-1">
@@ -381,13 +391,13 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                             </div>
                           )}
 
-                          {/* Error */}
+                          {}
                           {isThisInstalling === false && installError && (
                             <p className="text-[10px] text-red-400 mb-2 truncate">{installError}</p>
                           )}
                         </div>
 
-                        {/* Action buttons */}
+                        {}
                         <div className="px-4 pb-4 flex gap-2">
                           {alreadyInstalled ? (
                             <button
@@ -434,7 +444,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
           )}
         </div>
 
-        {/* Footer note */}
+        {}
         <div className="flex-shrink-0 px-5 py-3 border-t border-white/5 flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-white/20 flex-shrink-0">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
@@ -450,3 +460,4 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
     </div>
   )
 }
+

@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef } from 'react'
 import { DownloadSimple, X, CheckCircle, WarningCircle } from '@phosphor-icons/react'
 import curseforgeIcon from '../../../assets/loader/curseforge.png'
@@ -7,7 +21,6 @@ import GroupSelect    from '../../ui/GroupSelect'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-// Sidebar width = 68px + 12px padding
 const MINIMIZED_LEFT = 80
 
 const SOURCE_META = {
@@ -22,14 +35,8 @@ const VERSION_TYPE_STYLE = {
   alpha:   'bg-red-500/15 text-red-400 border-red-500/25',
 }
 
-/**
- * ModpackInstallModal
- * Confirmation + progress modal for installing a modpack from the browser.
- * The version is already selected in the detail page.
- * Supports minimize to bottom-left pill while downloading.
- */
 export default function ModpackInstallModal({ project, version, source, onClose, groups = [] }) {
-  const [phase, setPhase]       = useState('idle')   // idle | running | done | error
+  const [phase, setPhase]       = useState('idle')
   const [progress, setProgress] = useState(null)
   const [errorMsg, setErrorMsg] = useState(null)
   const [minimized, setMinimized] = useState(false)
@@ -38,7 +45,6 @@ export default function ModpackInstallModal({ project, version, source, onClose,
 
   const src = SOURCE_META[source] || SOURCE_META.modrinth
 
-  // Subscribe to import progress events
   useEffect(() => {
     if (!isElectron) return
     unsubRef.current = window.electronAPI.onImportProgress?.((data) => {
@@ -49,7 +55,6 @@ export default function ModpackInstallModal({ project, version, source, onClose,
     return () => { unsubRef.current?.() }
   }, [])
 
-  // ESC to close when not running
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape' && phase !== 'running') onClose() }
     window.addEventListener('keydown', onKey)
@@ -98,7 +103,6 @@ export default function ModpackInstallModal({ project, version, source, onClose,
   const isError   = phase === 'error'
   const pct       = progress?.percent ?? 0
 
-  // ── MINIMIZED VIEW ──────────────────────────────────────────────────────────
   if (minimized) {
     return (
       <div
@@ -114,13 +118,13 @@ export default function ModpackInstallModal({ project, version, source, onClose,
         onClick={() => setMinimized(false)}
         title="Click để mở lại"
       >
-        {/* Source icon */}
+        {}
         <div className="flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center"
           style={{ background: src.color + '20', border: `1px solid ${src.color}44` }}>
           <img src={src.icon} alt={src.label} className="w-5 h-5 object-contain" />
         </div>
 
-        {/* Info */}
+        {}
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-white/80 truncate">
             {project?.title || 'Modpack'}
@@ -145,7 +149,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
           )}
         </div>
 
-        {/* Status icon + close */}
+        {}
         <div className="flex-shrink-0 flex items-center gap-1.5">
           {isRunning && !isDone && !isError && (
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" style={{ color: src.color }}>
@@ -178,7 +182,6 @@ export default function ModpackInstallModal({ project, version, source, onClose,
     )
   }
 
-  // ── FULL MODAL VIEW ─────────────────────────────────────────────────────────
   return (
     <div
       className="fixed inset-0 z-[300] flex items-center justify-center px-4"
@@ -190,7 +193,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
         className="relative z-10 w-full max-w-sm rounded-2xl overflow-hidden"
         style={{ background: 'rgba(14,14,14,0.98)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 24px 80px rgba(0,0,0,0.7)' }}
       >
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             {project?.icon_url && (
@@ -202,7 +205,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {/* Minimize button */}
+            {}
             <button
               onClick={() => setMinimized(true)}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
@@ -212,7 +215,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
                 <path d="M19 13H5v-2h14v2z"/>
               </svg>
             </button>
-            {/* Close button */}
+            {}
             <button
               onClick={() => { if (!isRunning) onClose() }}
               disabled={isRunning}
@@ -227,7 +230,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          {/* Selected version — display only */}
+          {}
           {version && (
             <div>
               <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
@@ -253,7 +256,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
             </div>
           )}
 
-          {/* Group selector */}
+          {}
           {groups.length > 0 && (
             <div>
               <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
@@ -268,7 +271,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
             </div>
           )}
 
-          {/* Info box (idle) */}
+          {}
           {!isRunning && !isDone && !isError && (
             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-xs text-white/40"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -277,7 +280,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
             </div>
           )}
 
-          {/* Progress */}
+          {}
           {(isRunning || isDone || isError) && (
             <div className="flex flex-col gap-2 px-1">
               <div className="flex items-center justify-between gap-2">
@@ -304,7 +307,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
             </div>
           )}
 
-          {/* Actions */}
+          {}
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => { if (!isRunning) onClose() }}
@@ -343,3 +346,4 @@ export default function ModpackInstallModal({ project, version, source, onClose,
     </div>
   )
 }
+

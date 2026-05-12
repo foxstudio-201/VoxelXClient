@@ -1,3 +1,16 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import CreateServerModal from './CreateServerModal'
@@ -65,14 +78,12 @@ function StatusBadge({ status }) {
   )
 }
 
-// Server card — grid view
 function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
   const icon = SERVER_ICONS[server.type] || vanillaIcon
   const isDownloadingJava = !!javaProgress
   const [ping, setPing] = useState(null)
   const pingRef = useRef(null)
 
-  // Poll ping every 5s when online
   useEffect(() => {
     if (!isElectron || server.status !== 'online') { setPing(null); return }
     const doPing = async () => {
@@ -97,7 +108,7 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
         onMouseEnter={e => { if (!isDownloadingJava) e.currentTarget.style.borderColor = 'rgba(74,222,128,0.35)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
       >
-        {/* Blurred bg */}
+        {}
         <div className="absolute inset-0">
           <img src={icon} alt="" className="absolute inset-0 w-full h-full object-cover"
             style={{ filter: 'blur(20px)', opacity: 0.3, transform: 'scale(1.4)' }} />
@@ -105,7 +116,7 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
         </div>
 
         <div className="relative z-10 p-5 flex flex-col gap-4">
-          {/* Top row: icon + status */}
+          {}
           <div className="flex items-start justify-between">
             <img src={icon} alt={server.type}
               className="w-16 h-16 rounded-2xl object-contain bg-black/40 ring-1 ring-white/10 p-1.5" />
@@ -122,13 +133,13 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
             </div>
           </div>
 
-          {/* Name + type */}
+          {}
           <div>
             <p className="text-base font-black text-white/95 truncate leading-tight">{server.name}</p>
             <p className="text-xs text-white/40 capitalize mt-0.5 font-medium">{server.type} · {server.gameVersion}</p>
           </div>
 
-          {/* Java progress */}
+          {}
           {isDownloadingJava ? (
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -147,7 +158,7 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
               </div>
             </div>
           ) : (
-            /* Stats row */
+
             <div className="grid grid-cols-3 gap-2">
               <StatChip icon={
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7C5.9 5 5 5.9 5 7v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/></svg>
@@ -166,7 +177,7 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
         </div>
       </div>
 
-      {/* Delete button */}
+      {}
       {!isDownloadingJava && (
         <button
           onClick={e => { e.stopPropagation(); onDelete(server) }}
@@ -191,7 +202,6 @@ function StatChip({ icon, label, value, highlight }) {
   )
 }
 
-// Server row — list view
 function ServerCardList({ server, onClick, onDelete, javaProgress }) {
   const icon = SERVER_ICONS[server.type] || vanillaIcon
   const isDownloadingJava = !!javaProgress
@@ -280,7 +290,6 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
   const [activeServer, setActiveServer] = useState(null)
   const [confirmDel, setConfirmDel]   = useState(null)
 
-  // Use prop-based progress (persists across navigation) with local fallback
   const javaProgress = serverJavaProgress
   const setJavaProgress = onServerJavaProgress || (() => {})
 
@@ -296,7 +305,6 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
 
   useEffect(() => { load() }, [load])
 
-  // Subscribe to status updates
   useEffect(() => {
     if (!isElectron) return
     const unsubStatus = window.electronAPI.onServerStatus(data => {
@@ -309,7 +317,7 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
         s.id === data.serverId ? { ...s, playerCount: data.playerCount, maxPlayers: data.maxPlayers } : s
       ))
     })
-    // Subscribe to Java download progress
+
     const unsubJava = window.electronAPI.onServerJavaProgress(data => {
       const { serverId, phase, percent } = data
       if (phase === 'done' || phase === 'already_installed') {
@@ -327,7 +335,7 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
 
     if (javaPkg && isElectron && server?.id) {
       setJavaProgress(prev => ({ ...prev, [server.id]: { phase: 'starting', percent: 0 } }))
-      // Fire and forget — errors handled gracefully
+
       window.electronAPI.serverInstallJava(javaPkg, server.id)
         .then(r => {
           if (r?.error) {
@@ -352,7 +360,6 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
     setConfirmDel(null)
   }
 
-  // If a server is selected, show console view
   if (activeServer) {
     const current = servers.find(s => s.id === activeServer.id) || activeServer
     return (
@@ -367,14 +374,14 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
+      {}
       <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
         <div>
           <h1 className="text-lg font-bold text-white">Server</h1>
           <p className="text-xs text-white/30 mt-0.5">Quản lý Minecraft server</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* View toggle */}
+          {}
           <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/8">
             <button onClick={() => setView('list')}
               className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${view === 'list' ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}>
@@ -391,7 +398,7 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
             </button>
           </div>
 
-          {/* Create button */}
+          {}
           <button onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-green-500 hover:bg-green-400 text-white text-xs font-bold transition-all active:scale-95 shadow-lg shadow-green-500/20">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
@@ -402,7 +409,7 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
         </div>
       </div>
 
-      {/* Content */}
+      {}
       <div className="flex-1 overflow-y-auto px-6 pb-6" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
         {loading ? (
           <div className="flex items-center justify-center h-32 gap-2 text-white/30">
@@ -481,7 +488,7 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
         )}
       </div>
 
-      {/* Create modal */}
+      {}
       {showCreate && (
         <CreateServerModal
           onClose={() => setShowCreate(false)}
@@ -491,3 +498,4 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
     </div>
   )
 }
+

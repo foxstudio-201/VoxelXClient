@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useEffect, useState } from 'react'
 
 export default function NoAccountHint({ onGoToAccount }) {
@@ -8,12 +22,10 @@ export default function NoAccountHint({ onGoToAccount }) {
     return () => clearTimeout(t)
   }, [])
 
-  // Chỉ ẩn, không navigate
   function dismiss() {
     setVisible(false)
   }
 
-  // Ẩn rồi navigate
   function goToAccount() {
     setVisible(false)
     setTimeout(onGoToAccount, 200)
@@ -22,7 +34,7 @@ export default function NoAccountHint({ onGoToAccount }) {
   return (
     <div className="absolute inset-0 z-30 pointer-events-none">
 
-      {/* Backdrop — click ngoài chỉ ẩn, không navigate */}
+      {}
       <div
         onClick={dismiss}
         className={`
@@ -33,7 +45,7 @@ export default function NoAccountHint({ onGoToAccount }) {
         style={{ background: 'rgba(0,0,0,0.35)' }}
       />
 
-      {/* Ring pulse quanh nút account ở cuối sidebar */}
+      {}
       <div
         className={`
           absolute pointer-events-none
@@ -52,7 +64,7 @@ export default function NoAccountHint({ onGoToAccount }) {
         }}
       />
 
-      {/* Card popup — stopPropagation để click bên trong không trigger backdrop */}
+      {}
       <div
         onClick={(e) => e.stopPropagation()}
         className={`
@@ -66,7 +78,7 @@ export default function NoAccountHint({ onGoToAccount }) {
         style={{ left: 72, bottom: 10 }}
       >
         <div className="flex items-end gap-0">
-          {/* Mũi tên trỏ sang trái */}
+          {}
           <div
             className="flex-shrink-0 self-center mb-1"
             style={{
@@ -77,11 +89,11 @@ export default function NoAccountHint({ onGoToAccount }) {
             }}
           />
 
-          {/* Card */}
+          {}
           <div className="relative bg-[#161616] border border-green-500/20 rounded-xl shadow-2xl shadow-black/70 w-60 overflow-hidden">
             <div className="h-[2px] bg-gradient-to-r from-green-500 to-emerald-400 w-full" />
 
-            {/* Pulse dot */}
+            {}
             <span className="absolute top-3 right-3 flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -105,7 +117,7 @@ export default function NoAccountHint({ onGoToAccount }) {
                 <span className="text-white/70 font-medium">Microsoft</span> để bắt đầu khởi động Minecraft.
               </p>
 
-              {/* Nút này mới navigate */}
+              {}
               <button
                 onClick={goToAccount}
                 className="
@@ -127,3 +139,4 @@ export default function NoAccountHint({ onGoToAccount }) {
     </div>
   )
 }
+

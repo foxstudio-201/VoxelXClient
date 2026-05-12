@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState } from 'react'
 import PlayerHead from '../ui/PlayerHead'
 import { offlineUUID } from '../../utils/offlineUUID'
@@ -15,11 +29,9 @@ export default function AddAccountModal({ onClose, onAdd }) {
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
 
-  // Microsoft auth state: idle | waiting | success
   const [msState, setMsState]     = useState('idle')
   const [msAccount, setMsAccount] = useState(null)
 
-  // ── Offline submit ──────────────────────────────────────────────────────────
   async function handleOfflineSubmit(e) {
     e.preventDefault()
     setError('')
@@ -33,7 +45,6 @@ export default function AddAccountModal({ onClose, onAdd }) {
     onClose()
   }
 
-  // ── Microsoft login — mở cửa sổ đăng nhập ──────────────────────────────────
   async function startMsLogin() {
     if (!isElectron) {
       setError('Đăng nhập Microsoft chỉ khả dụng trong ứng dụng Electron.')
@@ -62,7 +73,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
     >
       <div className="w-[440px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
 
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <h2 className="text-base font-bold text-white">Thêm tài khoản</h2>
           <button onClick={onClose}
@@ -73,7 +84,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
           </button>
         </div>
 
-        {/* Tabs */}
+        {}
         <div className="flex gap-1 px-6 pt-4">
           {TABS.map(t => (
             <button key={t.id}
@@ -90,7 +101,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
 
         <div className="px-6 py-5 flex flex-col gap-4">
 
-          {/* ── OFFLINE TAB ── */}
+          {}
           {tab === 'offline' && (
             <form onSubmit={handleOfflineSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
@@ -107,7 +118,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                 </p>
               </div>
 
-              {/* Preview */}
+              {}
               <div className="flex items-center gap-3 bg-white/3 rounded-xl p-3 border border-white/5">
                 <div className="rounded-lg overflow-hidden flex-shrink-0">
                   <PlayerHead uuid={username.length >= 3 ? offlineUUID(username) : null} username={username} size={40} />
@@ -133,11 +144,11 @@ export default function AddAccountModal({ onClose, onAdd }) {
             </form>
           )}
 
-          {/* ── MICROSOFT TAB ── */}
+          {}
           {tab === 'online' && (
             <div className="flex flex-col gap-4">
 
-              {/* idle */}
+              {}
               {msState === 'idle' && (
                 <>
                   <div className="flex flex-col items-center gap-4 py-4">
@@ -179,7 +190,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                 </>
               )}
 
-              {/* waiting — cửa sổ đang mở */}
+              {}
               {msState === 'waiting' && (
                 <div className="flex flex-col items-center gap-4 py-8">
                   <svg className="animate-spin w-8 h-8 text-[#0078d4]" viewBox="0 0 24 24" fill="none">
@@ -193,7 +204,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                 </div>
               )}
 
-              {/* success */}
+              {}
               {msState === 'success' && msAccount && (
                 <div className="flex flex-col items-center gap-4 py-4">
                   <div className="w-12 h-12 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
@@ -230,3 +241,4 @@ function ErrorBanner({ message }) {
     </div>
   )
 }
+

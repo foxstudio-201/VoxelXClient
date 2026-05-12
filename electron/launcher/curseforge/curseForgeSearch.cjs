@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 const BASE = 'https://api.curse.tools/v1/cf'
 
 async function fetchCf(endpoint) {
@@ -13,46 +27,34 @@ async function fetchCf(endpoint) {
   }
 }
 
-/**
- * Search CurseForge projects
- * @param {Object} opts 
- * @param {string} opts.query
- * @param {string[]} opts.gameVersions
- * @param {string[]} opts.loaders
- * @param {string} opts.categoryId
- * @param {string} opts.sortBy - 'relevance', 'downloads', 'updated', 'newest'
- * @param {number} opts.offset
- * @param {number} opts.limit
- */
 async function searchProjects(opts) {
   const { query, gameVersions = [], loaders = [], categoryId, sortBy = 'relevance', offset = 0, limit = 20, projectType = 'mod' } = opts
   const params = new URLSearchParams()
-  params.append('gameId', '432') // Minecraft
-  
+  params.append('gameId', '432')
+
   const classMap = {
     'mod': 6,
     'modpack': 4471,
     'shader': 6552,
     'resourcepack': 12,
-    'datapack': 12 // CF doesn't have a specific datapack class, resourcepack is closest
+    'datapack': 12
   }
   params.append('classId', classMap[projectType] || 6)
-  
+
   if (query) params.append('searchFilter', query)
   if (categoryId) params.append('categoryId', categoryId)
   if (gameVersions.length > 0) params.append('gameVersion', gameVersions[0])
   if (loaders.length > 0) params.append('modLoaderType', getModLoaderType(loaders[0]))
-  
-  // Sort
+
   const sortMap = {
-    relevance: 1, // Featured/Relevance
-    downloads: 2, // Popularity
-    updated: 3,   // LastUpdated
-    newest: 4,    // Name? Actually CF uses 3 for updated
+    relevance: 1,
+    downloads: 2,
+    updated: 3,
+    newest: 4,
   }
   params.append('sortField', sortMap[sortBy] || 1)
   params.append('sortOrder', 'desc')
-  
+
   params.append('index', offset)
   params.append('pageSize', limit)
 
@@ -85,7 +87,7 @@ function formatProject(p) {
     categories: p.categories ? p.categories.map(c => c.name) : [],
     display_categories: p.categories ? p.categories.map(c => c.name) : [],
     versions: [],
-    client_side: 'optional', // CF doesn't specify easily
+    client_side: 'optional',
     server_side: 'optional',
     source: 'curseforge'
   }
@@ -96,8 +98,8 @@ async function getProject(id) {
   if (!data || !data.data) return null
   const p = data.data
   const proj = formatProject(p)
-  proj.body = p.summary // Detailed description requires another endpoint in CF, but summary is ok for now. 
-  // Get full description:
+  proj.body = p.summary
+
   const descData = await fetchCf(`/mods/${id}/description`)
   if (descData && descData.data) {
     proj.body = descData.data
@@ -106,10 +108,10 @@ async function getProject(id) {
 }
 
 async function getProjectVersions(id, filters = {}) {
-  // We can fetch files directly
+
   const data = await fetchCf(`/mods/${id}/files`)
   if (!data || !data.data) return []
-  
+
   let files = data.data
   if (filters.loaders && filters.loaders.length > 0) {
     files = files.filter(f => f.gameVersions.some(gv => filters.loaders.some(l => gv.toLowerCase().includes(l.toLowerCase()))))
@@ -126,7 +128,7 @@ async function getProjectVersions(id, filters = {}) {
     version_type: f.releaseType === 1 ? 'release' : f.releaseType === 2 ? 'beta' : 'alpha',
     date_published: f.fileDate,
     downloads: f.downloadCount,
-    game_versions: f.gameVersions.filter(v => /^1\.\d+/.test(v)), // Basic filtering
+    game_versions: f.gameVersions.filter(v => /^1\.\d+/.test(v)),
     loaders: f.gameVersions.filter(v => ['forge', 'fabric', 'quilt', 'neoforge'].includes(v.toLowerCase())).map(v => v.toLowerCase()),
     files: [{
       url: f.downloadUrl,
@@ -161,29 +163,24 @@ const path = require('path')
 
 async function installVersion(opts, onProgress) {
   const { versionId, instancePath } = opts
-  // We need to fetch the file details again to get the download URL
-  // versionId is actually the fileId in CurseForge
-  // But wait, we need the modId to fetch the file! 
-  // Wait, CF API has /v1/cf/files/{fileId}
+
   const fileData = await fetchCf(`/files/${versionId}`)
   if (!fileData || !fileData.data) throw new Error('File not found')
-  
+
   const file = fileData.data
   const downloadUrl = file.downloadUrl
   const filename = file.fileName
 
   if (!downloadUrl) throw new Error('No download URL available (possibly disabled by author)')
 
-  // We install it into instancePath / mods
   const destDir = path.join(instancePath, 'mods')
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
-  
+
   const destPath = path.join(destDir, filename)
-  
+
   return new Promise((resolve, reject) => {
     if (onProgress) onProgress({ log: `Bắt đầu tải ${filename}...`, percent: 0, total: file.fileLength })
-    
-    // fetch file as buffer (bypassing CF blocking on simple gets if any, or just use fetch arrayBuffer)
+
     fetch(downloadUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } })
       .then(async res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -203,3 +200,4 @@ module.exports = {
   getCategories,
   installVersion
 }
+

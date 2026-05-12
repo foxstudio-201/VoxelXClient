@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import {
   HomeIcon as HomeOutline,
   PlayCircleIcon as PlayOutline,
@@ -16,7 +30,6 @@ import {
 
 import PlayerHead from './ui/PlayerHead'
 
-// Server icon (outline)
 function ServerOutline({ className }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
@@ -28,7 +41,6 @@ function ServerOutline({ className }) {
   )
 }
 
-// Server icon (solid)
 function ServerSolid({ className }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -53,14 +65,14 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
 
   return (
     <aside className="w-[68px] flex flex-col items-center py-4 gap-0.5 bg-black/25 backdrop-blur-md border-r border-white/[0.06] z-50 overflow-visible">
-      {/* Logo — animated splash blocks */}
+      {}
       <div className="mb-4 mt-2">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/10 flex items-center justify-center relative overflow-hidden shadow-lg shadow-green-500/20 select-none border border-green-500/15">
-          {/* Glow */}
+          {}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-6 h-6 bg-green-500/30 rounded-full blur-lg" style={{ animation: 'sb-glow 3s ease-in-out infinite' }} />
           </div>
-          {/* 4 blocks */}
+          {}
           <div className="absolute rounded-[3px]" style={{ width: 8, height: 8, background: '#4ade80', boxShadow: '0 0 6px #4ade8099', animation: 'sb-tl 3s ease-in-out 0s infinite' }} />
           <div className="absolute rounded-[3px]" style={{ width: 8, height: 8, background: '#22c55e', boxShadow: '0 0 6px #22c55e99', animation: 'sb-tr 3s ease-in-out 0.06s infinite' }} />
           <div className="absolute rounded-[3px]" style={{ width: 8, height: 8, background: '#16a34a', boxShadow: '0 0 6px #16a34a99', animation: 'sb-bl 3s ease-in-out 0.12s infinite' }} />
@@ -100,7 +112,7 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
         `}</style>
       </div>
 
-      {/* Nav */}
+      {}
       <nav className="flex flex-col gap-1 flex-1 w-full px-2">
         {navItems.map(({ id, label, Outline, Solid }) => {
           const isActive = activePage === id
@@ -136,10 +148,10 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
         })}
       </nav>
 
-      {/* Divider above account */}
+      {}
       <div className="w-8 h-px bg-white/10 my-2" />
 
-      {/* Account */}
+      {}
       <div className="w-full px-2 pb-1">
         <button
           onClick={() => onNavigate('account')}
@@ -181,3 +193,4 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
     </aside>
   )
 }
+

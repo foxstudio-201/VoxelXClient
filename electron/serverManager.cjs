@@ -1,8 +1,18 @@
-﻿'use strict'
 /**
- * serverManager.cjs
- * Manages Minecraft server instances — create, start, stop, console I/O.
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
  */
+
+'use strict'
 
 const { ipcMain, dialog } = require('electron')
 const { app } = require('electron')
@@ -16,7 +26,6 @@ const DATA_DIR    = path.join(app.getPath('appData'), '.VoxelXClient')
 const SERVERS_DIR = path.join(DATA_DIR, 'servers')
 const SERVERS_FILE = path.join(DATA_DIR, 'servers.json')
 
-// Download URLs for each server type (latest stable)
 const SERVER_DOWNLOAD_URLS = {
   vanilla:   (ver) => `https://launchermeta.mojang.com/mc/game/version_manifest_v2.json`,
   paper:     (ver) => `https://api.papermc.io/v2/projects/paper/versions/${ver}/builds`,
@@ -29,9 +38,8 @@ const SERVER_DOWNLOAD_URLS = {
   sponge:    (ver) => `https://dl.spongepowered.org/api/v2/downloads/`,
 }
 
-// Running server processes: Map<serverId, { proc, logs, status }>
 const runningServers = new Map()
-// Running playit tunnels: Map<serverId, ChildProcess>
+
 const runningTunnels = new Map()
 
 function ensureDir(d) { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }) }
@@ -101,7 +109,6 @@ function downloadFile(url, destPath, onProgress) {
   })
 }
 
-// Resolve actual download URL for each server type
 async function resolveServerJarUrl(type, gameVersion) {
   try {
     switch (type) {
@@ -137,7 +144,7 @@ async function resolveServerJarUrl(type, gameVersion) {
         return latest?.url || null
       }
       case 'arclight': {
-        // Arclight releases on GitHub
+
         const releases = await httpsGet(`https://api.github.com/repos/IzzelAliz/Arclight/releases/latest`)
         if (!releases?.assets) return null
         const asset = releases.assets.find(a => a.name.includes(gameVersion) && a.name.endsWith('.jar'))
@@ -145,7 +152,7 @@ async function resolveServerJarUrl(type, gameVersion) {
         return asset?.browser_download_url || null
       }
       case 'magma': {
-        // Magma releases on GitHub
+
         const releases = await httpsGet(`https://api.github.com/repos/magmafoundation/Magma/releases/latest`)
         if (!releases?.assets) return null
         const asset = releases.assets.find(a => a.name.includes(gameVersion) && a.name.endsWith('.jar'))
@@ -160,11 +167,10 @@ async function resolveServerJarUrl(type, gameVersion) {
 
 function registerServerHandlers(getTrustedWindow) {
 
-  // server:list
   ipcMain.handle('server:list', (e) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
-    // Enrich with running status
+
     return {
       ok: true,
       servers: data.servers.map(s => ({
@@ -177,7 +183,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:create
   ipcMain.handle('server:create', async (e, opts) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const { name, type, gameVersion, ramGb, jvmArgs, cores, javaPath, serverPath, acceptEula, onlineMode, maxPlayers } = opts || {}
@@ -191,12 +196,10 @@ function registerServerHandlers(getTrustedWindow) {
 
     ensureDir(serverDir)
 
-    // Write eula.txt if accepted
     if (acceptEula) {
       fs.writeFileSync(path.join(serverDir, 'eula.txt'), '#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).\neula=true\n')
     }
 
-    // Write server.properties with online-mode and max-players
     const propsPath = path.join(serverDir, 'server.properties')
     if (!fs.existsSync(propsPath)) {
       const onlineModeVal = onlineMode === false ? 'false' : 'true'
@@ -233,7 +236,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, server }
   })
 
-  // server:delete
   ipcMain.handle('server:delete', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -246,7 +248,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // server:update — update server config
   ipcMain.handle('server:update', (e, serverId, patch) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -261,7 +262,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, server: data.servers[idx] }
   })
 
-  // server:downloadJar — download server jar with progress
   ipcMain.handle('server:downloadJar', async (e, serverId) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -281,7 +281,6 @@ function registerServerHandlers(getTrustedWindow) {
         win.webContents.send('server:downloadProgress', { serverId, ...p })
       })
 
-      // Update server record
       const idx = data.servers.findIndex(s => s.id === serverId)
       data.servers[idx].jarFile = jarName
       writeServers(data)
@@ -292,7 +291,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:installJava — install Java distro into server's .jre/ folder (used by JavaManagerModal)
   ipcMain.handle('server:installJava', async (e, pkg, serverId) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -307,7 +305,6 @@ function registerServerHandlers(getTrustedWindow) {
       ? path.join(jreDir, 'bin', 'java.exe')
       : path.join(jreDir, 'bin', 'java')
 
-    // Already installed
     if (fs.existsSync(javaExe)) {
       return { ok: true, javaExe, cached: true }
     }
@@ -315,7 +312,6 @@ function registerServerHandlers(getTrustedWindow) {
     try {
       const { installDistro } = require('./launcher/java/javaDistros.cjs')
 
-      // Remove old .jre if exists
       if (fs.existsSync(jreDir)) {
         fs.rmSync(jreDir, { recursive: true, force: true })
       }
@@ -324,12 +320,10 @@ function registerServerHandlers(getTrustedWindow) {
         win.webContents.send('server:javaProgress', { serverId, ...p })
       })
 
-      // Mark .jre as hidden on Windows
       if (process.platform === 'win32') {
         try { require('child_process').execSync(`attrib +h "${jreDir}"`, { windowsHide: true }) } catch {}
       }
 
-      // Save javaPath to server record
       const idx = data.servers.findIndex(s => s.id === serverId)
       if (idx >= 0) {
         data.servers[idx].javaPath = exe
@@ -342,7 +336,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:downloadJava — download Java into server's .jre/ hidden folder
   ipcMain.handle('server:downloadJava', async (e, serverId) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -356,7 +349,6 @@ function registerServerHandlers(getTrustedWindow) {
       ? path.join(jreDir, 'bin', 'java.exe')
       : path.join(jreDir, 'bin', 'java')
 
-    // Already installed
     if (fs.existsSync(javaExe)) {
       return { ok: true, javaExe, cached: true }
     }
@@ -364,11 +356,9 @@ function registerServerHandlers(getTrustedWindow) {
     try {
       const { installDistro } = require('./launcher/java/javaDistros.cjs')
 
-      // Determine best Java version for this MC version
       const mcMinor = parseInt((server.gameVersion || '1.21').split('.')[1] || '21', 10)
       const javaVersion = mcMinor >= 21 ? 21 : mcMinor >= 17 ? 17 : 8
 
-      // Fetch available packages from Adoptium (most reliable)
       const { fetchAllDistros } = require('./launcher/java/javaDistros.cjs')
       win.webContents.send('server:javaProgress', { serverId, phase: 'fetching', percent: 0 })
 
@@ -384,12 +374,10 @@ function registerServerHandlers(getTrustedWindow) {
         win.webContents.send('server:javaProgress', { serverId, ...p })
       })
 
-      // Mark .jre as hidden on Windows
       if (process.platform === 'win32') {
         try { require('child_process').execSync(`attrib +h "${jreDir}"`, { windowsHide: true }) } catch {}
       }
 
-      // Save javaPath to server record
       const idx = data.servers.findIndex(s => s.id === serverId)
       if (idx >= 0) {
         data.servers[idx].javaPath = exe
@@ -415,11 +403,6 @@ function registerServerHandlers(getTrustedWindow) {
     const jarPath = path.join(server.serverDir, server.jarFile)
     if (!fs.existsSync(jarPath)) return { error: `Không tìm thấy jar: ${server.jarFile}` }
 
-    // Resolve java executable — priority order:
-    // 1. User-specified javaPath
-    // 2. Launcher-managed Mojang runtimes (java-runtime-delta for 1.21+, etc.)
-    // 3. Custom distro runtimes installed via JavaManager
-    // 4. System PATH 'java' (last resort)
     let javaExe = null
 
     if (server.javaPath && fs.existsSync(server.javaPath)) {
@@ -427,7 +410,7 @@ function registerServerHandlers(getTrustedWindow) {
     } else {
       const runtimesDir = path.join(DATA_DIR, 'runtimes')
       if (fs.existsSync(runtimesDir)) {
-        // Prefer Mojang-managed runtimes first (java-runtime-delta = Java 21)
+
         const preferredOrder = ['java-runtime-delta', 'java-runtime-gamma', 'jre-legacy']
         for (const comp of preferredOrder) {
           const candidate = process.platform === 'win32'
@@ -436,7 +419,6 @@ function registerServerHandlers(getTrustedWindow) {
           if (fs.existsSync(candidate)) { javaExe = candidate; break }
         }
 
-        // If not found in preferred, scan all subdirs
         if (!javaExe) {
           for (const d of fs.readdirSync(runtimesDir)) {
             if (d.startsWith('.')) continue
@@ -449,13 +431,11 @@ function registerServerHandlers(getTrustedWindow) {
       }
     }
 
-    // Final fallback: system java
     if (!javaExe) javaExe = process.platform === 'win32' ? 'java.exe' : 'java'
 
     const ramMb = (server.ramGb || 2) * 1024
     const jvmArgs = server.jvmArgs ? server.jvmArgs.split(/\s+/).filter(Boolean) : []
 
-    // Only add default memory flags if jvmArgs doesn't already contain -Xmx
     const hasMemFlags = jvmArgs.some(a => a.startsWith('-Xmx') || a.startsWith('-Xms'))
     const memArgs = hasMemFlags ? [] : [
       `-Xmx${ramMb}m`,
@@ -465,7 +445,7 @@ function registerServerHandlers(getTrustedWindow) {
     const args = [
       ...memArgs,
       ...jvmArgs,
-      // Force UTF-8 output on all platforms (especially Windows CP1252)
+
       '-Dfile.encoding=UTF-8',
       '-Dstdout.encoding=UTF-8',
       '-Dstderr.encoding=UTF-8',
@@ -515,8 +495,6 @@ function registerServerHandlers(getTrustedWindow) {
       })
     }
 
-    // Use StringDecoder to correctly handle multi-byte UTF-8 characters
-    // (e.g. Vietnamese diacritics, § sign) that may be split across chunks
     const { StringDecoder } = require('string_decoder')
     const stdoutDecoder = new StringDecoder('utf8')
     const stderrDecoder = new StringDecoder('utf8')
@@ -526,11 +504,11 @@ function registerServerHandlers(getTrustedWindow) {
     proc.stdout.on('data', chunk => {
       stdoutBuf += stdoutDecoder.write(chunk)
       const lines = stdoutBuf.split('\n')
-      stdoutBuf = lines.pop() // keep incomplete last line
+      stdoutBuf = lines.pop()
       lines.filter(Boolean).forEach(line => {
         sendLog(line)
         if (line.includes('Done') && line.includes('For help')) sendStatus('online')
-        // Parse player join/leave: "UUID of player xxx is ..." or "xxx joined the game" / "xxx left the game"
+
         if (line.includes('joined the game')) {
           entry.playerCount = Math.max(0, (entry.playerCount || 0) + 1)
           sendPlayerCount()
@@ -538,7 +516,7 @@ function registerServerHandlers(getTrustedWindow) {
           entry.playerCount = Math.max(0, (entry.playerCount || 0) - 1)
           sendPlayerCount()
         }
-        // Parse "There are X of a max of Y players online"
+
         const playerMatch = line.match(/There are (\d+) of a max of (\d+) players online/)
         if (playerMatch) {
           entry.playerCount = parseInt(playerMatch[1], 10)
@@ -581,7 +559,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // server:stop
   ipcMain.handle('server:stop', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const entry = runningServers.get(serverId)
@@ -599,7 +576,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:restart
   ipcMain.handle('server:restart', async (e, serverId) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -611,7 +587,6 @@ function registerServerHandlers(getTrustedWindow) {
     return ipcMain.emit('server:start', { sender: win.webContents }, serverId)
   })
 
-  // server:sendCommand
   ipcMain.handle('server:sendCommand', (e, serverId, command) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const entry = runningServers.get(serverId)
@@ -624,14 +599,12 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:getLogs — get buffered logs
   ipcMain.handle('server:getLogs', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const entry = runningServers.get(serverId)
     return { ok: true, logs: entry?.logs || [] }
   })
 
-  // server:getStats — get real-time RAM/CPU usage of running server process
   ipcMain.handle('server:getStats', async (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const entry = runningServers.get(serverId)
@@ -639,21 +612,19 @@ function registerServerHandlers(getTrustedWindow) {
     try {
       const pidusage = require('pidusage')
       const stats = await pidusage(entry.proc.pid)
-      // RSS includes JVM overhead — cap at configured Xmx to avoid showing > 100%
-      // Read server config to get ramGb
+
       const data = readServers()
       const server = data.servers.find(s => s.id === serverId)
       const xmxMb = (server?.ramGb || 2) * 1024
       const rssMb = Math.round(stats.memory / 1024 / 1024)
-      // Heap used is typically RSS minus ~200-400MB JVM overhead
-      // Cap display at xmxMb so bar never exceeds 100%
+
       const displayMb = Math.min(rssMb, xmxMb)
       return {
         ok:      true,
         running: true,
         cpu:     Math.min(100, Math.round(stats.cpu * 10) / 10),
         ramMb:   displayMb,
-        rssMb,   // raw RSS for tooltip
+        rssMb,
         xmxMb,
       }
     } catch {
@@ -661,21 +632,18 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:getStatus
   ipcMain.handle('server:getStatus', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const entry = runningServers.get(serverId)
     return { ok: true, running: !!entry, status: entry?.status || 'offline' }
   })
 
-  // server:ping — TCP connect to measure latency
   ipcMain.handle('server:ping', async (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
     const server = data.servers.find(s => s.id === serverId)
     if (!server) return { error: 'Server không tồn tại' }
 
-    // Read port from server.properties
     let port = 25565
     try {
       const propsPath = path.join(server.serverDir, 'server.properties')
@@ -701,7 +669,6 @@ function registerServerHandlers(getTrustedWindow) {
     })
   })
 
-  // server:listDir — list directories inside server folder
   ipcMain.handle('server:listDir', (e, serverId, subPath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -711,7 +678,6 @@ function registerServerHandlers(getTrustedWindow) {
     const base = server.serverDir
     const target = subPath ? path.join(base, subPath) : base
 
-    // Security: must be inside serverDir
     if (!target.startsWith(base)) return { error: 'Đường dẫn không hợp lệ' }
     if (!fs.existsSync(target)) return { ok: true, entries: [] }
 
@@ -730,7 +696,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:listFiles — list files at root of server folder
   ipcMain.handle('server:listFiles', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -751,7 +716,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:listDirFull — list both dirs and files in any subpath
   ipcMain.handle('server:listDirFull', (e, serverId, subPath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -778,14 +742,12 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
-  // server:getNetworkInfo — get local IP, public IP, and server port
   ipcMain.handle('server:getNetworkInfo', async (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
     const server = data.servers.find(s => s.id === serverId)
     if (!server) return { error: 'Server không tồn tại' }
 
-    // Get local IP
     const os = require('os')
     let localIp = '127.0.0.1'
     try {
@@ -801,7 +763,6 @@ function registerServerHandlers(getTrustedWindow) {
       }
     } catch {}
 
-    // Get public IP
     let publicIp = null
     try {
       const body = await new Promise((resolve, reject) => {
@@ -815,7 +776,6 @@ function registerServerHandlers(getTrustedWindow) {
       publicIp = body
     } catch {}
 
-    // Read port from server.properties
     let port = '25565'
     try {
       const propsPath = path.join(server.serverDir, 'server.properties')
@@ -829,8 +789,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, localIp, publicIp, port }
   })
 
-  // server:startTunnel — start bore TCP tunnel (no account needed)
-  // bore local <port> --to bore.pub
   ipcMain.handle('server:startTunnel', async (e, serverId, port) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -849,26 +807,23 @@ function registerServerHandlers(getTrustedWindow) {
       if (!win.isDestroyed()) win.webContents.send('server:tunnelLog', { serverId, line, ...extra })
     }
 
-    // Kill existing tunnel
     if (runningTunnels.has(serverId)) {
       try { runningTunnels.get(serverId).kill() } catch {}
       runningTunnels.delete(serverId)
     }
 
-    // Add Windows Defender exclusion for the bore directory before downloading
     if (process.platform === 'win32') {
       try {
         const { execSync } = require('child_process')
         execSync(`powershell -Command "Add-MpPreference -ExclusionPath '${agentDir}'" -ErrorAction SilentlyContinue`, { windowsHide: true, timeout: 5000 })
         sendLog('Đã thêm exclusion Windows Defender cho thư mục bore')
-      } catch { /* ignore if no permission */ }
+      } catch {  }
     }
 
-    // Download bore if not present
     if (!fs.existsSync(agentExe)) {
       sendLog('Đang tải bore tunnel...', { status: 'downloading' })
       try {
-        // Fetch latest release
+
         const releaseInfo = await new Promise((resolve, reject) => {
           https.get('https://api.github.com/repos/ekzhang/bore/releases/latest',
             { headers: { 'User-Agent': 'VoxelXClient/1.0', 'Accept': 'application/vnd.github.v3+json' }, timeout: 10000 },
@@ -901,7 +856,6 @@ function registerServerHandlers(getTrustedWindow) {
         sendLog(`Tải ${assetName}...`)
         const archivePath = path.join(agentDir, assetName)
 
-        // Download archive
         await new Promise((resolve, reject) => {
           function doGet(url) {
             const client = url.startsWith('https') ? https : require('http')
@@ -917,22 +871,19 @@ function registerServerHandlers(getTrustedWindow) {
           doGet(asset.browser_download_url)
         })
 
-        // Extract
         if (assetName.endsWith('.zip')) {
-          // Use PowerShell on Windows
+
           const { execSync } = require('child_process')
           execSync(`powershell -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${agentDir}' -Force"`, { windowsHide: true })
         } else {
-          // tar.gz on Linux/Mac
+
           const { execSync } = require('child_process')
           execSync(`tar -xzf "${archivePath}" -C "${agentDir}"`, { cwd: agentDir })
         }
 
-        // Cleanup archive
         try { fs.unlinkSync(archivePath) } catch {}
         if (process.platform !== 'win32') fs.chmodSync(agentExe, 0o755)
 
-        // Verify file exists (Windows Defender may have deleted it)
         if (!fs.existsSync(agentExe)) {
           sendLog('⚠️ Windows Defender đã xóa bore.exe. Vui lòng thêm exclusion cho thư mục: ' + agentDir, { status: 'error' })
           sendLog('Hướng dẫn: Windows Security → Virus & threat protection → Manage settings → Add or remove exclusions → Add folder: ' + agentDir, {})
@@ -946,10 +897,8 @@ function registerServerHandlers(getTrustedWindow) {
       }
     }
 
-    // Start bore: bore local <port> --to bore.pub
     sendLog(`Khởi động tunnel: cổng ${port} → bore.pub...`, { status: 'starting' })
 
-    // Check file exists (may have been deleted by antivirus)
     if (!fs.existsSync(agentExe)) {
       const msg = `bore.exe không tìm thấy tại: ${agentExe}\nCó thể bị Windows Defender xóa. Thêm exclusion cho thư mục: ${agentDir}`
       sendLog(msg, { status: 'error' })
@@ -970,7 +919,7 @@ function registerServerHandlers(getTrustedWindow) {
         buf = lines.pop()
         lines.filter(Boolean).forEach(line => {
           sendLog(line)
-          // bore outputs: "listening at bore.pub:XXXXX"
+
           const m = line.match(/bore\.pub:(\d+)/i)
           if (m) {
             const addr = `bore.pub:${m[1]}`
@@ -995,7 +944,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:stopTunnel — stop bore tunnel
   ipcMain.handle('server:stopTunnel', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const proc = runningTunnels.get(serverId)
@@ -1006,7 +954,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // server:uploadFile — write binary file from base64
   ipcMain.handle('server:uploadFile', (e, serverId, subPath, fileName, base64Data) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (typeof fileName !== 'string' || fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
@@ -1028,7 +975,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
-  // server:installMod — download a mod/plugin from URL into server's mods/ or plugins/ folder
   ipcMain.handle('server:installMod', async (e, opts) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -1053,7 +999,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:readServerProps — read server.properties as key-value object
   ipcMain.handle('server:readServerProps', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1075,7 +1020,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
-  // server:writeServerProps — write/merge key-value pairs into server.properties
   ipcMain.handle('server:writeServerProps', (e, serverId, patch) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1096,7 +1040,7 @@ function registerServerHandlers(getTrustedWindow) {
         if (key in patch) { updated.add(key); return `${key}=${patch[key]}` }
         return line
       })
-      // Append keys not yet in file
+
       for (const [k, v] of Object.entries(patch)) {
         if (!updated.has(k)) lines.push(`${k}=${v}`)
       }
@@ -1105,7 +1049,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
-  // server:getWhitelist — read whitelist.json
   ipcMain.handle('server:getWhitelist', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1119,7 +1062,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch { return { ok: true, list: [] } }
   })
 
-  // server:addWhitelist — add player to whitelist.json
   ipcMain.handle('server:addWhitelist', (e, serverId, name, uuid) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1135,13 +1077,12 @@ function registerServerHandlers(getTrustedWindow) {
       list.push({ uuid: uuid || '00000000-0000-0000-0000-000000000000', name })
     }
     fs.writeFileSync(wlPath, JSON.stringify(list, null, 2), 'utf-8')
-    // If server running, send whitelist reload command
+
     const entry = runningServers.get(serverId)
     if (entry) { try { entry.proc.stdin.write('whitelist reload\n') } catch {} }
     return { ok: true, list }
   })
 
-  // server:removeWhitelist — remove players from whitelist.json
   ipcMain.handle('server:removeWhitelist', (e, serverId, names) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1160,7 +1101,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, list }
   })
 
-  // server:getBanlist — read banned-players.json
   ipcMain.handle('server:getBanlist', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1174,7 +1114,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch { return { ok: true, list: [] } }
   })
 
-  // server:unban — remove players from banned-players.json
   ipcMain.handle('server:unban', (e, serverId, names) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1197,7 +1136,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, list }
   })
 
-  // server:updateConfig — update server record (RAM, cores, JVM, javaPath)
   ipcMain.handle('server:updateConfig', (e, serverId, patch) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1211,7 +1149,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, server: data.servers[idx] }
   })
 
-  // server:openFolder
   ipcMain.handle('server:openFolder', async (e, serverId, subPath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1226,7 +1163,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true }
   })
 
-  // server:browse — pick server directory
   ipcMain.handle('server:browse', async (e) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
@@ -1239,7 +1175,6 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, path: result.filePaths[0] }
   })
 
-  // server:getVersions — list available MC versions for server
   ipcMain.handle('server:getVersions', async (e) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     try {
@@ -1254,7 +1189,6 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
-  // server:getVersionsForType — list versions supported by a specific server type
   ipcMain.handle('server:getVersionsForType', async (e, serverType) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     try {
@@ -1285,7 +1219,7 @@ function registerServerHandlers(getTrustedWindow) {
           return { ok: true, versions }
         }
         case 'forge': {
-          // Parse forge promotions to get supported MC versions
+
           const data = await httpsGet('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json')
           const promos = data?.promos || {}
           const versions = [...new Set(
@@ -1301,7 +1235,7 @@ function registerServerHandlers(getTrustedWindow) {
           return { ok: true, versions }
         }
         case 'neoforge': {
-          // NeoForge supports 1.20.1+
+
           const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
           const all = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id)
           const versions = all.filter(v => {
@@ -1316,15 +1250,15 @@ function registerServerHandlers(getTrustedWindow) {
           return { ok: true, versions }
         }
         case 'arclight': {
-          // Arclight supports 1.16.5 - 1.20.x (Forge+Paper)
+
           return { ok: true, versions: ['1.20.1', '1.19.4', '1.19.2', '1.18.2', '1.16.5'] }
         }
         case 'magma': {
-          // Magma supports specific versions
+
           return { ok: true, versions: ['1.20.1', '1.19.4', '1.18.2', '1.16.5', '1.12.2'] }
         }
         case 'sponge': {
-          // SpongeVanilla supports recent versions
+
           const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
           const all = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id)
           const versions = all.filter(v => {
@@ -1334,19 +1268,18 @@ function registerServerHandlers(getTrustedWindow) {
           return { ok: true, versions }
         }
         default: {
-          // Fallback: all release versions
+
           const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
           const versions = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id).slice(0, 30)
           return { ok: true, versions }
         }
       }
     } catch (err) {
-      // Fallback on error
+
       return { ok: true, versions: ['1.21.4', '1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2'] }
     }
   })
 
-  // server:readFile — read text file content
   ipcMain.handle('server:readFile', (e, serverId, filePath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1361,7 +1294,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
-  // server:writeFile — write text file content
   ipcMain.handle('server:writeFile', (e, serverId, filePath, content) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (typeof content !== 'string') return { error: 'Nội dung không hợp lệ' }
@@ -1377,7 +1309,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
-  // server:deleteItems — delete files/folders
   ipcMain.handle('server:deleteItems', (e, serverId, itemPaths) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!Array.isArray(itemPaths)) return { error: 'Danh sách không hợp lệ' }
@@ -1399,7 +1330,6 @@ function registerServerHandlers(getTrustedWindow) {
     return errors.length ? { error: errors.join('\n') } : { ok: true }
   })
 
-  // server:compress — zip selected files/folders
   ipcMain.handle('server:compress', async (e, serverId, itemPaths, zipName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!Array.isArray(itemPaths) || !itemPaths.length) return { error: 'Không có file để nén' }
@@ -1413,7 +1343,7 @@ function registerServerHandlers(getTrustedWindow) {
 
     try {
       const { execSync } = require('child_process')
-      // Use PowerShell Compress-Archive on Windows
+
       const targets = itemPaths.map(p => {
         const t = path.join(base, p)
         if (!t.startsWith(base + path.sep)) throw new Error(`Đường dẫn không hợp lệ: ${p}`)
@@ -1430,7 +1360,6 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
-  // server:extract — unzip a zip file
   ipcMain.handle('server:extract', async (e, serverId, zipFilePath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readServers()
@@ -1454,3 +1383,4 @@ function registerServerHandlers(getTrustedWindow) {
 }
 
 module.exports = { registerServerHandlers }
+

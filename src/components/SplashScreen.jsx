@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useEffect, useState, useRef } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -20,7 +34,7 @@ export default function SplashScreen({ onDone }) {
     let cancelled = false
 
     async function run() {
-      // ── Bước 1: Lấy version ──────────────────────────────────────────
+
       setProgress(5, 'Khởi tạo ứng dụng...')
       if (isElectron) {
         try {
@@ -32,7 +46,6 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      // ── Bước 2: Load settings (thật) ─────────────────────────────────
       setProgress(20, 'Tải cài đặt người dùng...')
       let autoCheckUpdate = true
       if (isElectron) {
@@ -50,29 +63,26 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      // ── Bước 2b: Kiểm tra cập nhật (nếu setting bật) ─────────────────
       if (autoCheckUpdate && isElectron) {
         setProgress(30, 'Kiểm tra cập nhật...')
         try {
           const updateResult = await window.electronAPI.checkUpdate()
           if (!cancelled && updateResult?.hasUpdate) {
-            // Has update — open UpdateWindow and hide splash/main window
+
             setProgress(35, `Phiên bản mới ${updateResult.latestVersion} — đang mở cửa sổ cập nhật...`)
             await delay(400)
             window.electronAPI.openUpdateWindow(updateResult)
-            return // Stop splash — UpdateWindow takes over
+            return
           }
         } catch {}
       }
 
-      // ── Bước 3: Load accounts + auto-refresh MS tokens ──────────────
       setProgress(45, 'Tải dữ liệu tài khoản...')
       if (isElectron) {
         try {
           const accountData = await window.electronAPI.getAccounts()
           const selected = (accountData?.accounts || []).find(a => a.id === accountData?.selectedId)
 
-          // Chỉ hiện log sync nếu tài khoản đang chọn là Microsoft
           if (selected?.type === 'microsoft') {
             setProgress(50, `Đồng bộ tài khoản Microsoft (${selected.username})...`)
             try {
@@ -80,7 +90,6 @@ export default function SplashScreen({ onDone }) {
             } catch {}
           }
 
-          // Refresh ngầm các tài khoản MS còn lại (không hiện log)
           const otherMs = (accountData?.accounts || []).filter(
             a => a.type === 'microsoft' && a.id !== selected?.id
           )
@@ -93,7 +102,6 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      // ── Bước 4: Load profiles (thật) ─────────────────────────────────
       setProgress(65, 'Tải danh sách profile...')
       if (isElectron) {
         try { await window.electronAPI.getProfiles() } catch {}
@@ -102,7 +110,6 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      // ── Bước 5: Kiểm tra phiên bản Minecraft ─────────────────────────
       setProgress(80, 'Tải danh sách phiên bản game...')
       if (isElectron) {
         try { await window.electronAPI.minecraftListVersions() } catch {}
@@ -111,7 +118,6 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      // ── Bước 6: Hoàn tất ─────────────────────────────────────────────
       setProgress(95, 'Hoàn tất khởi động...')
       await delay(200)
 
@@ -140,21 +146,21 @@ export default function SplashScreen({ onDone }) {
       className="fixed inset-0 z-[9999] flex flex-col bg-[#080808]"
       style={{ opacity: fadeOut ? 0 : 1, transition: 'opacity 550ms ease-in-out', pointerEvents: fadeOut ? 'none' : 'auto' }}
     >
-      {/* Grid bg */}
+      {}
       <div className="absolute inset-0 opacity-[0.04]" style={{
         backgroundImage: `linear-gradient(rgba(74,222,128,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,0.8) 1px,transparent 1px)`,
         backgroundSize: '48px 48px',
       }} />
 
-      {/* Ambient glow */}
+      {}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-96 h-96 bg-green-500/5 rounded-full blur-3xl" />
       </div>
 
-      {/* ── Center ── */}
+      {}
       <div className="flex-1 flex flex-col items-center justify-center gap-7 relative z-10">
 
-        {/* Logo */}
+        {}
         <div className="relative flex items-center justify-center" style={{ width: 160, height: 160 }}>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-32 h-32 bg-green-500/20 rounded-full blur-3xl" style={{ animation: 'splash-glow 4s ease-in-out infinite' }} />
@@ -203,7 +209,7 @@ export default function SplashScreen({ onDone }) {
           }
         `}</style>
 
-        {/* App name */}
+        {}
         <div className="text-center">
           <h1 className="text-3xl font-black text-white tracking-tight">
             VoxelX<span className="text-green-400">Client</span>
@@ -211,12 +217,12 @@ export default function SplashScreen({ onDone }) {
           <p className="text-xs text-white/25 mt-1 font-mono tracking-widest">{version ? `v${version}` : ''}</p>
         </div>
 
-        {/* Progress */}
+        {}
         <div className="w-72 flex flex-col gap-2">
-          {/* Log label — căn giữa */}
+          {}
           <p className="text-[11px] text-white/40 font-mono text-center truncate">{log}</p>
 
-          {/* Bar + % */}
+          {}
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1 bg-white/8 rounded-full overflow-hidden">
               <div
@@ -240,3 +246,4 @@ export default function SplashScreen({ onDone }) {
 function delay(ms) {
   return new Promise(r => setTimeout(r, ms))
 }
+

@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import GroupSelect from '../ui/GroupSelect'
 import fabricIcon    from '../../assets/loader/fabric.png'
@@ -61,7 +75,7 @@ function getVersionImage(gameVersion) {
 // ─── PreviewCard ──────────────────────────────────────────────────────────────
 function PreviewCard({ source, meta }) {
   const theme = SOURCES[source]
-  // Ưu tiên: iconBase64 (từ zip) > iconUrl (từ manifest URL) > loader icon
+
   const icon = meta.iconBase64 || meta.iconUrl || LOADER_ICONS[meta.loader] || forgeIcon
   const bgImage = meta.iconUrl || getVersionImage(meta.gameVersion)
 
@@ -107,7 +121,7 @@ function PreviewCard({ source, meta }) {
 }
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
-// Sidebar width = 68px, thêm 12px padding → minimized left = 80px
+
 const MINIMIZED_LEFT = 80
 
 export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
@@ -132,7 +146,6 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, importing])
 
-  // ── Process file path ──
   const processFilePath = useCallback(async (fPath, fName) => {
     setReading(true)
     setMeta(null)
@@ -152,7 +165,6 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
     }
   }, [])
 
-  // ── Browse ──
   async function handleBrowse() {
     if (!isElectron) return
     try {
@@ -162,7 +174,6 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
     } catch (err) { console.error('[ImportModal]', err) }
   }
 
-  // ── Drag & Drop ──
   const onDragEnter = useCallback((e) => {
     e.preventDefault(); e.stopPropagation()
     dragCounter.current++
@@ -191,7 +202,6 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
   }
   function switchSource(src) { setActiveSource(src); handleClearFile() }
 
-  // ── Import ──
   async function handleImport() {
     if (!filePath || !meta) return
     setImporting(true)
@@ -199,7 +209,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
 
     try {
       const loader = meta.loader || (activeSource === 'modrinth' ? 'fabric' : 'forge')
-      // Ưu tiên URL (nhẹ hơn), fallback về base64 từ icon.png trong zip
+
       const iconUrl = meta.iconUrl || meta.iconBase64 || null
 
       const createResult = await onCreate({
@@ -243,9 +253,6 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
 
   const canImport = !!filePath && !!meta && !reading && !importing
 
-  // ══════════════════════════════════════════════════════
-  // MINIMIZED VIEW — góc dưới trái, cách sidebar 12px
-  // ══════════════════════════════════════════════════════
   if (minimized) {
     const isRunning = importing && progress
     const isDone    = progress?.phase === 'done'
@@ -265,13 +272,13 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
         onClick={() => setMinimized(false)}
         title="Click để mở lại"
       >
-        {/* Source icon */}
+        {}
         <div className="flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center"
           style={{ background: theme.color + '20', border: `1px solid ${theme.color}44` }}>
           <img src={theme.icon} alt={theme.label} className="w-5 h-5 object-contain" />
         </div>
 
-        {/* Info */}
+        {}
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-white/80 truncate">
             {meta?.name || fileName?.replace(/\.(zip|mrpack)$/i, '') || 'Import'}
@@ -296,7 +303,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
           )}
         </div>
 
-        {/* Spinner / done / error icon */}
+        {}
         <div className="flex-shrink-0 flex items-center gap-1.5">
           {importing && !isDone && !isError && (
             <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" style={{ color: theme.color }}>
@@ -314,7 +321,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
             </svg>
           )}
-          {/* Close button — chỉ hiện khi không đang import */}
+          {}
           {!importing && (
             <button
               onClick={(e) => { e.stopPropagation(); onClose() }}
@@ -330,9 +337,6 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
     )
   }
 
-  // ══════════════════════════════════════════════════════
-  // FULL MODAL VIEW
-  // ══════════════════════════════════════════════════════
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -343,14 +347,14 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
         className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
         style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)' }}
       >
-        {/* ── Header ── */}
+        {}
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
           <div>
             <h2 className="text-base font-bold text-white">Import Profile</h2>
             <p className="text-xs text-white/30 mt-0.5">Import từ modpack .zip / .mrpack</p>
           </div>
           <div className="flex items-center gap-1">
-            {/* Minimize button */}
+            {}
             <button
               onClick={() => setMinimized(true)}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
@@ -360,7 +364,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
                 <path d="M19 13H5v-2h14v2z"/>
               </svg>
             </button>
-            {/* Close button */}
+            {}
             <button
               onClick={() => { if (!importing) onClose() }}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white hover:bg-white/8 transition-all"
@@ -373,7 +377,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
           </div>
         </div>
 
-        {/* ── Source tabs ── */}
+        {}
         <div className="px-5 pb-4">
           <div className="flex gap-1.5 p-1 bg-white/4 rounded-xl border border-white/5">
             {Object.values(SOURCES).map(src => (
@@ -395,9 +399,9 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
           </div>
         </div>
 
-        {/* ── Content ── */}
+        {}
         <div className="px-5 pb-5 flex flex-col gap-4">
-          {/* Group selector */}
+          {}
           {groups.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
@@ -412,7 +416,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           )}
 
-          {/* File picker / preview */}
+          {}
           {!filePath ? (
             <div
               ref={dropZoneRef}
@@ -447,7 +451,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {/* File info bar */}
+              {}
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border"
                 style={{ background: theme.color + '0d', borderColor: theme.color + '33' }}>
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0" style={{ color: theme.color }}>
@@ -478,7 +482,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           )}
 
-          {/* Progress */}
+          {}
           {progress && (
             <div className="flex flex-col gap-2 px-1">
               <div className="flex items-center justify-between gap-2">
@@ -503,7 +507,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           )}
 
-          {/* Buttons */}
+          {}
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => { if (!importing) onClose() }}
@@ -540,3 +544,4 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
     </div>
   )
 }
+

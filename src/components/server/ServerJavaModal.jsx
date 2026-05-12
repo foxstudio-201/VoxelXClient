@@ -1,3 +1,16 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
 
 import { useState, useEffect, useRef } from 'react'
 import adoptiumIcon from '../../assets/java-icon/adoptium.png'
@@ -26,11 +39,6 @@ function GraalIcon() {
   )
 }
 
-/**
- * ServerJavaModal — only SELECT a Java distro+version.
- * Does NOT download anything. Returns the selected pkg object via onSelect.
- * Actual download happens after server creation.
- */
 export default function ServerJavaModal({ onClose, onSelect }) {
   const [step, setStep]           = useState('distro')
   const [selectedDistro, setSelectedDistro] = useState(null)
@@ -41,7 +49,7 @@ export default function ServerJavaModal({ onClose, onSelect }) {
   useEffect(() => {
     if (!isElectron) { setLoading(false); return }
     setLoading(true)
-    // Fetch distros without profile context
+
     window.electronAPI.javaFetchDistros(null)
       .then(r => {
         if (r?.ok) setDistros(r.distros || { adoptium: [], azul: [], graalvm: [] })
@@ -68,7 +76,7 @@ export default function ServerJavaModal({ onClose, onSelect }) {
       <div className="relative z-10 w-full max-w-xl rounded-2xl overflow-hidden flex flex-col"
         style={{ background: 'rgba(12,12,12,0.98)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 32px 80px rgba(0,0,0,0.8)', maxHeight: '80vh' }}>
 
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
           <div className="flex items-center gap-3">
             {step === 'versions' && (
@@ -94,7 +102,7 @@ export default function ServerJavaModal({ onClose, onSelect }) {
           </button>
         </div>
 
-        {/* Body */}
+        {}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -181,7 +189,7 @@ export default function ServerJavaModal({ onClose, onSelect }) {
           )}
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex-shrink-0 px-5 py-3 border-t border-white/5 flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-white/20 flex-shrink-0">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
@@ -194,3 +202,4 @@ export default function ServerJavaModal({ onClose, onSelect }) {
     </div>
   )
 }
+

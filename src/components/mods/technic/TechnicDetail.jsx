@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useMemo } from 'react'
 import { DownloadSimple, Heart, CalendarBlank, ArrowLeft, ArrowSquareOut } from '@phosphor-icons/react'
 import { useTechnicProject, useTechnicVersions } from './useTechnic'
@@ -5,17 +19,17 @@ import InstallModal from '../shared/InstallModal'
 
 // ─── Inline splash logo (không overlay, không nền tối) ────────────────────────
 function SplashLogoInline({ size = 64, label }) {
-  const s = size / 4.5 // block size
-  const d1 = size * 0.14 // close position
-  const d2 = size * 0.30 // expanded position
+  const s = size / 4.5
+  const d1 = size * 0.14
+  const d2 = size * 0.30
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-        {/* Glow */}
+        {}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="bg-green-500/15 rounded-full blur-2xl" style={{ width: size * 0.8, height: size * 0.8, animation: 'md-logo-glow 3s ease-in-out infinite' }} />
         </div>
-        {/* 4 blocks */}
+        {}
         <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#4ade80', boxShadow: '0 0 10px #4ade8099', animation: 'md-logo-tl 3s ease-in-out 0s infinite' }} />
         <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#22c55e', boxShadow: '0 0 10px #22c55e99', animation: 'md-logo-tr 3s ease-in-out 0.06s infinite' }} />
         <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#16a34a', boxShadow: '0 0 10px #16a34a99', animation: 'md-logo-bl 3s ease-in-out 0.12s infinite' }} />
@@ -111,39 +125,34 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
   const { project, loading, error } = useTechnicProject(projectId)
   const { versions, loading: vLoading } = useTechnicVersions(projectId)
 
-  const [activeTab, setActiveTab] = useState('versions') // default to versions
+  const [activeTab, setActiveTab] = useState('versions')
   const [selectedVersion, setVersion] = useState(null)
   const [showInstall, setShowInstall] = useState(false)
 
-  // Init filter loader from outer filter (first selected loader, or 'all')
   const [filterLoader, setFilterLoader] = useState(() => activeLoaders[0] || 'all')
-  // Init filter game version from outer filter (first selected version, or 'all')
+
   const [filterGameVer, setFilterGameVer] = useState(() => activeGameVersions[0] || 'all')
   const [filterType, setFilterType] = useState('all')
 
-  // Available loaders from this project's versions
   const availableLoaders = useMemo(() => {
     const set = new Set()
     versions.forEach(v => (v.loaders || []).forEach(l => set.add(l)))
     return Array.from(set).filter(l => ['fabric', 'forge', 'neoforge', 'quilt', 'vanilla'].includes(l))
   }, [versions])
 
-  // Available version types
   const availableTypes = useMemo(() => {
     const set = new Set()
     versions.forEach(v => { if (v.version_type) set.add(v.version_type) })
     return Array.from(set)
   }, [versions])
 
-  // Available game versions (from versions data, not project.game_versions)
   const availableGameVersions = useMemo(() => {
     const set = new Set()
     versions.forEach(v => (v.game_versions || []).forEach(gv => set.add(gv)))
-    // Sort descending
+
     return Array.from(set).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))
   }, [versions])
 
-  // Filtered versions — loader + type + game version
   const filteredVersions = useMemo(() => {
     return versions.filter(v => {
       const matchLoader = filterLoader === 'all' || (v.loaders || []).includes(filterLoader)
@@ -175,17 +184,17 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* ── Header ── */}
+      {}
       <div className="flex-shrink-0 px-4 pt-3 pb-0">
 
-        {/* Back */}
+        {}
         <button onClick={onBack}
           className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors mb-3">
           <ArrowLeft size={14} weight="bold" />
           Back to results
         </button>
 
-        {/* Project info */}
+        {}
         <div className="flex items-start gap-3.5 mb-4">
           <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-white/5 flex items-center justify-center">
             {project.icon_url
@@ -211,7 +220,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
           </div>
         </div>
 
-        {/* Stats */}
+        {}
         <div className="flex items-center gap-4 mb-3 text-sm">
           <span className="flex items-center gap-1.5 text-green-400/80">
             <DownloadSimple size={15} weight="bold" />
@@ -229,9 +238,9 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
           </span>
         </div>
 
-        {/* Loader badges + Filter bar — same row */}
+        {}
         <div className="flex flex-wrap items-center gap-2 mb-2">
-          {/* Loader badges (display only) */}
+          {}
           <div className="flex flex-wrap items-center gap-1">
             {loaders.map(l => (
               <span key={l} className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize border ${LOADER_COLORS[l] || 'bg-white/8 text-white/50 border-white/10'}`}>
@@ -246,11 +255,11 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
             )}
           </div>
 
-          {/* Filter groups */}
+          {}
           {(availableLoaders.length > 1 || availableTypes.length > 1 || availableGameVersions.length > 1) && (
             <div className="flex flex-wrap items-center gap-1.5">
 
-              {/* Loader filter group */}
+              {}
               {availableLoaders.length > 1 && (
                 <div className="flex items-center gap-1 px-2 py-1 rounded-lg"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -263,7 +272,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                 </div>
               )}
 
-              {/* Type filter group */}
+              {}
               {availableTypes.length > 1 && (
                 <div className="flex items-center gap-1 px-2 py-1 rounded-lg"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -277,7 +286,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                 </div>
               )}
 
-              {/* Game version filter group */}
+              {}
               {availableGameVersions.length > 1 && (
                 <div className="flex items-center gap-1 px-2 py-1 rounded-lg"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -299,7 +308,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
           )}
         </div>
 
-        {/* Sub tabs */}
+        {}
         <div className="flex gap-0 border-b border-white/5 mt-2">
           {DETAIL_TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -316,16 +325,16 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
         </div>
       </div>
 
-      {/* ── Tab content ── */}
+      {}
       <div className="flex-1 overflow-y-auto px-4 py-3"
         style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
 
-        {/* Description */}
+        {}
         {activeTab === 'description' && (() => {
           const feed = project.feed || []
           return (
             <div className="flex flex-col gap-4">
-              {/* Background banner */}
+              {}
               {project.background_url && (
                 <div className="rounded-xl overflow-hidden w-full" style={{ aspectRatio: '16/5' }}>
                   <img
@@ -337,7 +346,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                 </div>
               )}
 
-              {/* Tagline / description */}
+              {}
               {project.description && (
                 <div className="px-4 py-3 rounded-xl text-sm text-white/70 leading-relaxed italic"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -345,7 +354,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                 </div>
               )}
 
-              {/* Pack info grid */}
+              {}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {project.author && (
                   <div className="px-3 py-2.5 rounded-xl flex flex-col gap-0.5"
@@ -373,7 +382,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                 </div>
               </div>
 
-              {/* Changelog feed */}
+              {}
               {feed.length > 0 && (
                 <div>
                   <p className="text-[10px] text-white/30 uppercase tracking-widest mb-2">Changelog</p>
@@ -398,7 +407,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                 </div>
               )}
 
-              {/* No info fallback */}
+              {}
               {!project.description && feed.length === 0 && (
                 <p className="text-white/25 text-xs text-center py-8">No description available</p>
               )}
@@ -406,10 +415,10 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
           )
         })()}
 
-        {/* Versions */}
+        {}
         {activeTab === 'versions' && (
           <div className="flex flex-col gap-3">
-            {/* Version list */}
+            {}
             {vLoading && (
               <div className="flex items-center justify-center py-10">
                 <SplashLogoInline size={56} label="Đang tải phiên bản..." />
@@ -428,11 +437,11 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-white text-sm font-semibold">{v.version_number}</span>
-                    {/* Type badge */}
+                    {}
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${VERSION_TYPE_STYLE[v.version_type] || 'bg-white/8 text-white/40 border-white/10'}`}>
                       {v.version_type}
                     </span>
-                    {/* Loader badges */}
+                    {}
                     {(v.loaders || []).map(l => (
                       <span key={l} className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize border ${LOADER_COLORS[l] || 'bg-white/8 text-white/40 border-white/10'}`}>
                         {l}
@@ -463,7 +472,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
           </div>
         )}
 
-        {/* Gallery */}
+        {}
         {activeTab === 'gallery' && (
           <div>
             {(!project.gallery || project.gallery.length === 0) ? (
@@ -481,7 +490,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
         )}
       </div>
 
-      {/* Install modal */}
+      {}
       {showInstall && selectedVersion && (
         <InstallModal
           project={project}
@@ -494,3 +503,4 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
     </div>
   )
 }
+

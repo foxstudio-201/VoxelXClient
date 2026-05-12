@@ -13,11 +13,6 @@
  */
 
 'use strict'
-/**
- * javaDistros.cjs
- * Fetch Java distributions from Adoptium, Azul Zulu, GraalVM.
- * Only fetches Java versions supported by Minecraft: 8, 11, 17, 21
- */
 
 const https = require('https')
 const http  = require('http')
@@ -25,7 +20,6 @@ const fs    = require('fs')
 const path  = require('path')
 const { execFile } = require('child_process')
 
-// Java versions Minecraft needs
 const MC_JAVA_VERSIONS = [8, 11, 17, 21, 25]
 
 // ─── HTTP helper ──────────────────────────────────────────────────────────────
@@ -36,7 +30,7 @@ function httpsGet(url, timeout = 8000) {
       headers: {
         'User-Agent': 'VoxelXClient/1.0',
         'Accept': 'application/json',
-        // GitHub API requires User-Agent, also accept vnd for releases
+
         'X-GitHub-Api-Version': '2022-11-28',
       },
       timeout,
@@ -58,8 +52,8 @@ function httpsGet(url, timeout = 8000) {
 
 // ─── Platform helpers ─────────────────────────────────────────────────────────
 function getPlatformArch() {
-  const os   = process.platform // win32 | darwin | linux
-  const arch = process.arch     // x64 | arm64 | ia32
+  const os   = process.platform
+  const arch = process.arch
   return { os, arch }
 }
 
@@ -70,7 +64,7 @@ function getJavaExe(javaDir) {
 }
 
 // ─── Adoptium (Eclipse Temurin) ───────────────────────────────────────────────
-// API: https://api.adoptium.net/v3/assets/latest/{version}/hotspot
+
 async function fetchAdoptiumVersions() {
   const { os, arch } = getPlatformArch()
   const adoptiumOS   = os === 'win32' ? 'windows' : os === 'darwin' ? 'mac' : 'linux'
@@ -102,7 +96,7 @@ async function fetchAdoptiumVersions() {
 }
 
 // ─── Azul Zulu ────────────────────────────────────────────────────────────────
-// API: https://api.azul.com/metadata/v1/zulu/packages/
+
 async function fetchAzulVersions() {
   const { os, arch } = getPlatformArch()
   const azulOS   = os === 'win32' ? 'windows' : os === 'darwin' ? 'macos' : 'linux'
@@ -133,33 +127,29 @@ async function fetchAzulVersions() {
 }
 
 // ─── GraalVM Community ────────────────────────────────────────────────────────
-// Download from GitHub releases: graalvm/graalvm-ce-builds
-// Tag format: jdk-{version}.x.y  (e.g. jdk-21.0.2, jdk-17.0.9)
+
 async function fetchGraalVMVersions() {
   const { os, arch } = getPlatformArch()
   const graalOS   = os === 'win32' ? 'windows' : os === 'darwin' ? 'macos' : 'linux'
   const graalArch = arch === 'arm64' ? 'aarch64' : 'x64'
   const ext       = os === 'win32' ? 'zip' : 'tar.gz'
 
-  // Minecraft-relevant Java versions supported by GraalVM CE
   const graalVersions = [
     { javaVersion: 25, tagPrefix: 'jdk-25.' },
     { javaVersion: 21, tagPrefix: 'jdk-21.' },
     { javaVersion: 17, tagPrefix: 'jdk-17.' },
   ]
 
-  // Fetch all releases once (up to 30)
   const allReleases = await httpsGet('https://api.github.com/repos/graalvm/graalvm-ce-builds/releases?per_page=30')
   if (!Array.isArray(allReleases)) return []
 
   const results = []
 
   for (const { javaVersion, tagPrefix } of graalVersions) {
-    // Find latest release for this Java version
+
     const release = allReleases.find(r => r.tag_name?.startsWith(tagPrefix))
     if (!release?.assets) continue
 
-    // Find matching asset: graalvm-community-jdk-{ver}_{os}-{arch}_bin.{ext}
     const extEscaped = ext === 'tar.gz' ? 'tar\\.gz' : 'zip'
     const pattern = new RegExp(
       `graalvm-community-jdk-${javaVersion}[^_]*_${graalOS}-${graalArch}_bin\\.${extEscaped}$`,
@@ -200,30 +190,21 @@ async function fetchAllDistros() {
 }
 
 // ─── Install a distro ─────────────────────────────────────────────────────────
-/**
- * Download and install a Java distribution.
- * @param {object} pkg        - package info from fetchAllDistros
- * @param {string} installDir - installation directory (e.g.: instancePath/jre/)
- * @param {function} onProgress
- * @returns {string} path to java executable
- */
+
 async function installDistro(pkg, installDir, onProgress) {
   const { distro, javaVersion, fileName, downloadUrl, isZip, isTarGz } = pkg
 
   const javaExe = getJavaExe(installDir)
 
-  // Already installed
   if (fs.existsSync(javaExe)) {
     onProgress?.({ phase: 'already_installed', percent: 100 })
     return javaExe
   }
 
-  // Temp directory next to installDir
   const tmpDir  = path.join(path.dirname(installDir), '.jre-tmp')
   const tmpFile = path.join(tmpDir, fileName || `java-${distro}-${javaVersion}.archive`)
   if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
-  // Download file
   onProgress?.({ phase: 'downloading', percent: 0, downloaded: 0, total: pkg.size || 0 })
 
   await new Promise((resolve, reject) => {
@@ -264,7 +245,6 @@ async function installDistro(pkg, installDir, onProgress) {
     doGet(downloadUrl)
   })
 
-  // Extract
   onProgress?.({ phase: 'extracting', percent: 0 })
   if (!fs.existsSync(installDir)) fs.mkdirSync(installDir, { recursive: true })
 
@@ -274,23 +254,20 @@ async function installDistro(pkg, installDir, onProgress) {
     await extractTarGz(tmpFile, installDir)
   }
 
-  // Remove temp file
   try { fs.unlinkSync(tmpFile) } catch {}
 
-  // Set executable bit
   if (process.platform !== 'win32') {
     try { fs.chmodSync(javaExe, 0o755) } catch {}
   }
 
   if (!fs.existsSync(javaExe)) {
-    // Some distros have an extra directory level inside
-    // Try to find java in subdirs
+
     const subDirs = fs.readdirSync(installDir, { withFileTypes: true })
       .filter(e => e.isDirectory())
     for (const sub of subDirs) {
       const candidate = getJavaExe(path.join(installDir, sub.name))
       if (fs.existsSync(candidate)) {
-        // Move contents up
+
         const subPath = path.join(installDir, sub.name)
         const entries = fs.readdirSync(subPath)
         for (const entry of entries) {
@@ -331,7 +308,6 @@ function getProfileJreInfo(instancePath) {
   const javaExe = getJavaExe(jreDir)
   if (!fs.existsSync(javaExe)) return null
 
-  // Read metadata if available
   const metaPath = path.join(jreDir, '.vxc-java-meta.json')
   let meta = {}
   try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) } catch {}
@@ -378,3 +354,4 @@ module.exports = {
   getJavaExe,
   MC_JAVA_VERSIONS,
 }
+

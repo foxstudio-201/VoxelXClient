@@ -1,4 +1,4 @@
-﻿/**
+/**
  * VoxelXClient — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
@@ -15,18 +15,16 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Window controls
+
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow:    () => ipcRenderer.send('window-close'),
 
-  // Accounts
   getAccounts:   ()        => ipcRenderer.invoke('accounts:get'),
   addAccount:    (account) => ipcRenderer.invoke('accounts:add', account),
   removeAccount: (id)      => ipcRenderer.invoke('accounts:remove', id),
   selectAccount: (id)      => ipcRenderer.invoke('accounts:select', id),
 
-  // Updater
   checkUpdate:      () => ipcRenderer.invoke('updater:check'),
   openUpdateWindow: (result) => ipcRenderer.invoke('updater:openUpdateWindow', result),
   downloadUpdate:   (opts) => ipcRenderer.invoke('updater:download', opts),
@@ -43,11 +41,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getVersion:  () => ipcRenderer.invoke('app:version'),
 
-  // Settings
   getSettings:  ()       => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch)  => ipcRenderer.invoke('settings:save', patch),
 
-  // Profiles
   getProfiles:    ()            => ipcRenderer.invoke('profiles:get'),
   createProfile:  (profileData) => ipcRenderer.invoke('profiles:create', profileData),
   deleteProfile:  (id)          => ipcRenderer.invoke('profiles:delete', id),
@@ -56,19 +52,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openProfileFolder: (id)          => ipcRenderer.invoke('profiles:openFolder', id),
   updateProfileRam:  (id, ramGb)   => ipcRenderer.invoke('profiles:updateRam', id, ramGb),
 
-  // Fabric Meta API (proxied through main process to avoid CSP)
   fabricGetLoaderVersions: (gameVersion) => ipcRenderer.invoke('fabric:getLoaderVersions', gameVersion),
 
-  // Forge Meta API (proxied through main process)
   forgeGetVersions: (gameVersion) => ipcRenderer.invoke('forge:getVersions', gameVersion),
 
-  // NeoForge Meta API (proxied through main process)
   neoforgeGetVersions: (gameVersion) => ipcRenderer.invoke('neoforge:getVersions', gameVersion),
 
-  // Minecraft version manifest (proxied to avoid CSP)
   minecraftListVersions: () => ipcRenderer.invoke('minecraft:listVersions'),
 
-  // Modpack import
   importModpack: (opts) => ipcRenderer.invoke('profiles:importModpack', opts),
   onImportProgress: (cb) => {
     const handler = (_e, data) => cb(data)
@@ -76,12 +67,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('import:progress', handler)
   },
   saveTempFile: (opts) => ipcRenderer.invoke('profiles:saveTempFile', opts),
-  // Download modpack from URL, create profile, and import — used by Mods browser
+
   downloadAndImportModpack: (opts) => ipcRenderer.invoke('modpack:downloadAndImport', opts),
-  // Open file dialog to select a modpack — returns path directly, no need to pass buffer
+
   browseModpack: ()         => ipcRenderer.invoke('modpack:browse'),
   readModpackMeta: (path)   => ipcRenderer.invoke('modpack:readMeta', path),
-  // Get real path from File object (drag & drop) — uses webUtils
+
   getFilePath: (file) => {
     try {
       const { webUtils } = require('electron')
@@ -91,7 +82,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
-  // Microsoft Auth
   msStartLogin:   ()   => ipcRenderer.invoke('ms:startLogin'),
   msCancelLogin:  ()   => ipcRenderer.invoke('ms:cancelLogin'),
   msRefreshToken: (id) => ipcRenderer.invoke('ms:refreshToken', id),
@@ -106,10 +96,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('ms:loginProgress', handler)
   },
 
-  // Shell
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
 
-  // Modrinth
   modrinthSearch:          (opts)           => ipcRenderer.invoke('modrinth:search', opts),
   spigetSearch:            (opts)           => ipcRenderer.invoke('spiget:search', opts),
   modrinthGetProject:      (idOrSlug)       => ipcRenderer.invoke('modrinth:getProject', idOrSlug),
@@ -123,7 +111,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('modrinth:installProgress', handler)
   },
 
-  // CurseForge
   curseforgeSearch:          (opts)           => ipcRenderer.invoke('curseforge:search', opts),
   curseforgeGetProject:      (id)             => ipcRenderer.invoke('curseforge:getProject', id),
   curseforgeGetVersions:     (id, f)          => ipcRenderer.invoke('curseforge:getVersions', id, f),
@@ -135,7 +122,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('curseforge:installProgress', handler)
   },
 
-  // Technic
   technicSearch:          (opts)           => ipcRenderer.invoke('technic:search', opts),
   technicGetProject:      (id)             => ipcRenderer.invoke('technic:getProject', id),
   technicGetVersions:     (id)             => ipcRenderer.invoke('technic:getVersions', id),
@@ -146,7 +132,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('technic:installProgress', handler)
   },
 
-  // FTB
   ftbSearch:          (opts)  => ipcRenderer.invoke('ftb:search', opts),
   ftbGetProject:      (id)    => ipcRenderer.invoke('ftb:getProject', id),
   ftbGetVersions:     (id)    => ipcRenderer.invoke('ftb:getVersions', id),
@@ -157,7 +142,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('ftb:installProgress', handler)
   },
 
-  // Launcher
   launchGame:      (opts)       => ipcRenderer.invoke('launcher:launch', opts),
   stopGame:        (opts)       => ipcRenderer.invoke('launcher:stop', opts),
   isGameRunning:   (opts)       => ipcRenderer.invoke('launcher:isRunning', opts),
@@ -186,7 +170,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('launcher:stopped', handler)
   },
 
-  // Groups
   getGroups:              ()                   => ipcRenderer.invoke('groups:get'),
   createGroup:            (data)               => ipcRenderer.invoke('groups:create', data),
   deleteGroup:            (id)                 => ipcRenderer.invoke('groups:delete', id),
@@ -194,11 +177,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeProfileFromGroup: (groupId, profileId) => ipcRenderer.invoke('groups:removeProfile', groupId, profileId),
   renameGroup:            (id, name)           => ipcRenderer.invoke('groups:rename', id, name),
 
-  // VoxelXSkin preferences
   saveSkinPrefs: (opts) => ipcRenderer.invoke('skin:savePrefs', opts),
   getSkinPrefs:  (opts) => ipcRenderer.invoke('skin:getPrefs', opts),
 
-  // Profile content (mods, worlds, shaders, resourcepacks)
   profileListMods:          (profileId)            => ipcRenderer.invoke('profile:listMods', profileId),
   profileToggleMod:         (profileId, fileName)  => ipcRenderer.invoke('profile:toggleMod', profileId, fileName),
   profileDeleteMod:         (profileId, fileName)  => ipcRenderer.invoke('profile:deleteMod', profileId, fileName),
@@ -214,7 +195,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   profileUpdate:            (profileId, patch)     => ipcRenderer.invoke('profile:update', profileId, patch),
   profileListJavas:         ()                     => ipcRenderer.invoke('profile:listJavas'),
 
-  // Java distro manager
   javaFetchDistros: (profileId) => ipcRenderer.invoke('java:fetchDistros', profileId),
   javaGetInstalled: (profileId) => ipcRenderer.invoke('java:getInstalled', profileId),
   javaInstall:      (pkg, profileId) => ipcRenderer.invoke('java:install', pkg, profileId),
@@ -225,7 +205,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('java:installProgress', handler)
     return () => ipcRenderer.removeListener('java:installProgress', handler)
   },
-  // Server manager
+
   serverList:          ()                    => ipcRenderer.invoke('server:list'),
   serverCreate:        (opts)                => ipcRenderer.invoke('server:create', opts),
   serverDelete:        (id)                  => ipcRenderer.invoke('server:delete', id),
@@ -296,3 +276,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('server:javaProgress', handler)
   },
 })
+

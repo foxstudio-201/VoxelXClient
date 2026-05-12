@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -9,11 +23,10 @@ export function useCurseForgeSearch(filters) {
   const [total, setTotal]     = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
-  const offsetRef             = useRef(0)   // track current offset without state
+  const offsetRef             = useRef(0)
   const abortRef              = useRef(false)
-  const loadingRef            = useRef(false) // prevent double-fetch
+  const loadingRef            = useRef(false)
 
-  // ── Core fetch ──────────────────────────────────────────────────────────────
   const fetchPage = useCallback(async (offset, append) => {
     if (!isElectron) return
     if (loadingRef.current) return
@@ -34,7 +47,7 @@ export function useCurseForgeSearch(filters) {
       const hits = data.hits || []
       if (append) {
         setResults(prev => {
-          // Deduplicate by project_id
+
           const existing = new Set(prev.map(r => r.project_id))
           const newHits = hits.filter(h => !existing.has(h.project_id))
           return [...prev, ...newHits]
@@ -59,16 +72,14 @@ export function useCurseForgeSearch(filters) {
     JSON.stringify(filters.categories),
   ])
 
-  // ── Reset & search when filters change ──────────────────────────────────────
   useEffect(() => {
-    abortRef.current = true   // cancel any in-flight request
+    abortRef.current = true
     loadingRef.current = false
     offsetRef.current = 0
     setResults([])
     setTotal(0)
     setError(null)
 
-    // Small delay to let abort propagate
     const t = setTimeout(() => {
       abortRef.current = false
       fetchPage(0, false)
@@ -87,7 +98,6 @@ export function useCurseForgeSearch(filters) {
     JSON.stringify(filters.categories),
   ])
 
-  // ── Load more — append next page ─────────────────────────────────────────────
   const loadMore = useCallback(() => {
     if (loadingRef.current) return
     fetchPage(offsetRef.current, true)
@@ -182,3 +192,4 @@ export function useCurseForgeInstall() {
 
   return { install, installing, progress, error, done, reset }
 }
+

@@ -1,4 +1,18 @@
-﻿import { useState, useEffect, useRef } from 'react'
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+import { useState, useEffect, useRef } from 'react'
 import adoptiumIcon from '../../assets/java-icon/adoptium.png'
 import azulIcon     from '../../assets/java-icon/azul.png'
 import vanillaIcon  from '../../assets/server-icon/vanilla-server.png'
@@ -42,7 +56,7 @@ function JavaDropdown({ value, onChange }) {
   const [open, setOpen]       = useState(false)
   const [distros, setDistros] = useState({ adoptium: [], azul: [], graalvm: [] })
   const [loading, setLoading] = useState(false)
-  const [step, setStep]       = useState('distro') // 'distro' | 'versions'
+  const [step, setStep]       = useState('distro')
   const [selDistro, setSelDistro] = useState(null)
   const ref = useRef(null)
 
@@ -67,7 +81,7 @@ function JavaDropdown({ value, onChange }) {
 
   return (
     <div ref={ref} className="relative">
-      {/* Trigger */}
+      {}
       <div role="button" tabIndex={0}
         onClick={() => setOpen(v => !v)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setOpen(v => !v) }}
@@ -102,12 +116,12 @@ function JavaDropdown({ value, onChange }) {
         )}
       </div>
 
-      {/* Dropdown panel */}
+      {}
       {open && (
         <div className="absolute z-[500] left-0 right-0 mt-1 rounded-xl border border-white/10 overflow-hidden"
           style={{ background: 'rgba(14,14,14,0.99)', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', maxHeight: 300, overflowY: 'auto', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 
-          {/* Header */}
+          {}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
             {step === 'versions' && (
               <button type="button" onClick={() => { setStep('distro'); setSelDistro(null) }}
@@ -128,7 +142,7 @@ function JavaDropdown({ value, onChange }) {
             )}
           </div>
 
-          {/* Default option */}
+          {}
           <button type="button" onClick={() => { onChange(null); setOpen(false) }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-white/5 transition-all border-b border-white/5">
             <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center flex-shrink-0">
@@ -143,7 +157,7 @@ function JavaDropdown({ value, onChange }) {
           </button>
 
           {step === 'distro' ? (
-            /* Distro list */
+
             Object.values(JAVA_DISTROS).map(d => (
               <button key={d.id} type="button"
                 onClick={() => { setSelDistro(d.id); setStep('versions') }}
@@ -165,7 +179,7 @@ function JavaDropdown({ value, onChange }) {
               </button>
             ))
           ) : (
-            /* Version list */
+
             currentVersions.length === 0
               ? <div className="px-3 py-4 text-xs text-white/25 text-center">Không có phiên bản nào</div>
               : currentVersions.map(pkg => {
@@ -266,7 +280,6 @@ function JvmPresetDropdown({ value, onChange, ramGb }) {
   const [customValue, setCustomValue] = useState('')
   const ref = useRef(null)
 
-  // Init with default on mount
   useEffect(() => {
     const preset = JVM_PRESETS.find(p => p.id === 'default')
     if (preset && !value) {
@@ -275,7 +288,6 @@ function JvmPresetDropdown({ value, onChange, ramGb }) {
     }
   }, [])
 
-  // Regenerate when RAM changes (for non-custom presets)
   useEffect(() => {
     if (selectedId === 'custom') return
     const preset = JVM_PRESETS.find(p => p.id === selectedId)
@@ -305,7 +317,7 @@ function JvmPresetDropdown({ value, onChange, ramGb }) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Preset selector */}
+      {}
       <div ref={ref} className="relative">
         <button type="button" onClick={() => setOpen(v => !v)}
           className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 focus:outline-none transition-all flex items-center justify-between gap-2 cursor-pointer hover:border-white/20">
@@ -354,7 +366,7 @@ function JvmPresetDropdown({ value, onChange, ramGb }) {
         )}
       </div>
 
-      {/* Args textarea — always visible, editable */}
+      {}
       <textarea
         value={value}
         onChange={e => {
@@ -373,7 +385,7 @@ function JvmPresetDropdown({ value, onChange, ramGb }) {
 }
 
 export default function CreateServerModal({ onClose, onCreate }) {
-  const [step, setStep]           = useState(1) // 1=type, 2=config
+  const [step, setStep]           = useState(1)
   const [selectedType, setType]   = useState(null)
   const [versions, setVersions]   = useState([])
   const [versionsLoading, setVersionsLoading] = useState(false)
@@ -400,7 +412,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
     if (!isElectron || !selectedType) return
     setVersions([])
     setVersionsLoading(true)
-    set('gameVersion', '') // reset version khi đổi type
+    set('gameVersion', '')
     const api = window.electronAPI.serverGetVersionsForType
       ? window.electronAPI.serverGetVersionsForType(selectedType.id)
       : window.electronAPI.serverGetVersions()
@@ -409,7 +421,6 @@ export default function CreateServerModal({ onClose, onCreate }) {
     }).catch(() => {}).finally(() => setVersionsLoading(false))
   }, [selectedType?.id])
 
-  // Close version dropdown on outside click
   useEffect(() => {
     if (!versionOpen) return
     function handler(e) {
@@ -459,7 +470,6 @@ export default function CreateServerModal({ onClose, onCreate }) {
 
       if (r?.error) { setError(r.error); return }
 
-      // Close modal FIRST, then notify parent to trigger Java download
       onClose()
       onCreate?.(r.server, selectedJavaPkg || null)
     } finally {
@@ -479,7 +489,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
         onClick={e => e.stopPropagation()}
         style={{ background: 'rgba(12,12,12,0.98)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 32px 80px rgba(0,0,0,0.8)', maxHeight: '88vh' }}>
 
-        {/* Header */}
+        {}
         <div className="flex-shrink-0 border-b border-white/5">
           <div className="flex items-center justify-between px-5 py-4">
             <div>
@@ -495,7 +505,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
               </svg>
             </button>
           </div>
-          {/* EULA warning banner — only show on step 2 when not accepted */}
+          {}
           {step === 2 && !form.acceptEula && (
             <div className="mx-5 mb-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
               style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}>
@@ -509,10 +519,10 @@ export default function CreateServerModal({ onClose, onCreate }) {
           )}
         </div>
 
-        {/* Body */}
+        {}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           {step === 1 ? (
-            /* Step 1: Server type grid */
+
             <div className="p-5">
               <div className="grid grid-cols-3 gap-3">
                 {SERVER_TYPES.map(t => (
@@ -535,9 +545,9 @@ export default function CreateServerModal({ onClose, onCreate }) {
               </div>
             </div>
           ) : (
-            /* Step 2: Config form */
+
             <div className="p-5 flex flex-col gap-4">
-              {/* Selected type display */}
+              {}
               <div className="flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
                 <img src={selectedType.icon} alt={selectedType.label} className="w-10 h-10 rounded-lg object-contain" />
                 <div>
@@ -550,13 +560,13 @@ export default function CreateServerModal({ onClose, onCreate }) {
                 </button>
               </div>
 
-              {/* Name */}
+              {}
               <div>
                 <label className={labelCls}>Tên server</label>
                 <input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="My Minecraft Server" />
               </div>
 
-              {/* Version */}
+              {}
               <div>
                 <label className={labelCls}>Phiên bản Minecraft</label>
                 <div ref={versionRef} className="relative">
@@ -606,7 +616,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                 </div>
               </div>
 
-              {/* RAM + Cores */}
+              {}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>RAM: <span className="text-green-400 normal-case font-bold">{form.ramGb} GB</span></label>
@@ -624,9 +634,9 @@ export default function CreateServerModal({ onClose, onCreate }) {
                 </div>
               </div>
 
-              {/* Online Mode + Max Players */}
+              {}
               <div className="grid grid-cols-2 gap-3">
-                {/* Online Mode toggle */}
+                {}
                 <div className="flex flex-col gap-2">
                   <label className={labelCls}>Online Mode</label>
                   <button type="button"
@@ -644,7 +654,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                         {form.onlineMode ? 'Bật' : 'Tắt'}
                       </span>
                     </div>
-                    {/* Toggle switch */}
+                    {}
                     <div className={`w-9 h-5 rounded-full transition-all relative flex-shrink-0 ${form.onlineMode ? 'bg-green-500' : 'bg-white/15'}`}>
                       <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${form.onlineMode ? 'left-4' : 'left-0.5'}`} />
                     </div>
@@ -656,7 +666,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                   </p>
                 </div>
 
-                {/* Max Players */}
+                {}
                 <div className="flex flex-col gap-2">
                   <label className={labelCls}>Max Players</label>
                   <input
@@ -670,7 +680,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                 </div>
               </div>
 
-              {/* JVM Arguments */}
+              {}
               <div>
                 <label className={labelCls}>JVM Arguments</label>
                 <JvmPresetDropdown
@@ -680,14 +690,14 @@ export default function CreateServerModal({ onClose, onCreate }) {
                 />
               </div>
 
-              {/* Java Runtime */}
+              {}
               <div>
                 <label className={labelCls}>Java Runtime</label>
                 <JavaDropdown value={selectedJavaPkg} onChange={setSelectedJavaPkg} />
                 <p className="text-[10px] text-white/20 mt-1">Java sẽ được tải vào thư mục server sau khi tạo xong.</p>
               </div>
 
-              {/* Server path */}
+              {}
               <div>
                 <label className={labelCls}>Thư mục server (để trống = tự động)</label>
                 <div className="flex gap-2">
@@ -701,7 +711,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                 </div>
               </div>
 
-              {/* EULA */}
+              {}
               <div className="flex items-start gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
                 <button onClick={() => set('acceptEula', !form.acceptEula)}
                   className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
@@ -729,7 +739,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
           )}
         </div>
 
-        {/* Footer */}
+        {}
         {step === 2 && (
           <div className="flex gap-2 px-5 py-4 border-t border-white/5 flex-shrink-0">
             <button onClick={() => setStep(1)}
@@ -756,3 +766,4 @@ export default function CreateServerModal({ onClose, onCreate }) {
     </div>
   )
 }
+

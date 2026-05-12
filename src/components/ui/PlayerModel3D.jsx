@@ -1,13 +1,25 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useRef, useEffect, useState, Suspense, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
-// Import GLB as Vite assets so paths resolve correctly in production (file:// protocol)
 import wideGlbUrl from '../../assets/model/wide.glb'
 import slimGlbUrl from '../../assets/model/slim.glb'
 
-// Preload cả 2 model
 useGLTF.preload(wideGlbUrl)
 useGLTF.preload(slimGlbUrl)
 
@@ -18,20 +30,17 @@ function PlayerMesh({ modelPath, skinUrl }) {
   const group = useRef()
   const { scene, animations } = useGLTF(modelPath)
 
-  // Clone scene để tránh share state giữa wide/slim
   const clonedScene = useMemo(() => {
     const clone = scene.clone(true)
-    // Ẩn hitbox ngay khi clone
+
     clone.traverse(obj => {
       if (obj.isMesh && obj.name === 'hitbox') obj.visible = false
     })
     return clone
   }, [scene])
 
-  // useAnimations cần ref trỏ đến group chứa clonedScene
   const { actions, names } = useAnimations(animations, group)
 
-  // Play idle animation
   useEffect(() => {
     const idle = actions['idle'] ?? actions[names[0]]
     if (idle) {
@@ -40,7 +49,6 @@ function PlayerMesh({ modelPath, skinUrl }) {
     }
   }, [actions, names])
 
-  // Dispose old materials/textures khi clonedScene thay đổi (tránh GPU leak)
   useEffect(() => {
     return () => {
       clonedScene.traverse(obj => {
@@ -54,45 +62,29 @@ function PlayerMesh({ modelPath, skinUrl }) {
     }
   }, [clonedScene])
 
-  // Apply skin texture
   useEffect(() => {
     if (!skinUrl) return
     let cancelled = false
     let currentTex = null
     let currentMats = []
 
-    /**
-     * Normalize skin to 64×64 data URL.
-     * Handles:
-     *   - 64×32 legacy format  → expand canvas to 64×64, mirror missing limb regions
-     *   - any HD size (128, 256, …) → scale down to 64×64 with pixelated sampling
-     *   - already 64×64        → pass through unchanged
-     */
     const normalizeSkin = (img) => {
       const sw = img.naturalWidth  || img.width
       const sh = img.naturalHeight || img.height
 
-      // Determine canonical scale factor (skin must be power-of-2 multiples of 64)
       const scale = sw / 64
 
       const out = document.createElement('canvas')
       out.width  = 64
       out.height = 64
       const ctx = out.getContext('2d')
-      // Use nearest-neighbor for pixel-art skin
+
       ctx.imageSmoothingEnabled = false
 
       if (sh / sw === 0.5) {
-        // ── Legacy 64×32 (or HD equivalent like 128×64) ──────────────────────
-        // Draw the top half (rows 0-31 in 64×64 space) scaled down
+
         ctx.drawImage(img, 0, 0, sw, sh, 0, 0, 64, 32)
 
-        // Mirror arm/leg regions to fill the bottom half (rows 32-63)
-        // Minecraft legacy UV layout (all coords in 64×64 space):
-        //   Right leg overlay : src (0,16)  8×4 + 4×12 → dst (0,32)
-        //   Left  leg         : mirror of right leg at (16,48)
-        //   Right arm overlay : src (40,16) 8×4 + 4×12 → dst (40,32)
-        //   Left  arm         : mirror of right arm at (32,48)
         const mirrorRegion = (sx, sy, sw2, sh2, dx, dy, flipX) => {
           ctx.save()
           if (flipX) {
@@ -105,12 +97,11 @@ function PlayerMesh({ modelPath, skinUrl }) {
           ctx.restore()
         }
 
-        // Left leg (mirror right leg)
         mirrorRegion(0,  16, 16, 16, 16, 48, true)
-        // Left arm (mirror right arm)
+
         mirrorRegion(40, 16, 16, 16, 32, 48, true)
       } else {
-        // ── Modern 64×64 or HD (128×128, 256×256, …) ─────────────────────────
+
         ctx.drawImage(img, 0, 0, sw, sh, 0, 0, 64, 64)
       }
 
@@ -126,7 +117,6 @@ function PlayerMesh({ modelPath, skinUrl }) {
         tex.flipY      = false
         tex.colorSpace = THREE.SRGBColorSpace
 
-        // Dispose previous texture/materials before replacing
         currentMats.forEach(m => { m.map?.dispose(); m.dispose() })
         currentMats = []
         currentTex?.dispose()
@@ -144,7 +134,6 @@ function PlayerMesh({ modelPath, skinUrl }) {
       }, undefined, (err) => console.warn('Skin apply failed:', err))
     }
 
-    // Load image first (handles both remote URLs and blob/data URLs)
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
@@ -154,7 +143,7 @@ function PlayerMesh({ modelPath, skinUrl }) {
         applyTexture(normalized)
       } catch (e) {
         console.warn('Skin normalize failed, applying raw:', e)
-        // Fallback: apply as-is via canvas copy
+
         const canvas = document.createElement('canvas')
         canvas.width  = img.naturalWidth  || img.width
         canvas.height = img.naturalHeight || img.height
@@ -170,7 +159,7 @@ function PlayerMesh({ modelPath, skinUrl }) {
 
     return () => {
       cancelled = true
-      // Dispose any pending texture/materials on cleanup
+
       currentMats.forEach(m => { m.map?.dispose(); m.dispose() })
       currentMats = []
       currentTex?.dispose()
@@ -204,7 +193,6 @@ function PlayerWithFallback({ uuid, username, modelPath, customSkinUrl }) {
 
   useEffect(() => { setIdx(0); setResolvedDefault(null) }, [uuid, username])
 
-  // Resolve the default skin URL by trying each fallback in order
   useEffect(() => {
     if (customSkinUrl) { setResolvedDefault(null); return }
     if (urls.length === 0) { setResolvedDefault(null); return }
@@ -228,7 +216,6 @@ function PlayerWithFallback({ uuid, username, modelPath, customSkinUrl }) {
     return () => { cancelled = true }
   }, [uuid, username, customSkinUrl, urls])
 
-  // customSkinUrl takes priority; otherwise use resolved default
   const skinUrl = customSkinUrl || resolvedDefault || urls[0] || null
 
   return (
@@ -256,7 +243,6 @@ function LoadingBox() {
 export default function PlayerModel3D({ uuid, username, slim = false, customSkinUrl = null, className = '' }) {
   const modelPath = slim ? slimGlbUrl : wideGlbUrl
 
-  // Pause render loop khi component bị ẩn (display:none) để tiết kiệm GPU
   const [visible, setVisible] = useState(true)
   const containerRef = useRef(null)
   const contextLostHandlerRef = useRef(null)
@@ -272,7 +258,6 @@ export default function PlayerModel3D({ uuid, username, slim = false, customSkin
     return () => obs.disconnect()
   }, [])
 
-  // Cleanup webglcontextlost listener khi unmount
   useEffect(() => {
     return () => {
       const ref = contextLostHandlerRef.current
@@ -288,7 +273,7 @@ export default function PlayerModel3D({ uuid, username, slim = false, customSkin
         gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
         style={{ background: 'transparent' }}
         onCreated={({ gl }) => {
-          // Xử lý context lost/restored gracefully — lưu ref để cleanup đúng
+
           const canvas = gl.domElement
           const handler = (e) => e.preventDefault()
           contextLostHandlerRef.current = { canvas, handler }

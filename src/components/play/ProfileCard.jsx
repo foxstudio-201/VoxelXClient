@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import vanillaIcon    from '../../assets/loader/vanilla.png'
 import fabricIcon     from '../../assets/loader/fabric.png'
 import forgeIcon      from '../../assets/loader/forge.png'
@@ -77,9 +91,9 @@ export default function ProfileCard({
   onDelete,
   onCancelDelete,
 }) {
-  // Background: importBgUrl (modpack image) > version image
+
   const bgImage    = profile.importBgUrl || getVersionImage(profile.gameVersion)
-  // Icon: importIconUrl (modpack icon) > loader icon
+
   const loaderIcon = profile.importIconUrl || LOADER_ICONS[profile.loader] || vanillaIcon
   const loaderColor = LOADER_COLORS[profile.loader] || 'text-green-400'
   const importSrc   = profile.importSource ? IMPORT_SOURCE_CONFIG[profile.importSource] : null
@@ -99,7 +113,7 @@ export default function ProfileCard({
         bg-[#141414]
       `}
     >
-      {/* ── Header: background image ── */}
+      {}
       <div className="relative h-28 overflow-hidden">
         <img
           src={bgImage}
@@ -110,7 +124,7 @@ export default function ProfileCard({
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none" />
 
-        {/* Selected badge */}
+        {}
         {isSelected && (
           <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/90 text-white text-[10px] font-bold">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
@@ -120,12 +134,12 @@ export default function ProfileCard({
           </div>
         )}
 
-        {/* Bottom-left: version + import source tag + modpack tag */}
+        {}
         <div className="absolute bottom-2 left-3 flex items-center gap-1.5 flex-wrap">
           <span className="text-[10px] font-mono text-white/80 bg-black/45 backdrop-blur-sm px-1.5 py-0.5 rounded border border-white/10">
             {profile.gameVersion}
           </span>
-          {/* Import source tag */}
+          {}
           {importSrc && (
             <span
               className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm"
@@ -135,7 +149,7 @@ export default function ProfileCard({
               {importSrc.label}
             </span>
           )}
-          {/* Modpack tag */}
+          {}
           {importSrc && (
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm bg-black/45 border border-white/20 text-white/70">
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
@@ -147,9 +161,9 @@ export default function ProfileCard({
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {}
       <div className="flex items-center gap-3 px-4 py-3">
-        {/* Icon: modpack icon hoặc loader icon */}
+        {}
         <div className="flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden bg-white/5 border border-white/5 flex items-center justify-center">
           <img
             src={loaderIcon}
@@ -160,7 +174,7 @@ export default function ProfileCard({
           />
         </div>
 
-        {/* Info */}
+        {}
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm text-white truncate">{profile.name}</p>
           <div className="flex items-center gap-2 mt-0.5">
@@ -174,10 +188,10 @@ export default function ProfileCard({
         </div>
       </div>
 
-      {/* ── Divider ── */}
+      {}
       <div className="border-t border-white/5" />
 
-      {/* ── Footer ── */}
+      {}
       <div className="relative px-3 py-2.5 flex gap-2 items-center justify-center">
         {confirmDelete && (
           <div className="absolute inset-0 rounded-b-2xl bg-[#141414]/97 border-t border-red-500/20 flex items-center justify-center gap-2 px-3 z-10">
@@ -228,3 +242,4 @@ export default function ProfileCard({
     </div>
   )
 }
+

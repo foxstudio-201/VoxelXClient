@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import GroupSelect from '../ui/GroupSelect'
 
@@ -29,7 +43,7 @@ const VERSION_IMAGES = {
 }
 
 // ─── Version data — fetched from Mojang manifest ─────────────────────────────
-// Hardcode chỉ dùng làm fallback khi offline
+
 const RELEASE_GROUPS_FALLBACK = [
   { major: '1.21', versions: ['1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] },
   { major: '1.20', versions: ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.6'] },
@@ -41,32 +55,21 @@ const RELEASE_GROUPS_FALLBACK = [
   { major: '1.12', versions: ['1.12', '1.12.2'] },
 ]
 
-/**
- * Fetch Mojang version manifest and build grouped version lists.
- * Returns { releaseGroups, vanillaGroups }
- *
- * Strategy for snapshots without a clear major (e.g. "24w46a"):
- *   - Walk the manifest in order (newest first)
- *   - Track the last seen release major; assign snapshots to that major
- *   - This mirrors how Mojang intends them (snapshots lead up to the next release)
- */
 async function fetchVersionGroups() {
-  // Use IPC proxy to avoid CSP restrictions in Electron renderer
+
   let versions
   if (typeof window !== 'undefined' && window.electronAPI?.minecraftListVersions) {
     const result = await window.electronAPI.minecraftListVersions()
     if (result?.error) throw new Error(result.error)
     versions = result.data
   } else {
-    // Fallback: direct fetch (works in browser dev mode)
+
     const res = await fetch('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const manifest = await res.json()
     versions = manifest.versions
   }
 
-  // majorMap: major -> { release:[], pre:[], snapshot:[] }
-  // Special majors: 'Beta', 'Alpha' for old_beta / old_alpha
   const majorMap = new Map()
 
   function ensureMajor(m) {
@@ -74,8 +77,6 @@ async function fetchVersionGroups() {
     return majorMap.get(m)
   }
 
-  // Manifest is newest-first. We walk it and track the "current" major context
-  // so snapshots get assigned to the right major.
   let currentMajor = null
 
   for (const v of versions) {
@@ -83,8 +84,7 @@ async function fetchVersionGroups() {
     const type = v.type
 
     if (type === 'release') {
-      // Only accept standard Minecraft versions: 1.x or 1.x.y
-      // Filter out non-Minecraft entries like "26.1.2" (Dungeons/other)
+
       if (!/^1\.\d+(\.\d+)?$/.test(id)) continue
       const m = id.match(/^(1\.\d+)/)
       if (m) {
@@ -92,13 +92,13 @@ async function fetchVersionGroups() {
         ensureMajor(currentMajor).release.push(id)
       }
     } else if (type === 'snapshot') {
-      // Pre-release / RC: has "-pre" or "-rc" suffix
+
       if (/-(pre|rc)\d*$/i.test(id)) {
         const m = id.match(/^(1\.\d+)/)
         const major = m ? m[1] : currentMajor
         if (major) ensureMajor(major).pre.push(id)
       } else {
-        // Weekly snapshot — assign to currentMajor
+
         if (currentMajor) ensureMajor(currentMajor).snapshot.push(id)
       }
     } else if (type === 'old_beta') {
@@ -108,13 +108,10 @@ async function fetchVersionGroups() {
     }
   }
 
-  // Sort numeric majors descending (1.21 > 1.20 > ... > 1.0)
-  // Mojang manifest is already newest-first, so versions within each group
-  // are already in the correct order — do NOT re-sort them.
   const numericMajors = Array.from(majorMap.keys())
     .filter(m => m !== 'Beta' && m !== 'Alpha')
     .sort((a, b) => {
-      // Compare as version numbers: "1.21" vs "1.20" vs "1.9"
+
       const aParts = a.split('.').map(Number)
       const bParts = b.split('.').map(Number)
       for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
@@ -125,12 +122,10 @@ async function fetchVersionGroups() {
     })
   const sortedMajors = [...numericMajors, 'Beta', 'Alpha'].filter(m => majorMap.has(m))
 
-  // releaseGroups: only numeric majors with at least one release
   const releaseGroups = numericMajors
     .filter(m => majorMap.get(m).release.length > 0)
     .map(m => ({ major: m, versions: majorMap.get(m).release }))
 
-  // vanillaGroups: all majors with any versions
   const vanillaGroups = sortedMajors
     .filter(m => {
       const g = majorMap.get(m)
@@ -148,8 +143,6 @@ async function fetchVersionGroups() {
   return { releaseGroups, vanillaGroups }
 }
 
-// Cache in module scope so we only fetch once per session
-// Set to null to force re-fetch after code changes
 let _versionCache2 = null
 async function getVersionGroups() {
   if (_versionCache2) return _versionCache2
@@ -189,7 +182,6 @@ function GroupContent({ group, selectedVersion, onSelect }) {
   const sections = group.sections || []
   const [activeTab, setActiveTab] = useState(() => sections[0]?.label ?? 'Release')
 
-  // Reset tab when group changes
   const currentTab = sections.find(s => s.label === activeTab) ? activeTab : sections[0]?.label
 
   const TAB_COLORS = {
@@ -202,7 +194,7 @@ function GroupContent({ group, selectedVersion, onSelect }) {
 
   return (
     <div className="border-t border-white/5 bg-black/15">
-      {/* Sub-tabs */}
+      {}
       {sections.length > 1 && (
         <div className="flex gap-1.5 px-3 pt-3 pb-2">
           {sections.map(sec => {
@@ -226,7 +218,7 @@ function GroupContent({ group, selectedVersion, onSelect }) {
         </div>
       )}
 
-      {/* Version grid — scrollable, max 4 rows */}
+      {}
       <div className="overflow-y-auto px-3 pb-3 pt-1" style={{ maxHeight: '160px' }}>
         <div className="grid grid-cols-3 gap-2">
           {currentVersions.map(v => {
@@ -270,7 +262,7 @@ function VanillaVersionAccordion({ selectedVersion, onSelect, groups }) {
 
         return (
           <div key={group.major} className="rounded-xl overflow-hidden border border-white/8">
-            {/* Header */}
+            {}
             <button
               onClick={() => setOpenGroup(isOpen ? null : group.major)}
               className="w-full relative h-44 flex items-end justify-between px-5 pb-4 overflow-hidden group"
@@ -296,9 +288,9 @@ function VanillaVersionAccordion({ selectedVersion, onSelect, groups }) {
               </div>
             </button>
 
-            {/* Content with sub-tabs — animated with calculated maxHeight for smooth transition */}
+            {}
             {(() => {
-              // Calculate max height: tabs bar (~44px) + grid (4 rows max = 160px) + padding (~16px)
+
               const tabsH   = (group.sections?.length ?? 0) > 1 ? 52 : 0
               const gridH   = 160
               const totalH  = tabsH + gridH + 16
@@ -336,12 +328,12 @@ function VersionAccordion({ selectedVersion, onSelect, groups }) {
 
         return (
           <div key={group.major} className="rounded-xl overflow-hidden border border-white/8">
-            {/* Group header */}
+            {}
             <button
               onClick={() => setOpenGroup(isOpen ? null : group.major)}
               className="w-full relative h-44 flex items-end justify-between px-5 pb-4 overflow-hidden group"
             >
-              {/* Background image — zoom on hover */}
+              {}
               <img
                 src={bgImg}
                 alt={group.major}
@@ -349,12 +341,12 @@ function VersionAccordion({ selectedVersion, onSelect, groups }) {
                 style={{ opacity: 1 }}
                 draggable={false}
               />
-              {/* Gradient: chỉ tối phần dưới, trên trong suốt */}
+              {}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
-              {/* Thêm gradient trái để text dễ đọc */}
+              {}
               <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent pointer-events-none" />
 
-              {/* Text ở dưới-trái */}
+              {}
               <div className="relative z-10 flex flex-col items-start">
                 <span className="text-3xl font-black text-white drop-shadow-lg tracking-tight">
                   {group.major}
@@ -362,7 +354,7 @@ function VersionAccordion({ selectedVersion, onSelect, groups }) {
                 <span className="text-sm text-white/60 mt-0.5">{group.versions.length} phiên bản</span>
               </div>
 
-              {/* Arrow */}
+              {}
               <div className="relative z-10 self-end">
                 <svg
                   viewBox="0 0 24 24"
@@ -374,7 +366,7 @@ function VersionAccordion({ selectedVersion, onSelect, groups }) {
               </div>
             </button>
 
-            {/* Version grid — animated open/close */}
+            {}
             <div
               className="overflow-hidden transition-all duration-300 ease-in-out"
               style={{
@@ -412,16 +404,15 @@ function VersionAccordion({ selectedVersion, onSelect, groups }) {
 }
 
 // ─── LoaderVersionList ────────────────────────────────────────────────────────
-// Sub-tabs: Stable | Beta | Old  (Fabric)
-//           Recommended | Latest | All  (Forge)
+
 function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
   const loaderCfg = LOADERS.find(l => l.id === loader)
-  const [versions, setVersions]         = useState([])   // Fabric: [{version,stable}] | Forge: [string]
+  const [versions, setVersions]         = useState([])
   const [forgePromos, setForgePromos]   = useState({ recommended: null, latest: null })
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState(null)
-  const [activeTab, setActiveTab]       = useState('stable') // fabric tabs
-  const [forgeTab, setForgeTab]         = useState('recommended') // forge tabs
+  const [activeTab, setActiveTab]       = useState('stable')
+  const [forgeTab, setForgeTab]         = useState('recommended')
 
   const doFetch = useCallback(async () => {
     setVersions([])
@@ -480,7 +471,6 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
     doFetch()
   }, [loader, gameVersion, doFetch])
 
-  // ── Loading ──
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
       <svg className={`animate-spin w-5 h-5 ${loader === 'fabric' ? 'text-purple-400' : 'text-orange-400'}`}
@@ -492,7 +482,6 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
     </div>
   )
 
-  // ── Error ──
   if (error) return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-red-400/50">
@@ -506,9 +495,6 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
     </div>
   )
 
-  // ══════════════════════════════════════════════════════
-  // FABRIC — sub-tabs: Stable | Beta | Old
-  // ══════════════════════════════════════════════════════
   if (loader === 'fabric') {
     const allStable  = versions.filter(v => v.stable)
     const allBeta    = versions.filter(v => !v.stable)
@@ -526,7 +512,7 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
 
     return (
       <div className="flex flex-col gap-3">
-        {/* Sub-tabs */}
+        {}
         <div className="flex gap-1.5 p-1 bg-white/4 rounded-xl border border-white/5">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -542,7 +528,7 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
             </button>
           ))}
         </div>
-        {/* List */}
+        {}
         {currentVersions.length === 0
           ? <div className="flex items-center justify-center py-8"><p className="text-xs text-white/20">Không có phiên bản nào</p></div>
           : <div className="flex flex-col gap-0.5">
@@ -566,14 +552,10 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
     )
   }
 
-  // ══════════════════════════════════════════════════════
-  // FORGE — sub-tabs: Recommended | Latest | All
-  // ══════════════════════════════════════════════════════
   if (loader === 'forge' || loader === 'neoforge') {
     const { recommended, latest } = forgePromos
     const isNeo = loader === 'neoforge'
 
-    // Phân loại
     const recVersions    = recommended ? versions.filter(v => v === recommended) : []
     const latestVersions = latest && latest !== recommended ? versions.filter(v => v === latest) : []
     const allVersions    = versions
@@ -594,7 +576,7 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
 
     return (
       <div className="flex flex-col gap-3">
-        {/* Sub-tabs */}
+        {}
         <div className="flex gap-1.5 p-1 bg-white/4 rounded-xl border border-white/5">
           {FORGE_TABS.map(tab => (
             <button key={tab.id} onClick={() => setForgeTab(tab.id)}
@@ -610,7 +592,7 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
             </button>
           ))}
         </div>
-        {/* List */}
+        {}
         {currentForgeVersions.length === 0
           ? <div className="flex items-center justify-center py-8"><p className="text-xs text-white/20">Không có phiên bản nào</p></div>
           : <div className="flex flex-col gap-0.5">
@@ -652,14 +634,12 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
   const [submitting, setSubmitting]       = useState(false)
   const [versionGroups, setVersionGroups] = useState({ releaseGroups: RELEASE_GROUPS_FALLBACK, vanillaGroups: null })
 
-  // Fetch version list from Mojang on mount
   useEffect(() => {
     getVersionGroups().then(groups => setVersionGroups(groups)).catch(() => {})
   }, [])
 
   const loaderCfg = LOADERS.find(l => l.id === loader)
 
-  // Reset loader version when loader or game version changes
   function handleLoaderChange(newLoader) {
     setLoader(newLoader)
     setLoaderVersion('')
@@ -668,7 +648,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
 
   function handleGameVersionSelect(v) {
     setGameVersion(v)
-    setLoaderVersion('') // reset loader version when game version changes
+    setLoaderVersion('')
   }
 
   async function handleBrowse() {
@@ -700,23 +680,23 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
   const canSubmit = gameVersion && (loader === 'vanilla' || loaderVersion)
 
   return (
-    /* Backdrop */
+
     <div
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      {/* Modal — wider total, left col bigger */}
+      {}
       <div
         className="bg-[#141414] rounded-2xl border border-white/5 shadow-2xl flex overflow-hidden"
         style={{ width: 1100, maxHeight: '92vh' }}
         onClick={e => e.stopPropagation()}
       >
-        {/* ── LEFT COLUMN — form + loader selector ── */}
+        {}
         <div
           className="flex flex-col gap-5 p-7 border-r border-white/5 flex-shrink-0 overflow-y-auto"
           style={{ width: 380 }}
         >
-          {/* Title */}
+          {}
           <div>
             <h2 className="text-base font-bold text-white">Tạo Profile</h2>
             <p className={`text-xs mt-0.5 ${loaderCfg?.text}`}>
@@ -725,7 +705,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
             </p>
           </div>
 
-          {/* Version preview image */}
+          {}
           <div className="rounded-xl overflow-hidden border border-white/5" style={{ height: 140 }}>
             <img
               src={getVersionImage(gameVersion)}
@@ -735,7 +715,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
             />
           </div>
 
-          {/* Profile name */}
+          {}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
               Tên profile
@@ -755,7 +735,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
             />
           </div>
 
-          {/* Instance path */}
+          {}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
               Thư mục game
@@ -793,7 +773,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           </div>
 
-          {/* Group selector */}
+          {}
           {groups.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
@@ -807,7 +787,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           )}
 
-          {/* ── Loader selector — dưới thư mục game ── */}
+          {}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
               Loader
@@ -834,10 +814,10 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           </div>
 
-          {/* Spacer */}
+          {}
           <div className="flex-1" />
 
-          {/* Submit button */}
+          {}
           <button
             type="button"
             onClick={handleSubmit}
@@ -863,9 +843,9 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
           </button>
         </div>
 
-        {/* ── RIGHT COLUMN — chỉ chứa danh sách version ── */}
+        {}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          {/* Header */}
+          {}
           <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
             <p className="text-xs text-white/30 font-semibold uppercase tracking-wider">
               {loader === 'vanilla'
@@ -887,7 +867,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
 
           <div className="border-t border-white/5 flex-shrink-0" />
 
-          {/* Scrollable version list only */}
+          {}
           <div className="flex-1 overflow-y-auto px-6 py-5">
             {loader === 'vanilla' ? (
               <VanillaVersionAccordion
@@ -896,7 +876,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
                 groups={versionGroups.vanillaGroups ?? versionGroups.releaseGroups.map(g => ({ major: g.major, sections: [{ label: 'Release', versions: g.versions }] }))}
               />
             ) : !gameVersion ? (
-              /* Fabric/Forge/NeoForge step 1: pick game version */
+
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center text-[10px] font-bold text-white">1</div>
@@ -926,9 +906,9 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
                 />
               </div>
             ) : (
-              /* Fabric/Forge step 2: pick loader version */
+
               <div>
-                {/* Back to game version */}
+                {}
                 <button
                   onClick={() => { setGameVersion(''); setLoaderVersion('') }}
                   className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 mb-4 transition-colors"
@@ -957,3 +937,4 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
     </div>
   )
 }
+

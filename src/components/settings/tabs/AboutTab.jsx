@@ -1,13 +1,26 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-// VoxelXClient logo — 4 ô vuông xanh
 function VXCLogo({ size = 56 }) {
   const s = size
   const half = s / 2
-  const gap = s * 0.054  // ~1.3px at 24px
-  const r = s * 0.063    // corner radius
+  const gap = s * 0.054
+  const r = s * 0.063
 
   return (
     <svg viewBox="0 0 24 24" fill="none" width={s} height={s}>
@@ -63,9 +76,9 @@ export default function AboutTab() {
   return (
     <div className="h-full overflow-y-auto px-6 py-5">
 
-      {/* Hero card */}
+      {}
       <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07] p-6 mb-6 relative overflow-hidden">
-        {/* Grid bg */}
+        {}
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
@@ -76,11 +89,11 @@ export default function AboutTab() {
             backgroundSize: '20px 20px',
           }}
         />
-        {/* Glow */}
+        {}
         <div className="absolute bottom-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-5">
-          {/* Logo */}
+          {}
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400/20 to-emerald-600/20 border border-green-500/20 flex items-center justify-center flex-shrink-0">
             <VXCLogo size={32} />
           </div>
@@ -97,7 +110,7 @@ export default function AboutTab() {
         </div>
       </div>
 
-      {/* Tech info */}
+      {}
       <div className="mb-6">
         <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">Thông tin kỹ thuật</p>
         <div className="rounded-xl border border-white/5 bg-white/2 px-4">
@@ -109,7 +122,7 @@ export default function AboutTab() {
         </div>
       </div>
 
-      {/* Links */}
+      {}
       <div className="mb-6">
         <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">Liên kết</p>
         <div className="flex flex-col gap-2">
@@ -143,7 +156,7 @@ export default function AboutTab() {
         </div>
       </div>
 
-      {/* Copyright */}
+      {}
       <div className="text-center py-4 border-t border-white/5">
         <p className="text-[11px] text-white/20">© 2026 FoxStudio. All rights reserved.</p>
         <p className="text-[10px] text-white/12 mt-1">Released under the MIT License</p>
@@ -151,3 +164,4 @@ export default function AboutTab() {
     </div>
   )
 }
+

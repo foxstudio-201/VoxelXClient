@@ -1,4 +1,16 @@
-// ANSI + Minecraft § color parsing utilities for server console
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
 
 function ansi256ToHex(n) {
   if (n < 16) {
@@ -58,7 +70,7 @@ export function parseColors(text) {
     if (italic) style.fontStyle = 'italic'
     const deco = [underline && 'underline', strike && 'line-through'].filter(Boolean).join(' ')
     if (deco) style.textDecoration = deco
-    // eslint-disable-next-line react/react-in-jsx-scope
+
     parts.push(<span key={key++} style={Object.keys(style).length ? style : undefined}>{str}</span>)
   }
 
@@ -102,7 +114,7 @@ export function parseColors(text) {
       else if (code === 'o') italic = true
       else if (code === 'n') underline = true
       else if (code === 'm') strike = true
-      else if (code === 'k') { /* obfuscated */ }
+      else if (code === 'k') {  }
       else if (MC_COLORS[code]) { fg = MC_COLORS[code]; hasColor = true }
     }
     lastIndex = m.index + m[0].length
@@ -132,3 +144,4 @@ export function getLineColor(line) {
     default:         return '#9ca3af'
   }
 }
+

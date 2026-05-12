@@ -1,3 +1,17 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
 import { useState, useEffect } from 'react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
@@ -34,12 +48,12 @@ function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
         }
       `}
     >
-      {/* Head */}
+      {}
       <div className={`rounded-lg overflow-hidden flex-shrink-0 ${isSelected ? 'ring-1 ring-green-500/50' : ''}`}>
         <PlayerHead uuid={account.uuid} username={account.username} size={36} />
       </div>
 
-      {/* Info */}
+      {}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className={`text-sm font-semibold truncate ${isSelected ? 'text-white' : 'text-white/65'}`}>
@@ -52,14 +66,14 @@ function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
         </p>
       </div>
 
-      {/* Selected check */}
+      {}
       {isSelected && (
         <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-green-400 flex-shrink-0">
           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
         </svg>
       )}
 
-      {/* Delete — hover */}
+      {}
       {confirmId !== account.id && (
         <button
           onClick={e => { e.stopPropagation(); onRemove(account.id) }}
@@ -90,15 +104,14 @@ export default function AccountPage() {
   const [slim, setSlim]                       = useState(false)
   const [showUuid, setShowUuid]               = useState(false)
   const [copied, setCopied]                   = useState(false)
-  const [skinSubTab, setSkinSubTab]           = useState('skin') // 'skin' | 'cape' | 'elytra'
+  const [skinSubTab, setSkinSubTab]           = useState('skin')
   const [cosmeticData, setCosmeticData]       = useState([])
   const [cosmeticLoading, setCosmeticLoading] = useState(false)
-  const [appliedSkinUrl, setAppliedSkinUrl]   = useState(null) // custom skin URL for preview
+  const [appliedSkinUrl, setAppliedSkinUrl]   = useState(null)
   const isElectronCtx = typeof window !== 'undefined' && window.electronAPI
 
   const selected = accounts.find(a => a.id === selectedId) ?? accounts[0] ?? null
 
-  // Load applied skin prefs when selected account changes
   const isElectron = typeof window !== 'undefined' && window.electronAPI
   useEffect(() => {
     if (!selected?.uuid) { setAppliedSkinUrl(null); return }
@@ -107,7 +120,7 @@ export default function AccountPage() {
         const prefs = isElectron
           ? await window.electronAPI.getSkinPrefs({ uuid: selected.uuid })
           : JSON.parse(localStorage.getItem(`vxc_skin_prefs_${selected.uuid}`) || 'null')
-        // Filter out invalid blob URLs that can't persist across reloads
+
         const skinUrl = prefs?.skinUrl
         if (skinUrl && skinUrl.startsWith('blob:')) {
           console.warn('Invalid blob URL found in prefs, clearing:', skinUrl)
@@ -120,7 +133,6 @@ export default function AccountPage() {
     load()
   }, [selected?.uuid])
 
-  // Fetch cosmetic data from VoxelXSkin API
   useEffect(() => {
     const controller = new AbortController()
     setCosmeticLoading(true)
@@ -135,7 +147,6 @@ export default function AccountPage() {
     return () => controller.abort()
   }, [])
 
-  // Reset showUuid khi đổi account
   const prevSelectedId = useState(selectedId)
   if (prevSelectedId[0] !== selectedId) {
     prevSelectedId[0] = selectedId
@@ -178,10 +189,9 @@ export default function AccountPage() {
     return result
   }
 
-  // Áp dụng skin trực tiếp từ grid (không mở modal)
   async function handleSelectSkinFromGrid(item) {
     if (item.isDefault) {
-      // Xóa custom skin, dùng skin mặc định
+
       const newPrefs = {
         uuid:      selected?.uuid,
         skinUrl:   null,
@@ -199,7 +209,7 @@ export default function AccountPage() {
       setSlim(false)
       toast({ type: 'success', title: 'Đã áp dụng', message: 'Skin mặc định' })
     } else {
-      // Skin custom đã được lưu, chỉ cần set lại state
+
       setAppliedSkinUrl(item.url)
       toast({ type: 'success', title: 'Đã áp dụng', message: 'Skin custom' })
     }
@@ -208,12 +218,12 @@ export default function AccountPage() {
   return (
     <div className="flex w-full h-full overflow-hidden">
 
-      {/* ── LEFT: danh sách tài khoản + skin subtabs ── */}
+      {}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/5">
 
-        {/* ── Phần trên: Danh sách tài khoản ── */}
+        {}
         <div className="flex flex-col" style={{ maxHeight: '55%', minHeight: 180 }}>
-          {/* Header */}
+          {}
           <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
             <div>
               <h1 className="text-lg font-bold text-white">Tài khoản</h1>
@@ -234,7 +244,7 @@ export default function AccountPage() {
             </button>
           </div>
 
-          {/* List */}
+          {}
           <div className="flex-1 overflow-y-auto px-4 pb-3" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
             {loading ? (
               <div className="flex items-center justify-center h-24">
@@ -291,12 +301,12 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Divider */}
+        {}
         <div className="flex-shrink-0 h-px bg-white/5 mx-4" />
 
-        {/* ── Phần dưới: Skin / Cape / Elytra subtabs ── */}
+        {}
         <div className="flex flex-col flex-1 overflow-hidden">
-          {/* SubTab header */}
+          {}
           <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2">
             <div className="flex gap-0 border-b border-white/5 flex-1">
               {[
@@ -314,7 +324,7 @@ export default function AccountPage() {
                 </button>
               ))}
             </div>
-            {/* Nút tuỳ chỉnh */}
+            {}
             <button
               onClick={() => setShowSkinModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white/50 hover:text-white hover:bg-white/8 border border-white/8 transition-all ml-2 flex-shrink-0"
@@ -327,16 +337,14 @@ export default function AccountPage() {
             </button>
           </div>
 
-          {/* SubTab content */}
+          {}
           <div className="flex-1 overflow-y-auto px-4 pb-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 {(() => {
-  // Build default skin URL from Minecraft username/UUID
+
   const defaultSkinUrl = selected?.username ? `https://minotar.net/skin/${selected.username}` : null
 
-  // Panel dưới hiện skin gốc + skin custom
   const savedItems = []
 
-  // Always show default Minecraft skin first (online or offline)
   if (skinSubTab === 'skin' && defaultSkinUrl) {
     savedItems.push({
       url: defaultSkinUrl,
@@ -346,7 +354,6 @@ export default function AccountPage() {
     })
   }
 
-  // Then show custom applied skin
   if (skinSubTab === 'skin' && appliedSkinUrl) {
     savedItems.push({ url: appliedSkinUrl, label: 'Custom', active: true, isDefault: false })
   }
@@ -400,14 +407,14 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* ── RIGHT: 3D skin model ── */}
+      {}
       <div
         className="flex-shrink-0 flex flex-col relative overflow-hidden"
         style={{ width: 240, minWidth: 200, maxWidth: 260 }}
       >
-        {/* Background — dark green gradient + grid như hero section */}
+        {}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07]">
-          {/* Grid pattern */}
+          {}
           <div
             className="absolute inset-0 opacity-10"
             style={{
@@ -418,13 +425,13 @@ export default function AccountPage() {
               backgroundSize: '24px 24px',
             }}
           />
-          {/* Glow orb center */}
+          {}
           <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 w-40 h-40 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
         </div>
 
         {selected ? (
           <>
-            {/* 3D Model — flex-1 để chiếm hết không gian còn lại */}
+            {}
             <div className="relative z-10 w-full flex-1 min-h-0">
               <PlayerModel3D
                 uuid={selected.uuid}
@@ -434,11 +441,11 @@ export default function AccountPage() {
               />
             </div>
 
-            {/* Info + slim toggle — cố định ở dưới */}
+            {}
             <div className="relative z-10 text-center px-4 py-3 flex-shrink-0 border-t border-white/5">
               <p className="text-sm font-bold text-white truncate">{selected.username}</p>
 
-              {/* UUID với show/hide + copy */}
+              {}
               <div className="flex items-center justify-center gap-1.5 mt-1">
                 <p className="text-[10px] text-white/30 font-mono truncate max-w-[120px]">
                   {showUuid
@@ -446,7 +453,7 @@ export default function AccountPage() {
                     : selected.uuid.slice(0, 8) + '···'
                   }
                 </p>
-                {/* Toggle show */}
+                {}
                 <button
                   onClick={() => setShowUuid(v => !v)}
                   className="text-white/20 hover:text-white/60 transition-colors flex-shrink-0"
@@ -462,7 +469,7 @@ export default function AccountPage() {
                     </svg>
                   )}
                 </button>
-                {/* Copy */}
+                {}
                 <button
                   onClick={handleCopyUuid}
                   className="text-white/20 hover:text-white/60 transition-colors flex-shrink-0"
@@ -481,7 +488,7 @@ export default function AccountPage() {
               </div>
               <div className="mt-2 flex items-center justify-center gap-2">
                 <AccountTypeTag type={selected.type} />
-                {/* Slim/Wide toggle */}
+                {}
                 <button
                   onClick={() => setSlim(v => !v)}
                   className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-all"
@@ -503,7 +510,7 @@ export default function AccountPage() {
         )}
       </div>
 
-      {/* Modal thêm tài khoản */}
+      {}
       {showModal && (
         <AddAccountModal
           onClose={() => setShowModal(false)}
@@ -511,7 +518,7 @@ export default function AccountPage() {
         />
       )}
 
-      {/* Modal tuỳ chỉnh skin */}
+      {}
       {showSkinModal && (
         <SkinCustomizeModal
           account={selected}
@@ -530,3 +537,4 @@ export default function AccountPage() {
     </div>
   )
 }
+
