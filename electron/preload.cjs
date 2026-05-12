@@ -257,6 +257,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('server:playerCount', handler)
     return () => ipcRenderer.removeListener('server:playerCount', handler)
   },
+  onServerLog: (cb) => {
     const handler = (_e, data) => cb(data)
     ipcRenderer.on('server:log', handler)
     return () => ipcRenderer.removeListener('server:log', handler)
