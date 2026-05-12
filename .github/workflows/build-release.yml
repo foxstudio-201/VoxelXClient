@@ -196,7 +196,7 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập chung vào **chạy song song nhiều tài khoản** và **cải tiến Server Manager**.
+            > Bản cập nhật tập chung vào **chạy song song nhiều tài khoản** và **cải tiến Server Manager** sửa lỗi trên linux khi khởi chạy game.
 
             ---
 
@@ -219,6 +219,12 @@ jobs:
             - IP nội bộ hiển thị trên panel, nút copy, ưu tiên tunnel address
             - RAM bar hiển thị đúng theo -Xmx, không vượt 100%
 
+            ---
+
+            ### Linux fix khởi chạy game
+
+            - Chỉnh sửa hệ thống giải nén dữ liệu các file jar để phù hợp với OS Linux.
+            
             ---
 
             ### ### 📦 Download
