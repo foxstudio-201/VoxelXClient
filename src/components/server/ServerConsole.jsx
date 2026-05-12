@@ -25,7 +25,7 @@ export default function ServerConsole({ server, onBack }) {
   const [tunnelLog, setTunnelLog]       = useState([])
 
   // Realtime stats
-  const [stats, setStats] = useState({ cpu: 0, ramMb: 0 })
+  const [stats, setStats] = useState({ cpu: 0, ramMb: 0, xmxMb: (server?.ramGb || 2) * 1024, rssMb: 0 })
   const statsIntervalRef  = useRef(null)
 
   const logEndRef = useRef(null)
@@ -74,13 +74,18 @@ export default function ServerConsole({ server, onBack }) {
   useEffect(() => {
     clearInterval(statsIntervalRef.current)
     if (!isElectron || !server || status !== 'online') {
-      setStats({ cpu: 0, ramMb: 0 })
+      setStats({ cpu: 0, ramMb: 0, xmxMb: (server?.ramGb || 2) * 1024 })
       return
     }
     const poll = async () => {
       try {
         const r = await window.electronAPI.serverGetStats(server.id)
-        if (r?.ok && r.running) setStats({ cpu: r.cpu ?? 0, ramMb: r.ramMb ?? 0 })
+        if (r?.ok && r.running) setStats({
+          cpu:   r.cpu   ?? 0,
+          ramMb: r.ramMb ?? 0,
+          xmxMb: r.xmxMb ?? (server.ramGb || 2) * 1024,
+          rssMb: r.rssMb ?? 0,
+        })
       } catch {}
     }
     poll()
@@ -321,11 +326,11 @@ export default function ServerConsole({ server, onBack }) {
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
               <div className="h-full bg-blue-400/60 rounded-full transition-all duration-1000"
-                style={{ width: isRunning && stats.ramMb > 0 ? `${Math.min(100, Math.round(stats.ramMb / (server.ramGb * 1024) * 100))}%` : '0%' }} />
+                style={{ width: isRunning && stats.ramMb > 0 ? `${Math.min(100, Math.round(stats.ramMb / stats.xmxMb * 100))}%` : '0%' }} />
             </div>
             <p className="text-xs text-white/35 mt-1 font-mono">
               {isRunning && stats.ramMb > 0
-                ? `${stats.ramMb} MB / ${server.ramGb * 1024} MB`
+                ? `${stats.ramMb} MB / ${stats.xmxMb} MB`
                 : isRunning ? 'Đang đo...' : 'Không hoạt động'}
             </p>
           </div>

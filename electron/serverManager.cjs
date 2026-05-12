@@ -623,11 +623,22 @@ function registerServerHandlers(getTrustedWindow) {
     try {
       const pidusage = require('pidusage')
       const stats = await pidusage(entry.proc.pid)
+      // RSS includes JVM overhead — cap at configured Xmx to avoid showing > 100%
+      // Read server config to get ramGb
+      const data = readServers()
+      const server = data.servers.find(s => s.id === serverId)
+      const xmxMb = (server?.ramGb || 2) * 1024
+      const rssMb = Math.round(stats.memory / 1024 / 1024)
+      // Heap used is typically RSS minus ~200-400MB JVM overhead
+      // Cap display at xmxMb so bar never exceeds 100%
+      const displayMb = Math.min(rssMb, xmxMb)
       return {
-        ok:     true,
+        ok:      true,
         running: true,
-        cpu:    Math.min(100, Math.round(stats.cpu * 10) / 10),   // %
-        ramMb:  Math.round(stats.memory / 1024 / 1024),           // MB
+        cpu:     Math.min(100, Math.round(stats.cpu * 10) / 10),
+        ramMb:   displayMb,
+        rssMb,   // raw RSS for tooltip
+        xmxMb,
       }
     } catch {
       return { ok: true, running: true, cpu: 0, ramMb: 0 }
