@@ -1,4 +1,4 @@
-name: Build & Release
+﻿name: Build & Release
 
 on:
   push:
@@ -196,62 +196,32 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **Server Manager** — quản lý server Minecraft hoàn chỉnh ngay trong launcher với plugin, mod, cài đặt, whitelist và ban list.
+            > Ban cap nhat tap trung vao **chay song song nhieu tai khoan** va **cai tien Server Manager**.
 
             ---
 
-            ### 🖥️ Server Console
+            ### Chay song song nhieu tai khoan
 
-            - Tab-complete lệnh Minecraft với 60+ lệnh gợi ý theo ngữ cảnh
-            - Tự động thêm `/` — chỉ cần gõ tên lệnh
-            - Realtime RAM/CPU từ process thực tế (pidusage), không còn hardcode
-            - RAM bar hiển thị đúng theo `-Xmx`, không vượt 100%
-            - IP nội bộ hiển thị ngay trên panel, nút copy một chạm
-            - Nếu bore tunnel đang bật → hiện địa chỉ tunnel thay thế
+            - Ho tro chay cung 1 profile voi nhieu tai khoan khac nhau cung luc
+            - Moi instance doc lap, khong anh huong lan nhau
+            - Quan ly nhieu instance dang chay tu cung mot giao dien
 
             ---
 
-            ### � Plugins & Mods Tab
+            ### Server Manager — Cai tien
 
-            - Tab **Plugins**: sub-tab Modrinth + Spigot với icon riêng
-            - Tab **Mods**: tìm kiếm mod từ Modrinth
-            - Tự động filter loader theo loại server (Paper → bukkit/spigot/paper, Fabric → fabric/quilt...)
-            - Modal chọn phiên bản: bộ lọc release/beta/alpha cố định trên header, không scroll cùng list
-            - Loader tags màu sắc theo từng loại
-            - Tải plugin/mod thẳng vào thư mục `plugins/` hoặc `mods/` của server
-
-            ---
-
-            ### ⚙️ Settings Tab (mới)
-
-            - **Cấu hình**: MOTD, Max Players, Port, Gamemode, Difficulty, Level Name
-            - Toggle: Online Mode, Whitelist, PvP
-            - RAM slider, CPU Cores, JVM Arguments, Java Path
-            - Custom dropdown thay thế `<select>` native
-            - **Whitelist**: thêm/xoá player, checkbox chọn nhiều, avatar player
-            - **Banned**: danh sách ban với countdown thời gian, auto-unban khi hết hạn, unban hàng loạt
+            - Them 2 loai server moi: **Arclight** (Forge + Paper) va **Magma** (Forge + Bukkit)
+            - Danh sach phien ban theo dung loai server, khong con hien phien ban khong ho tro
+            - Tab **Settings**: cau hinh MOTD, Max Players, Port, Gamemode, Difficulty
+            - Tab **Whitelist**: them/xoa player, avatar, chon nhieu
+            - Tab **Banned**: countdown thoi gian ban, auto-unban, unban hang loat
+            - Tab-complete lenh Minecraft (60+ lenh) voi goi y theo ngu canh
+            - IP noi bo hien thi tren panel, nut copy, uu tien tunnel address
+            - RAM bar hien thi dung theo -Xmx, khong vuot 100%
 
             ---
 
-            ### 🃏 Server Card
-
-            - Icon lớn hơn, tên to hơn
-            - Hiện ping ms (TCP), player count realtime, RAM/Cores
-            - Ping bars màu theo latency
-
-            ---
-
-            ### 🔧 Sửa lỗi & Cải tiến
-
-            - Sidebar: icon Server thay Globe, label "Server" thay "Worlds"
-            - Tắt DevTools trong bản production
-            - Version splash screen lấy từ Electron IPC (luôn đúng sau update)
-            - Sửa encoding UTF-8 console server
-            - Sửa lỗi preload `onServerLog` bị mất khai báo
-
-            ---
-
-            ### 📦 Download
+            ### ### 📦 Download
 
             | Nền tảng | File | Ghi chú |
             |----------|------|---------|
