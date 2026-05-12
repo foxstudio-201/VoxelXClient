@@ -16,7 +16,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
 import PlayerHead from './ui/PlayerHead'
 import ProfileSettingsPanel from './home/ProfileSettingsPanel'
-
 import vanillaIcon from '../assets/loader/vanilla.png'
 import fabricIcon from '../assets/loader/fabric.png'
 import forgeIcon from '../assets/loader/forge.png'
@@ -32,6 +31,280 @@ import v118 from '../assets/minecraft-versions/1.18.png'
 import v119 from '../assets/minecraft-versions/1.19.png'
 import v120 from '../assets/minecraft-versions/1.20.png'
 import v121 from '../assets/minecraft-versions/1.21.png'
+
+function stripHtmlTags(text) {
+  return String(text || '')
+    // Remove entire <div>...</div> blocks (header with badges/logo)
+    .replace(/<div[\s\S]*?<\/div>/gi, '')
+    // Remove self-closing tags like <img ... />
+    .replace(/<[^>]+\/>/g, '')
+    // Convert <br> to newline
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<p[^>]*>/gi, '')
+    // Remove all remaining HTML tags
+    .replace(/<[^>]+>/g, '')
+    // Decode HTML entities
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    // Remove leftover shields.io or raw github URLs on their own line
+    .replace(/^https?:\/\/img\.shields\.io[^\n]*/gm, '')
+    .replace(/^https?:\/\/raw\.githubusercontent[^\n]*/gm, '')
+    // Clean up excessive blank lines
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function renderInlineMarkdown(text) {
+  const parts = []
+  const regex = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s]+)/g
+  let lastIndex = 0
+  let match
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+
+    const token = match[0]
+    const link = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+    if (link) {
+      parts.push(
+        <button
+          key={`${match.index}-link`}
+          onClick={() => window.electronAPI?.openExternal?.(link[2])}
+          className="text-green-400 hover:text-green-300 underline underline-offset-2"
+        >
+          {link[1]}
+        </button>
+      )
+    } else if (token.startsWith('http')) {
+      parts.push(
+        <button
+          key={`${match.index}-url`}
+          onClick={() => window.electronAPI?.openExternal?.(token)}
+          className="text-green-400 hover:text-green-300 underline underline-offset-2 break-all"
+        >
+          {token}
+        </button>
+      )
+    } else if (token.startsWith('**')) {
+      parts.push(<strong key={`${match.index}-bold`} className="text-white/90 font-bold">{token.slice(2, -2)}</strong>)
+    }
+
+    lastIndex = match.index + token.length
+  }
+
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+  return parts
+}
+
+function renderPatchNotesBody(body) {
+  const clean = stripHtmlTags(body)
+  if (!clean) return <p className="text-white/40">Không có nội dung patch note</p>
+
+  return clean
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line =>
+      line &&
+      !/^[-*_]{3,}$/.test(line) &&
+      !/^<!--/.test(line) &&
+      !/^<\/?[^>]+>$/.test(line)
+    )
+    .map((line, index) => {
+      if (/^#{1,6}\s+/.test(line)) {
+        const level = line.match(/^#+/)[0].length
+        const text = line.replace(/^#{1,6}\s+/, '')
+        const size = level <= 1 ? 'text-xl' : level === 2 ? 'text-lg' : 'text-base'
+        return <h3 key={index} className={`${size} font-bold text-white mt-4 first:mt-0 mb-2`}>{renderInlineMarkdown(text)}</h3>
+      }
+
+      if (/^[-*]\s+/.test(line)) {
+        return (
+          <div key={index} className="flex gap-2 text-white/70 my-1">
+            <span className="text-green-400 mt-0.5">•</span>
+            <span>{renderInlineMarkdown(line.replace(/^[-*]\s+/, ''))}</span>
+          </div>
+        )
+      }
+
+      if (/^\d+\.\s+/.test(line)) {
+        const number = line.match(/^\d+/)?.[0]
+        return (
+          <div key={index} className="flex gap-2 text-white/70 my-1">
+            <span className="text-green-400 mt-0.5">{number}.</span>
+            <span>{renderInlineMarkdown(line.replace(/^\d+\.\s+/, ''))}</span>
+          </div>
+        )
+      }
+
+      return <p key={index} className="text-white/70 my-2 leading-relaxed">{renderInlineMarkdown(line)}</p>
+    })
+}
+
+// ─── PatchNotesModal ──────────────────────────────────────────────────────────
+function PatchNotesModal({ patchNotes, onClose }) {
+  if (!patchNotes) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="bg-[#141414] border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex-shrink-0 flex items-start justify-between px-6 py-4 border-b border-white/5">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold text-white mb-1">{patchNotes.title}</h2>
+            <p className="text-xs text-white/40">
+              Phiên bản {patchNotes.version}
+              {patchNotes.publishedAt && (
+                <>
+                  {' '} · {new Date(patchNotes.publishedAt).toLocaleDateString('vi-VN')}
+                </>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex-shrink-0 ml-4 w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
+            title="Đóng"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="max-w-none text-sm break-words font-sans">
+            {renderPatchNotesBody(patchNotes.body)}
+          </div>
+        </div>
+
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-t border-white/5 bg-black/20">
+          {patchNotes.htmlUrl && (
+            <button
+              onClick={() => window.electronAPI?.openExternal?.(patchNotes.htmlUrl)}
+              className="text-xs text-green-400 hover:text-green-300 transition-colors underline underline-offset-2"
+            >
+              Xem trên GitHub →
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="ml-auto px-4 py-2 rounded-lg bg-green-500/15 border border-green-500/25 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-all"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── AccountDropdown ──────────────────────────────────────────────────────────
+function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    if (dropdownOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [dropdownOpen])
+
+  if (!selectedAccount && accounts.length === 0) {
+    return (
+      <button
+        onClick={() => onNavigate?.('account')}
+        className="w-full flex items-center gap-2 bg-white/3 border border-dashed border-white/10 rounded-xl px-3 py-2.5 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
+        Thêm tài khoản
+      </button>
+    )
+  }
+
+  return (
+    <div className="relative pb-2" ref={dropdownRef}>
+      <button
+        onClick={() => setDropdownOpen(v => !v)}
+        className="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-2 cursor-pointer hover:bg-white/8 hover:border-white/20 transition-all"
+      >
+        {selectedAccount && (
+          <>
+            <div className="rounded-md overflow-hidden flex-shrink-0">
+              <PlayerHead uuid={selectedAccount.uuid} username={selectedAccount.username} size={28} />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <div className="text-sm text-white/80 font-medium truncate">{selectedAccount.username}</div>
+              <div className="text-[10px] text-white/30">{selectedAccount.type === 'microsoft' ? 'Microsoft' : 'Offline Mode'}</div>
+            </div>
+          </>
+        )}
+        <svg viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 text-white/40 flex-shrink-0 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}>
+          <path d="M7 10l5 5 5-5z" />
+        </svg>
+      </button>
+
+      {dropdownOpen && (
+        <div className="absolute left-0 right-0 bottom-full mb-1 max-h-64 overflow-y-auto bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50">
+          <div className="px-3 py-2 border-b border-white/5">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Select Account</p>
+          </div>
+          {accounts.length === 0 ? (
+            <div className="px-3 py-3 text-[11px] text-white/25 text-center">Không có tài khoản nào</div>
+          ) : (
+            <>
+              {accounts.map(account => (
+                <button
+                  key={account.id}
+                  onClick={() => {
+                    selectAccount(account.id)
+                    setDropdownOpen(false)
+                  }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all ${selectedAccount?.id === account.id ? 'bg-white/5' : ''}`}
+                >
+                  <div className="rounded-md overflow-hidden flex-shrink-0">
+                    <PlayerHead uuid={account.uuid} username={account.username} size={24} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-white/80 font-semibold truncate">{account.username}</p>
+                    <p className="text-[10px] text-white/30">{account.type === 'microsoft' ? 'Microsoft' : 'Offline Mode'}</p>
+                  </div>
+                  {selectedAccount?.id === account.id && (
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+              <div className="border-t border-white/5" />
+              <button
+                onClick={() => {
+                  onNavigate?.('account')
+                  setDropdownOpen(false)
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all text-white/30 hover:text-white/60 text-xs"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+                <span>Thêm tài khoản</span>
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const VERSION_IMAGES = { '1.12': v112, '1.15': v115, '1.16': v116, '1.17': v117, '1.18': v118, '1.19': v119, '1.20': v120, '1.21': v121 }
 const LOADER_ICONS = { vanilla: vanillaIcon, fabric: fabricIcon, forge: forgeIcon, neoforge: neoforgeIcon }
@@ -383,10 +656,52 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const [savedLog, setSavedLog] = useState(null)
   const [savedLogLoading, setSavedLogLoading] = useState(false)
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
+  const [patchNotesModal, setPatchNotesModal] = useState(null)
   const logDropdownRef = useRef(null)
   const ramSaveTimer = useRef(null)
+  const patchNotesShownRef = useRef(new Set())
 
   useEffect(() => () => clearTimeout(ramSaveTimer.current), [])
+
+  // Load patch notes on mount
+  useEffect(() => {
+    const loadPatchNotes = async () => {
+      if (!isElectron) return
+
+      try {
+        const result = await window.electronAPI.getCurrentPatchNotes()
+
+        if (!result.ok) return
+
+        const versionKey = `patchnotes_${result.currentVersion}`
+        if (patchNotesShownRef.current.has(versionKey)) return
+
+        // Show modal after 3 seconds
+        const timer = setTimeout(() => {
+          setPatchNotesModal(result)
+          patchNotesShownRef.current.add(versionKey)
+          // Persist to localStorage to survive app restarts
+          try {
+            const shown = JSON.parse(localStorage.getItem('vxc_patchnotes_shown') || '[]')
+            if (!shown.includes(versionKey)) {
+              shown.push(versionKey)
+              localStorage.setItem('vxc_patchnotes_shown', JSON.stringify(shown))
+            }
+          } catch {}
+        }, 3000)
+
+        return () => clearTimeout(timer)
+      } catch {}
+    }
+
+    // Load previously shown versions from localStorage
+    try {
+      const shown = JSON.parse(localStorage.getItem('vxc_patchnotes_shown') || '[]')
+      shown.forEach(v => patchNotesShownRef.current.add(v))
+    } catch {}
+
+    loadPatchNotes()
+  }, [])
 
   const particles = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
     size: Math.random() * 3 + 1.5,
@@ -417,7 +732,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
       }
     }, 500)
   }
-  const { selectedAccount } = useAccounts()
+  const { accounts, selectedAccount, selectAccount } = useAccounts()
 
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [profileStats, setProfileStats] = useState(null)
@@ -489,7 +804,10 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const modCount = profileStats?.modCount ?? 0
 
   return (
-    <div className="flex flex-col h-full overflow-hidden relative">      {}
+    <div className="flex flex-col h-full overflow-hidden relative">
+      <PatchNotesModal patchNotes={patchNotesModal} onClose={() => setPatchNotesModal(null)} />
+
+      {}
       <div className="relative flex-shrink-0 h-56 overflow-hidden">
         {}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07]">
@@ -863,7 +1181,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         </div>
 
         {}
-        <div className="w-80 flex-shrink-0 border-l border-white/5 bg-black/20 p-5 flex flex-col gap-4">
+        <div className="w-80 flex-shrink-0 border-l border-white/5 bg-black/20 p-5 pb-8 flex flex-col gap-4">
 
           {}
           <div>
@@ -1079,30 +1397,12 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             <label className="text-xs font-semibold text-white/40 uppercase tracking-widest block mb-2">
               Account
             </label>
-            {username ? (
-              <div
-                className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-2 cursor-pointer hover:bg-white/8 hover:border-white/20 transition-all"
-                onClick={() => onNavigate?.('account')}
-              >
-                <div className="rounded-md overflow-hidden flex-shrink-0">
-                  <PlayerHead uuid={selectedAccount?.uuid} username={username} size={28} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm text-white/80 font-medium truncate">{username}</div>
-                  <div className="text-[10px] text-white/30">{accountType}</div>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => onNavigate?.('account')}
-                className="w-full flex items-center gap-2 bg-white/3 border border-dashed border-white/10 rounded-xl px-3 py-2.5 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                </svg>
-                Thêm tài khoản
-              </button>
-            )}
+            <AccountDropdown
+              accounts={accounts}
+              selectedAccount={selectedAccount}
+              selectAccount={selectAccount}
+              onNavigate={onNavigate}
+            />
           </div>
 
           {}
