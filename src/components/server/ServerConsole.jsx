@@ -617,7 +617,7 @@ function ServerTypeIcon({ type, size = 32 }) {
     neoforge: () => import('../../assets/server-icon/neoforge-server.png'),
     mohist:   () => import('../../assets/server-icon/mohist-server.png'),
     sponge:   () => import('../../assets/server-icon/sponge-server.png'),
-    arclight: () => import('../../assets/server-icon/Arclight.jpeg'),
+    arclight: () => import('../../assets/server-icon/Arclight.png'),
     magma:    () => import('../../assets/server-icon/Magma.png'),
   }
   const [src, setSrc] = useState(null)

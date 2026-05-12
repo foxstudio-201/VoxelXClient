@@ -10,8 +10,6 @@ import forgeIcon    from '../../assets/server-icon/forge-server.png'
 import neoforgeIcon from '../../assets/server-icon/neoforge-server.png'
 import mohistIcon   from '../../assets/server-icon/mohist-server.png'
 import spongeIcon   from '../../assets/server-icon/sponge-server.png'
-import arclightIcon from '../../assets/server-icon/Arclight.jpeg'
-import magmaIcon    from '../../assets/server-icon/Magma.png'
 import arclightIcon from '../../assets/server-icon/Arclight.png'
 import magmaIcon    from '../../assets/server-icon/Magma.png'
 
