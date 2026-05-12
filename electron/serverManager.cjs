@@ -982,6 +982,31 @@ function registerServerHandlers(getTrustedWindow) {
     } catch (err) { return { error: err.message } }
   })
 
+  // server:installMod — download a mod/plugin from URL into server's mods/ or plugins/ folder
+  ipcMain.handle('server:installMod', async (e, opts) => {
+    const win = getTrustedWindow(e)
+    if (!win) return { error: 'Unauthorized' }
+    const { serverId, url, fileName, subDir } = opts || {}
+    if (!serverId || !url || !fileName) return { error: 'Thiếu thông tin' }
+    if (typeof fileName !== 'string' || fileName.includes('..')) return { error: 'Tên file không hợp lệ' }
+    if (!url.startsWith('https://')) return { error: 'URL không hợp lệ' }
+
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+
+    const targetDir = path.join(server.serverDir, subDir || 'plugins')
+    ensureDir(targetDir)
+    const destPath = path.join(targetDir, fileName)
+
+    try {
+      await downloadFile(url, destPath, () => {})
+      return { ok: true, path: destPath }
+    } catch (err) {
+      return { error: err.message }
+    }
+  })
+
   // server:openFolder
   ipcMain.handle('server:openFolder', async (e, serverId, subPath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }

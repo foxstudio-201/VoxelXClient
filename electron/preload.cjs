@@ -247,6 +247,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     require('electron').ipcRenderer.on('server:tunnelLog', handler)
     return () => require('electron').ipcRenderer.removeListener('server:tunnelLog', handler)
   },
+  serverInstallMod:    (opts)                 => ipcRenderer.invoke('server:installMod', opts),
   serverOpenFolder:    (id, sub)             => ipcRenderer.invoke('server:openFolder', id, sub),
   serverBrowse:        ()                    => ipcRenderer.invoke('server:browse'),
   serverInstallJava:   (pkg, id)             => ipcRenderer.invoke('server:installJava', pkg, id),
