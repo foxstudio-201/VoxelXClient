@@ -46,6 +46,7 @@ export default function UpdateWindow() {
   const [dlProgress, setDlProgress] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const unsubRef = useRef(null)
+  const preloadReceivedRef = useRef(false)
 
   useEffect(() => {
     if (isElectron) window.electronAPI.getVersion().then(setVersion)
@@ -58,10 +59,10 @@ export default function UpdateWindow() {
     let unsubPreload = null
     if (isElectron && window.electronAPI.onUpdaterPreloadResult) {
       unsubPreload = window.electronAPI.onUpdaterPreloadResult((res) => {
+        preloadReceivedRef.current = true
         setResult(res)
         if (res?.hasUpdate) {
           setStatus('updateAvailable')
-
           handleDownload(res)
         } else {
           setStatus('upToDate')
@@ -75,11 +76,11 @@ export default function UpdateWindow() {
     }
   }, [])
 
+  // Auto-check only when opened manually (not from splash)
   useEffect(() => {
-
     const t = setTimeout(() => {
-      if (status === 'idle') handleCheck()
-    }, 800)
+      if (status === 'idle' && !preloadReceivedRef.current) handleCheck()
+    }, 1000)
     return () => clearTimeout(t)
   }, [])
 
