@@ -264,38 +264,46 @@ export default function ServerConsole({ server, onBack }) {
       {/* RIGHT: Server info panel */}
       <div className="w-64 flex-shrink-0 flex flex-col overflow-hidden bg-black/15">
         <div className="flex-shrink-0 p-4 border-b border-white/5">
+          {/* Icon + name */}
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-white/5">
-              <ServerTypeIcon type={server.type} size={40} />
+            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-white/5">
+              <ServerTypeIcon type={server.type} size={48} />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-white/90 truncate">{server.name}</p>
-              <p className="text-[10px] text-white/35 capitalize">{server.type} {server.gameVersion}</p>
+              <p className="text-base font-bold text-white/95 truncate">{server.name}</p>
+              <p className="text-xs text-white/40 capitalize">{server.type} {server.gameVersion}</p>
             </div>
           </div>
+
+          {/* Status */}
           <div className="flex items-center gap-2 mb-3">
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot}`} />
-            <span className={`text-xs font-semibold capitalize ${statusColor}`}>
+            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusDot}`} />
+            <span className={`text-sm font-bold capitalize ${statusColor}`}>
               {status === 'online' ? 'Online' : status === 'starting' ? 'Đang khởi động...' : 'Offline'}
             </span>
           </div>
-          <div className="flex gap-2">
+
+          {/* IP address — tunnel if active, else local */}
+          <IpDisplay tunnelAddr={tunnelAddr} tunnelStatus={tunnelStatus} server={server} />
+
+          {/* Start/Stop/Restart */}
+          <div className="flex gap-2 mt-3">
             {!isRunning ? (
               <button onClick={handleStart} disabled={downloading}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-500 hover:bg-green-400 text-white text-xs font-bold transition-all active:scale-95 disabled:opacity-50">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M8 5v14l11-7z"/></svg>
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-500 hover:bg-green-400 text-white text-sm font-bold transition-all active:scale-95 disabled:opacity-50">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z"/></svg>
                 Start
               </button>
             ) : (
               <>
                 <button onClick={handleStop}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold border border-red-500/25 transition-all">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M6 6h12v12H6z"/></svg>
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-bold border border-red-500/25 transition-all">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M6 6h12v12H6z"/></svg>
                   Stop
                 </button>
                 <button onClick={handleRestart}
-                  className="w-9 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white/80 border border-white/8 transition-all">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                  className="w-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white/80 border border-white/8 transition-all">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                     <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
                   </svg>
                 </button>
@@ -303,17 +311,19 @@ export default function ServerConsole({ server, onBack }) {
             )}
           </div>
         </div>
+
+        {/* Stats */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] text-white/40 uppercase tracking-wider">RAM</span>
-              <span className="text-[10px] text-white/50 font-mono">{server.ramGb} GB max</span>
+              <span className="text-xs text-white/50 uppercase tracking-wider font-semibold">RAM</span>
+              <span className="text-xs text-white/60 font-mono font-semibold">{server.ramGb} GB max</span>
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
               <div className="h-full bg-blue-400/60 rounded-full transition-all duration-1000"
                 style={{ width: isRunning && stats.ramMb > 0 ? `${Math.min(100, Math.round(stats.ramMb / (server.ramGb * 1024) * 100))}%` : '0%' }} />
             </div>
-            <p className="text-[10px] text-white/25 mt-1">
+            <p className="text-xs text-white/35 mt-1 font-mono">
               {isRunning && stats.ramMb > 0
                 ? `${stats.ramMb} MB / ${server.ramGb * 1024} MB`
                 : isRunning ? 'Đang đo...' : 'Không hoạt động'}
@@ -321,22 +331,22 @@ export default function ServerConsole({ server, onBack }) {
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] text-white/40 uppercase tracking-wider">CPU</span>
-              <span className="text-[10px] text-white/50 font-mono">{server.cores} cores</span>
+              <span className="text-xs text-white/50 uppercase tracking-wider font-semibold">CPU</span>
+              <span className="text-xs text-white/60 font-mono font-semibold">{server.cores} cores</span>
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
               <div className="h-full bg-green-400/60 rounded-full transition-all duration-1000"
                 style={{ width: isRunning ? `${Math.min(100, stats.cpu / (server.cores || 1))}%` : '0%' }} />
             </div>
-            <p className="text-[10px] text-white/25 mt-1">
+            <p className="text-xs text-white/35 mt-1 font-mono">
               {isRunning ? `${Math.min(100, stats.cpu / (server.cores || 1)).toFixed(1)}%` : 'Không hoạt động'}
             </p>
           </div>
           <div className="rounded-xl border border-white/8 bg-white/3 p-3 space-y-2">
-            <InfoRow label="Loại" value={server.type} />
+            <InfoRow label="Loại"     value={server.type} />
             <InfoRow label="Phiên bản" value={server.gameVersion} />
-            <InfoRow label="RAM" value={`${server.ramGb} GB`} />
-            <InfoRow label="Cores" value={String(server.cores)} />
+            <InfoRow label="RAM"      value={`${server.ramGb} GB`} />
+            <InfoRow label="Cores"    value={String(server.cores)} />
             {server.jarFile && <InfoRow label="Jar" value={server.jarFile} mono />}
           </div>
         </div>
@@ -523,11 +533,70 @@ function CommandInput({ value, onChange, onSubmit, disabled, isRunning, autoScro
   )
 }
 
+// ── IP Display — shows tunnel addr if active, else local IP:port ──────────────
+function IpDisplay({ tunnelAddr, tunnelStatus, server }) {
+  const [localIp, setLocalIp]   = useState(null)
+  const [port, setPort]         = useState('25565')
+  const [copied, setCopied]     = useState(false)
+
+  useEffect(() => {
+    if (!isElectron || !server) return
+    window.electronAPI.serverGetNetworkInfo(server.id).then(r => {
+      if (r?.ok) { setLocalIp(r.localIp); setPort(r.port || '25565') }
+    }).catch(() => {})
+  }, [server?.id])
+
+  const isTunnelActive = tunnelStatus === 'running' && tunnelAddr
+  const displayAddr    = isTunnelActive ? tunnelAddr : (localIp ? `${localIp}:${port}` : null)
+  const label          = isTunnelActive ? 'Tunnel (công cộng)' : 'IP nội bộ (LAN)'
+  const accent         = isTunnelActive
+
+  function copy() {
+    if (!displayAddr) return
+    navigator.clipboard.writeText(displayAddr).then(() => {
+      setCopied(true); setTimeout(() => setCopied(false), 1500)
+    })
+  }
+
+  if (!displayAddr) return null
+
+  return (
+    <div className={`rounded-xl px-3 py-2.5 border ${accent ? 'border-green-500/25 bg-green-500/5' : 'border-white/8 bg-white/3'}`}>
+      <div className="flex items-center justify-between mb-1">
+        <span className={`text-[10px] font-semibold uppercase tracking-wider ${accent ? 'text-green-400/70' : 'text-white/35'}`}>
+          {label}
+        </span>
+        {accent && (
+          <span className="flex items-center gap-1 text-[9px] text-green-400/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            Đang bật
+          </span>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-sm font-bold font-mono truncate ${accent ? 'text-green-400' : 'text-white/80'}`}>
+          {displayAddr}
+        </span>
+        <button onClick={copy}
+          className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all flex-shrink-0 ${
+            copied ? 'bg-green-500/20 text-green-400' : 'bg-white/8 text-white/40 hover:text-white/70 hover:bg-white/12'
+          }`}>
+          {copied
+            ? <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            : <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          }
+          {copied ? 'Đã copy' : 'Copy'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function InfoRow({ label, value, mono }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-[10px] text-white/35">{label}</span>
-      <span className={`text-[10px] text-white/60 truncate max-w-[120px] ${mono ? 'font-mono' : ''}`}>{value}</span>
+      <span className="text-xs text-white/40">{label}</span>
+      <span className={`text-xs text-white/70 truncate max-w-[120px] font-medium ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   )
 }
