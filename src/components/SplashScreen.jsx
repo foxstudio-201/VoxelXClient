@@ -54,9 +54,14 @@ export default function SplashScreen({ onDone }) {
       if (autoCheckUpdate && isElectron) {
         setProgress(30, 'Kiểm tra cập nhật...')
         try {
-          // Only check — do NOT auto-download or install from splash
-          // User can update manually from Settings > About
-          await window.electronAPI.checkUpdate()
+          const updateResult = await window.electronAPI.checkUpdate()
+          if (!cancelled && updateResult?.hasUpdate) {
+            // Has update — open UpdateWindow and hide splash/main window
+            setProgress(35, `Phiên bản mới ${updateResult.latestVersion} — đang mở cửa sổ cập nhật...`)
+            await delay(400)
+            window.electronAPI.openUpdateWindow(updateResult)
+            return // Stop splash — UpdateWindow takes over
+          }
         } catch {}
       }
 

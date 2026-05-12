@@ -399,6 +399,33 @@ ipcMain.on('window-close', (e) => {
 // ─── Updater IPC ──────────────────────────────────────────────────────────────
 const GITHUB_REPO = 'foxstudio-201/VoxelXClient'
 
+// updater:openUpdateWindow — open update window with pre-fetched check result
+// Called from splash when update is detected, hides main window
+ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  // Hide main window (splash is part of main window)
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide()
+  // Open update window
+  createUpdateWindow()
+  // Send the check result to update window once it's ready
+  if (updateWindow && !updateWindow.isDestroyed()) {
+    updateWindow.webContents.once('did-finish-load', () => {
+      if (!updateWindow.isDestroyed()) {
+        updateWindow.webContents.send('updater:preloadResult', checkResult)
+      }
+    })
+    // If already loaded, send immediately
+    if (updateWindow.webContents.getURL() !== '') {
+      setTimeout(() => {
+        if (updateWindow && !updateWindow.isDestroyed()) {
+          updateWindow.webContents.send('updater:preloadResult', checkResult)
+        }
+      }, 300)
+    }
+  }
+  return { ok: true }
+})
+
 ipcMain.handle('updater:check', async (e) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 

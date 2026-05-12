@@ -25,12 +25,35 @@ export default function UpdateWindow() {
     if (isElectron) {
       unsubRef.current = window.electronAPI.onDownloadProgress(p => setDlProgress(p))
     }
-    return () => unsubRef.current?.()
+
+    // Listen for pre-loaded check result from splash (auto-start download)
+    let unsubPreload = null
+    if (isElectron && window.electronAPI.onUpdaterPreloadResult) {
+      unsubPreload = window.electronAPI.onUpdaterPreloadResult((res) => {
+        setResult(res)
+        if (res?.hasUpdate) {
+          setStatus('updateAvailable')
+          // Auto-start download immediately
+          handleDownload(res)
+        } else {
+          setStatus('upToDate')
+        }
+      })
+    }
+
+    return () => {
+      unsubRef.current?.()
+      unsubPreload?.()
+    }
   }, [])
 
-  // Auto-check on open
+  // Auto-check on open only if not opened from splash (no preload result)
   useEffect(() => {
-    handleCheck()
+    // Small delay to allow preload result to arrive first
+    const t = setTimeout(() => {
+      if (status === 'idle') handleCheck()
+    }, 800)
+    return () => clearTimeout(t)
   }, [])
 
   async function handleCheck() {

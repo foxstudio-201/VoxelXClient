@@ -28,12 +28,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Updater
   checkUpdate:      () => ipcRenderer.invoke('updater:check'),
+  openUpdateWindow: (result) => ipcRenderer.invoke('updater:openUpdateWindow', result),
   downloadUpdate:   (opts) => ipcRenderer.invoke('updater:download', opts),
   installUpdate:    (opts) => ipcRenderer.invoke('updater:install', opts),
   onDownloadProgress: (cb) => {
     const handler = (_e, data) => cb(data)
     ipcRenderer.on('updater:downloadProgress', handler)
     return () => ipcRenderer.removeListener('updater:downloadProgress', handler)
+  },
+  onUpdaterPreloadResult: (cb) => {
+    const handler = (_e, data) => cb(data)
+    ipcRenderer.on('updater:preloadResult', handler)
+    return () => ipcRenderer.removeListener('updater:preloadResult', handler)
   },
   getVersion:  () => ipcRenderer.invoke('app:version'),
 
