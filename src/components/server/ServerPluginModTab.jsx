@@ -28,6 +28,8 @@ const SERVER_LOADERS = {
   forge:    ['forge'],
   neoforge: ['neoforge', 'forge'],
   mohist:   ['forge', 'bukkit', 'spigot', 'paper'],
+  arclight: ['forge', 'bukkit', 'spigot', 'paper'],
+  magma:    ['forge', 'bukkit', 'spigot'],
   sponge:   ['sponge'],
   vanilla:  [],
 }

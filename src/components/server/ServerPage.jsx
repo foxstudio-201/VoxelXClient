@@ -12,6 +12,8 @@ import forgeIcon    from '../../assets/server-icon/forge-server.png'
 import neoforgeIcon from '../../assets/server-icon/neoforge-server.png'
 import mohistIcon   from '../../assets/server-icon/mohist-server.png'
 import spongeIcon   from '../../assets/server-icon/sponge-server.png'
+import arclightIcon from '../../assets/server-icon/Arclight.jpeg'
+import magmaIcon    from '../../assets/server-icon/Magma.png'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -19,6 +21,7 @@ const SERVER_ICONS = {
   vanilla: vanillaIcon, paper: paperIcon, purpur: purpurIcon,
   folia: foliaIcon, fabric: fabricIcon, forge: forgeIcon,
   neoforge: neoforgeIcon, mohist: mohistIcon, sponge: spongeIcon,
+  arclight: arclightIcon, magma: magmaIcon,
 }
 
 function getGridCols(count) {

@@ -136,6 +136,22 @@ async function resolveServerJarUrl(type, gameVersion) {
         const latest = builds?.builds?.slice(-1)[0]
         return latest?.url || null
       }
+      case 'arclight': {
+        // Arclight releases on GitHub
+        const releases = await httpsGet(`https://api.github.com/repos/IzzelAliz/Arclight/releases/latest`)
+        if (!releases?.assets) return null
+        const asset = releases.assets.find(a => a.name.includes(gameVersion) && a.name.endsWith('.jar'))
+          || releases.assets.find(a => a.name.endsWith('.jar'))
+        return asset?.browser_download_url || null
+      }
+      case 'magma': {
+        // Magma releases on GitHub
+        const releases = await httpsGet(`https://api.github.com/repos/magmafoundation/Magma/releases/latest`)
+        if (!releases?.assets) return null
+        const asset = releases.assets.find(a => a.name.includes(gameVersion) && a.name.endsWith('.jar'))
+          || releases.assets.find(a => a.name.endsWith('.jar'))
+        return asset?.browser_download_url || null
+      }
       default:
         return null
     }

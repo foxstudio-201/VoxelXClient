@@ -10,6 +10,10 @@ import forgeIcon    from '../../assets/server-icon/forge-server.png'
 import neoforgeIcon from '../../assets/server-icon/neoforge-server.png'
 import mohistIcon   from '../../assets/server-icon/mohist-server.png'
 import spongeIcon   from '../../assets/server-icon/sponge-server.png'
+import arclightIcon from '../../assets/server-icon/Arclight.jpeg'
+import magmaIcon    from '../../assets/server-icon/Magma.png'
+import arclightIcon from '../../assets/server-icon/Arclight.png'
+import magmaIcon    from '../../assets/server-icon/Magma.png'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -22,7 +26,10 @@ const SERVER_TYPES = [
   { id: 'forge',    label: 'Forge',     icon: forgeIcon,    desc: 'Classic mod loader' },
   { id: 'neoforge', label: 'NeoForge',  icon: neoforgeIcon, desc: 'Modern Forge fork' },
   { id: 'mohist',   label: 'Mohist',    icon: mohistIcon,   desc: 'Forge + Bukkit hybrid' },
+  { id: 'arclight', label: 'Arclight',  icon: arclightIcon, desc: 'Forge + Paper hybrid' },
+  { id: 'magma',    label: 'Magma',     icon: magmaIcon,    desc: 'Forge + Bukkit/Spigot' },
   { id: 'sponge',   label: 'Sponge',    icon: spongeIcon,   desc: 'Plugin API platform' },
+
 ]
 
 // ─── Java inline dropdown ─────────────────────────────────────────────────────
@@ -698,7 +705,6 @@ export default function CreateServerModal({ onClose, onCreate }) {
                   <p className="text-[10px] text-white/30 mt-0.5">
                     Tôi đồng ý với{' '}
                     <span className="text-green-400/70">Minecraft End User License Agreement</span>.
-                    File eula.txt sẽ được tự động tạo.
                   </p>
                 </div>
               </div>
