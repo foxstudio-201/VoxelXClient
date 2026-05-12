@@ -11,7 +11,7 @@
 Manage profiles, install mods, and launch any Minecraft version — all in one place.</p>
 
 <p>
-  <img src="https://img.shields.io/badge/version-1.0.0-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.2.0-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
   <img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&labelColor=0a0a0a&logo=windows11&logoColor=0078D4" alt="Windows" />
   <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&labelColor=0a0a0a&logo=linux&logoColor=FCC624" alt="Linux" />
   <img src="https://img.shields.io/badge/electron-42-47848F?style=flat-square&labelColor=0a0a0a&logo=electron" alt="Electron" />
