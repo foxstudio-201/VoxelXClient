@@ -617,27 +617,8 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
     const { spawn } = require('child_process')
 
     if (process.platform === 'win32') {
-      // Use VBScript to run batch invisibly (windowsHide doesn't hide child windows)
-      const batchPath = path.join(os.tmpdir(), 'vxc-update.bat')
-      const vbsPath   = path.join(os.tmpdir(), 'vxc-update.vbs')
-      const pid = process.pid
-      const batchContent = [
-        '@echo off',
-        `:waitloop`,
-        `tasklist /FI "PID eq ${pid}" 2>NUL | find /I "${pid}" >NUL`,
-        `if not errorlevel 1 (`,
-        `  timeout /t 1 /nobreak >NUL`,
-        `  goto waitloop`,
-        `)`,
-        `"${filePath}"`,
-        `del "${filePath}" 2>NUL`,
-        `del "%~f0" 2>NUL`,
-      ].join('\r\n')
-      // VBScript runs batch completely hidden
-      const vbsContent = `CreateObject("WScript.Shell").Run "cmd /C """ & "${batchPath.replace(/\\/g, '\\\\')}""", 0, False`
-      fs.writeFileSync(batchPath, batchContent, 'utf-8')
-      fs.writeFileSync(vbsPath, vbsContent, 'utf-8')
-      spawn('wscript.exe', [vbsPath], {
+      // Just run the NSIS installer directly — NSIS handles closing the old app
+      spawn(filePath, [], {
         detached: true,
         stdio:    'ignore',
       }).unref()
