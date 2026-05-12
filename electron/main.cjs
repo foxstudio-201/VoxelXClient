@@ -617,30 +617,29 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
     const { spawn } = require('child_process')
 
     if (process.platform === 'win32') {
-      // Create a batch script that waits for this process to exit, then runs installer
-      // Show installer UI so user can see the installation progress
+      // Use VBScript to run batch invisibly (windowsHide doesn't hide child windows)
       const batchPath = path.join(os.tmpdir(), 'vxc-update.bat')
+      const vbsPath   = path.join(os.tmpdir(), 'vxc-update.vbs')
       const pid = process.pid
       const batchContent = [
         '@echo off',
-        `:: Wait for VoxelXClient (PID ${pid}) to exit`,
         `:waitloop`,
         `tasklist /FI "PID eq ${pid}" 2>NUL | find /I "${pid}" >NUL`,
         `if not errorlevel 1 (`,
         `  timeout /t 1 /nobreak >NUL`,
         `  goto waitloop`,
         `)`,
-        `:: Run installer (with UI so user can see it)`,
         `"${filePath}"`,
-        `:: Clean up`,
         `del "${filePath}" 2>NUL`,
         `del "%~f0" 2>NUL`,
       ].join('\r\n')
+      // VBScript runs batch completely hidden
+      const vbsContent = `CreateObject("WScript.Shell").Run "cmd /C """ & "${batchPath.replace(/\\/g, '\\\\')}""", 0, False`
       fs.writeFileSync(batchPath, batchContent, 'utf-8')
-      spawn('cmd.exe', ['/C', batchPath], {
+      fs.writeFileSync(vbsPath, vbsContent, 'utf-8')
+      spawn('wscript.exe', [vbsPath], {
         detached: true,
         stdio:    'ignore',
-        windowsHide: true,
       }).unref()
     } else if (process.platform === 'darwin') {
       spawn('open', [filePath], { detached: true, stdio: 'ignore' }).unref()
