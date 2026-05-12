@@ -11,8 +11,9 @@
 Manage profiles, install mods, and launch any Minecraft version — all in one place.</p>
 
 <p>
-  <img src="https://img.shields.io/badge/version-1.0.0-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
-  <img src="https://img.shields.io/badge/platform-Windows-blue?style=flat-square&labelColor=0a0a0a" alt="Platform" />
+  <img src="https://img.shields.io/badge/version-1.2.0-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
+  <img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&labelColor=0a0a0a&logo=windows11&logoColor=0078D4" alt="Windows" />
+  <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&labelColor=0a0a0a&logo=linux&logoColor=FCC624" alt="Linux" />
   <img src="https://img.shields.io/badge/electron-42-47848F?style=flat-square&labelColor=0a0a0a&logo=electron" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&labelColor=0a0a0a&logo=react" alt="React" />
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=0a0a0a" alt="License" />
@@ -71,49 +72,6 @@ Manage profiles, install mods, and launch any Minecraft version — all in one p
 | **Auth** | Microsoft OAuth2 (MSAL) |
 | **IPC** | Electron contextBridge / ipcMain |
 | **Build** | electron-builder → NSIS installer |
-
----
-
-## 📁 Project Structure
-
-```
-VoxelXClient/
-├── electron/                  # Main process (Node.js)
-│   ├── main.cjs               # App entry, window management
-│   ├── preload.cjs            # Context bridge (IPC API)
-│   ├── msAuth.cjs             # Microsoft OAuth2 flow
-│   ├── profileManager.cjs     # Profile CRUD & persistence
-│   ├── discordRPC.cjs         # Discord Rich Presence
-│   └── launcher/
-│       ├── index.cjs          # Launch orchestrator
-│       ├── ipcHandlers.cjs    # All IPC event handlers
-│       ├── logWindow.cjs      # Floating log window
-│       ├── statsTracker.cjs   # Playtime & stats tracking
-│       ├── vanilla/           # Vanilla asset/version management
-│       ├── fabric/            # Fabric loader installer
-│       ├── forge/             # Forge installer
-│       ├── neoforge/          # NeoForge installer
-│       ├── java/              # Java runtime manager
-│       ├── curseforge/        # CurseForge modpack importer
-│       └── modrinth/          # Modrinth modpack importer
-│
-├── src/                       # Renderer process (React)
-│   ├── App.jsx                # Root component + routing
-│   ├── components/
-│   │   ├── HomePage.jsx       # Dashboard with news & launch
-│   │   ├── TitleBar.jsx       # Custom window chrome
-│   │   ├── SplashScreen.jsx   # Boot loading screen
-│   │   ├── Sidebar.jsx        # Navigation sidebar
-│   │   ├── account/           # Account management UI
-│   │   ├── play/              # Profile management UI
-│   │   ├── settings/          # Settings pages & tabs
-│   │   └── ui/                # Shared UI components
-│   ├── hooks/                 # Custom React hooks
-│   └── utils/                 # Utility functions
-│
-├── public/                    # Static assets
-└── scripts/                   # Build & icon generation scripts
-```
 
 ---
 
@@ -185,6 +143,6 @@ Released under the [MIT License](LICENSE).
 
 Made with ❤️ by **FoxStudio**
 
-<a href="https://voxelxclient.vercel.app">voxelxclient.vercel.app</a> &nbsp;·&nbsp; <a href="https://join.foxstudio.site">Discord</a>
+<a href="https://voxelxclient.vercel.app">website: VoxelXClient</a> &nbsp;·&nbsp; <a href="https://join.foxstudio.site">Discord</a>
 
 </div>
