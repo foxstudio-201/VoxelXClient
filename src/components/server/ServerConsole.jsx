@@ -118,10 +118,12 @@ export default function ServerConsole({ server, onBack }) {
   }
 
   async function handleSendCommand(e) {
-    e.preventDefault()
+    e?.preventDefault()
     if (!command.trim() || !isElectron) return
-    await window.electronAPI.serverSendCommand(server.id, command.trim())
-    setLogs(prev => [...prev, `> ${command.trim()}`])
+    // Strip leading slash if user typed it — server doesn't need it
+    const cmd = command.trim().replace(/^\//, '')
+    await window.electronAPI.serverSendCommand(server.id, cmd)
+    setLogs(prev => [...prev, `> /${cmd}`])
     setCommand('')
   }
 
@@ -218,15 +220,16 @@ export default function ServerConsole({ server, onBack }) {
                 )}
                 <div ref={logEndRef} />
               </div>
-              <form onSubmit={handleSendCommand} className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-t border-white/5 bg-black/30">
-                <span className="text-green-400/60 font-mono text-xs flex-shrink-0">&gt;</span>
-                <input value={command} onChange={e => setCommand(e.target.value)}
-                  placeholder={isRunning ? 'Nhập lệnh...' : 'Server chưa chạy'} disabled={!isRunning}
-                  className="flex-1 bg-transparent text-white/80 text-xs font-mono focus:outline-none placeholder-white/20 disabled:opacity-40" />
-                <button type="submit" disabled={!isRunning || !command.trim()}
-                  className="px-3 py-1 rounded-lg bg-green-500/15 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-all disabled:opacity-30">Gửi</button>
-                <button type="button" onClick={() => setAutoScroll(v => !v)}
-                  className={`px-2 py-1 rounded-lg text-xs transition-all ${autoScroll ? 'bg-green-500/15 text-green-400' : 'text-white/25 hover:text-white/50'}`}>↓</button>
+              <form onSubmit={handleSendCommand} className="flex-shrink-0 relative border-t border-white/5 bg-black/30">
+                <CommandInput
+                  value={command}
+                  onChange={setCommand}
+                  onSubmit={() => { if (command.trim() && isRunning) { handleSendCommand({ preventDefault: () => {} }) } }}
+                  disabled={!isRunning}
+                  isRunning={isRunning}
+                  autoScroll={autoScroll}
+                  onToggleScroll={() => setAutoScroll(v => !v)}
+                />
               </form>
             </div>
           )}
@@ -337,6 +340,184 @@ export default function ServerConsole({ server, onBack }) {
             {server.jarFile && <InfoRow label="Jar" value={server.jarFile} mono />}
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Minecraft command list for tab-complete ───────────────────────────────────
+const MC_COMMANDS = [
+  // Server management
+  { cmd: 'stop',        desc: 'Dừng server' },
+  { cmd: 'restart',     desc: 'Khởi động lại server' },
+  { cmd: 'reload',      desc: 'Tải lại cấu hình' },
+  { cmd: 'save-all',    desc: 'Lưu tất cả thế giới' },
+  { cmd: 'save-on',     desc: 'Bật tự động lưu' },
+  { cmd: 'save-off',    desc: 'Tắt tự động lưu' },
+  // Player management
+  { cmd: 'kick',        desc: 'Kick player', args: '<player> [reason]' },
+  { cmd: 'ban',         desc: 'Ban player', args: '<player> [reason]' },
+  { cmd: 'ban-ip',      desc: 'Ban IP', args: '<ip|player>' },
+  { cmd: 'pardon',      desc: 'Unban player', args: '<player>' },
+  { cmd: 'pardon-ip',   desc: 'Unban IP', args: '<ip>' },
+  { cmd: 'op',          desc: 'Cấp quyền OP', args: '<player>' },
+  { cmd: 'deop',        desc: 'Thu hồi quyền OP', args: '<player>' },
+  { cmd: 'whitelist add',    desc: 'Thêm vào whitelist', args: '<player>' },
+  { cmd: 'whitelist remove', desc: 'Xoá khỏi whitelist', args: '<player>' },
+  { cmd: 'whitelist list',   desc: 'Danh sách whitelist' },
+  { cmd: 'whitelist on',     desc: 'Bật whitelist' },
+  { cmd: 'whitelist off',    desc: 'Tắt whitelist' },
+  { cmd: 'whitelist reload', desc: 'Tải lại whitelist' },
+  { cmd: 'list',        desc: 'Danh sách player online' },
+  // World
+  { cmd: 'time set day',     desc: 'Đặt thời gian ban ngày' },
+  { cmd: 'time set night',   desc: 'Đặt thời gian ban đêm' },
+  { cmd: 'time set noon',    desc: 'Đặt thời gian buổi trưa' },
+  { cmd: 'time set midnight',desc: 'Đặt thời gian nửa đêm' },
+  { cmd: 'time add',    desc: 'Thêm thời gian', args: '<ticks>' },
+  { cmd: 'weather clear',    desc: 'Thời tiết trong sáng' },
+  { cmd: 'weather rain',     desc: 'Thời tiết mưa' },
+  { cmd: 'weather thunder',  desc: 'Thời tiết sấm sét' },
+  { cmd: 'gamerule',    desc: 'Xem/đặt game rule', args: '<rule> [value]' },
+  { cmd: 'difficulty',  desc: 'Đặt độ khó', args: '<peaceful|easy|normal|hard>' },
+  { cmd: 'gamemode',    desc: 'Đặt gamemode', args: '<mode> [player]' },
+  // Teleport / give
+  { cmd: 'tp',          desc: 'Dịch chuyển', args: '<player> <target|x y z>' },
+  { cmd: 'teleport',    desc: 'Dịch chuyển', args: '<player> <target|x y z>' },
+  { cmd: 'give',        desc: 'Cho item', args: '<player> <item> [count]' },
+  { cmd: 'clear',       desc: 'Xoá inventory', args: '[player] [item]' },
+  { cmd: 'kill',        desc: 'Giết entity', args: '[player|@a|@e]' },
+  { cmd: 'heal',        desc: 'Hồi máu (Paper)', args: '[player]' },
+  { cmd: 'effect give', desc: 'Thêm hiệu ứng', args: '<player> <effect> [duration]' },
+  { cmd: 'effect clear',desc: 'Xoá hiệu ứng', args: '[player]' },
+  { cmd: 'enchant',     desc: 'Enchant item', args: '<player> <enchantment> [level]' },
+  { cmd: 'xp add',      desc: 'Thêm XP', args: '<player> <amount>' },
+  { cmd: 'xp set',      desc: 'Đặt XP', args: '<player> <amount>' },
+  // Info
+  { cmd: 'seed',        desc: 'Xem seed thế giới' },
+  { cmd: 'tps',         desc: 'Xem TPS server (Paper)' },
+  { cmd: 'version',     desc: 'Xem phiên bản server' },
+  { cmd: 'plugins',     desc: 'Danh sách plugin (Bukkit)' },
+  { cmd: 'help',        desc: 'Xem danh sách lệnh', args: '[command]' },
+  // Scoreboard / team
+  { cmd: 'scoreboard',  desc: 'Quản lý scoreboard' },
+  { cmd: 'team',        desc: 'Quản lý team' },
+  { cmd: 'title',       desc: 'Hiển thị title', args: '<player> <title|subtitle|...>' },
+  { cmd: 'say',         desc: 'Gửi tin nhắn tới tất cả', args: '<message>' },
+  { cmd: 'msg',         desc: 'Gửi tin nhắn riêng', args: '<player> <message>' },
+  { cmd: 'tell',        desc: 'Gửi tin nhắn riêng', args: '<player> <message>' },
+  { cmd: 'broadcast',   desc: 'Phát sóng tin nhắn (Paper)', args: '<message>' },
+  { cmd: 'execute',     desc: 'Thực thi lệnh theo điều kiện' },
+  { cmd: 'summon',      desc: 'Triệu hồi entity', args: '<entity> [x y z]' },
+  { cmd: 'setblock',    desc: 'Đặt block', args: '<x y z> <block>' },
+  { cmd: 'fill',        desc: 'Điền block', args: '<x1 y1 z1> <x2 y2 z2> <block>' },
+  { cmd: 'clone',       desc: 'Sao chép vùng', args: '<x1 y1 z1> <x2 y2 z2> <x y z>' },
+]
+
+function CommandInput({ value, onChange, onSubmit, disabled, isRunning, autoScroll, onToggleScroll }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [selIdx, setSelIdx]           = useState(0)
+  const [showSug, setShowSug]         = useState(false)
+  const inputRef = useRef(null)
+  const sugRef   = useRef(null)
+
+  // Build suggestions from current input
+  useEffect(() => {
+    const raw = value.startsWith('/') ? value.slice(1) : value
+    if (!raw.trim()) { setSuggestions([]); setShowSug(false); return }
+    const lower = raw.toLowerCase()
+    const matches = MC_COMMANDS.filter(c => c.cmd.toLowerCase().startsWith(lower) && c.cmd.toLowerCase() !== lower)
+      .slice(0, 8)
+    setSuggestions(matches)
+    setShowSug(matches.length > 0)
+    setSelIdx(0)
+  }, [value])
+
+  function applySuggestion(cmd) {
+    onChange(cmd)
+    setShowSug(false)
+    inputRef.current?.focus()
+  }
+
+  function handleKeyDown(e) {
+    if (showSug && suggestions.length > 0) {
+      if (e.key === 'Tab' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelIdx(i => (i + 1) % suggestions.length)
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelIdx(i => (i - 1 + suggestions.length) % suggestions.length)
+        return
+      }
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        if (e.key === 'Tab') { e.preventDefault(); applySuggestion(suggestions[selIdx].cmd); return }
+      }
+      if (e.key === 'Escape') { setShowSug(false); return }
+    }
+    if (e.key === 'Tab') { e.preventDefault(); if (suggestions.length > 0) applySuggestion(suggestions[0].cmd) }
+    if (e.key === 'Enter') { e.preventDefault(); setShowSug(false); onSubmit() }
+  }
+
+  // Strip leading slash when sending — server doesn't need it
+  function handleChange(e) {
+    let v = e.target.value
+    // Allow typing with or without slash — normalize internally without slash
+    if (v.startsWith('/')) v = v.slice(1)
+    onChange(v)
+  }
+
+  return (
+    <div className="relative">
+      {/* Suggestions popup — above input */}
+      {showSug && suggestions.length > 0 && (
+        <div ref={sugRef}
+          className="absolute bottom-full left-0 right-0 mb-1 mx-3 rounded-xl border border-white/10 overflow-hidden"
+          style={{ background: 'rgba(14,14,14,0.98)', boxShadow: '0 -8px 32px rgba(0,0,0,0.6)', maxHeight: 240, overflowY: 'auto', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
+          {suggestions.map((s, i) => (
+            <button key={s.cmd} type="button"
+              onMouseDown={e => { e.preventDefault(); applySuggestion(s.cmd) }}
+              className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-all ${i === selIdx ? 'bg-green-500/15' : 'hover:bg-white/5'}`}>
+              <span className={`text-xs font-mono font-bold flex-shrink-0 ${i === selIdx ? 'text-green-400' : 'text-white/70'}`}>
+                /{s.cmd}
+              </span>
+              {s.args && <span className="text-[10px] text-white/30 font-mono">{s.args}</span>}
+              <span className="text-[10px] text-white/25 ml-auto truncate">{s.desc}</span>
+            </button>
+          ))}
+          <div className="px-3 py-1.5 border-t border-white/5 flex items-center gap-3">
+            <span className="text-[9px] text-white/20">Tab: chọn</span>
+            <span className="text-[9px] text-white/20">↑↓: di chuyển</span>
+            <span className="text-[9px] text-white/20">Esc: đóng</span>
+          </div>
+        </div>
+      )}
+
+      {/* Input row */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        <span className="text-green-400/60 font-mono text-xs flex-shrink-0">/</span>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => { if (suggestions.length > 0) setShowSug(true) }}
+          onBlur={() => setTimeout(() => setShowSug(false), 150)}
+          placeholder={isRunning ? 'Nhập lệnh... (Tab để gợi ý)' : 'Server chưa chạy'}
+          disabled={disabled}
+          autoComplete="off"
+          spellCheck={false}
+          className="flex-1 bg-transparent text-white/80 text-xs font-mono focus:outline-none placeholder-white/20 disabled:opacity-40"
+        />
+        <button type="button" onClick={onSubmit} disabled={disabled || !value.trim()}
+          className="px-3 py-1 rounded-lg bg-green-500/15 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-all disabled:opacity-30">
+          Gửi
+        </button>
+        <button type="button" onClick={onToggleScroll}
+          className={`px-2 py-1 rounded-lg text-xs transition-all ${autoScroll ? 'bg-green-500/15 text-green-400' : 'text-white/25 hover:text-white/50'}`}>
+          ↓
+        </button>
       </div>
     </div>
   )
