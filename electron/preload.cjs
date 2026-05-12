@@ -105,6 +105,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Modrinth
   modrinthSearch:          (opts)           => ipcRenderer.invoke('modrinth:search', opts),
+  spigetSearch:            (opts)           => ipcRenderer.invoke('spiget:search', opts),
   modrinthGetProject:      (idOrSlug)       => ipcRenderer.invoke('modrinth:getProject', idOrSlug),
   modrinthGetVersions:     (idOrSlug, f)    => ipcRenderer.invoke('modrinth:getVersions', idOrSlug, f),
   modrinthInstall:         (opts)           => ipcRenderer.invoke('modrinth:install', opts),

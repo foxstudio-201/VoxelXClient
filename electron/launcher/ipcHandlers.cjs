@@ -747,6 +747,43 @@ function registerLauncherHandlers(getTrustedWindow) {
     catch (err) { return { error: err.message } }
   })
 
+  // ── Spiget (SpigotMC) search ──────────────────────────────────────────────
+  ipcMain.handle('spiget:search', async (e, opts) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const { query = '', size = 20, page = 1 } = opts || {}
+    const https = require('https')
+    try {
+      const data = await new Promise((resolve, reject) => {
+        const encoded = encodeURIComponent(query || '*')
+        // If no query, list popular free resources sorted by downloads
+        const url = query
+          ? `https://api.spiget.org/v2/search/resources/${encoded}?size=${size}&page=${page}&sort=-downloads&fields=id,name,tag,icon,downloads,rating,testedVersions,premium,file`
+          : `https://api.spiget.org/v2/resources/free?size=${size}&page=${page}&sort=-downloads&fields=id,name,tag,icon,downloads,rating,testedVersions,premium,file`
+        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' }, timeout: 8000 }, res => {
+          let body = ''
+          res.on('data', c => { body += c })
+          res.on('end', () => {
+            try { resolve(JSON.parse(body)) } catch { resolve([]) }
+          })
+        }).on('error', reject).on('timeout', reject)
+      })
+      // Normalize to array
+      const list = Array.isArray(data) ? data : (data?.results || [])
+      // Attach icon URL
+      const results = list.map(r => ({
+        ...r,
+        icon_url: r.icon?.url ? `https://www.spigotmc.org/${r.icon.url}` : null,
+        title:    r.name,
+        description: r.tag || '',
+        downloads: r.downloads || 0,
+        resource_id: r.id,
+      }))
+      return { ok: true, results }
+    } catch (err) {
+      return { error: err.message }
+    }
+  })
+
   ipcMain.handle('modrinth:getProject', async (e, idOrSlug) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     try { return await getProject(idOrSlug) }
