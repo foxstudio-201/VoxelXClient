@@ -1254,6 +1254,98 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
+  // server:getVersionsForType — list versions supported by a specific server type
+  ipcMain.handle('server:getVersionsForType', async (e, serverType) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    try {
+      switch (serverType) {
+        case 'vanilla': {
+          const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
+          const versions = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id).slice(0, 40)
+          return { ok: true, versions }
+        }
+        case 'paper': {
+          const data = await httpsGet('https://api.papermc.io/v2/projects/paper')
+          const versions = (data?.versions || []).reverse()
+          return { ok: true, versions }
+        }
+        case 'purpur': {
+          const data = await httpsGet('https://api.purpurmc.org/v2/purpur')
+          const versions = (data?.versions || []).reverse()
+          return { ok: true, versions }
+        }
+        case 'folia': {
+          const data = await httpsGet('https://api.papermc.io/v2/projects/folia')
+          const versions = (data?.versions || []).reverse()
+          return { ok: true, versions }
+        }
+        case 'fabric': {
+          const data = await httpsGet('https://meta.fabricmc.net/v2/versions/game')
+          const versions = (data || []).filter(v => v.stable).map(v => v.version).slice(0, 30)
+          return { ok: true, versions }
+        }
+        case 'forge': {
+          // Parse forge promotions to get supported MC versions
+          const data = await httpsGet('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json')
+          const promos = data?.promos || {}
+          const versions = [...new Set(
+            Object.keys(promos)
+              .map(k => k.split('-')[0])
+              .filter(v => /^\d+\.\d+/.test(v))
+          )].sort((a, b) => {
+            const pa = a.split('.').map(Number)
+            const pb = b.split('.').map(Number)
+            for (let i = 0; i < 3; i++) { if ((pb[i]||0) !== (pa[i]||0)) return (pb[i]||0) - (pa[i]||0) }
+            return 0
+          })
+          return { ok: true, versions }
+        }
+        case 'neoforge': {
+          // NeoForge supports 1.20.1+
+          const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
+          const all = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id)
+          const versions = all.filter(v => {
+            const parts = v.split('.').map(Number)
+            return parts[1] > 20 || (parts[1] === 20 && (parts[2] || 0) >= 1)
+          })
+          return { ok: true, versions }
+        }
+        case 'mohist': {
+          const data = await httpsGet('https://mohistmc.com/api/v2/projects/mohist')
+          const versions = (data?.versions || []).reverse()
+          return { ok: true, versions }
+        }
+        case 'arclight': {
+          // Arclight supports 1.16.5 - 1.20.x (Forge+Paper)
+          return { ok: true, versions: ['1.20.1', '1.19.4', '1.19.2', '1.18.2', '1.16.5'] }
+        }
+        case 'magma': {
+          // Magma supports specific versions
+          return { ok: true, versions: ['1.20.1', '1.19.4', '1.18.2', '1.16.5', '1.12.2'] }
+        }
+        case 'sponge': {
+          // SpongeVanilla supports recent versions
+          const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
+          const all = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id)
+          const versions = all.filter(v => {
+            const parts = v.split('.').map(Number)
+            return parts[1] >= 16
+          }).slice(0, 20)
+          return { ok: true, versions }
+        }
+        default: {
+          // Fallback: all release versions
+          const manifest = await httpsGet('https://launchermeta.mojang.com/mc/game/version_manifest_v2.json')
+          const versions = (manifest?.versions || []).filter(v => v.type === 'release').map(v => v.id).slice(0, 30)
+          return { ok: true, versions }
+        }
+      }
+    } catch (err) {
+      // Fallback on error
+      return { ok: true, versions: ['1.21.4', '1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2'] }
+    }
+  })
+
   // server:readFile — read text file content
   ipcMain.handle('server:readFile', (e, serverId, filePath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }

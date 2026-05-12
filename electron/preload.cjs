@@ -268,6 +268,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   serverBrowse:        ()                    => ipcRenderer.invoke('server:browse'),
   serverInstallJava:   (pkg, id)             => ipcRenderer.invoke('server:installJava', pkg, id),
   serverGetVersions:   ()                    => ipcRenderer.invoke('server:getVersions'),
+  serverGetVersionsForType: (type)           => ipcRenderer.invoke('server:getVersionsForType', type),
   serverPing:          (id)                  => ipcRenderer.invoke('server:ping', id),
   onServerPlayerCount: (cb) => {
     const handler = (_e, data) => cb(data)

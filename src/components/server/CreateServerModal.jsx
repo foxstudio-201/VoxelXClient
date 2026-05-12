@@ -376,6 +376,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
   const [step, setStep]           = useState(1) // 1=type, 2=config
   const [selectedType, setType]   = useState(null)
   const [versions, setVersions]   = useState([])
+  const [versionsLoading, setVersionsLoading] = useState(false)
   const [versionOpen, setVersionOpen] = useState(false)
   const versionRef = useRef(null)
   const [showJavaModal, setShowJavaModal] = useState(false)
@@ -396,11 +397,17 @@ export default function CreateServerModal({ onClose, onCreate }) {
   const [error, setError]         = useState('')
 
   useEffect(() => {
-    if (!isElectron) return
-    window.electronAPI.serverGetVersions().then(r => {
+    if (!isElectron || !selectedType) return
+    setVersions([])
+    setVersionsLoading(true)
+    set('gameVersion', '') // reset version khi đổi type
+    const api = window.electronAPI.serverGetVersionsForType
+      ? window.electronAPI.serverGetVersionsForType(selectedType.id)
+      : window.electronAPI.serverGetVersions()
+    api.then(r => {
       if (r?.ok) setVersions(r.versions)
-    }).catch(() => {})
-  }, [])
+    }).catch(() => {}).finally(() => setVersionsLoading(false))
+  }, [selectedType?.id])
 
   // Close version dropdown on outside click
   useEffect(() => {
@@ -568,8 +575,16 @@ export default function CreateServerModal({ onClose, onCreate }) {
                   {versionOpen && (
                     <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-white/10 overflow-hidden"
                       style={{ background: 'rgba(18,18,18,0.98)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', maxHeight: 220, overflowY: 'auto', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
-                      {versions.length === 0 ? (
-                        <div className="px-3 py-3 text-xs text-white/30 text-center">Đang tải...</div>
+                      {versionsLoading ? (
+                        <div className="flex items-center justify-center gap-2 px-3 py-4">
+                          <svg className="animate-spin w-3.5 h-3.5 text-green-400/50" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                          </svg>
+                          <span className="text-xs text-white/30">Đang tải phiên bản {selectedType?.label}...</span>
+                        </div>
+                      ) : versions.length === 0 ? (
+                        <div className="px-3 py-3 text-xs text-white/30 text-center">Không có phiên bản nào</div>
                       ) : (
                         versions.map(v => (
                           <button
