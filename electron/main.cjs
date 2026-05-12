@@ -590,8 +590,8 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
     const { spawn } = require('child_process')
 
     if (process.platform === 'win32') {
-      // Create a batch script that waits for this process to exit, then runs installer silently
-      // This ensures the old app is fully closed before installer replaces files
+      // Create a batch script that waits for this process to exit, then runs installer
+      // Show installer UI so user can see the installation progress
       const batchPath = path.join(os.tmpdir(), 'vxc-update.bat')
       const pid = process.pid
       const batchContent = [
@@ -603,8 +603,8 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
         `  timeout /t 1 /nobreak >NUL`,
         `  goto waitloop`,
         `)`,
-        `:: Run installer silently`,
-        `"${filePath}" /S`,
+        `:: Run installer (with UI so user can see it)`,
+        `"${filePath}"`,
         `:: Clean up`,
         `del "${filePath}" 2>NUL`,
         `del "%~f0" 2>NUL`,

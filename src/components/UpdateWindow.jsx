@@ -51,8 +51,7 @@ export default function UpdateWindow() {
         setStatus('noRelease')
       } else if (res.hasUpdate) {
         setStatus('updateAvailable')
-        // Auto-start download immediately
-        handleDownload(res)
+        // Do NOT auto-download — let user click the button
       } else {
         setStatus('upToDate')
       }
@@ -194,10 +193,10 @@ export default function UpdateWindow() {
             </div>
           )}
 
-          {/* Update available — shown briefly before download starts */}
+          {/* Update available — user clicks to download */}
           {status === 'updateAvailable' && result && (
             <div className="rounded-xl border border-green-500/20 bg-green-500/8 p-5">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-green-400 flex-shrink-0">
                   <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                 </svg>
@@ -210,9 +209,25 @@ export default function UpdateWindow() {
               </div>
               {result.releaseName && <p className="text-xs text-white/50 mb-1">{result.releaseName}</p>}
               {result.releaseNotes && (
-                <p className="text-xs text-white/30 leading-relaxed line-clamp-3">{result.releaseNotes}</p>
+                <p className="text-xs text-white/30 leading-relaxed line-clamp-3 mb-3">{result.releaseNotes}</p>
               )}
-              <p className="text-xs text-green-400/60 mt-2 animate-pulse">Đang chuẩn bị tải xuống...</p>
+              {result.installerAsset ? (
+                <button onClick={() => handleDownload(result)}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold bg-green-500 hover:bg-green-400 text-white transition-all active:scale-95 flex items-center justify-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                  Tải & Cài đặt v{result.latestVersion}
+                </button>
+              ) : (
+                <button onClick={() => openUrl(result.releaseUrl)}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold bg-white/10 hover:bg-white/15 text-white transition-all active:scale-95 flex items-center justify-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                    <path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                  </svg>
+                  Mở trang tải xuống
+                </button>
+              )}
             </div>
           )}
 

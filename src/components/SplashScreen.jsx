@@ -54,32 +54,9 @@ export default function SplashScreen({ onDone }) {
       if (autoCheckUpdate && isElectron) {
         setProgress(30, 'Kiểm tra cập nhật...')
         try {
-          const updateResult = await window.electronAPI.checkUpdate()
-          if (!cancelled && updateResult?.hasUpdate && updateResult?.installerAsset) {
-            // Has update — download and install silently
-            setProgress(32, `Phiên bản mới ${updateResult.latestVersion} — đang tải...`)
-
-            const unsub = window.electronAPI.onDownloadProgress(p => {
-              if (!cancelled) {
-                const pct = 32 + Math.round((p.percent ?? 0) * 0.3) // 32–62%
-                setProgress(pct, `Tải cập nhật ${updateResult.latestVersion}... ${p.percent ?? 0}%`)
-              }
-            })
-
-            const dlResult = await window.electronAPI.downloadUpdate({
-              downloadUrl: updateResult.installerAsset.downloadUrl,
-              fileName:    updateResult.installerAsset.name,
-            })
-            unsub?.()
-
-            if (!cancelled && dlResult?.ok) {
-              setProgress(65, 'Đang cài đặt cập nhật...')
-              await delay(400)
-              // Install and quit — app will restart after installer runs
-              window.electronAPI.installUpdate({ filePath: dlResult.filePath })
-              return // Don't continue splash — app is quitting
-            }
-          }
+          // Only check — do NOT auto-download or install from splash
+          // User can update manually from Settings > About
+          await window.electronAPI.checkUpdate()
         } catch {}
       }
 
