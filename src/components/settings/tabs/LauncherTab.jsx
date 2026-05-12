@@ -29,20 +29,6 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-/**
- * VoxelXClient — Minecraft Launcher
- * Created by FoxStudio. AI-assisted development.
- *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
- * Website     : https://voxxelxclient.vercel.app
- *
- * NOTICE:
- *   - This software is provided as-is without warranty of any kind.
- *   - Do not redistribute or resell without explicit permission from FoxStudio.
- *   - If you use or reference this code, please credit FoxStudio.
- *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
- */
-
 import { useState } from 'react'
 import { BG_THEMES } from '../../AppBackground'
 
@@ -155,7 +141,6 @@ function FontTab({ settings, onChange }) {
     applyFont(id)
   }
 
-  // Apply font size (percentage, default 100%)
   function handleFontSizeChange(size) {
     onChange({ fontSize: size })
     document.documentElement.style.setProperty('--app-font-size', `${size}%`)
@@ -235,7 +220,7 @@ function FontTab({ settings, onChange }) {
       {}
       <div className="rounded-xl border border-white/5 bg-white/3 p-4">
         <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">Preview</p>
-        <div 
+        <div
           style={{
             fontFamily: activeFont.stack, fontWeight: weight,
             fontSize: `${fontSize}%`

@@ -29,20 +29,6 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-/**
- * VoxelXClient — Minecraft Launcher
- * Created by FoxStudio. AI-assisted development.
- *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
- * Website     : https://voxxelxclient.vercel.app
- *
- * NOTICE:
- *   - This software is provided as-is without warranty of any kind.
- *   - Do not redistribute or resell without explicit permission from FoxStudio.
- *   - If you use or reference this code, please credit FoxStudio.
- *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
- */
-
 import { useRef, useEffect, useState, Suspense, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations, OrbitControls } from '@react-three/drei'
@@ -336,3 +322,4 @@ export default function PlayerModel3D({ uuid, username, slim = false, customSkin
     </div>
   )
 }
+

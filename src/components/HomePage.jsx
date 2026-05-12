@@ -29,20 +29,6 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-/**
- * VoxelXClient — Minecraft Launcher
- * Created by FoxStudio. AI-assisted development.
- *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
- * Website     : https://voxxelxclient.vercel.app
- *
- * NOTICE:
- *   - This software is provided as-is without warranty of any kind.
- *   - Do not redistribute or resell without explicit permission from FoxStudio.
- *   - If you use or reference this code, please credit FoxStudio.
- *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
- */
-
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
 import PlayerHead from './ui/PlayerHead'
@@ -63,46 +49,36 @@ import v119 from '../assets/minecraft-versions/1.19.png'
 import v120 from '../assets/minecraft-versions/1.20.png'
 import v121 from '../assets/minecraft-versions/1.21.png'
 
-// Convert markdown+HTML release body to clean HTML for rendering
 function markdownToHtml(text) {
   if (!text) return ''
   let html = String(text)
 
-  // Remove shields.io badge images (noise)
   html = html.replace(/<img[^>]*shields\.io[^>]*>/gi, '')
   html = html.replace(/!\[[^\]]*\]\(https?:\/\/img\.shields\.io[^)]*\)/g, '')
 
-  // Convert markdown images to <img> (logo etc)
   html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g,
     '<img src="$2" alt="$1" style="max-width:72px;max-height:72px;border-radius:12px;margin:6px auto;display:block;" />')
 
-  // Convert markdown links
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
     '<span class="md-link" data-href="$2">$1 ↗</span>')
 
-  // Headings
   html = html.replace(/^#{4,6}\s+(.+)$/gm, '<h4 class="md-h4">$1</h4>')
   html = html.replace(/^###\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>')
   html = html.replace(/^##\s+(.+)$/gm, '<h2 class="md-h2">$1</h2>')
   html = html.replace(/^#\s+(.+)$/gm, '<h1 class="md-h1">$1</h1>')
 
-  // Bold/italic/code
   html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
   html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
   html = html.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>')
 
-  // Blockquote
   html = html.replace(/^>\s+(.+)$/gm, '<blockquote class="md-blockquote">$1</blockquote>')
 
-  // Horizontal rule
   html = html.replace(/^---+$/gm, '<hr class="md-hr" />')
 
-  // Bullet lists
   html = html.replace(/^[-*]\s+(.+)$/gm, '<li class="md-li">$1</li>')
   html = html.replace(/(<li class="md-li">[\s\S]*?<\/li>\n?)+/g, m => `<ul class="md-ul">${m}</ul>`)
 
-  // Paragraphs
   html = html.replace(/^(?!<[a-zA-Z/]|$)(.+)$/gm, '<p class="md-p">$1</p>')
 
   return html
@@ -705,7 +681,6 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
 
   useEffect(() => () => clearTimeout(ramSaveTimer.current), [])
 
-  // Load patch notes on mount
   useEffect(() => {
     const loadPatchNotes = async () => {
       if (!isElectron) return
@@ -718,11 +693,10 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         const versionKey = `patchnotes_${result.currentVersion}`
         if (patchNotesShownRef.current.has(versionKey)) return
 
-        // Show modal after 3 seconds
         const timer = setTimeout(() => {
           setPatchNotesModal(result)
           patchNotesShownRef.current.add(versionKey)
-          // Persist to localStorage to survive app restarts
+
           try {
             const shown = JSON.parse(localStorage.getItem('vxc_patchnotes_shown') || '[]')
             if (!shown.includes(versionKey)) {
@@ -736,7 +710,6 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
       } catch {}
     }
 
-    // Load previously shown versions from localStorage
     try {
       const shown = JSON.parse(localStorage.getItem('vxc_patchnotes_shown') || '[]')
       shown.forEach(v => patchNotesShownRef.current.add(v))
