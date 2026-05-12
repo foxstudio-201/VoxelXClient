@@ -184,7 +184,8 @@ jobs:
             <p><strong>The Ultimate Minecraft Launcher</strong><br/>Manage profiles, install mods, and launch any Minecraft version — all in one place.</p>
             <p>
             <img src="https://img.shields.io/badge/version-${{ steps.version.outputs.VERSION }}-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
-            <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue?style=flat-square&labelColor=0a0a0a" alt="Platform" />
+            <img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&labelColor=0a0a0a&logo=windows11&logoColor=0078D4" alt="Windows" />
+            <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&labelColor=0a0a0a&logo=linux&logoColor=FCC624" alt="Linux" />
             <img src="https://img.shields.io/badge/electron-42-47848F?style=flat-square&labelColor=0a0a0a&logo=electron" alt="Electron" />
             <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&labelColor=0a0a0a&logo=react" alt="React" />
             <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=0a0a0a" alt="License" />
@@ -195,56 +196,58 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật lớn tập trung vào **Server Manager** — quản lý server Minecraft trực tiếp trong launcher, không cần công cụ ngoài.
+            > Bản cập nhật tập trung vào **Server Manager** — quản lý server Minecraft hoàn chỉnh ngay trong launcher với plugin, mod, cài đặt, whitelist và ban list.
 
             ---
 
-            ### 🖥️ Server Console — Tái cấu trúc hoàn toàn
+            ### 🖥️ Server Console
 
-            - Console hiển thị màu ANSI và ký hiệu `§` đầy đủ, đúng encoding UTF-8
-            - Lọc log theo mức độ: `ALL` / `INFO` / `WARN` / `ERROR`
-            - Auto-scroll thông minh, nút copy toàn bộ log
-            - Giao diện chia tab: **Console · Files · Network**
-
-            ---
-
-            ### 📁 File Manager — Quản lý file server
-
-            - Duyệt toàn bộ thư mục server với cây thư mục đầy đủ
-            - Double-click file để mở **Code Editor** với highlight cú pháp, số dòng, cuộn đồng bộ
-            - Lưu / Huỷ với hiệu ứng trượt mượt
-            - Checkbox chọn nhiều file/folder để **xoá hàng loạt**
-            - Nén file thành `.zip`, giải nén trực tiếp trong launcher
-            - Kéo thả hoặc dùng nút **Add** để upload file lên server
+            - Tab-complete lệnh Minecraft với 60+ lệnh gợi ý theo ngữ cảnh
+            - Tự động thêm `/` — chỉ cần gõ tên lệnh
+            - Realtime RAM/CPU từ process thực tế (pidusage), không còn hardcode
+            - RAM bar hiển thị đúng theo `-Xmx`, không vượt 100%
+            - IP nội bộ hiển thị ngay trên panel, nút copy một chạm
+            - Nếu bore tunnel đang bật → hiện địa chỉ tunnel thay thế
 
             ---
 
-            ### 🌐 Network Tab — Kết nối từ xa
+            ### � Plugins & Mods Tab
 
-            - Hiển thị **IP nội bộ** (LAN) và **IP công cộng** kèm port
-            - Tích hợp **bore tunnel** — tạo địa chỉ công cộng không cần port forwarding, không cần tài khoản
-            - Tự động tải `bore` binary (~6MB) lần đầu sử dụng
-            - Trạng thái tunnel giữ nguyên khi chuyển tab
-            - Nút copy địa chỉ tunnel một chạm để chia sẻ cho bạn bè
-
-            ---
-
-            ### ⚙️ Profile Settings — Cải tiến
-
-            - Sửa lỗi tab Worlds không load được danh sách thế giới
-            - Sửa lỗi Shaders / Resource Packs không lấy được icon từ Modrinth API
-            - RAM slider hiển thị đúng track màu
-            - Truyền đúng object profile sau khi cập nhật
+            - Tab **Plugins**: sub-tab Modrinth + Spigot với icon riêng
+            - Tab **Mods**: tìm kiếm mod từ Modrinth
+            - Tự động filter loader theo loại server (Paper → bukkit/spigot/paper, Fabric → fabric/quilt...)
+            - Modal chọn phiên bản: bộ lọc release/beta/alpha cố định trên header, không scroll cùng list
+            - Loader tags màu sắc theo từng loại
+            - Tải plugin/mod thẳng vào thư mục `plugins/` hoặc `mods/` của server
 
             ---
 
-            ### 🔧 Sửa lỗi khác
+            ### ⚙️ Settings Tab (mới)
 
+            - **Cấu hình**: MOTD, Max Players, Port, Gamemode, Difficulty, Level Name
+            - Toggle: Online Mode, Whitelist, PvP
+            - RAM slider, CPU Cores, JVM Arguments, Java Path
+            - Custom dropdown thay thế `<select>` native
+            - **Whitelist**: thêm/xoá player, checkbox chọn nhiều, avatar player
+            - **Banned**: danh sách ban với countdown thời gian, auto-unban khi hết hạn, unban hàng loạt
+
+            ---
+
+            ### 🃏 Server Card
+
+            - Icon lớn hơn, tên to hơn
+            - Hiện ping ms (TCP), player count realtime, RAM/Cores
+            - Ping bars màu theo latency
+
+            ---
+
+            ### 🔧 Sửa lỗi & Cải tiến
+
+            - Sidebar: icon Server thay Globe, label "Server" thay "Worlds"
             - Tắt DevTools trong bản production
-            - Sửa lỗi nút xoá server bị che bởi `overflow-hidden`
-            - Sửa lỗi `Identifier 'app' has already been declared` trong `serverManager.cjs`
-            - Sửa encoding UTF-8 cho stdout/stderr server (dùng `StringDecoder`)
-            - Thêm JVM flags `-Dfile.encoding=UTF-8` để hiển thị đúng tiếng Việt trong console
+            - Version splash screen lấy từ Electron IPC (luôn đúng sau update)
+            - Sửa encoding UTF-8 console server
+            - Sửa lỗi preload `onServerLog` bị mất khai báo
 
             ---
 
@@ -252,10 +255,10 @@ jobs:
 
             | Nền tảng | File | Ghi chú |
             |----------|------|---------|
-            | Windows | `VoxelXClient Setup ${{ steps.version.outputs.VERSION }}.exe` | Installer (khuyến nghị) |
-            | Windows | `VoxelXClient ${{ steps.version.outputs.VERSION }}.exe` | Portable, không cần cài |
-            | Linux | `VoxelXClient-${{ steps.version.outputs.VERSION }}.AppImage` | Chạy trực tiếp |
-            | Linux | `voxelxclient_${{ steps.version.outputs.VERSION }}_amd64.deb` | Debian / Ubuntu |
+            | 🪟 Windows | `VoxelXClient Setup ${{ steps.version.outputs.VERSION }}.exe` | Installer (khuyến nghị) |
+            | 🪟 Windows | `VoxelXClient ${{ steps.version.outputs.VERSION }}.exe` | Portable, không cần cài |
+            | 🐧 Linux | `VoxelXClient-${{ steps.version.outputs.VERSION }}.AppImage` | Chạy trực tiếp |
+            | 🐧 Linux | `voxelxclient_${{ steps.version.outputs.VERSION }}_amd64.deb` | Debian / Ubuntu |
 
             > **Yêu cầu:** Windows 10/11 (64-bit) hoặc Linux x64
             > ⚠️ Windows: SmartScreen có thể cảnh báo lần đầu — nhấn **More info** → **Run anyway**
