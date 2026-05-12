@@ -164,7 +164,7 @@ function registerServerHandlers(getTrustedWindow) {
   // server:create
   ipcMain.handle('server:create', async (e, opts) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    const { name, type, gameVersion, ramGb, jvmArgs, cores, javaPath, serverPath, acceptEula } = opts || {}
+    const { name, type, gameVersion, ramGb, jvmArgs, cores, javaPath, serverPath, acceptEula, onlineMode, maxPlayers } = opts || {}
 
     if (!name || !type || !gameVersion) return { error: 'Thiếu thông tin bắt buộc' }
 
@@ -180,6 +180,20 @@ function registerServerHandlers(getTrustedWindow) {
       fs.writeFileSync(path.join(serverDir, 'eula.txt'), '#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).\neula=true\n')
     }
 
+    // Write server.properties with online-mode and max-players
+    const propsPath = path.join(serverDir, 'server.properties')
+    if (!fs.existsSync(propsPath)) {
+      const onlineModeVal = onlineMode === false ? 'false' : 'true'
+      const maxPlayersVal = Math.max(1, Math.min(1000, parseInt(maxPlayers) || 20))
+      fs.writeFileSync(propsPath,
+        `#Minecraft server properties\n` +
+        `online-mode=${onlineModeVal}\n` +
+        `max-players=${maxPlayersVal}\n` +
+        `server-port=25565\n` +
+        `motd=A Minecraft Server\n`
+      )
+    }
+
     const server = {
       id,
       name,
@@ -190,8 +204,10 @@ function registerServerHandlers(getTrustedWindow) {
       cores:      cores      ?? 2,
       javaPath:   javaPath   || '',
       serverDir,
+      onlineMode: onlineMode !== false,
+      maxPlayers: Math.max(1, Math.min(1000, parseInt(maxPlayers) || 20)),
       createdAt:  new Date().toISOString(),
-      jarFile:    null, // will be set after download
+      jarFile:    null,
     }
 
     const data = readServers()

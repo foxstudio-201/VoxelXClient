@@ -384,6 +384,8 @@ export default function CreateServerModal({ onClose, onCreate }) {
     javaPath:    '',
     serverPath:  '',
     acceptEula:  false,
+    onlineMode:  true,
+    maxPlayers:  20,
   })
   const [creating, setCreating]   = useState(false)
   const [error, setError]         = useState('')
@@ -438,6 +440,8 @@ export default function CreateServerModal({ onClose, onCreate }) {
             javaPath:    '',
             serverPath:  form.serverPath,
             acceptEula:  form.acceptEula,
+            onlineMode:  form.onlineMode,
+            maxPlayers:  form.maxPlayers,
           })
         : { ok: true, server: { id: 'demo', name: form.name, type: selectedType.id, gameVersion: form.gameVersion, ramGb: form.ramGb, status: 'offline' } }
 
@@ -464,19 +468,33 @@ export default function CreateServerModal({ onClose, onCreate }) {
         style={{ background: 'rgba(12,12,12,0.98)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 32px 80px rgba(0,0,0,0.8)', maxHeight: '88vh' }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
-          <div>
-            <h3 className="text-white font-bold text-sm">Tạo Server Minecraft</h3>
-            <p className="text-white/30 text-xs mt-0.5">
-              {step === 1 ? 'Bước 1: Chọn loại server' : `Bước 2: Cấu hình — ${selectedType?.label}`}
-            </p>
+        <div className="flex-shrink-0 border-b border-white/5">
+          <div className="flex items-center justify-between px-5 py-4">
+            <div>
+              <h3 className="text-white font-bold text-sm">Tạo Server Minecraft</h3>
+              <p className="text-white/30 text-xs mt-0.5">
+                {step === 1 ? 'Bước 1: Chọn loại server' : `Bước 2: Cấu hình — ${selectedType?.label}`}
+              </p>
+            </div>
+            <button onClick={onClose}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 transition-all">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
           </div>
-          <button onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 transition-all">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
+          {/* EULA warning banner — only show on step 2 when not accepted */}
+          {step === 2 && !form.acceptEula && (
+            <div className="mx-5 mb-3 flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              <p className="text-xs text-yellow-300/80 leading-relaxed">
+                Bạn phải <span className="font-bold text-yellow-300">chấp nhận Minecraft EULA</span> trước khi tạo server. Kéo xuống cuối để tích chọn.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Body */}
@@ -586,6 +604,52 @@ export default function CreateServerModal({ onClose, onCreate }) {
                 </div>
               </div>
 
+              {/* Online Mode + Max Players */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Online Mode toggle */}
+                <div className="flex flex-col gap-2">
+                  <label className={labelCls}>Online Mode</label>
+                  <button type="button"
+                    onClick={() => set('onlineMode', !form.onlineMode)}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all ${
+                      form.onlineMode
+                        ? 'border-green-500/30 bg-green-500/8'
+                        : 'border-white/10 bg-white/3'
+                    }`}>
+                    <div className="flex items-center gap-2">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 ${form.onlineMode ? 'text-green-400' : 'text-white/25'}`}>
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
+                      </svg>
+                      <span className={`text-xs font-semibold ${form.onlineMode ? 'text-green-400' : 'text-white/40'}`}>
+                        {form.onlineMode ? 'Bật' : 'Tắt'}
+                      </span>
+                    </div>
+                    {/* Toggle switch */}
+                    <div className={`w-9 h-5 rounded-full transition-all relative flex-shrink-0 ${form.onlineMode ? 'bg-green-500' : 'bg-white/15'}`}>
+                      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${form.onlineMode ? 'left-4' : 'left-0.5'}`} />
+                    </div>
+                  </button>
+                  <p className="text-[10px] text-white/25 leading-relaxed">
+                    {form.onlineMode
+                      ? 'Yêu cầu tài khoản Minecraft chính hãng'
+                      : 'Cho phép tài khoản offline (cracked)'}
+                  </p>
+                </div>
+
+                {/* Max Players */}
+                <div className="flex flex-col gap-2">
+                  <label className={labelCls}>Max Players</label>
+                  <input
+                    type="number" min="1" max="1000" step="1"
+                    value={form.maxPlayers}
+                    onChange={e => set('maxPlayers', Math.max(1, Math.min(1000, parseInt(e.target.value) || 20)))}
+                    className={`${inputCls} font-mono`}
+                    placeholder="20"
+                  />
+                  <p className="text-[10px] text-white/25">Số người chơi tối đa (1–1000)</p>
+                </div>
+              </div>
+
               {/* JVM Arguments */}
               <div>
                 <label className={labelCls}>JVM Arguments</label>
@@ -653,9 +717,10 @@ export default function CreateServerModal({ onClose, onCreate }) {
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/50 hover:text-white border border-white/8 hover:bg-white/5 transition-all">
               Quay lại
             </button>
-            <button onClick={handleCreate} disabled={creating}
+            <button onClick={handleCreate} disabled={creating || !form.acceptEula}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: '0 4px 16px rgba(34,197,94,0.25)' }}>
+              style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: '0 4px 16px rgba(34,197,94,0.25)' }}
+              title={!form.acceptEula ? 'Vui lòng chấp nhận EULA trước' : ''}>
               {creating ? (
                 <>
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
