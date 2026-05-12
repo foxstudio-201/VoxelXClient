@@ -463,13 +463,24 @@ ipcMain.handle('updater:check', async (e) => {
     }))
 
     // Pick best installer asset for current platform
+    // Windows: prefer "Setup" installer over portable exe
+    // If running as portable (not installed), skip auto-update — user must download manually
     let installerAsset = null
     if (process.platform === 'win32') {
-      installerAsset = assets.find(a => /setup.*\.exe$/i.test(a.name) || /\.exe$/i.test(a.name))
+      // Detect if running as portable: portable exe is typically in Downloads, Desktop, or same dir as exe
+      // Installed version is in Program Files or AppData
+      const exePath = process.execPath || ''
+      const isInstalled = /program files/i.test(exePath) || /appdata/i.test(exePath)
+      if (isInstalled) {
+        // Only auto-update installed version with Setup installer
+        installerAsset = assets.find(a => /setup/i.test(a.name) && /\.exe$/i.test(a.name))
+      }
+      // Portable: no auto-update (installerAsset stays null → hasUpdate still true but no download)
     } else if (process.platform === 'darwin') {
       installerAsset = assets.find(a => /\.dmg$/i.test(a.name))
     } else {
-      installerAsset = assets.find(a => /\.AppImage$/i.test(a.name) || /\.deb$/i.test(a.name))
+      installerAsset = assets.find(a => /\.AppImage$/i.test(a.name))
+        || assets.find(a => /\.deb$/i.test(a.name))
     }
 
     return {
