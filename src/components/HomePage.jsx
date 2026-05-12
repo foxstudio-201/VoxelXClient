@@ -32,31 +32,49 @@ import v119 from '../assets/minecraft-versions/1.19.png'
 import v120 from '../assets/minecraft-versions/1.20.png'
 import v121 from '../assets/minecraft-versions/1.21.png'
 
-function stripHtmlTags(text) {
-  return String(text || '')
-    // Remove entire <div>...</div> blocks (header with badges/logo)
-    .replace(/<div[\s\S]*?<\/div>/gi, '')
-    // Remove self-closing tags like <img ... />
-    .replace(/<[^>]+\/>/g, '')
-    // Convert <br> to newline
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<p[^>]*>/gi, '')
-    // Remove all remaining HTML tags
-    .replace(/<[^>]+>/g, '')
-    // Decode HTML entities
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    // Remove leftover shields.io or raw github URLs on their own line
-    .replace(/^https?:\/\/img\.shields\.io[^\n]*/gm, '')
-    .replace(/^https?:\/\/raw\.githubusercontent[^\n]*/gm, '')
-    // Clean up excessive blank lines
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+// Convert markdown+HTML release body to clean HTML for rendering
+function markdownToHtml(text) {
+  if (!text) return ''
+  let html = String(text)
+
+  // Remove shields.io badge images (noise)
+  html = html.replace(/<img[^>]*shields\.io[^>]*>/gi, '')
+  html = html.replace(/!\[[^\]]*\]\(https?:\/\/img\.shields\.io[^)]*\)/g, '')
+
+  // Convert markdown images to <img> (logo etc)
+  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g,
+    '<img src="$2" alt="$1" style="max-width:72px;max-height:72px;border-radius:12px;margin:6px auto;display:block;" />')
+
+  // Convert markdown links
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    '<span class="md-link" data-href="$2">$1 ↗</span>')
+
+  // Headings
+  html = html.replace(/^#{4,6}\s+(.+)$/gm, '<h4 class="md-h4">$1</h4>')
+  html = html.replace(/^###\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>')
+  html = html.replace(/^##\s+(.+)$/gm, '<h2 class="md-h2">$1</h2>')
+  html = html.replace(/^#\s+(.+)$/gm, '<h1 class="md-h1">$1</h1>')
+
+  // Bold/italic/code
+  html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+  html = html.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>')
+
+  // Blockquote
+  html = html.replace(/^>\s+(.+)$/gm, '<blockquote class="md-blockquote">$1</blockquote>')
+
+  // Horizontal rule
+  html = html.replace(/^---+$/gm, '<hr class="md-hr" />')
+
+  // Bullet lists
+  html = html.replace(/^[-*]\s+(.+)$/gm, '<li class="md-li">$1</li>')
+  html = html.replace(/(<li class="md-li">[\s\S]*?<\/li>\n?)+/g, m => `<ul class="md-ul">${m}</ul>`)
+
+  // Paragraphs
+  html = html.replace(/^(?!<[a-zA-Z/]|$)(.+)$/gm, '<p class="md-p">$1</p>')
+
+  return html
 }
 
 function renderInlineMarkdown(text) {
@@ -102,47 +120,40 @@ function renderInlineMarkdown(text) {
 }
 
 function renderPatchNotesBody(body) {
-  const clean = stripHtmlTags(body)
-  if (!clean) return <p className="text-white/40">Không có nội dung patch note</p>
+  const html = markdownToHtml(body)
+  if (!html.trim()) return <p className="text-white/40">Không có nội dung patch note</p>
 
-  return clean
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line =>
-      line &&
-      !/^[-*_]{3,}$/.test(line) &&
-      !/^<!--/.test(line) &&
-      !/^<\/?[^>]+>$/.test(line)
-    )
-    .map((line, index) => {
-      if (/^#{1,6}\s+/.test(line)) {
-        const level = line.match(/^#+/)[0].length
-        const text = line.replace(/^#{1,6}\s+/, '')
-        const size = level <= 1 ? 'text-xl' : level === 2 ? 'text-lg' : 'text-base'
-        return <h3 key={index} className={`${size} font-bold text-white mt-4 first:mt-0 mb-2`}>{renderInlineMarkdown(text)}</h3>
-      }
-
-      if (/^[-*]\s+/.test(line)) {
-        return (
-          <div key={index} className="flex gap-2 text-white/70 my-1">
-            <span className="text-green-400 mt-0.5">•</span>
-            <span>{renderInlineMarkdown(line.replace(/^[-*]\s+/, ''))}</span>
-          </div>
-        )
-      }
-
-      if (/^\d+\.\s+/.test(line)) {
-        const number = line.match(/^\d+/)?.[0]
-        return (
-          <div key={index} className="flex gap-2 text-white/70 my-1">
-            <span className="text-green-400 mt-0.5">{number}.</span>
-            <span>{renderInlineMarkdown(line.replace(/^\d+\.\s+/, ''))}</span>
-          </div>
-        )
-      }
-
-      return <p key={index} className="text-white/70 my-2 leading-relaxed">{renderInlineMarkdown(line)}</p>
-    })
+  return (
+    <>
+      <style>{`
+        .md-h1 { font-size:1.25rem; font-weight:800; color:rgba(255,255,255,0.95); margin:16px 0 8px; }
+        .md-h2 { font-size:1.1rem; font-weight:700; color:rgba(255,255,255,0.9); margin:14px 0 6px; }
+        .md-h3 { font-size:0.95rem; font-weight:700; color:rgba(255,255,255,0.85); margin:12px 0 5px; display:flex; align-items:center; gap:6px; }
+        .md-h4 { font-size:0.875rem; font-weight:600; color:rgba(255,255,255,0.75); margin:10px 0 4px; }
+        .md-p  { color:rgba(255,255,255,0.65); margin:4px 0; line-height:1.6; font-size:0.875rem; }
+        .md-ul { list-style:none; padding:0; margin:4px 0 8px; }
+        .md-li { color:rgba(255,255,255,0.65); font-size:0.875rem; line-height:1.6; padding:2px 0 2px 16px; position:relative; }
+        .md-li::before { content:"•"; color:#4ade80; position:absolute; left:0; }
+        .md-code { background:rgba(255,255,255,0.08); color:#86efac; padding:1px 5px; border-radius:4px; font-family:monospace; font-size:0.8rem; }
+        .md-blockquote { border-left:3px solid rgba(74,222,128,0.4); padding:4px 12px; margin:8px 0; color:rgba(255,255,255,0.5); font-style:italic; font-size:0.875rem; }
+        .md-hr { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:12px 0; }
+        .md-link { color:#4ade80; cursor:pointer; text-decoration:underline; text-underline-offset:2px; font-size:0.875rem; }
+        .md-link:hover { color:#86efac; }
+        strong { color:rgba(255,255,255,0.9); font-weight:700; }
+        em { color:rgba(255,255,255,0.7); font-style:italic; }
+      `}</style>
+      <div
+        dangerouslySetInnerHTML={{ __html: html }}
+        onClick={e => {
+          const el = e.target.closest('.md-link')
+          if (el) {
+            const href = el.getAttribute('data-href')
+            if (href) window.electronAPI?.openExternal?.(href)
+          }
+        }}
+      />
+    </>
+  )
 }
 
 // ─── PatchNotesModal ──────────────────────────────────────────────────────────
