@@ -1,7 +1,7 @@
 {
   "name": "voxelxclient",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "VoxelXClient - Minecraft Launcher by FoxStudio",
   "author": {
     "name": "FoxStudio",
@@ -55,7 +55,7 @@
   "build": {
     "appId": "com.voxelxclient.launcher",
     "productName": "VoxelXClient",
-    "copyright": "Copyright © 2024 FoxStudio",
+    "copyright": "Copyright Â© 2024 FoxStudio",
     "asar": true,
     "directories": {
       "output": "dist-electron",
