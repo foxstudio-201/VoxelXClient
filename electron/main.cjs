@@ -603,7 +603,7 @@ ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
 })
 
 // updater:install — run the downloaded installer and quit the app
-ipcMain.handle('updater:install', (e, { filePath }) => {
+ipcMain.handle('updater:install', async (e, { filePath }) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (typeof filePath !== 'string') return { error: 'Invalid file path' }
   if (!fs.existsSync(filePath)) return { error: 'Installer file not found' }
@@ -615,6 +615,9 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
 
   try {
     const { spawn } = require('child_process')
+
+    // Wait a moment to ensure file is fully written and not locked by antivirus
+    await new Promise(r => setTimeout(r, 1500))
 
     if (process.platform === 'win32') {
       // Just run the NSIS installer directly — NSIS handles closing the old app

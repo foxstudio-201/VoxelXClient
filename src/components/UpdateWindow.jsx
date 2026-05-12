@@ -219,21 +219,21 @@ export default function UpdateWindow() {
           {/* Update available — user clicks to download */}
           {status === 'updateAvailable' && result && (
             <div className="rounded-xl border border-green-500/20 bg-green-500/8 p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-green-400 flex-shrink-0">
-                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                </svg>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-green-500/15 border border-green-500/25 flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-green-400">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                </div>
                 <div>
                   <p className="text-sm font-bold text-green-400">Có phiên bản mới!</p>
-                  <p className="text-xs text-white/40">
-                    {result.currentVersion} → <span className="text-green-400 font-mono">{result.latestVersion}</span>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    <span className="font-mono">{result.currentVersion}</span>
+                    <span className="mx-1.5 text-white/20">→</span>
+                    <span className="text-green-400 font-mono font-bold">{result.latestVersion}</span>
                   </p>
                 </div>
               </div>
-              {result.releaseName && <p className="text-xs text-white/50 mb-1">{result.releaseName}</p>}
-              {result.releaseNotes && (
-                <p className="text-xs text-white/30 leading-relaxed line-clamp-3 mb-3">{result.releaseNotes}</p>
-              )}
               {result.installerAsset ? (
                 <button onClick={() => handleDownload(result)}
                   className="w-full py-2.5 rounded-xl text-sm font-bold bg-green-500 hover:bg-green-400 text-white transition-all active:scale-95 flex items-center justify-center gap-2">
