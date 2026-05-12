@@ -579,11 +579,30 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
     const { spawn } = require('child_process')
 
     if (process.platform === 'win32') {
-      // Launch NSIS installer — detached so it survives app exit
-      // No /S flag so user sees the installer UI
-      spawn(filePath, [], {
+      // Create a batch script that waits for this process to exit, then runs installer silently
+      // This ensures the old app is fully closed before installer replaces files
+      const batchPath = path.join(os.tmpdir(), 'vxc-update.bat')
+      const pid = process.pid
+      const batchContent = [
+        '@echo off',
+        `:: Wait for VoxelXClient (PID ${pid}) to exit`,
+        `:waitloop`,
+        `tasklist /FI "PID eq ${pid}" 2>NUL | find /I "${pid}" >NUL`,
+        `if not errorlevel 1 (`,
+        `  timeout /t 1 /nobreak >NUL`,
+        `  goto waitloop`,
+        `)`,
+        `:: Run installer silently`,
+        `"${filePath}" /S`,
+        `:: Clean up`,
+        `del "${filePath}" 2>NUL`,
+        `del "%~f0" 2>NUL`,
+      ].join('\r\n')
+      fs.writeFileSync(batchPath, batchContent, 'utf-8')
+      spawn('cmd.exe', ['/C', batchPath], {
         detached: true,
         stdio:    'ignore',
+        windowsHide: true,
       }).unref()
     } else if (process.platform === 'darwin') {
       spawn('open', [filePath], { detached: true, stdio: 'ignore' }).unref()
@@ -593,8 +612,7 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
       spawn(filePath, [], { detached: true, stdio: 'ignore' }).unref()
     }
 
-    // Quit the app so installer can replace files
-    // Clean up installer file after launching to prevent re-install loop
+    // Delete installer file after launching to prevent re-install loop
     setTimeout(() => {
       try { fs.unlinkSync(filePath) } catch {}
       app.isQuitting = true
