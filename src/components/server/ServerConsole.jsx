@@ -3,6 +3,7 @@ import { parseColors, getLineLevel, getLineColor } from './serverColorUtils.jsx'
 import ServerFileManager from './ServerFileManager'
 import ServerNetworkTab from './ServerNetworkTab'
 import ServerPluginModTab from './ServerPluginModTab'
+import ServerSettingsTab from './ServerSettingsTab'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -150,6 +151,7 @@ export default function ServerConsole({ server, onBack }) {
             { id: 'network', label: 'Network', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg> },
             { id: 'plugins', label: 'Plugins', icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7s2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z"/></svg> },
             { id: 'mods',    label: 'Mods',    icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> },
+            { id: 'settings', label: 'Settings', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg> },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === tab.id ? 'bg-white/10 text-white' : 'text-white/35 hover:text-white/60 hover:bg-white/5'}`}>
@@ -250,6 +252,9 @@ export default function ServerConsole({ server, onBack }) {
 
           {/* Mods tab */}
           {activeTab === 'mods' && <ServerPluginModTab server={server} projectType="mod" />}
+
+          {/* Settings tab */}
+          {activeTab === 'settings' && <ServerSettingsTab server={server} />}
         </div>
       </div>
 
@@ -318,10 +323,10 @@ export default function ServerConsole({ server, onBack }) {
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
               <div className="h-full bg-green-400/60 rounded-full transition-all duration-1000"
-                style={{ width: isRunning ? `${Math.min(100, stats.cpu)}%` : '0%' }} />
+                style={{ width: isRunning ? `${Math.min(100, stats.cpu / (server.cores || 1))}%` : '0%' }} />
             </div>
             <p className="text-[10px] text-white/25 mt-1">
-              {isRunning ? `${stats.cpu.toFixed(1)}%` : 'Không hoạt động'}
+              {isRunning ? `${Math.min(100, stats.cpu / (server.cores || 1)).toFixed(1)}%` : 'Không hoạt động'}
             </p>
           </div>
           <div className="rounded-xl border border-white/8 bg-white/3 p-3 space-y-2">

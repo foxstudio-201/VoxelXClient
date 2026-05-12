@@ -1026,6 +1026,164 @@ function registerServerHandlers(getTrustedWindow) {
     }
   })
 
+  // server:readServerProps — read server.properties as key-value object
+  ipcMain.handle('server:readServerProps', (e, serverId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const propsPath = path.join(server.serverDir, 'server.properties')
+    if (!fs.existsSync(propsPath)) return { ok: true, props: {} }
+    try {
+      const lines = fs.readFileSync(propsPath, 'utf-8').split('\n')
+      const props = {}
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed || trimmed.startsWith('#')) continue
+        const eq = trimmed.indexOf('=')
+        if (eq < 0) continue
+        props[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1).trim()
+      }
+      return { ok: true, props }
+    } catch (err) { return { error: err.message } }
+  })
+
+  // server:writeServerProps — write/merge key-value pairs into server.properties
+  ipcMain.handle('server:writeServerProps', (e, serverId, patch) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const propsPath = path.join(server.serverDir, 'server.properties')
+    try {
+      let lines = fs.existsSync(propsPath)
+        ? fs.readFileSync(propsPath, 'utf-8').split('\n')
+        : ['#Minecraft server properties']
+      const updated = new Set()
+      lines = lines.map(line => {
+        const trimmed = line.trim()
+        if (!trimmed || trimmed.startsWith('#')) return line
+        const eq = trimmed.indexOf('=')
+        if (eq < 0) return line
+        const key = trimmed.slice(0, eq).trim()
+        if (key in patch) { updated.add(key); return `${key}=${patch[key]}` }
+        return line
+      })
+      // Append keys not yet in file
+      for (const [k, v] of Object.entries(patch)) {
+        if (!updated.has(k)) lines.push(`${k}=${v}`)
+      }
+      fs.writeFileSync(propsPath, lines.join('\n'), 'utf-8')
+      return { ok: true }
+    } catch (err) { return { error: err.message } }
+  })
+
+  // server:getWhitelist — read whitelist.json
+  ipcMain.handle('server:getWhitelist', (e, serverId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const wlPath = path.join(server.serverDir, 'whitelist.json')
+    if (!fs.existsSync(wlPath)) return { ok: true, list: [] }
+    try {
+      const list = JSON.parse(fs.readFileSync(wlPath, 'utf-8'))
+      return { ok: true, list: Array.isArray(list) ? list : [] }
+    } catch { return { ok: true, list: [] } }
+  })
+
+  // server:addWhitelist — add player to whitelist.json
+  ipcMain.handle('server:addWhitelist', (e, serverId, name, uuid) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const wlPath = path.join(server.serverDir, 'whitelist.json')
+    let list = []
+    if (fs.existsSync(wlPath)) {
+      try { list = JSON.parse(fs.readFileSync(wlPath, 'utf-8')) } catch {}
+    }
+    if (!Array.isArray(list)) list = []
+    if (!list.find(p => p.name?.toLowerCase() === name?.toLowerCase())) {
+      list.push({ uuid: uuid || '00000000-0000-0000-0000-000000000000', name })
+    }
+    fs.writeFileSync(wlPath, JSON.stringify(list, null, 2), 'utf-8')
+    // If server running, send whitelist reload command
+    const entry = runningServers.get(serverId)
+    if (entry) { try { entry.proc.stdin.write('whitelist reload\n') } catch {} }
+    return { ok: true, list }
+  })
+
+  // server:removeWhitelist — remove players from whitelist.json
+  ipcMain.handle('server:removeWhitelist', (e, serverId, names) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const wlPath = path.join(server.serverDir, 'whitelist.json')
+    let list = []
+    if (fs.existsSync(wlPath)) {
+      try { list = JSON.parse(fs.readFileSync(wlPath, 'utf-8')) } catch {}
+    }
+    const nameSet = new Set((names || []).map(n => n.toLowerCase()))
+    list = list.filter(p => !nameSet.has(p.name?.toLowerCase()))
+    fs.writeFileSync(wlPath, JSON.stringify(list, null, 2), 'utf-8')
+    const entry = runningServers.get(serverId)
+    if (entry) { try { entry.proc.stdin.write('whitelist reload\n') } catch {} }
+    return { ok: true, list }
+  })
+
+  // server:getBanlist — read banned-players.json
+  ipcMain.handle('server:getBanlist', (e, serverId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const banPath = path.join(server.serverDir, 'banned-players.json')
+    if (!fs.existsSync(banPath)) return { ok: true, list: [] }
+    try {
+      const list = JSON.parse(fs.readFileSync(banPath, 'utf-8'))
+      return { ok: true, list: Array.isArray(list) ? list : [] }
+    } catch { return { ok: true, list: [] } }
+  })
+
+  // server:unban — remove players from banned-players.json
+  ipcMain.handle('server:unban', (e, serverId, names) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+    const banPath = path.join(server.serverDir, 'banned-players.json')
+    let list = []
+    if (fs.existsSync(banPath)) {
+      try { list = JSON.parse(fs.readFileSync(banPath, 'utf-8')) } catch {}
+    }
+    const nameSet = new Set((names || []).map(n => n.toLowerCase()))
+    list = list.filter(p => !nameSet.has(p.name?.toLowerCase()))
+    fs.writeFileSync(banPath, JSON.stringify(list, null, 2), 'utf-8')
+    const entry = runningServers.get(serverId)
+    if (entry) {
+      for (const name of (names || [])) {
+        try { entry.proc.stdin.write(`pardon ${name}\n`) } catch {}
+      }
+    }
+    return { ok: true, list }
+  })
+
+  // server:updateConfig — update server record (RAM, cores, JVM, javaPath)
+  ipcMain.handle('server:updateConfig', (e, serverId, patch) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const idx = data.servers.findIndex(s => s.id === serverId)
+    if (idx < 0) return { error: 'Server không tồn tại' }
+    const allowed = ['name', 'ramGb', 'jvmArgs', 'cores', 'javaPath']
+    for (const k of allowed) {
+      if (k in patch) data.servers[idx][k] = patch[k]
+    }
+    writeServers(data)
+    return { ok: true, server: data.servers[idx] }
+  })
+
   // server:openFolder
   ipcMain.handle('server:openFolder', async (e, serverId, subPath) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
