@@ -2,7 +2,6 @@ import {
   HomeIcon as HomeOutline,
   PlayCircleIcon as PlayOutline,
   PuzzlePieceIcon as PuzzleOutline,
-  GlobeAltIcon as GlobeOutline,
   Cog6ToothIcon as CogOutline,
   UserCircleIcon as UserOutline,
 } from '@heroicons/react/24/outline'
@@ -11,18 +10,41 @@ import {
   HomeIcon as HomeSolid,
   PlayCircleIcon as PlaySolid,
   PuzzlePieceIcon as PuzzleSolid,
-  GlobeAltIcon as GlobeSolid,
   Cog6ToothIcon as CogSolid,
   UserCircleIcon as UserSolid,
 } from '@heroicons/react/24/solid'
 
 import PlayerHead from './ui/PlayerHead'
 
+// Server icon (outline)
+function ServerOutline({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+      <rect x="2" y="3" width="20" height="6" rx="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <rect x="2" y="12" width="20" height="6" rx="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+      <circle cx="6" cy="15" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+  )
+}
+
+// Server icon (solid)
+function ServerSolid({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <rect x="2" y="3" width="20" height="6" rx="1.5"/>
+      <rect x="2" y="12" width="20" height="6" rx="1.5"/>
+      <circle cx="6" cy="6" r="1.2" fill="rgba(0,0,0,0.4)"/>
+      <circle cx="6" cy="15" r="1.2" fill="rgba(0,0,0,0.4)"/>
+    </svg>
+  )
+}
+
 const navItems = [
   { id: 'home',     label: 'Home',     Outline: HomeOutline,   Solid: HomeSolid   },
   { id: 'play',     label: 'Play',     Outline: PlayOutline,   Solid: PlaySolid   },
   { id: 'mods',     label: 'Mods',     Outline: PuzzleOutline, Solid: PuzzleSolid },
-  { id: 'worlds',   label: 'Worlds',   Outline: GlobeOutline,  Solid: GlobeSolid  },
+  { id: 'worlds',   label: 'Server',   Outline: ServerOutline, Solid: ServerSolid },
   { id: 'settings', label: 'Settings', Outline: CogOutline,    Solid: CogSolid    },
 ]
 

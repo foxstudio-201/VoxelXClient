@@ -615,6 +615,25 @@ function registerServerHandlers(getTrustedWindow) {
     return { ok: true, logs: entry?.logs || [] }
   })
 
+  // server:getStats — get real-time RAM/CPU usage of running server process
+  ipcMain.handle('server:getStats', async (e, serverId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const entry = runningServers.get(serverId)
+    if (!entry || !entry.proc?.pid) return { ok: true, running: false }
+    try {
+      const pidusage = require('pidusage')
+      const stats = await pidusage(entry.proc.pid)
+      return {
+        ok:     true,
+        running: true,
+        cpu:    Math.min(100, Math.round(stats.cpu * 10) / 10),   // %
+        ramMb:  Math.round(stats.memory / 1024 / 1024),           // MB
+      }
+    } catch {
+      return { ok: true, running: true, cpu: 0, ramMb: 0 }
+    }
+  })
+
   // server:getStatus
   ipcMain.handle('server:getStatus', (e, serverId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }

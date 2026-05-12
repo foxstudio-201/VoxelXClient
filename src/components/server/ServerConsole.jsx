@@ -23,6 +23,10 @@ export default function ServerConsole({ server, onBack }) {
   const [tunnelAddr, setTunnelAddr]     = useState(null)
   const [tunnelLog, setTunnelLog]       = useState([])
 
+  // Realtime stats
+  const [stats, setStats] = useState({ cpu: 0, ramMb: 0 })
+  const statsIntervalRef  = useRef(null)
+
   const logEndRef = useRef(null)
   const unsubsRef = useRef([])
 
@@ -65,6 +69,23 @@ export default function ServerConsole({ server, onBack }) {
     if (autoScroll && logEndRef.current) logEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [logs, autoScroll])
 
+  // Poll RAM/CPU stats every 2s when server is running
+  useEffect(() => {
+    clearInterval(statsIntervalRef.current)
+    if (!isElectron || !server || status !== 'online') {
+      setStats({ cpu: 0, ramMb: 0 })
+      return
+    }
+    const poll = async () => {
+      try {
+        const r = await window.electronAPI.serverGetStats(server.id)
+        if (r?.ok && r.running) setStats({ cpu: r.cpu ?? 0, ramMb: r.ramMb ?? 0 })
+      } catch {}
+    }
+    poll()
+    statsIntervalRef.current = setInterval(poll, 2000)
+    return () => clearInterval(statsIntervalRef.current)
+  }, [server?.id, status])
   useEffect(() => {
     if (activeTab === 'files') {} // ServerFileManager handles its own loading
   }, [activeTab])
@@ -281,9 +302,14 @@ export default function ServerConsole({ server, onBack }) {
               <span className="text-[10px] text-white/50 font-mono">{server.ramGb} GB max</span>
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-400/60 rounded-full transition-all" style={{ width: isRunning ? '45%' : '0%' }} />
+              <div className="h-full bg-blue-400/60 rounded-full transition-all duration-1000"
+                style={{ width: isRunning && stats.ramMb > 0 ? `${Math.min(100, Math.round(stats.ramMb / (server.ramGb * 1024) * 100))}%` : '0%' }} />
             </div>
-            <p className="text-[10px] text-white/25 mt-1">{isRunning ? `~${Math.round(server.ramGb * 0.45 * 1024)} MB / ${server.ramGb * 1024} MB` : 'Không hoạt động'}</p>
+            <p className="text-[10px] text-white/25 mt-1">
+              {isRunning && stats.ramMb > 0
+                ? `${stats.ramMb} MB / ${server.ramGb * 1024} MB`
+                : isRunning ? 'Đang đo...' : 'Không hoạt động'}
+            </p>
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -291,9 +317,12 @@ export default function ServerConsole({ server, onBack }) {
               <span className="text-[10px] text-white/50 font-mono">{server.cores} cores</span>
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
-              <div className="h-full bg-green-400/60 rounded-full transition-all" style={{ width: isRunning ? '25%' : '0%' }} />
+              <div className="h-full bg-green-400/60 rounded-full transition-all duration-1000"
+                style={{ width: isRunning ? `${Math.min(100, stats.cpu)}%` : '0%' }} />
             </div>
-            <p className="text-[10px] text-white/25 mt-1">{isRunning ? '~25%' : 'Không hoạt động'}</p>
+            <p className="text-[10px] text-white/25 mt-1">
+              {isRunning ? `${stats.cpu.toFixed(1)}%` : 'Không hoạt động'}
+            </p>
           </div>
           <div className="rounded-xl border border-white/8 bg-white/3 p-3 space-y-2">
             <InfoRow label="Loại" value={server.type} />
