@@ -315,6 +315,20 @@ function createTray() {
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  // Clean up any leftover update installers from previous sessions
+  // This prevents re-download loop if installer was cancelled or failed
+  try {
+    const os = require('os')
+    const updateDir = path.join(os.tmpdir(), 'VoxelXClient-update')
+    if (fs.existsSync(updateDir)) {
+      const files = fs.readdirSync(updateDir)
+      for (const f of files) {
+        if (f.endsWith('.exe') || f.endsWith('.AppImage') || f.endsWith('.deb')) {
+          try { fs.unlinkSync(path.join(updateDir, f)) } catch {}
+        }
+      }
+    }
+  } catch {}
   const { session } = require('electron')
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const url = details.url || ''
@@ -496,6 +510,19 @@ ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
 
   if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
+  // If file already fully downloaded, skip re-download
+  if (fs.existsSync(tmpFile)) {
+    const stat = fs.statSync(tmpFile)
+    if (stat.size > 1024 * 1024) { // > 1MB = likely complete
+      if (!win.isDestroyed()) {
+        win.webContents.send('updater:downloadProgress', { downloaded: stat.size, total: stat.size, percent: 100, speed: 0 })
+      }
+      return { ok: true, filePath: tmpFile, cached: true }
+    }
+    // Incomplete file — delete and re-download
+    try { fs.unlinkSync(tmpFile) } catch {}
+  }
+
   try {
     await new Promise((resolve, reject) => {
       function doGet(url) {
@@ -567,7 +594,12 @@ ipcMain.handle('updater:install', (e, { filePath }) => {
     }
 
     // Quit the app so installer can replace files
-    setTimeout(() => { app.isQuitting = true; app.quit() }, 500)
+    // Clean up installer file after launching to prevent re-install loop
+    setTimeout(() => {
+      try { fs.unlinkSync(filePath) } catch {}
+      app.isQuitting = true
+      app.quit()
+    }, 500)
     return { ok: true }
   } catch (err) {
     return { error: err.message }
