@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import CreateServerModal from './CreateServerModal'
 import ServerConsole from './ServerConsole'
 
@@ -21,11 +21,31 @@ const SERVER_ICONS = {
   neoforge: neoforgeIcon, mohist: mohistIcon, sponge: spongeIcon,
 }
 
-// Grid columns based on server count
 function getGridCols(count) {
   if (count <= 2) return 'grid-cols-2'
   if (count <= 6) return 'grid-cols-3'
   return 'grid-cols-4'
+}
+
+function pingColor(ms) {
+  if (ms === null) return 'text-white/20'
+  if (ms < 50)  return 'text-green-400'
+  if (ms < 120) return 'text-yellow-400'
+  return 'text-red-400'
+}
+
+function PingBars({ ms }) {
+  const bars = [1, 2, 3, 4]
+  const active = ms === null ? 0 : ms < 50 ? 4 : ms < 100 ? 3 : ms < 200 ? 2 : 1
+  const col = ms === null ? 'bg-white/15' : ms < 50 ? 'bg-green-400' : ms < 120 ? 'bg-yellow-400' : 'bg-red-400'
+  return (
+    <div className="flex items-end gap-[2px]">
+      {bars.map((b, i) => (
+        <div key={b} className={`w-[3px] rounded-sm transition-all ${i < active ? col : 'bg-white/15'}`}
+          style={{ height: `${5 + i * 3}px` }} />
+      ))}
+    </div>
+  )
 }
 
 function StatusBadge({ status }) {
@@ -34,7 +54,6 @@ function StatusBadge({ status }) {
     starting: { dot: 'bg-yellow-400 animate-pulse', text: 'text-yellow-400', label: 'Starting' },
     offline:  { dot: 'bg-white/20',                 text: 'text-white/30',   label: 'Offline' },
   }[status] || { dot: 'bg-white/20', text: 'text-white/30', label: 'Offline' }
-
   return (
     <div className="flex items-center gap-1.5">
       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
@@ -47,34 +66,66 @@ function StatusBadge({ status }) {
 function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
   const icon = SERVER_ICONS[server.type] || vanillaIcon
   const isDownloadingJava = !!javaProgress
+  const [ping, setPing] = useState(null)
+  const pingRef = useRef(null)
+
+  // Poll ping every 5s when online
+  useEffect(() => {
+    if (!isElectron || server.status !== 'online') { setPing(null); return }
+    const doPing = async () => {
+      try {
+        const r = await window.electronAPI.serverPing(server.id)
+        setPing(r?.ok ? r.ms : null)
+      } catch { setPing(null) }
+    }
+    doPing()
+    pingRef.current = setInterval(doPing, 5000)
+    return () => clearInterval(pingRef.current)
+  }, [server.id, server.status])
+
+  const isOnline = server.status === 'online'
+
   return (
     <div className="relative group">
       <div
         onClick={() => !isDownloadingJava && onClick?.(server)}
         className={`relative rounded-2xl overflow-hidden transition-all duration-200 ${isDownloadingJava ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
         style={{ border: '1px solid rgba(255,255,255,0.08)' }}
-        onMouseEnter={e => { if (!isDownloadingJava) { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.35)' } }}
+        onMouseEnter={e => { if (!isDownloadingJava) e.currentTarget.style.borderColor = 'rgba(74,222,128,0.35)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
       >
-        {/* Background: blurred icon */}
+        {/* Blurred bg */}
         <div className="absolute inset-0">
           <img src={icon} alt="" className="absolute inset-0 w-full h-full object-cover"
-            style={{ filter: 'blur(16px)', opacity: 0.35, transform: 'scale(1.3)' }} />
-          <div className="absolute inset-0 bg-[#0a0a0a]/70" />
+            style={{ filter: 'blur(20px)', opacity: 0.3, transform: 'scale(1.4)' }} />
+          <div className="absolute inset-0 bg-[#0a0a0a]/75" />
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 p-4 flex flex-col gap-3">
+        <div className="relative z-10 p-5 flex flex-col gap-4">
+          {/* Top row: icon + status */}
           <div className="flex items-start justify-between">
-            <img src={icon} alt={server.type} className="w-12 h-12 rounded-xl object-contain bg-black/30 ring-1 ring-white/10 p-1" />
-            <StatusBadge status={server.status || 'offline'} />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-white/90 truncate">{server.name}</p>
-            <p className="text-[10px] text-white/35 capitalize mt-0.5">{server.type} · {server.gameVersion}</p>
+            <img src={icon} alt={server.type}
+              className="w-16 h-16 rounded-2xl object-contain bg-black/40 ring-1 ring-white/10 p-1.5" />
+            <div className="flex flex-col items-end gap-1.5">
+              <StatusBadge status={server.status || 'offline'} />
+              {isOnline && (
+                <div className="flex items-center gap-1.5">
+                  <PingBars ms={ping} />
+                  <span className={`text-[10px] font-mono font-bold ${pingColor(ping)}`}>
+                    {ping !== null ? `${ping}ms` : '—'}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Java download progress bar */}
+          {/* Name + type */}
+          <div>
+            <p className="text-base font-black text-white/95 truncate leading-tight">{server.name}</p>
+            <p className="text-xs text-white/40 capitalize mt-0.5 font-medium">{server.type} · {server.gameVersion}</p>
+          </div>
+
+          {/* Java progress */}
           {isDownloadingJava ? (
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -93,17 +144,31 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
               </div>
             </div>
           ) : (
-            <p className="text-[10px] text-white/25">{server.ramGb} GB RAM</p>
+            /* Stats row */
+            <div className="grid grid-cols-3 gap-2">
+              <StatChip icon={
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7C5.9 5 5 5.9 5 7v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/></svg>
+              } label="RAM" value={`${server.ramGb}GB`} />
+              <StatChip icon={
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+              } label="Cores" value={`${server.cores ?? 2}`} />
+              <StatChip icon={
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              } label="Players"
+                value={isOnline ? `${server.playerCount ?? 0}/${server.maxPlayers ?? 20}` : '—'}
+                highlight={isOnline && (server.playerCount ?? 0) > 0}
+              />
+            </div>
           )}
         </div>
       </div>
 
-      {/* Delete button — outside overflow-hidden so it's not clipped */}
+      {/* Delete button */}
       {!isDownloadingJava && (
         <button
           onClick={e => { e.stopPropagation(); onDelete(server) }}
-          className="absolute bottom-2 right-2 w-6 h-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 text-white/40 hover:text-red-400 hover:bg-red-500/20 transition-all z-20">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+          className="absolute bottom-3 right-3 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 text-white/40 hover:text-red-400 hover:bg-red-500/20 transition-all z-20">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
           </svg>
         </button>
@@ -112,21 +177,49 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
   )
 }
 
+function StatChip({ icon, label, value, highlight }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5 rounded-xl py-2 px-1"
+      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className={`${highlight ? 'text-green-400' : 'text-white/30'}`}>{icon}</div>
+      <span className={`text-[11px] font-bold font-mono ${highlight ? 'text-green-400' : 'text-white/70'}`}>{value}</span>
+      <span className="text-[9px] text-white/25 uppercase tracking-wider">{label}</span>
+    </div>
+  )
+}
+
 // Server row — list view
 function ServerCardList({ server, onClick, onDelete, javaProgress }) {
   const icon = SERVER_ICONS[server.type] || vanillaIcon
   const isDownloadingJava = !!javaProgress
+  const [ping, setPing] = useState(null)
+  const pingRef = useRef(null)
+  const isOnline = server.status === 'online'
+
+  useEffect(() => {
+    if (!isElectron || !isOnline) { setPing(null); return }
+    const doPing = async () => {
+      try {
+        const r = await window.electronAPI.serverPing(server.id)
+        setPing(r?.ok ? r.ms : null)
+      } catch { setPing(null) }
+    }
+    doPing()
+    pingRef.current = setInterval(doPing, 5000)
+    return () => clearInterval(pingRef.current)
+  }, [server.id, isOnline])
+
   return (
     <div
       onClick={() => !isDownloadingJava && onClick?.(server)}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isDownloadingJava ? 'cursor-not-allowed opacity-80' : 'cursor-pointer group'}`}
+      className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${isDownloadingJava ? 'cursor-not-allowed opacity-80' : 'cursor-pointer group'}`}
       style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}
       onMouseEnter={e => { if (!isDownloadingJava) { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.25)'; e.currentTarget.style.background = 'rgba(74,222,128,0.04)' } }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
     >
-      <img src={icon} alt={server.type} className="w-10 h-10 rounded-xl object-contain bg-black/30 ring-1 ring-white/10 p-1 flex-shrink-0" />
+      <img src={icon} alt={server.type} className="w-12 h-12 rounded-xl object-contain bg-black/30 ring-1 ring-white/10 p-1.5 flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-white/85 truncate">{server.name}</p>
+        <p className="text-sm font-bold text-white/90 truncate">{server.name}</p>
         {isDownloadingJava ? (
           <div className="mt-1">
             <div className="flex items-center justify-between mb-0.5">
@@ -141,18 +234,36 @@ function ServerCardList({ server, onClick, onDelete, javaProgress }) {
             </div>
           </div>
         ) : (
-          <p className="text-[10px] text-white/35 capitalize">{server.type} · {server.gameVersion} · {server.ramGb} GB RAM</p>
+          <p className="text-[11px] text-white/35 capitalize mt-0.5">
+            {server.type} · {server.gameVersion} · {server.ramGb}GB RAM · {server.cores ?? 2} cores
+          </p>
         )}
       </div>
-      {!isDownloadingJava && <StatusBadge status={server.status || 'offline'} />}
       {!isDownloadingJava && (
-        <button
-          onClick={e => { e.stopPropagation(); onDelete(server) }}
-          className="w-7 h-7 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-          </svg>
-        </button>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          {isOnline && (
+            <>
+              <div className="text-center">
+                <p className="text-xs font-bold text-white/70">{server.playerCount ?? 0}<span className="text-white/30">/{server.maxPlayers ?? 20}</span></p>
+                <p className="text-[9px] text-white/25 uppercase tracking-wider">Players</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <PingBars ms={ping} />
+                <span className={`text-[10px] font-mono font-bold ${pingColor(ping)}`}>
+                  {ping !== null ? `${ping}ms` : '—'}
+                </span>
+              </div>
+            </>
+          )}
+          <StatusBadge status={server.status || 'offline'} />
+          <button
+            onClick={e => { e.stopPropagation(); onDelete(server) }}
+            className="w-7 h-7 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   )
@@ -190,19 +301,22 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
         s.id === data.serverId ? { ...s, status: data.status, running: data.status !== 'offline' } : s
       ))
     })
+    const unsubPlayers = window.electronAPI.onServerPlayerCount?.(data => {
+      setServers(prev => prev.map(s =>
+        s.id === data.serverId ? { ...s, playerCount: data.playerCount, maxPlayers: data.maxPlayers } : s
+      ))
+    })
     // Subscribe to Java download progress
     const unsubJava = window.electronAPI.onServerJavaProgress(data => {
       const { serverId, phase, percent } = data
       if (phase === 'done' || phase === 'already_installed') {
-        // Remove progress when done
         setJavaProgress(prev => { const n = { ...prev }; delete n[serverId]; return n })
-        // Refresh server list to get updated javaPath
         load()
       } else {
         setJavaProgress(prev => ({ ...prev, [serverId]: { phase, percent: percent ?? 0 } }))
       }
     })
-    return () => { unsubStatus?.(); unsubJava?.() }
+    return () => { unsubStatus?.(); unsubPlayers?.(); unsubJava?.() }
   }, [load])
 
   function handleCreate(server, javaPkg) {

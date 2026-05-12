@@ -251,7 +251,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   serverBrowse:        ()                    => ipcRenderer.invoke('server:browse'),
   serverInstallJava:   (pkg, id)             => ipcRenderer.invoke('server:installJava', pkg, id),
   serverGetVersions:   ()                    => ipcRenderer.invoke('server:getVersions'),
-  onServerLog: (cb) => {
+  serverPing:          (id)                  => ipcRenderer.invoke('server:ping', id),
+  onServerPlayerCount: (cb) => {
+    const handler = (_e, data) => cb(data)
+    ipcRenderer.on('server:playerCount', handler)
+    return () => ipcRenderer.removeListener('server:playerCount', handler)
+  },
     const handler = (_e, data) => cb(data)
     ipcRenderer.on('server:log', handler)
     return () => ipcRenderer.removeListener('server:log', handler)

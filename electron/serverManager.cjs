@@ -153,8 +153,10 @@ function registerServerHandlers(getTrustedWindow) {
       ok: true,
       servers: data.servers.map(s => ({
         ...s,
-        running: runningServers.has(s.id),
-        status:  runningServers.has(s.id) ? 'online' : 'offline',
+        running:     runningServers.has(s.id),
+        status:      runningServers.has(s.id) ? (runningServers.get(s.id).status || 'online') : 'offline',
+        playerCount: runningServers.get(s.id)?.playerCount || 0,
+        maxPlayers:  runningServers.get(s.id)?.maxPlayers  || 20,
       }))
     }
   })
@@ -450,7 +452,7 @@ function registerServerHandlers(getTrustedWindow) {
       },
     })
 
-    const entry = { proc, logs: [], status: 'starting' }
+    const entry = { proc, logs: [], status: 'starting', playerCount: 0, maxPlayers: 20 }
     runningServers.set(serverId, entry)
 
     function sendLog(line) {
@@ -470,6 +472,17 @@ function registerServerHandlers(getTrustedWindow) {
       })
     }
 
+    function sendPlayerCount() {
+      const allWins = require('electron').BrowserWindow.getAllWindows()
+      allWins.forEach(w => {
+        if (!w.isDestroyed()) w.webContents.send('server:playerCount', {
+          serverId,
+          playerCount: entry.playerCount || 0,
+          maxPlayers:  entry.maxPlayers  || 20,
+        })
+      })
+    }
+
     // Use StringDecoder to correctly handle multi-byte UTF-8 characters
     // (e.g. Vietnamese diacritics, § sign) that may be split across chunks
     const { StringDecoder } = require('string_decoder')
@@ -485,6 +498,21 @@ function registerServerHandlers(getTrustedWindow) {
       lines.filter(Boolean).forEach(line => {
         sendLog(line)
         if (line.includes('Done') && line.includes('For help')) sendStatus('online')
+        // Parse player join/leave: "UUID of player xxx is ..." or "xxx joined the game" / "xxx left the game"
+        if (line.includes('joined the game')) {
+          entry.playerCount = Math.max(0, (entry.playerCount || 0) + 1)
+          sendPlayerCount()
+        } else if (line.includes('left the game')) {
+          entry.playerCount = Math.max(0, (entry.playerCount || 0) - 1)
+          sendPlayerCount()
+        }
+        // Parse "There are X of a max of Y players online"
+        const playerMatch = line.match(/There are (\d+) of a max of (\d+) players online/)
+        if (playerMatch) {
+          entry.playerCount = parseInt(playerMatch[1], 10)
+          entry.maxPlayers  = parseInt(playerMatch[2], 10)
+          sendPlayerCount()
+        }
       })
     })
     proc.stdout.on('end', () => {
@@ -504,11 +532,13 @@ function registerServerHandlers(getTrustedWindow) {
     })
     proc.on('close', (code) => {
       sendLog(`[Server] Process exited with code ${code}`)
+      entry.playerCount = 0
       sendStatus('offline')
       runningServers.delete(serverId)
     })
     proc.on('error', (err) => {
       sendLog(`[Server] Spawn error: ${err.message}`)
+      entry.playerCount = 0
       sendStatus('offline')
       runningServers.delete(serverId)
     })
@@ -574,6 +604,39 @@ function registerServerHandlers(getTrustedWindow) {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const entry = runningServers.get(serverId)
     return { ok: true, running: !!entry, status: entry?.status || 'offline' }
+  })
+
+  // server:ping — TCP connect to measure latency
+  ipcMain.handle('server:ping', async (e, serverId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readServers()
+    const server = data.servers.find(s => s.id === serverId)
+    if (!server) return { error: 'Server không tồn tại' }
+
+    // Read port from server.properties
+    let port = 25565
+    try {
+      const propsPath = path.join(server.serverDir, 'server.properties')
+      if (fs.existsSync(propsPath)) {
+        const content = fs.readFileSync(propsPath, 'utf-8')
+        const match = content.match(/^server-port\s*=\s*(\d+)/m)
+        if (match) port = parseInt(match[1], 10)
+      }
+    } catch {}
+
+    return new Promise((resolve) => {
+      const net = require('net')
+      const start = Date.now()
+      const socket = new net.Socket()
+      socket.setTimeout(3000)
+      socket.connect(port, '127.0.0.1', () => {
+        const ms = Date.now() - start
+        socket.destroy()
+        resolve({ ok: true, ms })
+      })
+      socket.on('error', () => { socket.destroy(); resolve({ ok: false, ms: null }) })
+      socket.on('timeout', () => { socket.destroy(); resolve({ ok: false, ms: null }) })
+    })
   })
 
   // server:listDir — list directories inside server folder
