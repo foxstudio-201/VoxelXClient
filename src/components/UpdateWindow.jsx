@@ -63,7 +63,7 @@ export default function UpdateWindow() {
         setResult(res)
         if (res?.hasUpdate) {
           setStatus('updateAvailable')
-          handleDownload(res)
+          // Do NOT auto-download — user must click the button
         } else {
           setStatus('upToDate')
         }
