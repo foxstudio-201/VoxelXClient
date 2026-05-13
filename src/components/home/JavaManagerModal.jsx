@@ -339,7 +339,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                         className="relative rounded-2xl border overflow-hidden transition-all"
                         style={{
                           background: alreadyInstalled ? `${d.color}08` : 'rgba(255,255,255,0.03)',
-                          borderColor: alreadyInstalled ? `${d.color}30` : 'rgba(255,255,255,0.08)',
+                          borderColor: alreadyInstalled ? `${d.color}30` : 'var(--app-border-color)',
                         }}>
 
                         {}
@@ -477,4 +477,3 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
     </div>
   )
 }
-

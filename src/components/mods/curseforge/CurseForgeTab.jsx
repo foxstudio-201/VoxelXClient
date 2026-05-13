@@ -158,7 +158,7 @@ export default function CurseForgeTab() {
         {}
         <div
           className="flex-shrink-0 w-64 border-r relative"
-          style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+          style={{ borderColor: 'var(--app-border-color)' }}
         >
           <CurseForgeFilters filters={filters} onChange={updateFilters} />
         </div>
@@ -180,4 +180,3 @@ export default function CurseForgeTab() {
     </div>
   )
 }
-

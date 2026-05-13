@@ -74,7 +74,7 @@ export default function NoAccountHint({ onGoToAccount }) {
           bottom: 16,
           width: 48,
           height: 48,
-          borderRadius: 12,
+          borderRadius: 'var(--app-radius)',
           border: '2px solid rgba(74,222,128,0.7)',
           boxShadow: '0 0 0 4px rgba(74,222,128,0.15), 0 0 16px rgba(74,222,128,0.3)',
           animation: visible ? 'pulse-ring 1.8s ease-in-out infinite' : 'none',
@@ -156,4 +156,3 @@ export default function NoAccountHint({ onGoToAccount }) {
     </div>
   )
 }
-

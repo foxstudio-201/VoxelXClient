@@ -130,10 +130,7 @@ function applyBorder(radius, color) {
 }
 
 function FontTab({ settings, onChange }) {
-  const weight     = settings.fontWeight ?? 400
-  const fontId     = settings.fontId     ?? 'system'
-  const fontSize   = settings.fontSize   ?? 100
-  const WEIGHTS    = [100, 200, 300, 400, 500, 600, 700, 800, 900]
+  const fontId     = settings.fontId ?? 'system'
   const activeFont = FONTS.find(f => f.id === fontId) ?? FONTS[0]
 
   function handleFontSelect(id) {
@@ -141,34 +138,8 @@ function FontTab({ settings, onChange }) {
     applyFont(id)
   }
 
-  function handleFontSizeChange(size) {
-    onChange({ fontSize: size })
-    document.documentElement.style.setProperty('--app-font-size', `${size}%`)
-  }
-
   return (
-    <div className="py-4 space-y-5">
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-white/40 uppercase tracking-widest">Cỡ chữ</p>
-          <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md">{fontSize}%</span>
-        </div>
-        <input
-          type="range" min={80} max={120} step={1} value={fontSize}
-          onChange={e => handleFontSizeChange(Number(e.target.value))}
-          className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-white/10
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
-            [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-green-400 [&::-webkit-slider-thumb]:cursor-pointer"
-        />
-        <div className="flex justify-between mt-1">
-          {[80, 90, 100, 110, 120].map(w => (
-            <span key={w} className={`text-[9px] ${w === fontSize ? 'text-green-400' : 'text-white/20'}`}>{w}%</span>
-          ))}
-        </div>
-      </div>
-
-      {}
+    <div className="py-4 space-y-4">
       <div>
         <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Font chữ</p>
         <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1">
@@ -196,35 +167,10 @@ function FontTab({ settings, onChange }) {
         </div>
       </div>
 
-      {}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-white/40 uppercase tracking-widest">Độ dày</p>
-          <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md">{weight}</span>
-        </div>
-        <input
-          type="range" min={100} max={900} step={100} value={weight}
-          onChange={e => onChange({ fontWeight: Number(e.target.value) })}
-          className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-white/10
-            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
-            [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-green-400 [&::-webkit-slider-thumb]:cursor-pointer"
-        />
-        <div className="flex justify-between mt-1">
-          {WEIGHTS.map(w => (
-            <span key={w} className={`text-[9px] ${w === weight ? 'text-green-400' : 'text-white/20'}`}>{w}</span>
-          ))}
-        </div>
-      </div>
-
-      {}
       <div className="rounded-xl border border-white/5 bg-white/3 p-4">
         <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">Preview</p>
         <div
-          style={{
-            fontFamily: activeFont.stack, fontWeight: weight,
-            fontSize: `${fontSize}%`
-          }}
+          style={{ fontFamily: activeFont.stack }}
           className="text-white text-base"
         >
           VoxelXClient Launcher
@@ -733,4 +679,3 @@ export default function LauncherTab({ settings, onChange }) {
     </div>
   )
 }
-

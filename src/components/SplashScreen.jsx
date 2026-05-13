@@ -30,6 +30,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react'
+import { loadAppSettings } from '../utils/appSettings'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -65,17 +66,15 @@ export default function SplashScreen({ onDone }) {
 
       setProgress(20, 'Tải cài đặt người dùng...')
       let autoCheckUpdate = true
-      if (isElectron) {
-        try {
-          const s = await window.electronAPI.getSettings()
-          if (s?.background && !cancelled) {
-            window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: s.background }))
-          }
-          if (typeof s?.autoCheckUpdate === 'boolean') {
-            autoCheckUpdate = s.autoCheckUpdate
-          }
-        } catch {}
-      }
+      try {
+        const s = await loadAppSettings()
+        if (s?.background && !cancelled) {
+          window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: s.background }))
+        }
+        if (typeof s?.autoCheckUpdate === 'boolean') {
+          autoCheckUpdate = s.autoCheckUpdate
+        }
+      } catch {}
       await delay(100)
 
       if (cancelled) return
@@ -263,4 +262,3 @@ export default function SplashScreen({ onDone }) {
 function delay(ms) {
   return new Promise(r => setTimeout(r, ms))
 }
-

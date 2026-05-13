@@ -69,6 +69,11 @@
     --app-font: system-ui, -apple-system, sans-serif;
     --app-font-size: 100%;
     --app-radius: 12px;
+    --app-radius-sm: calc(var(--app-radius) * 0.333333);
+    --app-radius-md: calc(var(--app-radius) * 0.5);
+    --app-radius-lg: calc(var(--app-radius) * 0.75);
+    --app-radius-xl: var(--app-radius);
+    --app-radius-2xl: calc(var(--app-radius) * 1.333333);
     --app-border-color: rgba(255,255,255,0.08);
   }
 
@@ -82,6 +87,68 @@
     -webkit-user-select: none;
     overscroll-behavior: none;
   }
+}
+
+.rounded-sm { border-radius: var(--app-radius-sm); }
+.rounded-md { border-radius: var(--app-radius-md); }
+.rounded-lg { border-radius: var(--app-radius-lg); }
+.rounded-xl { border-radius: var(--app-radius-xl); }
+.rounded-2xl { border-radius: var(--app-radius-2xl); }
+
+:is(
+  .border-white\/3,
+  .border-white\/4,
+  .border-white\/5,
+  .border-white\/6,
+  .border-white\/8,
+  .border-white\/10,
+  .border-white\/12,
+  .border-white\/15,
+  .border-white\/20,
+  .border-white\/25,
+  .border-white\/30,
+  .border-white\/40
+) {
+  border-color: var(--app-border-color);
+}
+
+:is(
+  .hover\:border-white\/8:hover,
+  .hover\:border-white\/10:hover,
+  .hover\:border-white\/12:hover,
+  .hover\:border-white\/15:hover,
+  .hover\:border-white\/20:hover,
+  .hover\:border-white\/40:hover,
+  .focus\:border-white\/20:focus
+) {
+  border-color: var(--app-border-color);
+}
+
+.group:hover .group-hover\:border-white\/30 {
+  border-color: var(--app-border-color);
+}
+
+:is(
+  .divide-white\/5
+) > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--app-border-color);
+}
+
+:is(
+  [style*="border: 1px solid rgba(255,255,255,0."],
+  [style*="border: 1px solid rgba(255, 255, 255, 0."],
+  [style*="border-color: rgba(255,255,255,0."],
+  [style*="border-color: rgba(255, 255, 255, 0."],
+  [style*="border-right-color: rgba(255,255,255,0."],
+  [style*="border-right-color: rgba(255, 255, 255, 0."],
+  [style*="border-left-color: rgba(255,255,255,0."],
+  [style*="border-left-color: rgba(255, 255, 255, 0."],
+  [style*="border-top-color: rgba(255,255,255,0."],
+  [style*="border-top-color: rgba(255, 255, 255, 0."],
+  [style*="border-bottom-color: rgba(255,255,255,0."],
+  [style*="border-bottom-color: rgba(255, 255, 255, 0."]
+) {
+  border-color: var(--app-border-color) !important;
 }
 
 @layer utilities {

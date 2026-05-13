@@ -143,28 +143,42 @@ const DEFAULT_SETTINGS = {
   hideLauncherOnLaunch: true,
   showLogWindow:        true,
   discordRPC:           false,
-  fontWeight:           400,
-  fontSize:             100,
+  fontId:               'system',
   colorAccent:          '#4ade80',
   colorHover:           '#86efac',
   colorActive:          '#22c55e',
   background:           'dark',
+  borderRadius:         12,
+  borderColor:          'rgba(255,255,255,0.08)',
   agreedTos:            false,
   agreedPrivacy:        false,
+}
+
+const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS)
+
+function sanitizeSettings(input = {}) {
+  const safe = { ...DEFAULT_SETTINGS }
+  if (!input || typeof input !== 'object') return safe
+
+  for (const key of SETTING_KEYS) {
+    if (key in input) safe[key] = input[key]
+  }
+
+  return safe
 }
 
 function readSettings() {
   ensureAccountsFile()
   try {
-    if (!fs.existsSync(SETTINGS_FILE)) return { ...DEFAULT_SETTINGS }
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8')) }
-  } catch { return { ...DEFAULT_SETTINGS } }
+    if (!fs.existsSync(SETTINGS_FILE)) return sanitizeSettings()
+    return sanitizeSettings(JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8')))
+  } catch { return sanitizeSettings() }
 }
 
 function writeSettings(data) {
   ensureAccountsFile()
   const tmp = SETTINGS_FILE + '.tmp'
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600 })
+  fs.writeFileSync(tmp, JSON.stringify(sanitizeSettings(data), null, 2), { mode: 0o600 })
   fs.renameSync(tmp, SETTINGS_FILE)
 }
 
@@ -1362,9 +1376,8 @@ ipcMain.handle('settings:save', (e, patch) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (!patch || typeof patch !== 'object') return { error: 'Dữ liệu không hợp lệ' }
 
-  const ALLOWED_KEYS = Object.keys(DEFAULT_SETTINGS)
   const safe = {}
-  for (const key of ALLOWED_KEYS) {
+  for (const key of SETTING_KEYS) {
     if (key in patch) safe[key] = patch[key]
   }
 
@@ -1379,4 +1392,3 @@ ipcMain.handle('settings:save', (e, patch) => {
 
   return { ok: true, data: updated }
 })
-

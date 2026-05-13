@@ -43,6 +43,7 @@ import SplashScreen from './components/SplashScreen'
 import AppBackground from './components/AppBackground'
 import { ToastContext, useToastState } from './hooks/useToast'
 import { AccountsProvider, useAccounts } from './hooks/useAccounts'
+import { loadAppSettings, applyAppSettings } from './utils/appSettings'
 
 import ModsPage from './components/mods/ModsPage'
 import ServerPage from './components/server/ServerPage'
@@ -311,17 +312,10 @@ export default function App() {
   const [bgId, setBgId] = useState('dark')
 
   useEffect(() => {
-    const isElectron = typeof window !== 'undefined' && window.electronAPI
-    if (isElectron) {
-      window.electronAPI.getSettings().then(s => {
-        if (s?.background) setBgId(s.background)
-      }).catch(() => {})
-    } else {
-      try {
-        const raw = localStorage.getItem('vxc_settings')
-        if (raw) { const s = JSON.parse(raw); if (s.background) setBgId(s.background) }
-      } catch {}
-    }
+    loadAppSettings().then(s => {
+      applyAppSettings(s)
+      if (s?.background) setBgId(s.background)
+    }).catch(() => {})
 
     const handler = (e) => setBgId(e.detail)
     window.addEventListener('vxc-bg-change', handler)
@@ -351,4 +345,3 @@ export default function App() {
     </AccountsProvider>
   )
 }
-

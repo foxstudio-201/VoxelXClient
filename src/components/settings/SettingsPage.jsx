@@ -33,86 +33,7 @@ import { useState, useEffect, useCallback } from 'react'
 import LauncherTab from './tabs/LauncherTab'
 import PrivacyTab  from './tabs/PrivacyTab'
 import AboutTab    from './tabs/AboutTab'
-import { BG_THEMES } from '../AppBackground'
-
-const isElectron = typeof window !== 'undefined' && window.electronAPI
-
-const DEFAULT_SETTINGS = {
-  autoCheckUpdate:      true,
-  hideLauncherOnLaunch: true,
-  discordRPC:           false,
-  fontWeight:           400,
-  fontSize:             100,
-  fontId:               'system',
-  colorAccent:          '#4ade80',
-  colorHover:           '#86efac',
-  colorActive:          '#22c55e',
-  background:           'dark',
-  borderRadius:         12,
-  borderColor:          'rgba(255,255,255,0.08)',
-  agreedTos:            false,
-  agreedPrivacy:        false,
-}
-
-async function loadSettingsAsync() {
-  if (isElectron) {
-    try { return await window.electronAPI.getSettings() } catch {}
-  }
-  try {
-    const raw = localStorage.getItem('vxc_settings')
-    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) }
-  } catch {}
-  return { ...DEFAULT_SETTINGS }
-}
-
-async function saveSettingsAsync(patch) {
-  if (isElectron) {
-    try { await window.electronAPI.saveSettings(patch) } catch {}
-  } else {
-    try {
-      const raw = localStorage.getItem('vxc_settings')
-      const current = raw ? JSON.parse(raw) : {}
-      localStorage.setItem('vxc_settings', JSON.stringify({ ...current, ...patch }))
-    } catch {}
-  }
-}
-
-function applyBgFromSettings(s) {
-
-  const bgId = s.background ?? 'dark'
-  window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: bgId }))
-
-  const safeFontSize = Math.min(120, Math.max(80, Number(s.fontSize ?? 100)))
-  document.documentElement.style.setProperty('--app-font-size', `${safeFontSize}%`)
-
-  if (s.fontId && s.fontId !== 'system') {
-    const FONT_STACKS = {
-      inter:          "'Inter', sans-serif",
-      outfit:         "'Outfit', sans-serif",
-      'plus-jakarta':  "'Plus Jakarta Sans', sans-serif",
-      'dm-sans':       "'DM Sans', sans-serif",
-      nunito:          "'Nunito', sans-serif",
-      poppins:         "'Poppins', sans-serif",
-      raleway:         "'Raleway', sans-serif",
-      'space-grotesk': "'Space Grotesk', sans-serif",
-      sora:            "'Sora', sans-serif",
-      jetbrains:       "'JetBrains Mono', monospace",
-      'fira-code':     "'Fira Code', monospace",
-    }
-    const stack = FONT_STACKS[s.fontId]
-    if (stack) {
-      document.documentElement.style.setProperty('--app-font', stack)
-      document.body.style.fontFamily = stack
-    }
-  }
-
-  if (s.borderRadius !== undefined) {
-    document.documentElement.style.setProperty('--app-radius', `${s.borderRadius}px`)
-  }
-  if (s.borderColor) {
-    document.documentElement.style.setProperty('--app-border-color', s.borderColor)
-  }
-}
+import { DEFAULT_SETTINGS, sanitizeSettings, loadAppSettings, saveAppSettings, applyAppSettings } from '../../utils/appSettings'
 
 const TABS = [
   {
@@ -150,31 +71,22 @@ export default function SettingsPage() {
   const [loaded, setLoaded]      = useState(false)
 
   useEffect(() => {
-    loadSettingsAsync().then(s => {
+    loadAppSettings().then(s => {
       setSettings(s)
       setLoaded(true)
-      applyBgFromSettings(s)
+      applyAppSettings(s)
     })
   }, [])
 
   useEffect(() => {
-    if (loaded) {
-      loadSettingsAsync().then(s => {
-        setSettings(s)
-        applyBgFromSettings(s)
-      })
-    }
-  }, [activeTab, loaded])
-
-  useEffect(() => {
     if (!loaded) return
-    saveSettingsAsync(settings)
+    saveAppSettings(settings)
   }, [settings, loaded])
 
   const handleChange = useCallback((patch) => {
     setSettings(prev => {
-      const next = { ...prev, ...patch }
-      applyBgFromSettings(next)
+      const next = sanitizeSettings({ ...prev, ...patch })
+      applyAppSettings(next)
       return next
     })
   }, [])
@@ -228,4 +140,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-
