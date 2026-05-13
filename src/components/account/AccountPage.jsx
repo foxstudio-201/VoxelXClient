@@ -40,21 +40,37 @@ import PlayerModel3D from '../ui/PlayerModel3D'
 function AccountTypeTag({ type }) {
   if (type === 'offline') {
     return (
-      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-white/35">
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/8 text-white/35">
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5 flex-shrink-0">
+          <path d="M20 18h-2V7c0-2.76-2.24-5-5-5S8 4.24 8 7v11H6v2h14v-2zM10 7c0-1.66 1.34-3 3-3s3 1.34 3 3v11h-6V7zm3 13c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+        </svg>
         OFFLINE
       </span>
     )
   }
   if (type === 'discord') {
     return (
-      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5 flex-shrink-0">
+          <path d="M20.317 4.369A19.791 19.791 0 0015.885 3c-.191.34-.404.798-.553 1.165a18.27 18.27 0 00-5.327 0A12.04 12.04 0 009.45 3a19.736 19.736 0 00-4.434 1.371C2.21 8.622 1.449 12.77 1.822 16.863A19.923 19.923 0 007.245 19.5c.438-.6.83-1.235 1.165-1.905-.63-.238-1.23-.53-1.793-.867.149-.107.294-.221.434-.339 3.46 1.623 7.214 1.623 10.633 0 .142.118.287.232.434.339-.565.339-1.167.63-1.795.867.336.67.728 1.307 1.167 1.905a19.874 19.874 0 005.422-2.638c.438-4.745-.75-8.855-3.595-12.494zM9.16 14.555c-1.036 0-1.886-.95-1.886-2.115 0-1.165.832-2.115 1.886-2.115 1.062 0 1.904.96 1.886 2.115 0 1.165-.832 2.115-1.886 2.115zm5.693 0c-1.036 0-1.886-.95-1.886-2.115 0-1.165.832-2.115 1.886-2.115 1.062 0 1.904.96 1.886 2.115 0 1.165-.824 2.115-1.886 2.115z"/>
+        </svg>
         DISCORD
       </span>
     )
   }
+  // Microsoft — thêm icon Windows + khiên bảo vệ
   return (
-    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+      <svg viewBox="0 0 21 21" className="w-2.5 h-2.5 flex-shrink-0">
+        <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+        <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+        <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+        <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+      </svg>
       MICROSOFT
+      <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5 flex-shrink-0 text-blue-300">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
+      </svg>
     </span>
   )
 }

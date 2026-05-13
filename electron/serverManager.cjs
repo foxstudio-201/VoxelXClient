@@ -282,6 +282,16 @@ function registerServerHandlers(getTrustedWindow) {
     if (!server) return { error: 'Server không tồn tại' }
     if (runningServers.has(serverId)) return { error: 'Server đang chạy, hãy dừng trước' }
 
+    // Xóa thư mục server trên disk
+    if (server.serverDir && fs.existsSync(server.serverDir)) {
+      try {
+        fs.rmSync(server.serverDir, { recursive: true, force: true })
+      } catch (err) {
+        console.error('[ServerManager] Không thể xóa thư mục server:', err.message)
+        return { error: `Không thể xóa thư mục: ${err.message}` }
+      }
+    }
+
     data.servers = data.servers.filter(s => s.id !== serverId)
     writeServers(data)
     return { ok: true }

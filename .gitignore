@@ -30,6 +30,10 @@ web/
 scripts/add-header-all.cjs
 scripts/strip-comments.cjs
 
+# Bot Discord deps
+bot-discord/node_modules
+bot-discord/.env
+
 # Large demo files
 modpack_demo/
 

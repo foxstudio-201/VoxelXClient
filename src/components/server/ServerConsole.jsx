@@ -49,6 +49,8 @@ export default function ServerConsole({ server, onBack }) {
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied]           = useState(false)
   const [folderPath, setFolderPath]   = useState('')
+  // Local server data — cập nhật ngay sau khi save settings
+  const [serverData, setServerData]   = useState(server)
 
   const [tunnelStatus, setTunnelStatus] = useState('idle')
   const [tunnelAddr, setTunnelAddr]     = useState(null)
@@ -56,6 +58,11 @@ export default function ServerConsole({ server, onBack }) {
 
   const [stats, setStats] = useState({ cpu: 0, ramMb: 0, xmxMb: (server?.ramGb || 2) * 1024, rssMb: 0 })
   const statsIntervalRef  = useRef(null)
+
+  // Sync xmxMb khi serverData.ramGb thay đổi (sau khi save settings)
+  useEffect(() => {
+    setStats(prev => ({ ...prev, xmxMb: (serverData.ramGb || 2) * 1024 }))
+  }, [serverData.ramGb])
 
   const logEndRef = useRef(null)
   const unsubsRef = useRef([])
@@ -322,7 +329,15 @@ export default function ServerConsole({ server, onBack }) {
           {activeTab === 'mods' && <ServerPluginModTab server={server} projectType="mod" />}
 
           {}
-          {activeTab === 'settings' && <ServerSettingsTab server={server} />}
+          {activeTab === 'settings' && <ServerSettingsTab server={serverData} onServerUpdated={async () => {
+            if (!isElectron) return null
+            const r = await window.electronAPI.serverList()
+            if (r?.ok) {
+              const updated = r.servers.find(s => s.id === serverData.id)
+              if (updated) { setServerData(updated); return updated }
+            }
+            return null
+          }} />}
         </div>
       </div>
 
@@ -332,11 +347,11 @@ export default function ServerConsole({ server, onBack }) {
           {}
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-white/5">
-              <ServerTypeIcon type={server.type} size={48} />
+              <ServerTypeIcon type={serverData.type} size={48} />
             </div>
             <div className="min-w-0">
-              <p className="text-base font-bold text-white/95 truncate">{server.name}</p>
-              <p className="text-xs text-white/40 capitalize">{server.type} {server.gameVersion}</p>
+              <p className="text-base font-bold text-white/95 truncate">{serverData.name}</p>
+              <p className="text-xs text-white/40 capitalize">{serverData.type} {serverData.gameVersion}</p>
             </div>
           </div>
 
@@ -349,7 +364,7 @@ export default function ServerConsole({ server, onBack }) {
           </div>
 
           {}
-          <IpDisplay tunnelAddr={tunnelAddr} tunnelStatus={tunnelStatus} server={server} />
+          <IpDisplay tunnelAddr={tunnelAddr} tunnelStatus={tunnelStatus} server={serverData} />
 
           {}
           <div className="flex gap-2 mt-3">
@@ -382,7 +397,7 @@ export default function ServerConsole({ server, onBack }) {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs text-white/50 uppercase tracking-wider font-semibold">RAM</span>
-              <span className="text-xs text-white/60 font-mono font-semibold">{server.ramGb} GB max</span>
+              <span className="text-xs text-white/60 font-mono font-semibold">{serverData.ramGb} GB max</span>
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
               <div className="h-full bg-blue-400/60 rounded-full transition-all duration-1000"
@@ -397,22 +412,22 @@ export default function ServerConsole({ server, onBack }) {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs text-white/50 uppercase tracking-wider font-semibold">CPU</span>
-              <span className="text-xs text-white/60 font-mono font-semibold">{server.cores} cores</span>
+              <span className="text-xs text-white/60 font-mono font-semibold">{serverData.cores} cores</span>
             </div>
             <div className="w-full h-2 bg-white/8 rounded-full overflow-hidden">
               <div className="h-full bg-green-400/60 rounded-full transition-all duration-1000"
-                style={{ width: isRunning ? `${Math.min(100, stats.cpu / (server.cores || 1))}%` : '0%' }} />
+                style={{ width: isRunning ? `${Math.min(100, stats.cpu / (serverData.cores || 1))}%` : '0%' }} />
             </div>
             <p className="text-xs text-white/35 mt-1 font-mono">
-              {isRunning ? `${Math.min(100, stats.cpu / (server.cores || 1)).toFixed(1)}%` : 'Không hoạt động'}
+              {isRunning ? `${Math.min(100, stats.cpu / (serverData.cores || 1)).toFixed(1)}%` : 'Không hoạt động'}
             </p>
           </div>
           <div className="rounded-xl border border-white/8 bg-white/3 p-3 space-y-2">
-            <InfoRow label="Loại"     value={server.type} />
-            <InfoRow label="Phiên bản" value={server.gameVersion} />
-            <InfoRow label="RAM"      value={`${server.ramGb} GB`} />
-            <InfoRow label="Cores"    value={String(server.cores)} />
-            {server.jarFile && <InfoRow label="Jar" value={server.jarFile} mono />}
+            <InfoRow label="Loại"     value={serverData.type} />
+            <InfoRow label="Phiên bản" value={serverData.gameVersion} />
+            <InfoRow label="RAM"      value={`${serverData.ramGb} GB`} />
+            <InfoRow label="Cores"    value={String(serverData.cores)} />
+            {serverData.jarFile && <InfoRow label="Jar" value={serverData.jarFile} mono />}
           </div>
         </div>
       </div>
@@ -599,6 +614,7 @@ function IpDisplay({ tunnelAddr, tunnelStatus, server }) {
   const [localIp, setLocalIp]   = useState(null)
   const [port, setPort]         = useState('25565')
   const [copied, setCopied]     = useState(false)
+  const [visible, setVisible]   = useState(false)
 
   useEffect(() => {
     if (!isElectron || !server) return
@@ -611,6 +627,8 @@ function IpDisplay({ tunnelAddr, tunnelStatus, server }) {
   const displayAddr    = isTunnelActive ? tunnelAddr : (localIp ? `${localIp}:${port}` : null)
   const label          = isTunnelActive ? 'Tunnel (công cộng)' : 'IP nội bộ (LAN)'
   const accent         = isTunnelActive
+
+  const maskedAddr = displayAddr ? displayAddr.replace(/[\d]/g, '•') : null
 
   function copy() {
     if (!displayAddr) return
@@ -634,20 +652,38 @@ function IpDisplay({ tunnelAddr, tunnelStatus, server }) {
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <span className={`text-sm font-bold font-mono truncate ${accent ? 'text-green-400' : 'text-white/80'}`}>
-          {displayAddr}
+      <div className="flex items-center justify-between gap-1.5">
+        <span className={`text-sm font-bold font-mono truncate transition-all select-none ${
+          visible
+            ? accent ? 'text-green-400' : 'text-white/80'
+            : 'blur-[3px] text-white/40'
+        }`}>
+          {visible ? displayAddr : maskedAddr}
         </span>
-        <button onClick={copy}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all flex-shrink-0 ${
-            copied ? 'bg-green-500/20 text-green-400' : 'bg-white/8 text-white/40 hover:text-white/70 hover:bg-white/12'
-          }`}>
-          {copied
-            ? <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            : <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-          }
-          {copied ? 'Đã copy' : 'Copy'}
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Eye toggle */}
+          <button onClick={() => setVisible(v => !v)}
+            className="flex items-center justify-center w-6 h-6 rounded text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
+            title={visible ? 'Ẩn IP' : 'Hiện IP'}>
+            {visible
+              ? <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
+              : <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            }
+          </button>
+          {/* Copy — only when visible */}
+          {visible && (
+            <button onClick={copy}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all ${
+                copied ? 'bg-green-500/20 text-green-400' : 'bg-white/8 text-white/40 hover:text-white/70 hover:bg-white/12'
+              }`}>
+              {copied
+                ? <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                : <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              }
+              {copied ? 'Đã copy' : 'Copy'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

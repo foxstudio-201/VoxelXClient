@@ -151,7 +151,16 @@ function ConfigTab({ server, onServerUpdated }) {
         javaPath: config.javaPath,
       })
       setSaved(true); setTimeout(() => setSaved(false), 2000)
-      onServerUpdated?.()
+      // Gọi callback để ServerPage reload, rồi sync lại config local
+      const updated = await onServerUpdated?.()
+      if (updated) {
+        setConfig({
+          ramGb:    updated.ramGb   || config.ramGb,
+          cores:    updated.cores   || config.cores,
+          jvmArgs:  updated.jvmArgs ?? config.jvmArgs,
+          javaPath: updated.javaPath ?? config.javaPath,
+        })
+      }
     } finally { setSaving(false) }
   }
 

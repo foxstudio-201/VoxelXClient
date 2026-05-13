@@ -12,9 +12,9 @@ const TABS = [
 
 function validatePlayerName(name) {
   const trimmed = name.trim()
-  if (!trimmed) return 'Vui long nhap ten nguoi dung'
-  if (trimmed.length < 3 || trimmed.length > 16) return 'Ten phai tu 3-16 ky tu'
-  if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) return 'Chi dung chu, so va dau _'
+  if (!trimmed) return 'Vui lòng nhập tên người dùng'
+  if (trimmed.length < 3 || trimmed.length > 16) return 'Tên phải từ 3–16 ký tự'
+  if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) return 'Chỉ dùng chữ, số và dấu _'
   return null
 }
 
@@ -120,7 +120,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
 
   async function startMsLogin() {
     if (!isElectron) {
-      setError('Dang nhap Microsoft chi kha dung trong ung dung Electron.')
+      setError('Đăng nhập Microsoft chỉ khả dụng trong ứng dụng Electron.')
       return
     }
 
@@ -139,14 +139,14 @@ export default function AddAccountModal({ onClose, onAdd }) {
       setMsState('success')
       if (onAdd) await onAdd({ _msAlreadySaved: true, ...result.account })
     } catch (err) {
-      setError(err?.message || 'Khong the dang nhap Microsoft luc nay.')
+      setError(err?.message || 'Không thể đăng nhập Microsoft lúc này.')
       setMsState('idle')
     }
   }
 
   async function startDiscordLink() {
     if (!isElectron) {
-      setError('Lien ket Discord chi kha dung trong ung dung Electron.')
+      setError('Liên kết Discord chỉ khả dụng trong ứng dụng Electron.')
       return
     }
 
@@ -163,7 +163,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
 
       const normalizedProfile = normalizeDiscordProfile(result?.profile)
       if (!normalizedProfile) {
-        setError('Du lieu tai khoan Discord tra ve khong hop le.')
+        setError('Dữ liệu tài khoản Discord trả về không hợp lệ.')
         setDiscordState('idle')
         return
       }
@@ -171,7 +171,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
       setDiscordProfile(normalizedProfile)
       setDiscordState('linked')
     } catch (err) {
-      setError(err?.message || 'Khong the lien ket Discord luc nay.')
+      setError(err?.message || 'Không thể liên kết Discord lúc này.')
       setDiscordState('idle')
     }
   }
@@ -182,7 +182,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
     setLoading(true)
 
     if (!discordProfile?.discordId) {
-      setError('Ban can lien ket Discord truoc.')
+      setError('Bạn cần liên kết Discord trước.')
       setLoading(false)
       return
     }
@@ -231,7 +231,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
     >
       <div className="w-[460px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h2 className="text-base font-bold text-white">Them tai khoan</h2>
+          <h2 className="text-base font-bold text-white">Thêm tài khoản</h2>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
@@ -263,28 +263,29 @@ export default function AddAccountModal({ onClose, onAdd }) {
           {tab === 'offline' && (
             <form onSubmit={handleOfflineSubmit} className="flex flex-col gap-4">
               <TextField
-                label="Ten nguoi dung"
+                label="Tên người dùng"
                 value={username}
                 onChange={setUsername}
                 placeholder="Steve"
                 autoFocus
               />
               <p className="text-[11px] text-white/25 -mt-2">
-                Tai khoan offline khong can internet. Chi choi duoc server khong yeu cau xac thuc.
+                Tài khoản offline không cần internet. Chỉ chơi được server không yêu cầu xác thực.
               </p>
 
               <AccountPreview
+                type="offline"
                 uuid={offlinePreviewUuid}
-                username={username.trim() || 'Chua dat ten'}
+                username={username.trim() || 'Chưa đặt tên'}
                 subtitle={`Offline · ${offlinePreviewUuid || '—'}`}
               />
 
               {error && <ErrorBanner message={error} />}
 
               <div className="flex gap-2 pt-1">
-                <SecondaryButton type="button" onClick={onClose}>Huy</SecondaryButton>
+                <SecondaryButton type="button" onClick={onClose}>Huỷ</SecondaryButton>
                 <PrimaryButton type="submit" disabled={loading}>
-                  {loading ? 'Dang xu ly...' : 'Them tai khoan'}
+                  {loading ? 'Đang xử lý...' : 'Thêm tài khoản'}
                 </PrimaryButton>
               </div>
             </form>
@@ -304,9 +305,9 @@ export default function AddAccountModal({ onClose, onAdd }) {
                       </svg>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-white/80">Dang nhap Microsoft</p>
+                      <p className="text-sm font-semibold text-white/80">Đăng nhập Microsoft</p>
                       <p className="text-xs text-white/35 mt-1 leading-relaxed">
-                        Launcher se mo mot cua so dang nhap de dong bo tai khoan Microsoft da mua Minecraft Java Edition.
+                        Launcher sẽ mở một cửa sổ đăng nhập để đồng bộ tài khoản Microsoft đã mua Minecraft Java Edition.
                       </p>
                     </div>
                   </div>
@@ -314,7 +315,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                   {error && <ErrorBanner message={error} />}
 
                   <div className="flex gap-2">
-                    <SecondaryButton onClick={onClose}>Huy</SecondaryButton>
+                    <SecondaryButton onClick={onClose}>Huỷ</SecondaryButton>
                     <button
                       onClick={startMsLogin}
                       disabled={!isElectron}
@@ -326,7 +327,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                         <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
                         <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
                       </svg>
-                      Dang nhap voi Microsoft
+                      Đăng nhập với Microsoft
                     </button>
                   </div>
                 </>
@@ -334,8 +335,8 @@ export default function AddAccountModal({ onClose, onAdd }) {
 
               {msState === 'waiting' && (
                 <WaitingState
-                  title="Dang cho dang nhap..."
-                  description="Hoan thanh dang nhap trong cua so Microsoft vua mo."
+                  title="Đang chờ đăng nhập..."
+                  description="Hoàn thành đăng nhập trong cửa sổ Microsoft vừa mở."
                   colorClass="text-[#0078d4]"
                 />
               )}
@@ -343,7 +344,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
               {msState === 'success' && msAccount && (
                 <SuccessState
                   title={msAccount.username}
-                  description="Dang nhap thanh cong · Microsoft"
+                  description="Đăng nhập thành công · Microsoft"
                   actionLabel="Xong"
                   onAction={onClose}
                 />
@@ -360,9 +361,9 @@ export default function AddAccountModal({ onClose, onAdd }) {
                       <DiscordGlyph className="w-8 h-8 text-[#5865F2]" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-white/80">Lien ket tai khoan Discord</p>
+                      <p className="text-sm font-semibold text-white/80">Liên kết tài khoản Discord</p>
                       <p className="text-xs text-white/35 mt-1 leading-relaxed">
-                        Discord dung de xac minh danh tinh. Sau khi lien ket xong, ban se nhap ten player va tao tai khoan nhu cu.
+                        Discord dùng để xác minh danh tính. Sau khi liên kết xong, bạn sẽ nhập tên player và tạo tài khoản như cũ.
                       </p>
                     </div>
                   </div>
@@ -370,7 +371,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                   {error && <ErrorBanner message={error} />}
 
                   <div className="flex gap-2">
-                    <SecondaryButton type="button" onClick={onClose}>Huy</SecondaryButton>
+                    <SecondaryButton type="button" onClick={onClose}>Huỷ</SecondaryButton>
                     <button
                       type="button"
                       onClick={startDiscordLink}
@@ -378,7 +379,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                       className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#5865F2] hover:bg-[#4752c4] text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <DiscordGlyph className="w-4 h-4" />
-                      Lien ket Discord
+                      Liên kết Discord
                     </button>
                   </div>
                 </>
@@ -386,8 +387,8 @@ export default function AddAccountModal({ onClose, onAdd }) {
 
               {discordState === 'waiting' && (
                 <WaitingState
-                  title="Dang cho xac thuc Discord..."
-                  description="Trinh duyet da duoc mo. Hoan thanh xac nhan Discord roi quay lai launcher."
+                  title="Đang chờ xác thực Discord..."
+                  description="Trình duyệt đã được mở. Hoàn thành xác nhận Discord rồi quay lại launcher."
                   colorClass="text-[#5865F2]"
                 />
               )}
@@ -411,20 +412,21 @@ export default function AddAccountModal({ onClose, onAdd }) {
                   </div>
 
                   <TextField
-                    label="Ten player"
+                    label="Tên player"
                     value={discordPlayerName}
                     onChange={setDiscordPlayerName}
                     placeholder="Steve"
                     autoFocus
                   />
                   <p className="text-[11px] text-white/25 -mt-2">
-                    Ten nay se duoc dung de tao account Minecraft trong launcher. Discord chi dung de lien ket va xac minh.
+                    Tên này sẽ được dùng để tạo account Minecraft trong launcher. Discord chỉ dùng để liên kết và xác minh.
                   </p>
 
                   <AccountPreview
+                    type="discord"
                     uuid={discordPreviewUuid}
-                    username={discordPlayerName.trim() || 'Chua dat ten'}
-                    subtitle={`Discord linked · ${discordPreviewUuid || '—'}`}
+                    username={discordPlayerName.trim() || 'Chưa đặt tên'}
+                    subtitle={`Discord · ${discordPreviewUuid || '—'}`}
                   />
 
                   {error && <ErrorBanner message={error} />}
@@ -439,10 +441,10 @@ export default function AddAccountModal({ onClose, onAdd }) {
                         setError('')
                       }}
                     >
-                      Lien ket lai
+                      Liên kết lại
                     </SecondaryButton>
                     <PrimaryButton type="submit" disabled={loading}>
-                      {loading ? 'Dang tao...' : 'Tao tai khoan'}
+                      {loading ? 'Đang tạo...' : 'Tạo tài khoản'}
                     </PrimaryButton>
                   </div>
                 </>
@@ -472,15 +474,58 @@ function TextField({ label, value, onChange, placeholder, autoFocus = false }) {
   )
 }
 
-function AccountPreview({ uuid, username, subtitle }) {
+function AccountPreview({ uuid, username, subtitle, type = 'offline' }) {
+  const badge = {
+    offline: {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
+        </svg>
+      ),
+      color: 'text-white/50 bg-white/10 border-white/15',
+      label: 'Offline',
+    },
+    online: {
+      icon: (
+        <svg viewBox="0 0 21 21" className="w-2.5 h-2.5 flex-shrink-0">
+          <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+          <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+          <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+          <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+        </svg>
+      ),
+      color: 'text-[#0078d4] bg-[#0078d4]/15 border-[#0078d4]/25',
+      label: 'Microsoft',
+    },
+    discord: {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
+          <path d="M20.317 4.369A19.791 19.791 0 0015.885 3c-.191.34-.404.798-.553 1.165a18.27 18.27 0 00-5.327 0A12.04 12.04 0 009.45 3a19.736 19.736 0 00-4.434 1.371C2.21 8.622 1.449 12.77 1.822 16.863A19.923 19.923 0 007.245 19.5c.438-.6.83-1.235 1.165-1.905-.63-.238-1.23-.53-1.793-.867.149-.107.294-.221.434-.339 3.46 1.623 7.214 1.623 10.633 0 .142.118.287.232.434.339-.565.339-1.167.63-1.795.867.336.67.728 1.307 1.167 1.905a19.874 19.874 0 005.422-2.638c.438-4.745-.75-8.855-3.595-12.494zM9.16 14.555c-1.036 0-1.886-.95-1.886-2.115 0-1.165.832-2.115 1.886-2.115 1.062 0 1.904.96 1.886 2.115 0 1.165-.832 2.115-1.886 2.115zm5.693 0c-1.036 0-1.886-.95-1.886-2.115 0-1.165.832-2.115 1.886-2.115 1.062 0 1.904.96 1.886 2.115 0 1.165-.824 2.115-1.886 2.115z" />
+        </svg>
+      ),
+      color: 'text-[#5865F2] bg-[#5865F2]/15 border-[#5865F2]/25',
+      label: 'Discord',
+    },
+  }[type] ?? {
+    icon: null,
+    color: 'text-white/50 bg-white/10 border-white/15',
+    label: type,
+  }
+
   return (
     <div className="flex items-center gap-3 bg-white/3 rounded-xl p-3 border border-white/5">
       <div className="rounded-lg overflow-hidden flex-shrink-0">
         <PlayerHead uuid={uuid} username={username} size={40} />
       </div>
-      <div>
-        <div className="text-sm font-medium text-white/80">{username}</div>
-        <div className="text-[11px] text-white/30">{subtitle}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-white/80 truncate">{username}</div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${badge.color}`}>
+            {badge.icon}
+            {badge.label}
+          </span>
+          <span className="text-[11px] text-white/25 truncate">{subtitle.replace(/^[^·]*·\s*/, '')}</span>
+        </div>
       </div>
     </div>
   )
