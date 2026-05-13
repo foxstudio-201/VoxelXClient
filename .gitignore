@@ -25,7 +25,10 @@ dist-ssr
 
 # Landing page — separate repo
 web/
-scripts/
+
+# Scripts — exclude internal-only tools
+scripts/add-header-all.cjs
+scripts/strip-comments.cjs
 
 # Large demo files
 modpack_demo/

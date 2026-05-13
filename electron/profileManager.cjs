@@ -996,6 +996,50 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
   })
 
+  ipcMain.handle('profile:listDirFull', (e, profileId, subPath) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
+
+    const data = readProfiles()
+    const profile = data.profiles.find(p => p.id === profileId)
+    if (!profile) return { error: 'Profile không tồn tại' }
+
+    const base = path.resolve(profile.instancePath)
+    const target = subPath ? path.resolve(base, subPath) : base
+    if (target !== base && !target.startsWith(base + path.sep)) return { error: 'Đường dẫn không hợp lệ' }
+    if (!fs.existsSync(target)) return { ok: true, entries: [] }
+
+    try {
+      const raw = fs.readdirSync(target, { withFileTypes: true })
+      const entries = raw.map(entry => {
+        const fullPath = path.join(target, entry.name)
+        const relPath = subPath ? path.join(subPath, entry.name) : entry.name
+        let size = null
+        let mtime = null
+
+        try {
+          const stat = fs.statSync(fullPath)
+          size = entry.isFile() ? stat.size : null
+          mtime = stat.mtimeMs
+        } catch {}
+
+        return {
+          name: entry.name,
+          path: relPath.replace(/\\/g, '/'),
+          isDir: entry.isDirectory(),
+          size,
+          mtime,
+        }
+      })
+
+      const dirs = entries.filter(entry => entry.isDir).sort((a, b) => a.name.localeCompare(b.name))
+      const files = entries.filter(entry => !entry.isDir).sort((a, b) => a.name.localeCompare(b.name))
+      return { ok: true, entries: [...dirs, ...files] }
+    } catch (err) {
+      return { error: err.message }
+    }
+  })
+
   ipcMain.handle('profile:deleteWorld', (e, profileId, folderName) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     if (!validateId(profileId)) return { error: 'ID không hợp lệ' }
@@ -1236,4 +1280,3 @@ function registerJavaDistroHandlers(getTrustedWindow) {
 }
 
 module.exports = { registerProfileHandlers, registerGroupHandlers, registerProfileContentHandlers, registerJavaDistroHandlers }
-

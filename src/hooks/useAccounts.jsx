@@ -72,7 +72,7 @@ export function AccountsProvider({ children }) {
       return { ok: true, data }
     }
 
-    const uuid = account.type === 'offline'
+    const uuid = ['offline', 'discord'].includes(account.type)
       ? offlineUUID(account.username)
       : crypto.randomUUID()
     const newAccount = {
@@ -141,4 +141,3 @@ export function useAccounts() {
   if (!ctx) throw new Error('useAccounts must be used inside AccountsProvider')
   return ctx
 }
-

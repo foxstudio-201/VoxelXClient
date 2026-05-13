@@ -33,6 +33,7 @@ const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell } = require(
 const path = require('path')
 const fs   = require('fs')
 const rpc  = require('./discordRPC.cjs')
+const { startDiscordLink } = require('./discordAuth.cjs')
 const { registerProfileHandlers, registerGroupHandlers, registerProfileContentHandlers, registerJavaDistroHandlers } = require('./profileManager.cjs')
 const { registerServerHandlers } = require('./serverManager.cjs')
 const { registerLauncherHandlers } = require('./launcher.cjs')
@@ -88,12 +89,45 @@ function isTrustedOrigin(url) {
 // ─── Input validation ─────────────────────────────────────────────────────────
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,16}$/
 
-function validateAccount(account) {
+function legacyValidateAccount(account) {
   if (!account || typeof account !== 'object') return 'Dữ liệu không hợp lệ'
   if (!['offline', 'microsoft'].includes(account.type)) return 'Loại tài khoản không hợp lệ'
   if (typeof account.username !== 'string') return 'Username không hợp lệ'
   if (!USERNAME_RE.test(account.username)) return 'Username chỉ được chứa chữ, số và _ (3-16 ký tự)'
   if (typeof account.uuid !== 'string' || !/^[0-9a-f-]{36}$/.test(account.uuid)) return 'UUID không hợp lệ'
+  return null
+}
+
+function legacySanitizeAccount(account) {
+  const base = {
+    id:        account.id,
+    uuid:      account.uuid,
+    type:      account.type,
+    username:  account.username,
+    createdAt: account.createdAt,
+  }
+  if (account.type === 'microsoft') {
+    base.msRefreshToken = account.msRefreshToken || null
+    base.mcToken        = account.mcToken        || null
+    base.mcTokenExpiry  = account.mcTokenExpiry  || 0
+  }
+  return base
+}
+
+function legacyValidateId(id) {
+  return typeof id === 'string' && /^[0-9a-f-]{36}$/.test(id)
+}
+
+function validateAccount(account) {
+  if (!account || typeof account !== 'object') return 'Du lieu khong hop le'
+  if (!['offline', 'microsoft', 'discord'].includes(account.type)) return 'Loai tai khoan khong hop le'
+  if (typeof account.username !== 'string') return 'Username khong hop le'
+  if (!USERNAME_RE.test(account.username)) return 'Username chi duoc chua chu, so va _ (3-16 ky tu)'
+  if (typeof account.uuid !== 'string' || !/^[0-9a-f-]{36}$/.test(account.uuid)) return 'UUID khong hop le'
+  if (account.type === 'discord') {
+    if (typeof account.discordId !== 'string' || !/^\d{10,25}$/.test(account.discordId)) return 'Discord ID khong hop le'
+    if (typeof account.discordUsername !== 'string' || !account.discordUsername.trim()) return 'Discord username khong hop le'
+  }
   return null
 }
 
@@ -110,14 +144,76 @@ function sanitizeAccount(account) {
     base.mcToken        = account.mcToken        || null
     base.mcTokenExpiry  = account.mcTokenExpiry  || 0
   }
+  if (account.type === 'discord') {
+    base.discordId            = account.discordId || null
+    base.discordUsername      = account.discordUsername || null
+    base.discordGlobalName    = account.discordGlobalName || null
+    base.discordDiscriminator = account.discordDiscriminator || null
+    base.discordAvatarUrl     = account.discordAvatarUrl || null
+    base.linkedAt             = account.linkedAt || account.createdAt || new Date().toISOString()
+  }
   return base
 }
 
+function normalizeDiscordProfile(profile) {
+  if (!profile || typeof profile !== 'object') return null
+
+  const discordId = String(
+    profile.discordId ??
+    profile.id ??
+    profile.userId ??
+    ''
+  ).trim()
+
+  const discordUsername = String(
+    profile.discordUsername ??
+    profile.username ??
+    profile.login ??
+    ''
+  ).trim()
+
+  const discordGlobalName = String(
+    profile.discordGlobalName ??
+    profile.globalName ??
+    profile.global_name ??
+    profile.displayName ??
+    ''
+  ).trim()
+
+  const discriminatorValue =
+    profile.discordDiscriminator ??
+    profile.discriminator ??
+    profile.tagSuffix ??
+    null
+
+  const discordDiscriminator = discriminatorValue == null
+    ? null
+    : String(discriminatorValue).trim() || null
+
+  const discordAvatarUrl = String(
+    profile.discordAvatarUrl ??
+    profile.avatarUrl ??
+    profile.avatar_url ??
+    profile.avatar ??
+    ''
+  ).trim() || null
+
+  if (!discordId || !discordUsername) return null
+
+  return {
+    discordId,
+    discordUsername,
+    discordGlobalName: discordGlobalName || null,
+    discordDiscriminator,
+    discordAvatarUrl,
+  }
+}
+
+// ─── Accounts helpers ─────────────────────────────────────────────────────────
 function validateId(id) {
   return typeof id === 'string' && /^[0-9a-f-]{36}$/.test(id)
 }
 
-// ─── Accounts helpers ─────────────────────────────────────────────────────────
 function ensureAccountsFile() {
   if (!fs.existsSync(ACCOUNTS_DIR)) fs.mkdirSync(ACCOUNTS_DIR, { recursive: true })
   if (!fs.existsSync(ACCOUNTS_FILE))
@@ -770,9 +866,12 @@ ipcMain.handle('accounts:add', (e, account) => {
   if (err) return { error: err }
 
   const data = readAccounts()
-  const exists = data.accounts.find(
-    a => a.username === account.username && a.type === account.type
-  )
+  const exists = data.accounts.find(a => {
+    if (account.type === 'discord' && a.type === 'discord') {
+      return a.discordId === account.discordId || a.username === account.username
+    }
+    return a.username === account.username && a.type === account.type
+  })
   if (exists) return { error: 'Tài khoản đã tồn tại' }
 
   const safe = sanitizeAccount(account)
@@ -1391,4 +1490,14 @@ ipcMain.handle('settings:save', (e, patch) => {
   }
 
   return { ok: true, data: updated }
+})
+ipcMain.handle('discord:startLink', async (e) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  try {
+    const profile = normalizeDiscordProfile(await startDiscordLink())
+    if (!profile) return { error: 'Du lieu tai khoan Discord khong hop le' }
+    return { ok: true, profile }
+  } catch (err) {
+    return { error: err.message }
+  }
 })

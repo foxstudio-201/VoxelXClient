@@ -45,6 +45,13 @@ function AccountTypeTag({ type }) {
       </span>
     )
   }
+  if (type === 'discord') {
+    return (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+        DISCORD
+      </span>
+    )
+  }
   return (
     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
       MICROSOFT
@@ -554,4 +561,3 @@ export default function AccountPage() {
     </div>
   )
 }
-

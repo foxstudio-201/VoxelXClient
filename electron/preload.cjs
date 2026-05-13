@@ -103,6 +103,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   msStartLogin:   ()   => ipcRenderer.invoke('ms:startLogin'),
   msCancelLogin:  ()   => ipcRenderer.invoke('ms:cancelLogin'),
   msRefreshToken: (id) => ipcRenderer.invoke('ms:refreshToken', id),
+  discordStartLink: () => ipcRenderer.invoke('discord:startLink'),
   onMsDeviceCode: (cb) => {
     const handler = (_e, data) => cb(data)
     ipcRenderer.on('ms:deviceCode', handler)
@@ -210,6 +211,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   profileDeleteResourcePack:(profileId, fileName)  => ipcRenderer.invoke('profile:deleteResourcePack', profileId, fileName),
   profileListWorlds:        (profileId)            => ipcRenderer.invoke('profile:listWorlds', profileId),
   profileDeleteWorld:       (profileId, folder)    => ipcRenderer.invoke('profile:deleteWorld', profileId, folder),
+  profileListDirFull:       (profileId, subPath)   => ipcRenderer.invoke('profile:listDirFull', profileId, subPath),
   profileUpdate:            (profileId, patch)     => ipcRenderer.invoke('profile:update', profileId, patch),
   profileListJavas:         ()                     => ipcRenderer.invoke('profile:listJavas'),
 
@@ -295,4 +297,3 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('server:javaProgress', handler)
   },
 })
-

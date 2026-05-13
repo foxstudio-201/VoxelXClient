@@ -221,6 +221,12 @@ function PatchNotesModal({ patchNotes, onClose }) {
 }
 
 // ─── AccountDropdown ──────────────────────────────────────────────────────────
+function getAccountTypeLabel(type) {
+  if (type === 'microsoft') return 'Microsoft'
+  if (type === 'discord') return 'Discord Linked'
+  return 'Offline Mode'
+}
+
 function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
@@ -262,7 +268,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
             </div>
             <div className="min-w-0 flex-1 text-left">
               <div className="text-sm text-white/80 font-medium truncate">{selectedAccount.username}</div>
-              <div className="text-[10px] text-white/30">{selectedAccount.type === 'microsoft' ? 'Microsoft' : 'Offline Mode'}</div>
+              <div className="text-[10px] text-white/30">{getAccountTypeLabel(selectedAccount.type)}</div>
             </div>
           </>
         )}
@@ -294,7 +300,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-white/80 font-semibold truncate">{account.username}</p>
-                    <p className="text-[10px] text-white/30">{account.type === 'microsoft' ? 'Microsoft' : 'Offline Mode'}</p>
+                    <p className="text-[10px] text-white/30">{getAccountTypeLabel(account.type)}</p>
                   </div>
                   {selectedAccount?.id === account.id && (
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
@@ -794,7 +800,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   }, [launchState, selectedProfile])
 
   const username = selectedAccount?.username ?? null
-  const accountType = selectedAccount?.type === 'microsoft' ? 'Microsoft' : 'Offline Mode'
+  const accountType = getAccountTypeLabel(selectedAccount?.type)
 
   function handleLaunch() {
     if (!selectedProfile || !isElectron) return
@@ -1499,4 +1505,3 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     </div>
   )
 }
-
