@@ -30,9 +30,8 @@ web/
 scripts/add-header-all.cjs
 scripts/strip-comments.cjs
 
-# Bot Discord deps
-bot-discord/node_modules
-bot-discord/.env
+# Bot Discord — separate repo, không push cùng app
+bot-discord/
 
 # Large demo files
 modpack_demo/
