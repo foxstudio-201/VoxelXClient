@@ -1,3 +1,34 @@
+/**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
+ */
+
 import { useState } from 'react'
 import PlayerHead from '../ui/PlayerHead'
 import { offlineUUID } from '../../utils/offlineUUID'
@@ -72,7 +103,7 @@ function normalizeDiscordProfile(profile) {
   }
 }
 
-export default function AddAccountModal({ onClose, onAdd }) {
+export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existingAccounts = [] }) {
   const [tab, setTab] = useState('offline')
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
@@ -84,6 +115,9 @@ export default function AddAccountModal({ onClose, onAdd }) {
   const [discordState, setDiscordState] = useState('idle')
   const [discordProfile, setDiscordProfile] = useState(null)
   const [discordPlayerName, setDiscordPlayerName] = useState('')
+  // 'new' = tạo tài khoản mới, 'link' = liên kết với account đã có
+  const [discordMode, setDiscordMode] = useState('new')
+  const [linkTargetId, setLinkTargetId] = useState('')
 
   function resetTab(nextTab) {
     setTab(nextTab)
@@ -93,6 +127,8 @@ export default function AddAccountModal({ onClose, onAdd }) {
     setDiscordState('idle')
     setDiscordProfile(null)
     setDiscordPlayerName('')
+    setDiscordMode('new')
+    setLinkTargetId('')
   }
 
   async function handleOfflineSubmit(e) {
@@ -187,6 +223,24 @@ export default function AddAccountModal({ onClose, onAdd }) {
       return
     }
 
+    if (discordMode === 'link') {
+      // Liên kết Discord vào account đã có
+      if (!linkTargetId) {
+        setError('Vui lòng chọn tài khoản muốn liên kết.')
+        setLoading(false)
+        return
+      }
+      const result = await onLinkDiscord?.(linkTargetId, discordProfile)
+      if (result?.error) {
+        setError(result.error)
+        setLoading(false)
+        return
+      }
+      onClose()
+      return
+    }
+
+    // Tạo tài khoản mới
     const name = discordPlayerName.trim()
     const validationError = validatePlayerName(name)
     if (validationError) {
@@ -356,16 +410,52 @@ export default function AddAccountModal({ onClose, onAdd }) {
             <form onSubmit={handleDiscordSubmit} className="flex flex-col gap-4">
               {discordState === 'idle' && (
                 <>
-                  <div className="flex flex-col items-center gap-4 py-4">
+                  {/* Icon + mô tả */}
+                  <div className="flex flex-col items-center gap-3 py-3">
                     <div className="w-14 h-14 rounded-2xl bg-[#5865F2]/15 border border-[#5865F2]/25 flex items-center justify-center">
                       <DiscordGlyph className="w-8 h-8 text-[#5865F2]" />
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-semibold text-white/80">Liên kết tài khoản Discord</p>
                       <p className="text-xs text-white/35 mt-1 leading-relaxed">
-                        Discord dùng để xác minh danh tính. Sau khi liên kết xong, bạn sẽ nhập tên player và tạo tài khoản như cũ.
+                        Xác thực qua Discord rồi chọn tạo tài khoản mới hoặc liên kết vào tài khoản đã có.
                       </p>
                     </div>
+                  </div>
+
+                  {/* Chọn mode */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDiscordMode('new')}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-left transition-all ${
+                        discordMode === 'new'
+                          ? 'border-[#5865F2]/50 bg-[#5865F2]/10 text-white'
+                          : 'border-white/8 bg-white/3 text-white/40 hover:border-white/15 hover:text-white/60'
+                      }`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className={`w-5 h-5 ${discordMode === 'new' ? 'text-[#8b9cf4]' : 'text-white/25'}`}>
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                      </svg>
+                      <span className="text-xs font-semibold">Tạo tài khoản mới</span>
+                      <span className="text-[10px] text-white/30 text-center leading-tight">Tạo account mới liên kết với Discord</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscordMode('link')}
+                      disabled={existingAccounts.length === 0}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                        discordMode === 'link'
+                          ? 'border-[#5865F2]/50 bg-[#5865F2]/10 text-white'
+                          : 'border-white/8 bg-white/3 text-white/40 hover:border-white/15 hover:text-white/60'
+                      }`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className={`w-5 h-5 ${discordMode === 'link' ? 'text-[#8b9cf4]' : 'text-white/25'}`}>
+                        <path d="M17 7H13V9H17C18.65 9 20 10.35 20 12C20 13.65 18.65 15 17 15H13V17H17C19.76 17 22 14.76 22 12C22 9.24 19.76 7 17 7ZM11 15H7C5.35 15 4 13.65 4 12C4 10.35 5.35 9 7 9H11V7H7C4.24 7 2 9.24 2 12C2 14.76 4.24 17 7 17H11V15ZM8 13H16V11H8V13Z"/>
+                      </svg>
+                      <span className="text-xs font-semibold">Liên kết tài khoản cũ</span>
+                      <span className="text-[10px] text-white/30 text-center leading-tight">Gắn Discord vào account đã có</span>
+                    </button>
                   </div>
 
                   {error && <ErrorBanner message={error} />}
@@ -379,7 +469,7 @@ export default function AddAccountModal({ onClose, onAdd }) {
                       className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#5865F2] hover:bg-[#4752c4] text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <DiscordGlyph className="w-4 h-4" />
-                      Liên kết Discord
+                      Xác thực Discord
                     </button>
                   </div>
                 </>
@@ -395,39 +485,90 @@ export default function AddAccountModal({ onClose, onAdd }) {
 
               {discordState === 'linked' && discordProfile && (
                 <>
-                  <div className="rounded-2xl border border-[#5865F2]/25 bg-[#5865F2]/8 p-4 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-black/20 border border-white/10 overflow-hidden flex items-center justify-center">
+                  {/* Discord profile card */}
+                  <div className="rounded-2xl border border-[#5865F2]/25 bg-[#5865F2]/8 p-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-black/20 border border-white/10 overflow-hidden flex items-center justify-center flex-shrink-0">
                       {discordProfile.discordAvatarUrl ? (
                         <img src={discordProfile.discordAvatarUrl} alt={discordDisplayName} className="w-full h-full object-cover" />
                       ) : (
-                        <DiscordGlyph className="w-6 h-6 text-[#c8ccff]" />
+                        <DiscordGlyph className="w-5 h-5 text-[#c8ccff]" />
                       )}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-white truncate">{discordDisplayName}</p>
-                      <p className="text-xs text-white/45 truncate">
-                        {discordTag || 'Discord'}
-                      </p>
+                      <p className="text-xs text-white/45 truncate">{discordTag || 'Discord'}</p>
                     </div>
+                    <span className="flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                      Đã xác thực
+                    </span>
                   </div>
 
-                  <TextField
-                    label="Tên player"
-                    value={discordPlayerName}
-                    onChange={setDiscordPlayerName}
-                    placeholder="Steve"
-                    autoFocus
-                  />
-                  <p className="text-[11px] text-white/25 -mt-2">
-                    Tên này sẽ được dùng để tạo account Minecraft trong launcher. Discord chỉ dùng để liên kết và xác minh.
-                  </p>
+                  {/* Mode: tạo mới */}
+                  {discordMode === 'new' && (
+                    <>
+                      <TextField
+                        label="Tên player"
+                        value={discordPlayerName}
+                        onChange={setDiscordPlayerName}
+                        placeholder="Steve"
+                        autoFocus
+                      />
+                      <p className="text-[11px] text-white/25 -mt-2">
+                        Tên này dùng trong Minecraft. Discord chỉ dùng để xác minh danh tính.
+                      </p>
+                      <AccountPreview
+                        type="discord"
+                        uuid={discordPreviewUuid}
+                        username={discordPlayerName.trim() || 'Chưa đặt tên'}
+                        subtitle={`Discord · ${discordPreviewUuid || '—'}`}
+                      />
+                    </>
+                  )}
 
-                  <AccountPreview
-                    type="discord"
-                    uuid={discordPreviewUuid}
-                    username={discordPlayerName.trim() || 'Chưa đặt tên'}
-                    subtitle={`Discord · ${discordPreviewUuid || '—'}`}
-                  />
+                  {/* Mode: liên kết với account đã có */}
+                  {discordMode === 'link' && (
+                    <>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
+                          Chọn tài khoản để liên kết
+                        </label>
+                        <div className="flex flex-col gap-1 max-h-36 overflow-y-auto">
+                          {existingAccounts.map(acc => (
+                            <button
+                              key={acc.id}
+                              type="button"
+                              onClick={() => setLinkTargetId(acc.id)}
+                              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left transition-all ${
+                                linkTargetId === acc.id
+                                  ? 'border-[#5865F2]/50 bg-[#5865F2]/10'
+                                  : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/5'
+                              }`}
+                            >
+                              <PlayerHead uuid={acc.uuid} username={acc.username} size={28} />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold text-white/80 truncate">{acc.username}</p>
+                                <p className="text-[10px] text-white/30 truncate">
+                                  {acc.type === 'microsoft' ? 'Microsoft' : acc.type === 'discord' ? 'Discord' : 'Offline'}
+                                  {acc.discordId ? ' · Đã liên kết Discord' : ''}
+                                </p>
+                              </div>
+                              {linkTargetId === acc.id && (
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#8b9cf4] flex-shrink-0">
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {linkTargetId && (
+                        <p className="text-[11px] text-white/30 -mt-1">
+                          Discord <span className="text-[#8b9cf4]">@{discordProfile.discordUsername}</span> sẽ được gắn vào tài khoản đã chọn.
+                        </p>
+                      )}
+                    </>
+                  )}
 
                   {error && <ErrorBanner message={error} />}
 
@@ -438,13 +579,17 @@ export default function AddAccountModal({ onClose, onAdd }) {
                         setDiscordState('idle')
                         setDiscordProfile(null)
                         setDiscordPlayerName('')
+                        setLinkTargetId('')
                         setError('')
                       }}
                     >
-                      Liên kết lại
+                      Xác thực lại
                     </SecondaryButton>
                     <PrimaryButton type="submit" disabled={loading}>
-                      {loading ? 'Đang tạo...' : 'Tạo tài khoản'}
+                      {loading
+                        ? 'Đang xử lý...'
+                        : discordMode === 'link' ? 'Liên kết' : 'Tạo tài khoản'
+                      }
                     </PrimaryButton>
                   </div>
                 </>
@@ -608,3 +753,4 @@ function ErrorBanner({ message }) {
     </div>
   )
 }
+

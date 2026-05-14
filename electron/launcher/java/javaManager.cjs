@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -42,7 +42,6 @@ const pipelineAsync = promisify(pipeline)
 
 const JRE_MANIFEST_URL = 'https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json'
 
-// ─── Version → Java component mapping ────────────────────────────────────────
 function getJavaComponent(gameVersion) {
   const parts = gameVersion.split('.')
   const minor = parseInt(parts[1] || '0', 10)
@@ -58,7 +57,6 @@ function getJavaVersion(component) {
   return '21'
 }
 
-// ─── Platform detection ───────────────────────────────────────────────────────
 function getMojangPlatform() {
   const arch = process.arch === 'x64' ? 'x64' : 'x86'
   switch (process.platform) {
@@ -74,7 +72,6 @@ function getJavaExecutable(javaDir) {
   return path.join(javaDir, 'bin', 'java')
 }
 
-// ─── HTTP download helper ─────────────────────────────────────────────────────
 function httpsGetRaw(url) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http
@@ -121,7 +118,6 @@ function downloadFile(url, destPath, onProgress) {
   })
 }
 
-// ─── Extract .tar.gz ──────────────────────────────────────────────────────────
 async function extractTarGz(tarPath, destDir) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
@@ -138,7 +134,6 @@ async function extractTarGz(tarPath, destDir) {
   })
 }
 
-// ─── Extract .zip (Windows) ───────────────────────────────────────────────────
 async function extractZip(zipPath, destDir) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
@@ -155,8 +150,6 @@ async function extractZip(zipPath, destDir) {
     ps.on('error', reject)
   })
 }
-
-// ─── Main: ensure Java is available ──────────────────────────────────────────
 
 async function ensureJava(gameVersion, runtimesDir, onProgress) {
   const component   = getJavaComponent(gameVersion)

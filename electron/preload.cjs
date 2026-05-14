@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addAccount:    (account) => ipcRenderer.invoke('accounts:add', account),
   removeAccount: (id)      => ipcRenderer.invoke('accounts:remove', id),
   selectAccount: (id)      => ipcRenderer.invoke('accounts:select', id),
+  updateAccount: (id, patch) => ipcRenderer.invoke('accounts:update', { id, patch }),
 
   checkUpdate:      () => ipcRenderer.invoke('updater:check'),
   openUpdateWindow: (result) => ipcRenderer.invoke('updater:openUpdateWindow', result),
@@ -199,19 +200,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSkinPrefs: (opts) => ipcRenderer.invoke('skin:savePrefs', opts),
   getSkinPrefs:  (opts) => ipcRenderer.invoke('skin:getPrefs', opts),
 
-  profileListMods:          (profileId)            => ipcRenderer.invoke('profile:listMods', profileId),
-  profileToggleMod:         (profileId, fileName)  => ipcRenderer.invoke('profile:toggleMod', profileId, fileName),
-  profileDeleteMod:         (profileId, fileName)  => ipcRenderer.invoke('profile:deleteMod', profileId, fileName),
-  profileGetModMeta:        (profileId, fileName)  => ipcRenderer.invoke('profile:getModMeta', profileId, fileName),
-  profileGetShaderMeta:     (profileId, fileName)  => ipcRenderer.invoke('profile:getShaderMeta', profileId, fileName),
-  profileGetResourcePackMeta: (profileId, fileName) => ipcRenderer.invoke('profile:getResourcePackMeta', profileId, fileName),
-  profileListShaders:       (profileId)            => ipcRenderer.invoke('profile:listShaders', profileId),
-  profileDeleteShader:      (profileId, f, sub)    => ipcRenderer.invoke('profile:deleteShader', profileId, f, sub),
-  profileListResourcePacks: (profileId)            => ipcRenderer.invoke('profile:listResourcePacks', profileId),
-  profileDeleteResourcePack:(profileId, fileName)  => ipcRenderer.invoke('profile:deleteResourcePack', profileId, fileName),
-  profileListWorlds:        (profileId)            => ipcRenderer.invoke('profile:listWorlds', profileId),
-  profileDeleteWorld:       (profileId, folder)    => ipcRenderer.invoke('profile:deleteWorld', profileId, folder),
-  profileListDirFull:       (profileId, subPath)   => ipcRenderer.invoke('profile:listDirFull', profileId, subPath),
+  profileListMods:          (profileId, accountId)            => ipcRenderer.invoke('profile:listMods', profileId, accountId),
+  profileToggleMod:         (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:toggleMod', profileId, fileName, accountId),
+  profileDeleteMod:         (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:deleteMod', profileId, fileName, accountId),
+  profileGetModMeta:        (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:getModMeta', profileId, fileName, accountId),
+  profileGetShaderMeta:     (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:getShaderMeta', profileId, fileName, accountId),
+  profileGetResourcePackMeta: (profileId, fileName, accountId) => ipcRenderer.invoke('profile:getResourcePackMeta', profileId, fileName, accountId),
+  profileListShaders:       (profileId, accountId)            => ipcRenderer.invoke('profile:listShaders', profileId, accountId),
+  profileDeleteShader:      (profileId, f, sub, accountId)    => ipcRenderer.invoke('profile:deleteShader', profileId, f, sub, accountId),
+  profileListResourcePacks: (profileId, accountId)            => ipcRenderer.invoke('profile:listResourcePacks', profileId, accountId),
+  profileDeleteResourcePack:(profileId, fileName, accountId)  => ipcRenderer.invoke('profile:deleteResourcePack', profileId, fileName, accountId),
+  profileInstallFile:       (profileId, type, srcPath, accountId) => ipcRenderer.invoke('profile:installFile', profileId, type, srcPath, accountId),
+  profileListWorlds:        (profileId, accountId)            => ipcRenderer.invoke('profile:listWorlds', profileId, accountId),
+  profileDeleteWorld:       (profileId, folder, accountId)    => ipcRenderer.invoke('profile:deleteWorld', profileId, folder, accountId),
+  profileListDirFull:       (profileId, subPath, accountId)   => ipcRenderer.invoke('profile:listDirFull', profileId, subPath, accountId),
   profileUpdate:            (profileId, patch)     => ipcRenderer.invoke('profile:update', profileId, patch),
   profileListJavas:         ()                     => ipcRenderer.invoke('profile:listJavas'),
 
@@ -297,3 +299,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('server:javaProgress', handler)
   },
 })
+

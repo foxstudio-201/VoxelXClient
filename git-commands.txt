@@ -93,3 +93,9 @@ Xóa tag remote:
 
 Xem remote URL:
    git remote -v
+
+push web 
+
+git add .
+git commit -m "message"
+git push

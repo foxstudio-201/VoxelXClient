@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -39,7 +39,6 @@ const { spawnSync } = require('child_process')
 
 const NEOFORGE_MAVEN = 'https://maven.neoforged.net/releases'
 
-// ─── Download helper ──────────────────────────────────────────────────────────
 function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
     const client  = url.startsWith('https') ? https : http
@@ -71,7 +70,6 @@ function downloadFile(url, destPath) {
   })
 }
 
-// ─── Maven coord to relative path ────────────────────────────────────────────
 function mavenToPath(coord) {
   if (!coord) return null
   const atIdx = coord.indexOf('@')
@@ -87,7 +85,6 @@ function mavenToPath(coord) {
   return `${groupPath}/${artifact}/${version}/${fileName}`
 }
 
-// ─── Resolve JVM args (substitute NeoForge placeholders) ─────────────────────
 function resolveJvmArgs(rawArgs, librariesDir, versionName) {
   if (!Array.isArray(rawArgs)) return []
   const sep = process.platform === 'win32' ? ';' : ':'
@@ -132,7 +129,6 @@ function resolveJvmArgs(rawArgs, librariesDir, versionName) {
   return result
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 async function setupNeoForge(mcVersion, neoVersion, librariesDir, clientJar, javaPath, instanceRoot, onProgress) {
   const installerName = `neoforge-${neoVersion}-installer.jar`
   const installerDir  = path.join(librariesDir, 'net', 'neoforged', 'neoforge', neoVersion)

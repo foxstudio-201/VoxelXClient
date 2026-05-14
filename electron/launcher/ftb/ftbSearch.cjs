@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -39,7 +39,6 @@ const UA   = 'VoxelXClient/1.0'
 
 const packCache = new Map()
 
-// ─── HTTP helper ──────────────────────────────────────────────────────────────
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http
@@ -59,7 +58,6 @@ function fetchJson(url) {
   })
 }
 
-// ─── Format a raw FTB pack into our standard shape ───────────────────────────
 function formatPack(p) {
   if (!p || !p.id) return null
 
@@ -93,7 +91,6 @@ function formatPack(p) {
   }
 }
 
-// ─── Fetch a single pack by ID (with cache) ───────────────────────────────────
 async function fetchPack(id) {
   if (packCache.has(id)) return packCache.get(id)
   try {
@@ -107,7 +104,6 @@ async function fetchPack(id) {
   }
 }
 
-// ─── Search ───────────────────────────────────────────────────────────────────
 async function searchProjects(opts = {}) {
   const query  = (opts.query || '').trim()
   const offset = opts.offset || 0
@@ -154,14 +150,12 @@ async function searchProjects(opts = {}) {
   }
 }
 
-// ─── Get project detail ───────────────────────────────────────────────────────
 async function getProject(idOrSlug) {
   const id = Number(idOrSlug)
   if (isNaN(id)) return null
   return fetchPack(id)
 }
 
-// ─── Get project versions ─────────────────────────────────────────────────────
 async function getProjectVersions(idOrSlug) {
   const id = Number(idOrSlug)
   if (isNaN(id)) return []
@@ -198,7 +192,6 @@ async function getProjectVersions(idOrSlug) {
   }).reverse()
 }
 
-// ─── Install (placeholder — FTB install is complex, needs Solder-like logic) ──
 async function installVersion(opts, onProgress) {
   throw new Error('FTB modpack installation is not yet implemented.')
 }

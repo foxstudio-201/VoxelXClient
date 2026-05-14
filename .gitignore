@@ -30,7 +30,7 @@ web/
 scripts/add-header-all.cjs
 scripts/strip-comments.cjs
 
-# Bot Discord — separate repo, không push cùng app
+# Bot Discord — separate repo
 bot-discord/
 
 # Large demo files

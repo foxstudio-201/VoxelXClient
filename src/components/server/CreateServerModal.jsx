@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -57,7 +57,6 @@ const SERVER_TYPES = [
 
 ]
 
-// ─── Java inline dropdown ─────────────────────────────────────────────────────
 const JAVA_DISTROS = {
   adoptium: { id: 'adoptium', name: 'Temurin', icon: adoptiumIcon, color: '#f97316' },
   azul:     { id: 'azul',     name: 'Zulu',    icon: azulIcon,     color: '#3b82f6' },
@@ -208,7 +207,6 @@ function JavaDropdown({ value, onChange }) {
   )
 }
 
-// ─── JVM Preset Dropdown ──────────────────────────────────────────────────────
 const JVM_PRESETS = [
   {
     id: 'default',

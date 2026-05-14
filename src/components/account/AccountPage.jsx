@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -58,7 +58,7 @@ function AccountTypeTag({ type }) {
       </span>
     )
   }
-  // Microsoft — thêm icon Windows + khiên bảo vệ
+
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
       <svg viewBox="0 0 21 21" className="w-2.5 h-2.5 flex-shrink-0">
@@ -100,6 +100,15 @@ function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
             {account.username}
           </span>
           <AccountTypeTag type={account.type} />
+          {/* Badge Discord liên kết — hiển thị khi account offline/discord đã có discordId */}
+          {account.discordId && account.type !== 'discord' && (
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[#5865F2]/20 text-[#8b9cf4] border border-[#5865F2]/25 flex-shrink-0">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-2 h-2">
+                <path d="M20.317 4.369A19.791 19.791 0 0015.885 3c-.191.34-.404.798-.553 1.165a18.27 18.27 0 00-5.327 0A12.04 12.04 0 009.45 3a19.736 19.736 0 00-4.434 1.371C2.21 8.622 1.449 12.77 1.822 16.863A19.923 19.923 0 007.245 19.5c.438-.6.83-1.235 1.165-1.905-.63-.238-1.23-.53-1.793-.867.149-.107.294-.221.434-.339 3.46 1.623 7.214 1.623 10.633 0 .142.118.287.232.434.339-.565.339-1.167.63-1.795.867.336.67.728 1.307 1.167 1.905a19.874 19.874 0 005.422-2.638c.438-4.745-.75-8.855-3.595-12.494zM9.16 14.555c-1.036 0-1.886-.95-1.886-2.115 0-1.165.832-2.115 1.886-2.115 1.062 0 1.904.96 1.886 2.115 0 1.165-.832 2.115-1.886 2.115zm5.693 0c-1.036 0-1.886-.95-1.886-2.115 0-1.165.832-2.115 1.886-2.115 1.062 0 1.904.96 1.886 2.115 0 1.165-.824 2.115-1.886 2.115z"/>
+              </svg>
+              Linked
+            </span>
+          )}
         </div>
         <p className="text-[10px] text-white/25 truncate font-mono">
           {account.uuid.slice(0, 8)}···
@@ -136,7 +145,7 @@ function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
 }
 
 export default function AccountPage() {
-  const { accounts, selectedId, loading, addAccount, removeAccount, selectAccount } = useAccounts()
+  const { accounts, selectedId, loading, addAccount, updateAccount, removeAccount, selectAccount } = useAccounts()
   const toast = useToast()
   const [showModal, setShowModal]             = useState(false)
   const [showSkinModal, setShowSkinModal]     = useState(false)
@@ -225,6 +234,21 @@ export default function AccountPage() {
     const result = await addAccount(account)
     if (!result?.error) {
       toast({ type: 'success', title: 'Thêm thành công', message: account.username })
+    }
+    return result
+  }
+
+  async function handleLinkDiscord(accountId, discordProfile) {
+    const result = await updateAccount(accountId, {
+      discordId:            discordProfile.discordId,
+      discordUsername:      discordProfile.discordUsername,
+      discordGlobalName:    discordProfile.discordGlobalName,
+      discordDiscriminator: discordProfile.discordDiscriminator,
+      discordAvatarUrl:     discordProfile.discordAvatarUrl,
+      linkedAt:             new Date().toISOString(),
+    })
+    if (!result?.error) {
+      toast({ type: 'success', title: 'Đã liên kết Discord', message: discordProfile.discordUsername })
     }
     return result
   }
@@ -555,6 +579,8 @@ export default function AccountPage() {
         <AddAccountModal
           onClose={() => setShowModal(false)}
           onAdd={handleAdd}
+          onLinkDiscord={handleLinkDiscord}
+          existingAccounts={accounts}
         />
       )}
 
@@ -577,3 +603,4 @@ export default function AccountPage() {
     </div>
   )
 }
+

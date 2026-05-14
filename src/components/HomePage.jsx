@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -163,7 +163,6 @@ function renderPatchNotesBody(body) {
   )
 }
 
-// ─── PatchNotesModal ──────────────────────────────────────────────────────────
 function PatchNotesModal({ patchNotes, onClose }) {
   if (!patchNotes) return null
 
@@ -220,7 +219,6 @@ function PatchNotesModal({ patchNotes, onClose }) {
   )
 }
 
-// ─── AccountDropdown ──────────────────────────────────────────────────────────
 function getAccountTypeLabel(type) {
   if (type === 'microsoft') return 'Microsoft'
   if (type === 'discord') return 'Discord Linked'
@@ -400,7 +398,6 @@ const NEWS = [
   },
 ]
 
-// ─── NewsPanel ────────────────────────────────────────────────────────────────
 function NewsPanel() {
   return (
     <div className="overflow-y-auto px-6 py-5 h-full">
@@ -436,7 +433,6 @@ function NewsPanel() {
   )
 }
 
-// ─── InstanceLogPanel ─────────────────────────────────────────────────────────
 function InstanceLogPanel({ instance, onKill }) {
   const logEndRef = useRef(null)
   const [autoScroll, setAutoScroll] = useState(true)
@@ -1186,10 +1182,11 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               {profileSettingsOpen && selectedProfile ? (
                 <ProfileSettingsPanel
                   profile={selectedProfile}
+                  accountId={selectedAccount?.id}
                   onClose={() => setProfileSettingsOpen(false)}
-                  onProfileUpdated={(updated) => {
-                    setSelectedProfile(updated)
-                    setRam(updated.ramGb ?? ram)
+                  onProfileUpdated={(p) => {
+                    setProfiles(prev => prev.map(pr => pr.id === p.id ? p : pr))
+                    setSelectedProfile(p)
                   }}
                 />
               ) : (
@@ -1505,3 +1502,4 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     </div>
   )
 }
+

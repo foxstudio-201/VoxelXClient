@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -40,9 +40,6 @@ import slimGlbUrl from '../../assets/model/slim.glb'
 useGLTF.preload(wideGlbUrl)
 useGLTF.preload(slimGlbUrl)
 
-// ─── Skin URL — username trước, UUID sau ─────────────────────────────────────
-
-// ─── Player model với skin texture ───────────────────────────────────────────
 function PlayerMesh({ modelPath, skinUrl }) {
   const group = useRef()
   const { scene, animations } = useGLTF(modelPath)
@@ -195,7 +192,6 @@ function PlayerMesh({ modelPath, skinUrl }) {
   )
 }
 
-// ─── Wrapper xử lý fallback skin URL ─────────────────────────────────────────
 const FALLBACK_URLS = (uuid, username) => [
   username ? `https://minotar.net/skin/${username}`   : null,
   username ? `https://crafthead.net/skin/${username}` : null,
@@ -244,7 +240,6 @@ function PlayerWithFallback({ uuid, username, modelPath, customSkinUrl }) {
   )
 }
 
-// ─── Loading placeholder ──────────────────────────────────────────────────────
 function LoadingBox() {
   const ref = useRef()
   useFrame((_, dt) => { if (ref.current) ref.current.rotation.y += dt * 1.2 })
@@ -256,7 +251,6 @@ function LoadingBox() {
   )
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
 export default function PlayerModel3D({ uuid, username, slim = false, customSkinUrl = null, className = '' }) {
   const modelPath = slim ? slimGlbUrl : wideGlbUrl
 

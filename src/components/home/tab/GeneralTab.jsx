@@ -1,0 +1,224 @@
+import { useState, useEffect, useRef } from 'react'
+import JavaManagerModal from '../JavaManagerModal'
+import { isElectron, Icons } from './shared'
+
+export default function GeneralTab({ profile, onProfileUpdated }) {
+  const [name, setName] = useState(profile?.name || '')
+  const [ram, setRam] = useState(profile?.ramGb || 2)
+  const [winWidth, setWinWidth] = useState(profile?.windowWidth || 854)
+  const [winHeight, setWinHeight] = useState(profile?.windowHeight || 480)
+  const [jvmArgs, setJvmArgs] = useState(profile?.jvmArgs || '')
+  const [javaRuntime, setJavaRuntime] = useState(profile?.javaRuntime || '')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [showJavaModal, setShowJavaModal] = useState(false)
+  const [javaList, setJavaList] = useState([])
+  const saveTimerRef = useRef(null)
+
+  useEffect(() => {
+    setName(profile?.name || '')
+    setRam(profile?.ramGb || 2)
+    setWinWidth(profile?.windowWidth || 854)
+    setWinHeight(profile?.windowHeight || 480)
+    setJvmArgs(profile?.jvmArgs || '')
+    setJavaRuntime(profile?.javaRuntime || '')
+  }, [profile?.id])
+
+  useEffect(() => {
+    if (!isElectron) return
+    window.electronAPI.profileListJavas?.()
+      .then(r => { if (r?.ok) setJavaList(r.javas || []) })
+      .catch(() => {})
+  }, [])
+
+  async function handleSave() {
+    if (!isElectron || !profile?.id) return
+    setSaving(true)
+    try {
+      const patch = {
+        name: name.trim() || profile.name,
+        ramGb: ram,
+        windowWidth: Number(winWidth) || 854,
+        windowHeight: Number(winHeight) || 480,
+        jvmArgs: jvmArgs.trim(),
+        javaRuntime: javaRuntime.trim(),
+      }
+      await window.electronAPI.profileUpdate(profile.id, patch)
+      setSaved(true)
+      onProfileUpdated?.({ ...profile, ...patch })
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = setTimeout(() => setSaved(false), 2000)
+    } catch {}
+    setSaving(false)
+  }
+
+  function handleJavaSelected(javaExe) {
+    setJavaRuntime(javaExe)
+    setShowJavaModal(false)
+  }
+
+  const ramMarks = [1, 2, 4, 6, 8, 12, 16, 24, 32]
+
+  return (
+    <div className="p-4 flex flex-col gap-4">
+      {/* Tên profile */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-white/50">Tên profile</label>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder={profile?.name}
+          className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/85 placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/8 transition-all"
+        />
+      </div>
+
+      {/* RAM */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-white/50">RAM tối đa</label>
+          <span className="text-xs font-bold text-green-400">{ram} GB</span>
+        </div>
+        <div className="relative flex items-center gap-0 h-6">
+          {ramMarks.map((m, i) => {
+            const isActive = m <= ram
+            const isCurrent = m === ram
+            const isLast = i === ramMarks.length - 1
+            return (
+              <button
+                key={m}
+                onClick={() => setRam(m)}
+                className="relative flex-1 flex flex-col items-center gap-1 group"
+                title={`${m} GB`}
+              >
+                <div className={`w-full h-1.5 transition-all ${
+                  isLast ? 'rounded-r-full' : i === 0 ? 'rounded-l-full' : ''
+                } ${isActive ? 'bg-green-500' : 'bg-white/10 group-hover:bg-white/20'}`} />
+                {isCurrent && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-green-400 shadow-lg shadow-green-500/40 ring-2 ring-green-400/30 z-10" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex">
+          {ramMarks.map(m => (
+            <button
+              key={m}
+              onClick={() => setRam(m)}
+              className={`flex-1 text-center text-[9px] py-0.5 rounded transition-all ${
+                m === ram ? 'text-green-400 font-bold' : 'text-white/20 hover:text-white/50'
+              }`}
+            >
+              {m}G
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Kích thước cửa sổ */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-white/50">Kích thước cửa sổ</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            value={winWidth}
+            onChange={e => setWinWidth(e.target.value)}
+            placeholder="854"
+            className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/85 placeholder-white/20 outline-none focus:border-white/20 transition-all text-center"
+          />
+          <span className="text-white/20 text-xs">×</span>
+          <input
+            type="number"
+            value={winHeight}
+            onChange={e => setWinHeight(e.target.value)}
+            placeholder="480"
+            className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white/85 placeholder-white/20 outline-none focus:border-white/20 transition-all text-center"
+          />
+        </div>
+        <div className="flex gap-1.5 flex-wrap">
+          {[['854×480', 854, 480], ['1280×720', 1280, 720], ['1920×1080', 1920, 1080]].map(([label, w, h]) => (
+            <button
+              key={label}
+              onClick={() => { setWinWidth(w); setWinHeight(h) }}
+              className={`text-[10px] px-2 py-1 rounded-lg border transition-all ${winWidth === w && winHeight === h ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-white/8 bg-white/3 text-white/30 hover:text-white/60 hover:border-white/15'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* JVM Args */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-white/50">JVM Arguments</label>
+        <textarea
+          value={jvmArgs}
+          onChange={e => setJvmArgs(e.target.value)}
+          placeholder="-XX:+UseG1GC -XX:MaxGCPauseMillis=50"
+          rows={3}
+          className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white/85 placeholder-white/20 outline-none focus:border-white/20 focus:bg-white/8 transition-all font-mono resize-none"
+        />
+      </div>
+
+      {/* Java Runtime */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-white/50">Java Runtime</label>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white/60 font-mono truncate min-w-0">
+            {javaRuntime || <span className="text-white/20">Tự động (mặc định)</span>}
+          </div>
+          <button
+            onClick={() => setShowJavaModal(true)}
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/5 border border-white/8 text-white/50 hover:text-white/80 hover:border-white/15 transition-all text-xs"
+          >
+            {Icons.java}
+            <span>Chọn</span>
+          </button>
+          {javaRuntime && (
+            <button
+              onClick={() => setJavaRuntime('')}
+              className="flex-shrink-0 p-2.5 rounded-xl bg-white/5 border border-white/8 text-white/30 hover:text-red-400 hover:border-red-500/20 transition-all"
+              title="Xóa"
+            >
+              {Icons.trash}
+            </button>
+          )}
+        </div>
+        {javaList.length > 0 && (
+          <div className="flex flex-col gap-1 mt-1">
+            {javaList.map((j, i) => (
+              <button
+                key={i}
+                onClick={() => setJavaRuntime(j.path)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all ${javaRuntime === j.path ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-white/3 border border-white/5 text-white/50 hover:bg-white/6 hover:text-white/70'}`}
+              >
+                <span className="text-[10px] font-mono truncate flex-1">{j.path}</span>
+                {j.version && <span className="text-[9px] text-white/25 flex-shrink-0">Java {j.version}</span>}
+                {javaRuntime === j.path && <span className="flex-shrink-0 text-green-400">{Icons.check}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Lưu */}
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${saved ? 'bg-green-500/20 border border-green-500/30 text-green-400' : 'bg-white/8 border border-white/10 text-white/70 hover:bg-white/12 hover:text-white/90'} disabled:opacity-50`}
+      >
+        {saving ? Icons.spin : saved ? Icons.check : null}
+        {saving ? 'Đang lưu...' : saved ? 'Đã lưu!' : 'Lưu thay đổi'}
+      </button>
+
+      {showJavaModal && (
+        <JavaManagerModal
+          profile={profile}
+          onClose={() => setShowJavaModal(false)}
+          onJavaSelected={handleJavaSelected}
+        />
+      )}
+    </div>
+  )
+}

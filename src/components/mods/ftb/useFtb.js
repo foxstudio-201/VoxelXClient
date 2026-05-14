@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -34,7 +34,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 const PAGE_SIZE = 20
 
-// ─── Search hook ──────────────────────────────────────────────────────────────
 export function useFtbSearch(filters) {
   const [results, setResults] = useState([])
   const [total, setTotal]     = useState(0)
@@ -120,7 +119,6 @@ export function useFtbSearch(filters) {
   return { results, total, loading, error, loadMore, hasMore }
 }
 
-// ─── Project detail hook ──────────────────────────────────────────────────────
 export function useFtbProject(id) {
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -142,7 +140,6 @@ export function useFtbProject(id) {
   return { project, loading, error }
 }
 
-// ─── Versions hook ────────────────────────────────────────────────────────────
 export function useFtbVersions(id) {
   const [versions, setVersions] = useState([])
   const [loading, setLoading]   = useState(false)
@@ -164,7 +161,6 @@ export function useFtbVersions(id) {
   return { versions, loading, error }
 }
 
-// ─── Install hook ─────────────────────────────────────────────────────────────
 export function useFtbInstall() {
   const [installing, setInstalling] = useState(false)
   const [progress, setProgress]     = useState(null)

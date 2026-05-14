@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -43,8 +43,6 @@ const isDev = process.env.NODE_ENV === 'development'
 
 app.setAppUserModelId('com.voxelxclient.launcher')
 
-// ─── Paths ────────────────────────────────────────────────────────────────────
-
 function resolveIconPath() {
 
   const devPath = path.join(__dirname, '../public/icon.ico')
@@ -64,7 +62,6 @@ const ICON_PATH     = resolveIconPath()
 const ACCOUNTS_DIR  = path.join(app.getPath('appData'), '.VoxelXClient')
 const ACCOUNTS_FILE = path.join(ACCOUNTS_DIR, 'accounts.json')
 
-// ─── Trusted origins ──────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = isDev
   ? ['http://localhost:5173']
   : ['file://']
@@ -86,7 +83,6 @@ function isTrustedOrigin(url) {
   } catch { return false }
 }
 
-// ─── Input validation ─────────────────────────────────────────────────────────
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,16}$/
 
 function legacyValidateAccount(account) {
@@ -209,7 +205,6 @@ function normalizeDiscordProfile(profile) {
   }
 }
 
-// ─── Accounts helpers ─────────────────────────────────────────────────────────
 function validateId(id) {
   return typeof id === 'string' && /^[0-9a-f-]{36}$/.test(id)
 }
@@ -231,7 +226,6 @@ function writeAccounts(data) {
   fs.renameSync(tmp, ACCOUNTS_FILE)
 }
 
-// ─── Settings file ────────────────────────────────────────────────────────────
 const SETTINGS_FILE = path.join(ACCOUNTS_DIR, 'settings.json')
 
 const DEFAULT_SETTINGS = {
@@ -248,6 +242,8 @@ const DEFAULT_SETTINGS = {
   borderColor:          'rgba(255,255,255,0.08)',
   agreedTos:            false,
   agreedPrivacy:        false,
+  musicEnabled:         true,
+  musicVolume:          35,
 }
 
 const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS)
@@ -278,12 +274,10 @@ function writeSettings(data) {
   fs.renameSync(tmp, SETTINGS_FILE)
 }
 
-// ─── Globals ──────────────────────────────────────────────────────────────────
 let mainWindow   = null
 let updateWindow = null
 let tray         = null
 
-// ─── Secure window options (shared) ──────────────────────────────────────────
 function secureWebPrefs() {
   return {
     preload:                     path.join(__dirname, 'preload.cjs'),
@@ -298,7 +292,6 @@ function secureWebPrefs() {
   }
 }
 
-// ─── Main window ──────────────────────────────────────────────────────────────
 function createMainWindow() {
   const icon = fs.existsSync(ICON_PATH) ? nativeImage.createFromPath(ICON_PATH) : undefined
 
@@ -344,7 +337,6 @@ function createMainWindow() {
   mainWindow.on('closed', () => { mainWindow = null })
 }
 
-// ─── Update window ────────────────────────────────────────────────────────────
 function createUpdateWindow() {
   if (updateWindow && !updateWindow.isDestroyed()) { updateWindow.focus(); return }
 
@@ -383,7 +375,6 @@ function createUpdateWindow() {
   updateWindow.on('closed', () => { updateWindow = null })
 }
 
-// ─── Tray ─────────────────────────────────────────────────────────────────────
 function createTray() {
   try {
     let trayIcon
@@ -448,7 +439,6 @@ function createTray() {
   }
 }
 
-// ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
 
   try {
@@ -484,7 +474,7 @@ app.whenReady().then(() => {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           "default-src 'self' 'unsafe-inline' http://localhost:5173 ws://localhost:5173;" +
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173;" +
+          "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: http://localhost:5173;" +
           "worker-src 'self' blob:;" +
           "font-src 'self' data:;" +
           "img-src 'self' data: blob: https:;" +
@@ -508,7 +498,6 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {  })
 app.on('before-quit', () => { app.isQuitting = true })
 
-// ─── Window controls IPC ──────────────────────────────────────────────────────
 function getTrustedWindow(event) {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (!win) return null
@@ -530,7 +519,6 @@ ipcMain.on('window-close', (e) => {
   else win.hide()
 })
 
-// ─── Updater IPC ──────────────────────────────────────────────────────────────
 const GITHUB_REPO = 'foxstudio-201/VoxelXClient'
 
 ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
@@ -852,13 +840,11 @@ ipcMain.handle('app:version', (e) => {
   return app.getVersion()
 })
 
-// ─── Account IPC ──────────────────────────────────────────────────────────────
 ipcMain.handle('accounts:get', (e) => {
   if (!getTrustedWindow(e)) return { accounts: [], selectedId: null }
   return readAccounts()
 })
 
-// ─── Account ADD ──────────────────────────────────────────────────────────────
 ipcMain.handle('accounts:add', (e, account) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 
@@ -881,7 +867,6 @@ ipcMain.handle('accounts:add', (e, account) => {
   return { ok: true, data }
 })
 
-// ─── Account REMOVE ──────────────────────────────────────────────────────────────
 ipcMain.handle('accounts:remove', (e, id) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -904,7 +889,32 @@ ipcMain.handle('accounts:select', (e, id) => {
   return { ok: true, data }
 })
 
-// ─── Microsoft Auth IPC ───────────────────────────────────────────────────────
+// Cập nhật thông tin một account (dùng để liên kết Discord vào account đã có)
+ipcMain.handle('accounts:update', (e, { id, patch }) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  if (!validateId(id)) return { error: 'ID không hợp lệ' }
+  if (!patch || typeof patch !== 'object') return { error: 'Dữ liệu không hợp lệ' }
+
+  // Chỉ cho phép cập nhật các field Discord
+  const ALLOWED_PATCH_KEYS = [
+    'discordId', 'discordUsername', 'discordGlobalName',
+    'discordDiscriminator', 'discordAvatarUrl', 'linkedAt',
+  ]
+
+  const data = readAccounts()
+  const idx = data.accounts.findIndex(a => a.id === id)
+  if (idx === -1) return { error: 'Tài khoản không tồn tại' }
+
+  const safePatch = {}
+  for (const key of ALLOWED_PATCH_KEYS) {
+    if (key in patch) safePatch[key] = patch[key]
+  }
+
+  data.accounts[idx] = { ...data.accounts[idx], ...safePatch }
+  writeAccounts(data)
+  return { ok: true, data }
+})
+
 ipcMain.handle('ms:startLogin', async (e) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
@@ -953,7 +963,6 @@ ipcMain.handle('ms:cancelLogin', (e) => {
   return { ok: true }
 })
 
-// ─── Auto-refresh ──────────────────────────────────────────────────────────────
 ipcMain.handle('ms:refreshToken', async (e, id) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (!validateId(id)) return { error: 'ID không hợp lệ' }
@@ -985,7 +994,6 @@ ipcMain.handle('ms:refreshToken', async (e, id) => {
   }
 })
 
-// ─── Shell IPC ────────────────────────────────────────────────────────────────
 ipcMain.handle('shell:openExternal', (e, url) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   try {
@@ -996,17 +1004,14 @@ ipcMain.handle('shell:openExternal', (e, url) => {
   } catch { return { error: 'URL không hợp lệ' } }
 })
 
-// ─── Profile IPC ──────────────────────────────────────────────────────────────
 registerProfileHandlers(getTrustedWindow)
 registerGroupHandlers(getTrustedWindow)
 registerProfileContentHandlers(getTrustedWindow)
 registerJavaDistroHandlers(getTrustedWindow)
 registerServerHandlers(getTrustedWindow)
 
-// ─── Launcher IPC ─────────────────────────────────────────────────────────────
 registerLauncherHandlers(getTrustedWindow)
 
-// ─── Fabric Meta API IPC ──────────────────────────────────────────────────────
 ipcMain.handle('fabric:getLoaderVersions', async (e, gameVersion) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (typeof gameVersion !== 'string' || !/^[a-zA-Z0-9._+\-]+$/.test(gameVersion)) {
@@ -1031,7 +1036,6 @@ ipcMain.handle('fabric:getLoaderVersions', async (e, gameVersion) => {
   }
 })
 
-// ─── Minecraft Version Manifest IPC ──────────────────────────────────────────
 ipcMain.handle('minecraft:listVersions', async (e) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   try {
@@ -1043,7 +1047,6 @@ ipcMain.handle('minecraft:listVersions', async (e) => {
   }
 })
 
-// ─── Modpack Browse & Read Meta IPC ──────────────────────────────────────────
 ipcMain.handle('modpack:browse', async (e) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
@@ -1149,7 +1152,6 @@ ipcMain.handle('modpack:readMeta', async (e, filePath) => {
   }
 })
 
-// ─── Modpack Import IPC ───────────────────────────────────────────────────────
 ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId }) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
@@ -1160,6 +1162,7 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
   if (!filePath || !fs.existsSync(filePath)) return { error: 'File không tồn tại' }
   if (!['curseforge', 'modrinth'].includes(source)) return { error: 'Source không hợp lệ' }
 
+  const DATA_DIR_IMPORT = path.join(require('electron').app.getPath('appData'), '.VoxelXClient')
   const PROFILES_FILE_IMPORT = require('path').join(DATA_DIR_IMPORT, 'profiles.json')
   let profilesData
   try { profilesData = JSON.parse(fs.readFileSync(PROFILES_FILE_IMPORT, 'utf-8')) }
@@ -1217,7 +1220,6 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
   }
 })
 
-// ─── Save temp file IPC (fallback for webUtils) ───────────────────────────────
 ipcMain.handle('profiles:saveTempFile', async (e, { name, buffer }) => {
   if (!getTrustedWindow(e)) return null
   try {
@@ -1231,8 +1233,6 @@ ipcMain.handle('profiles:saveTempFile', async (e, { name, buffer }) => {
     return null
   }
 })
-
-// ─── modpack:downloadAndImport ────────────────────────────────────────────────
 
 ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, source, profileMeta, groupId }) => {
   const win = getTrustedWindow(e)
@@ -1484,7 +1484,8 @@ ipcMain.handle('settings:save', (e, patch) => {
   const updated = { ...current, ...safe }
   writeSettings(updated)
 
-  if ('discordRPC' in safe) {
+  // Chỉ toggle Discord RPC khi giá trị discordRPC thực sự thay đổi
+  if ('discordRPC' in safe && safe.discordRPC !== current.discordRPC) {
     if (safe.discordRPC) rpc.connect()
     else rpc.disconnect()
   }
@@ -1501,3 +1502,4 @@ ipcMain.handle('discord:startLink', async (e) => {
     return { error: err.message }
   }
 })
+

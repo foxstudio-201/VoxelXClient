@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -36,14 +36,12 @@ const http    = require('http')
 const crypto  = require('crypto')
 const { BrowserWindow } = require('electron')
 
-// ─── OAuth config — using the official Minecraft Launcher client ID ───────────
 const CLIENT_ID    = '00000000402b5328'
 const REDIRECT_URI = 'https://login.live.com/oauth20_desktop.srf'
 const SCOPE        = 'XboxLive.signin offline_access'
 const AUTH_URL     = 'https://login.live.com/oauth20_authorize.srf'
 const TOKEN_URL    = 'https://login.live.com/oauth20_token.srf'
 
-// ─── HTTP helpers ─────────────────────────────────────────────────────────────
 function httpsPost(url, body, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const bodyStr = typeof body === 'string' ? body : JSON.stringify(body)
@@ -80,8 +78,6 @@ function encodeForm(obj) {
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&')
 }
-
-// ─── Step 1: Open Microsoft login window ─────────────────────────────────────
 
 function openAuthWindow(parentWindow) {
   return new Promise((resolve, reject) => {
@@ -154,7 +150,6 @@ function openAuthWindow(parentWindow) {
   })
 }
 
-// ─── Step 2: Exchange authorization code for tokens ──────────────────────────
 async function exchangeCodeForTokens(code) {
   const res = await httpsPost(TOKEN_URL, encodeForm({
     client_id:    CLIENT_ID,
@@ -169,7 +164,6 @@ async function exchangeCodeForTokens(code) {
   return res.body
 }
 
-// ─── Step 3: Refresh access token ────────────────────────────────────────────
 async function refreshAccessToken(refreshToken) {
   const res = await httpsPost(TOKEN_URL, encodeForm({
     client_id:     CLIENT_ID,
@@ -183,7 +177,6 @@ async function refreshAccessToken(refreshToken) {
   return res.body
 }
 
-// ─── Step 4: Xbox Live auth ───────────────────────────────────────────────────
 async function authXboxLive(msAccessToken) {
   const res = await httpsPost('https://user.auth.xboxlive.com/user/authenticate', {
     Properties: {
@@ -201,7 +194,6 @@ async function authXboxLive(msAccessToken) {
   return { xblToken, userHash }
 }
 
-// ─── Step 5: XSTS token ───────────────────────────────────────────────────────
 async function authXSTS(xblToken) {
   const res = await httpsPost('https://xsts.auth.xboxlive.com/xsts/authorize', {
     Properties: {
@@ -225,7 +217,6 @@ async function authXSTS(xblToken) {
   return { xstsToken, userHash }
 }
 
-// ─── Step 6: Minecraft Bearer token ──────────────────────────────────────────
 async function authMinecraft(xstsToken, userHash) {
   const res = await httpsPost(
     'https://api.minecraftservices.com/authentication/login_with_xbox',
@@ -237,7 +228,6 @@ async function authMinecraft(xstsToken, userHash) {
   return { mcToken, expiresIn: res.body.expires_in || 86400 }
 }
 
-// ─── Step 7: Minecraft profile ────────────────────────────────────────────────
 async function getMinecraftProfile(mcToken) {
   return new Promise((resolve, reject) => {
     const req = https.request({
@@ -267,7 +257,6 @@ async function getMinecraftProfile(mcToken) {
   })
 }
 
-// ─── Full chain from MS tokens → Minecraft profile ───────────────────────────
 async function msTokensToMinecraft(msAccessToken, msRefreshToken) {
   const { xblToken }              = await authXboxLive(msAccessToken)
   const { xstsToken, userHash }   = await authXSTS(xblToken)
@@ -280,8 +269,6 @@ async function msTokensToMinecraft(msAccessToken, msRefreshToken) {
     mcTokenExpiry: Date.now() + expiresIn * 1000,
   }
 }
-
-// ─── Public API ───────────────────────────────────────────────────────────────
 
 async function loginWithWindow(parentWindow) {
   const code     = await openAuthWindow(parentWindow)

@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -39,7 +39,6 @@ const path  = require('path')
 const BASE = 'https://api.modrinth.com/v2'
 const UA   = 'VoxelXClient/1.0 (github.com/foxstudio-201/VoxelXClient)'
 
-// ─── HTTP helpers ─────────────────────────────────────────────────────────────
 function httpsGetJson(url) {
   return new Promise((resolve, reject) => {
     const opts = new URL(url)
@@ -87,8 +86,6 @@ function downloadFile(url, destPath, onProgress) {
   })
 }
 
-// ─── Search ───────────────────────────────────────────────────────────────────
-
 async function searchProjects(opts = {}) {
   const {
     query = '',
@@ -122,12 +119,10 @@ async function searchProjects(opts = {}) {
   return httpsGetJson(url)
 }
 
-// ─── Project detail ───────────────────────────────────────────────────────────
 async function getProject(idOrSlug) {
   return httpsGetJson(`${BASE}/project/${idOrSlug}`)
 }
 
-// ─── Project versions ─────────────────────────────────────────────────────────
 async function getProjectVersions(idOrSlug, { gameVersions = [], loaders = [] } = {}) {
   const params = new URLSearchParams()
   if (gameVersions.length > 0) params.set('game_versions', JSON.stringify(gameVersions))
@@ -136,29 +131,23 @@ async function getProjectVersions(idOrSlug, { gameVersions = [], loaders = [] } 
   return httpsGetJson(`${BASE}/project/${idOrSlug}/version${qs}`)
 }
 
-// ─── Get single version ───────────────────────────────────────────────────────
 async function getVersion(versionId) {
   return httpsGetJson(`${BASE}/version/${versionId}`)
 }
 
-// ─── Get multiple projects (batch) ───────────────────────────────────────────
 async function getProjects(ids) {
   const params = new URLSearchParams({ ids: JSON.stringify(ids) })
   return httpsGetJson(`${BASE}/projects?${params}`)
 }
 
-// ─── Install a version ────────────────────────────────────────────────────────
-
 async function installVersion(opts) {
-  const { versionId, projectType, instancePath, accountId, onProgress } = opts
+  const { versionId, projectType, instancePath, onProgress } = opts
 
   const version = await getVersion(versionId)
   const primaryFile = version.files?.find(f => f.primary) || version.files?.[0]
   if (!primaryFile) throw new Error('No file found for this version')
 
-  const baseDir = accountId
-    ? path.join(instancePath, 'accounts', accountId)
-    : instancePath
+  const baseDir = instancePath
 
   const folderMap = {
     mod:          'mods',
@@ -187,7 +176,6 @@ async function installVersion(opts) {
   return { ok: true, path: destPath, filename: primaryFile.filename }
 }
 
-// ─── Get available game versions (for filter dropdown) ────────────────────────
 async function getGameVersions() {
   try {
     const versions = await httpsGetJson(`${BASE}/tag/game_version`)
@@ -200,7 +188,6 @@ async function getGameVersions() {
   }
 }
 
-// ─── Get Modrinth categories (for filter) ─────────────────────────────────────
 async function getCategories() {
   return httpsGetJson(`${BASE}/tag/category`)
 }

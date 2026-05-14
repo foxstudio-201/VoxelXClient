@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -40,7 +40,6 @@ import fabricIcon    from '../../assets/loader/fabric.png'
 import forgeIcon     from '../../assets/loader/forge.png'
 import neoforgeIcon  from '../../assets/loader/neoforge.png'
 
-// ─── Loader filter config ─────────────────────────────────────────────────────
 const LOADER_FILTERS = [
   { id: 'all',      label: 'All',      icon: null },
   { id: 'vanilla',  label: 'Vanilla',  icon: vanillaIcon,  color: '#4ade80' },
@@ -49,7 +48,7 @@ const LOADER_FILTERS = [
   { id: 'neoforge', label: 'NeoForge', icon: neoforgeIcon, color: '#f43f5e' },
   { id: 'modpack',  label: 'Modpack',  icon: null,         color: '#3b82f6' },
 ]
-// ─── Inline splash logo ────────────────────────────────────────────────────────
+
 function SplashLogoInline({ size = 64, label }) {
   const s = size / 4.5
   const d1 = size * 0.14
@@ -104,7 +103,6 @@ function SplashLogoInline({ size = 64, label }) {
   )
 }
 
-// ─── localStorage fallback ────────────────────────────────────────────────────
 const LS_KEY = 'vxc_profiles'
 
 function lsRead() {
@@ -120,7 +118,6 @@ function lsWrite(data) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(data)) } catch {}
 }
 
-// ─── API wrapper ──────────────────────────────────────────────────────────────
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 async function apiGetProfiles() {
@@ -171,7 +168,6 @@ async function apiSelectProfile(id) {
   return { ok: true, data }
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatSize(bytes) {
   if (!bytes || bytes === 0) return '0 B'
   const units = ['B', 'KB', 'MB', 'GB']
@@ -180,7 +176,6 @@ function formatSize(bytes) {
   return `${val.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
 }
 
-// ─── Loader icons map (dùng trong GroupCard) ─────────────────────────────────
 const LOADER_ICONS_MAP = {
   vanilla:  vanillaIcon,
   fabric:   fabricIcon,
@@ -188,7 +183,6 @@ const LOADER_ICONS_MAP = {
   neoforge: neoforgeIcon,
 }
 
-// ─── GroupCard ────────────────────────────────────────────────────────────────
 function GroupCard({ group, onOpen, onDelete }) {
   const previewProfiles = (group.profiles || []).slice(0, 4)
   const placeholders = Array(Math.max(0, 4 - previewProfiles.length)).fill(null)
@@ -251,7 +245,6 @@ function GroupCard({ group, onOpen, onDelete }) {
   )
 }
 
-// ─── CreateGroupModal ─────────────────────────────────────────────────────────
 function CreateGroupModal({ onClose, onCreate }) {
   const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -317,7 +310,6 @@ function CreateGroupModal({ onClose, onCreate }) {
   )
 }
 
-// ─── GroupDetailView ──────────────────────────────────────────────────────────
 function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSelect, onDelete, onCancelDelete, onRemoveFromGroup }) {
   return (
     <div className="flex flex-col h-full">
@@ -377,7 +369,6 @@ function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSe
   )
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function PlayPage() {
   const toast = useToast()
   const [profiles, setProfiles]                   = useState([])

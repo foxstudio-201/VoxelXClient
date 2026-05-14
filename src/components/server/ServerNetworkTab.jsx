@@ -1,6 +1,32 @@
 /**
  * VoxelXClient — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - This software is provided as-is without warranty of any kind.
+ *   - Do not redistribute or resell without explicit permission from FoxStudio.
+ *   - If you use or reference this code, please credit FoxStudio.
+ *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
+ */
+
+ /**
+ * VoxelXClient — Minecraft Launcher
+ * Created by FoxStudio. AI-assisted development.
+ *
+ * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Website     : https://voxxelxclient.vercel.app
+ *
+ * NOTICE:
+ *   - Dành cho mấy cháu cứ thích phỉ báng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
+ *   - Vậy nên bớt ảo tưởng đi.
+ *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
+ *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -88,7 +114,6 @@ function LanAddressRow({ value }) {
   )
 }
 
-// ─── Tab 1: Bore Tunnel ───────────────────────────────────────────────────────
 function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setTunnelAddr, tunnelLog, setTunnelLog }) {
   const [localIp, setLocalIp]     = useState(null)
   const [port, setPort]           = useState('25565')
@@ -131,7 +156,7 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
 
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
-      {/* LAN */}
+      {}
       <div>
         <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">Mạng nội bộ (LAN)</p>
         <div className="grid grid-cols-2 gap-2">
@@ -147,7 +172,7 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
         )}
       </div>
 
-      {/* Public IP */}
+      {}
       <div>
         <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">IP công cộng</p>
         <InfoCard label="IP công cộng" value={loadingIp ? 'Đang tải...' : publicIp} sub="Cần mở port trên router để dùng" />
@@ -163,7 +188,7 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
         </div>
       </div>
 
-      {/* Bore Tunnel */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -276,12 +301,11 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
   )
 }
 
-// ─── Tab 2: VoxelX Tunnel (Vietnam) ──────────────────────────────────────────
 function VoxelXTunnelTab() {
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 
-      {/* Coming soon banner */}
+      {}
       <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/8 to-transparent p-5 text-center">
         <div className="w-12 h-12 rounded-2xl bg-green-500/15 border border-green-500/25 flex items-center justify-center mx-auto mb-3">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-green-400">
@@ -298,9 +322,9 @@ function VoxelXTunnelTab() {
         </p>
       </div>
 
-      {/* Pricing card */}
+      {}
       <div className="rounded-2xl border border-green-500/30 bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent p-5 relative overflow-hidden">
-        {/* Glow */}
+        {}
         <div className="absolute top-0 right-0 w-32 h-32 bg-green-400/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative">
@@ -318,7 +342,7 @@ function VoxelXTunnelTab() {
             </div>
           </div>
 
-          {/* Features */}
+          {}
           <div className="space-y-2.5 mb-5">
             {[
               { icon: '🟢', label: 'Ping xanh', desc: 'Server đặt tại Việt Nam — độ trễ cực thấp' },
@@ -338,7 +362,7 @@ function VoxelXTunnelTab() {
             ))}
           </div>
 
-          {/* Buy button — disabled */}
+          {}
           <button
             disabled
             className="w-full py-3 rounded-xl text-sm font-bold text-white/40 bg-white/5 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2"
@@ -352,7 +376,7 @@ function VoxelXTunnelTab() {
         </div>
       </div>
 
-      {/* IP display placeholder */}
+      {}
       <div className="rounded-xl border border-white/8 bg-white/3 p-4">
         <p className="text-xs text-white/45 uppercase tracking-wider font-semibold mb-3">Tunnel của bạn</p>
         <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-black/20 border border-white/5">
@@ -364,7 +388,7 @@ function VoxelXTunnelTab() {
         </div>
       </div>
 
-      {/* Info */}
+      {}
       <div className="rounded-xl border border-white/5 bg-white/2 p-4">
         <p className="text-xs text-white/45 font-semibold mb-2">So sánh với bore tunnel</p>
         <div className="space-y-2">
@@ -388,7 +412,6 @@ function VoxelXTunnelTab() {
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setTunnelAddr, tunnelLog, setTunnelLog }) {
   const [activeTab, setActiveTab] = useState('bore')
 
@@ -416,7 +439,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Tab header — 2 panels equal width */}
+      {}
       <div className="flex-shrink-0 grid grid-cols-2 gap-0 border-b border-white/5">
         {tabs.map(tab => (
           <button
@@ -439,7 +462,7 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
         ))}
       </div>
 
-      {/* Tab content */}
+      {}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'bore' && (
           <BoreTunnelTab
@@ -457,3 +480,4 @@ export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus
     </div>
   )
 }
+

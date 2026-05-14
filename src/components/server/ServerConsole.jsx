@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -49,7 +49,7 @@ export default function ServerConsole({ server, onBack }) {
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied]           = useState(false)
   const [folderPath, setFolderPath]   = useState('')
-  // Local server data — cập nhật ngay sau khi save settings
+
   const [serverData, setServerData]   = useState(server)
 
   const [tunnelStatus, setTunnelStatus] = useState('idle')
@@ -59,7 +59,6 @@ export default function ServerConsole({ server, onBack }) {
   const [stats, setStats] = useState({ cpu: 0, ramMb: 0, xmxMb: (server?.ramGb || 2) * 1024, rssMb: 0 })
   const statsIntervalRef  = useRef(null)
 
-  // Sync xmxMb khi serverData.ramGb thay đổi (sau khi save settings)
   useEffect(() => {
     setStats(prev => ({ ...prev, xmxMb: (serverData.ramGb || 2) * 1024 }))
   }, [serverData.ramGb])
@@ -661,7 +660,7 @@ function IpDisplay({ tunnelAddr, tunnelStatus, server }) {
           {visible ? displayAddr : maskedAddr}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Eye toggle */}
+          {}
           <button onClick={() => setVisible(v => !v)}
             className="flex items-center justify-center w-6 h-6 rounded text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
             title={visible ? 'Ẩn IP' : 'Hiện IP'}>
@@ -670,7 +669,7 @@ function IpDisplay({ tunnelAddr, tunnelStatus, server }) {
               : <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             }
           </button>
-          {/* Copy — only when visible */}
+          {}
           {visible && (
             <button onClick={copy}
               className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all ${

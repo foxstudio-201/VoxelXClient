@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -659,19 +659,29 @@ function registerLauncherHandlers(getTrustedWindow) {
   })
 
   ipcMain.handle('curseforge:search', async (e, opts) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await cfSearch.searchProjects(opts)
   })
   ipcMain.handle('curseforge:getProject', async (e, id) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await cfSearch.getProject(id)
   })
   ipcMain.handle('curseforge:getVersions', async (e, id, filters) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await cfSearch.getProjectVersions(id, filters)
   })
   ipcMain.handle('curseforge:getCategories', async (e, projectType) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await cfSearch.getCategories(projectType)
   })
   ipcMain.handle('curseforge:install', async (e, opts) => {
-    return await cfSearch.installVersion(opts, (p) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    let targetPath = opts.instancePath
+    if (opts.accountId) {
+      targetPath = path.join(opts.instancePath, 'accounts', opts.accountId)
+      if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath, { recursive: true })
+    }
+    return await cfSearch.installVersion({ ...opts, instancePath: targetPath }, (p) => {
       const wins = require('electron').BrowserWindow.getAllWindows()
       wins.forEach(w => {
         if (!w.isDestroyed()) w.webContents.send('curseforge:installProgress', p)
@@ -679,16 +689,8 @@ function registerLauncherHandlers(getTrustedWindow) {
     })
   })
 
-  ipcMain.handle('technic:search', async (e, opts) => {
-    return await technicSearch.searchProjects(opts)
-  })
-  ipcMain.handle('technic:getProject', async (e, id) => {
-    return await technicSearch.getProject(id)
-  })
-  ipcMain.handle('technic:getVersions', async (e, id, filters) => {
-    return await technicSearch.getProjectVersions(id)
-  })
   ipcMain.handle('technic:install', async (e, opts) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await technicSearch.installVersion(opts, (p) => {
       const wins = require('electron').BrowserWindow.getAllWindows()
       wins.forEach(w => {
@@ -698,15 +700,19 @@ function registerLauncherHandlers(getTrustedWindow) {
   })
 
   ipcMain.handle('ftb:search', async (e, opts) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await ftbSearch.searchProjects(opts)
   })
   ipcMain.handle('ftb:getProject', async (e, id) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await ftbSearch.getProject(id)
   })
   ipcMain.handle('ftb:getVersions', async (e, id) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await ftbSearch.getProjectVersions(id)
   })
   ipcMain.handle('ftb:install', async (e, opts) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await ftbSearch.installVersion(opts, (p) => {
       const wins = require('electron').BrowserWindow.getAllWindows()
       wins.forEach(w => {
@@ -772,9 +778,18 @@ function registerLauncherHandlers(getTrustedWindow) {
   ipcMain.handle('modrinth:install', async (e, opts) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
+    
+    // Resolve correct instance path for the account if provided
+    let targetPath = opts.instancePath
+    if (opts.accountId) {
+      targetPath = path.join(opts.instancePath, 'accounts', opts.accountId)
+      if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath, { recursive: true })
+    }
+
     try {
       return await installVersion({
         ...opts,
+        instancePath: targetPath,
         onProgress: (p) => {
           if (!win.isDestroyed()) win.webContents.send('modrinth:installProgress', p)
         },

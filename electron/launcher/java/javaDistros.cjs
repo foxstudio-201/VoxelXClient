@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -39,7 +39,6 @@ const { execFile } = require('child_process')
 
 const MC_JAVA_VERSIONS = [8, 11, 17, 21, 25]
 
-// ─── HTTP helper ──────────────────────────────────────────────────────────────
 function httpsGet(url, timeout = 8000) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http
@@ -67,7 +66,6 @@ function httpsGet(url, timeout = 8000) {
   })
 }
 
-// ─── Platform helpers ─────────────────────────────────────────────────────────
 function getPlatformArch() {
   const os   = process.platform
   const arch = process.arch
@@ -79,8 +77,6 @@ function getJavaExe(javaDir) {
     ? path.join(javaDir, 'bin', 'java.exe')
     : path.join(javaDir, 'bin', 'java')
 }
-
-// ─── Adoptium (Eclipse Temurin) ───────────────────────────────────────────────
 
 async function fetchAdoptiumVersions() {
   const { os, arch } = getPlatformArch()
@@ -112,8 +108,6 @@ async function fetchAdoptiumVersions() {
   return results.sort((a, b) => b.javaVersion - a.javaVersion)
 }
 
-// ─── Azul Zulu ────────────────────────────────────────────────────────────────
-
 async function fetchAzulVersions() {
   const { os, arch } = getPlatformArch()
   const azulOS   = os === 'win32' ? 'windows' : os === 'darwin' ? 'macos' : 'linux'
@@ -142,8 +136,6 @@ async function fetchAzulVersions() {
 
   return results.sort((a, b) => b.javaVersion - a.javaVersion)
 }
-
-// ─── GraalVM Community ────────────────────────────────────────────────────────
 
 async function fetchGraalVMVersions() {
   const { os, arch } = getPlatformArch()
@@ -191,7 +183,6 @@ async function fetchGraalVMVersions() {
   return results.sort((a, b) => b.javaVersion - a.javaVersion)
 }
 
-// ─── Fetch all distros ────────────────────────────────────────────────────────
 async function fetchAllDistros() {
   const [adoptium, azul, graalvm] = await Promise.allSettled([
     fetchAdoptiumVersions(),
@@ -205,8 +196,6 @@ async function fetchAllDistros() {
     graalvm:  graalvm.status  === 'fulfilled' ? graalvm.value  : [],
   }
 }
-
-// ─── Install a distro ─────────────────────────────────────────────────────────
 
 async function installDistro(pkg, installDir, onProgress) {
   const { distro, javaVersion, fileName, downloadUrl, isZip, isTarGz } = pkg
@@ -304,7 +293,6 @@ async function installDistro(pkg, installDir, onProgress) {
   return javaExe
 }
 
-// ─── Delete a distro ──────────────────────────────────────────────────────────
 function deleteDistro(installDir) {
   if (fs.existsSync(installDir)) {
     fs.rmSync(installDir, { recursive: true, force: true })
@@ -313,12 +301,10 @@ function deleteDistro(installDir) {
   return false
 }
 
-// ─── Check installed in a specific dir ───────────────────────────────────────
 function isDistroInstalled(installDir) {
   return fs.existsSync(getJavaExe(installDir))
 }
 
-// ─── Get installed distros from a profile's jre dir ──────────────────────────
 function getProfileJreInfo(instancePath) {
   const jreDir = path.join(instancePath, 'jre')
   if (!fs.existsSync(jreDir)) return null
@@ -332,7 +318,6 @@ function getProfileJreInfo(instancePath) {
   return { javaExe, jreDir, ...meta }
 }
 
-// ─── Zip/TarGz helpers ────────────────────────────────────────────────────────
 async function extractZip(zipPath, destDir) {
   const { spawn } = require('child_process')
   if (process.platform === 'win32') {

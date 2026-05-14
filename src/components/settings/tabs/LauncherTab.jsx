@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -617,6 +617,60 @@ export default function LauncherTab({ settings, onChange }) {
       </Section>
 
       {}
+      <Section title="Âm nhạc">
+        <SettingRow
+          label="Nhạc nền"
+          description="Phát nhạc LIGHTS sau khi khởi động, lặp lại sau 1–3 phút"
+        >
+          <Toggle
+            checked={settings.musicEnabled !== false}
+            onChange={v => {
+              onChange({ musicEnabled: v })
+              window.dispatchEvent(new CustomEvent('vxc-music-change', { detail: { enabled: v } }))
+            }}
+          />
+        </SettingRow>
+        <div className="py-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-white/80">Âm lượng</p>
+            <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md">
+              {settings.musicVolume ?? 35}%
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* icon âm lượng thấp */}
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white/25 flex-shrink-0">
+              <path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>
+            </svg>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={settings.musicVolume ?? 35}
+              disabled={settings.musicEnabled === false}
+              onChange={e => {
+                const v = Number(e.target.value)
+                onChange({ musicVolume: v })
+                window.dispatchEvent(new CustomEvent('vxc-music-change', { detail: { volume: v } }))
+              }}
+              className={`
+                flex-1 h-1.5 rounded-full appearance-none cursor-pointer
+                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
+                [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
+                [&::-webkit-slider-thumb]:bg-green-400 [&::-webkit-slider-thumb]:cursor-pointer
+                ${settings.musicEnabled === false ? 'opacity-30 cursor-not-allowed' : 'bg-white/10'}
+              `}
+            />
+            {/* icon âm lượng cao */}
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white/25 flex-shrink-0">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+          </div>
+        </div>
+      </Section>
+
+      {}
       <Section title="Trò chơi">
         <SettingRow
           label="Tự động ẩn launcher khi khởi chạy game"
@@ -679,3 +733,4 @@ export default function LauncherTab({ settings, onChange }) {
     </div>
   )
 }
+

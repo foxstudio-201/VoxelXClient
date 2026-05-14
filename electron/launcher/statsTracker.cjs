@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -33,8 +33,6 @@
 
 const fs   = require('fs')
 const path = require('path')
-
-// ─── Playtime ─────────────────────────────────────────────────────────────────
 
 function startPlaytimeTracker(profileId, profilesData, writeProfiles) {
   const startTime = Date.now()
@@ -66,8 +64,6 @@ function formatPlaytimeShort(seconds) {
   if (h < 1) return `${Math.floor(seconds / 60)}m`
   return `${h.toFixed(1)}h`
 }
-
-// ─── Worlds ───────────────────────────────────────────────────────────────────
 
 function getWorlds(instancePath) {
   const savesDir = path.join(instancePath, 'saves')
@@ -109,8 +105,6 @@ function getWorlds(instancePath) {
   }
 }
 
-// ─── Mods ─────────────────────────────────────────────────────────────────────
-
 function getMods(instancePath) {
   const modsDir = path.join(instancePath, 'mods')
   if (!fs.existsSync(modsDir)) return []
@@ -139,7 +133,6 @@ function getMods(instancePath) {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function getDirSize(dirPath) {
   let total = 0
   try {

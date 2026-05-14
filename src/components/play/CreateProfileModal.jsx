@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -32,7 +32,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import GroupSelect from '../ui/GroupSelect'
 
-// ─── Assets ───────────────────────────────────────────────────────────────────
 import vanillaIcon   from '../../assets/loader/vanilla.png'
 import fabricIcon    from '../../assets/loader/fabric.png'
 import forgeIcon     from '../../assets/loader/forge.png'
@@ -58,8 +57,6 @@ const VERSION_IMAGES = {
   '1.20': v120,
   '1.21': v121,
 }
-
-// ─── Version data — fetched from Mojang manifest ─────────────────────────────
 
 const RELEASE_GROUPS_FALLBACK = [
   { major: '1.21', versions: ['1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] },
@@ -172,7 +169,6 @@ async function getVersionGroups() {
   }
 }
 
-// ─── Loader config ────────────────────────────────────────────────────────────
 const LOADERS = [
   { id: 'vanilla',  label: 'Vanilla',   icon: vanillaIcon,  color: '#4ade80', bg: 'bg-green-500',  ring: 'ring-green-500/40',  text: 'text-green-400',  btnClass: 'bg-green-500 hover:bg-green-400 shadow-green-500/20' },
   { id: 'fabric',   label: 'Fabric',    icon: fabricIcon,   color: '#a855f7', bg: 'bg-purple-500', ring: 'ring-purple-500/40', text: 'text-purple-400', btnClass: 'bg-purple-500 hover:bg-purple-400 shadow-purple-500/20' },
@@ -180,7 +176,6 @@ const LOADERS = [
   { id: 'neoforge', label: 'NeoForge',  icon: neoforgeIcon, color: '#f43f5e', bg: 'bg-rose-500',   ring: 'ring-rose-500/40',   text: 'text-rose-400',   btnClass: 'bg-rose-500 hover:bg-rose-400 shadow-rose-500/20' },
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function getMajorVersion(v) {
   const parts = v.split('.')
   return parts.length >= 2 ? `${parts[0]}.${parts[1]}` : v
@@ -194,7 +189,6 @@ function getVersionImage(gameVersion) {
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-// ─── VanillaVersionAccordion — sub-tabs: Release / Pre-release / Snapshot ─────
 function GroupContent({ group, selectedVersion, onSelect }) {
   const sections = group.sections || []
   const [activeTab, setActiveTab] = useState(() => sections[0]?.label ?? 'Release')
@@ -330,7 +324,6 @@ function VanillaVersionAccordion({ selectedVersion, onSelect, groups }) {
   )
 }
 
-// ─── VersionAccordion — chỉ release (Fabric/Forge) ───────────────────────────
 function VersionAccordion({ selectedVersion, onSelect, groups }) {
   const [openGroup, setOpenGroup] = useState(() => {
     if (!selectedVersion) return '1.21'
@@ -419,8 +412,6 @@ function VersionAccordion({ selectedVersion, onSelect, groups }) {
     </div>
   )
 }
-
-// ─── LoaderVersionList ────────────────────────────────────────────────────────
 
 function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
   const loaderCfg = LOADERS.find(l => l.id === loader)
@@ -640,7 +631,6 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
   return null
 }
 
-// ─── Main Modal ───────────────────────────────────────────────────────────────
 export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
   const [loader, setLoader]               = useState('vanilla')
   const [gameVersion, setGameVersion]     = useState('')

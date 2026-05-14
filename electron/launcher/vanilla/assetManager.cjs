@@ -21,8 +21,8 @@
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai, vậy nên đừng có mà nói này nói nọ.
- *   - Giỏi giang thì tự code bằng năng lực của mình đi, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
+ *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
+ *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
  *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
  *   - Vậy nên bớt ảo tưởng đi.
  *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
@@ -40,7 +40,6 @@ const crypto = require('crypto')
 const RESOURCES_URL = 'https://resources.download.minecraft.net'
 const LIBRARIES_URL = 'https://libraries.minecraft.net'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function sha1File(filePath) {
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash('sha1')
@@ -118,7 +117,6 @@ async function needsDownload(filePath, expectedSha1, expectedSize) {
   return false
 }
 
-// ─── Platform helpers ─────────────────────────────────────────────────────────
 function getCurrentOS() {
   switch (process.platform) {
     case 'win32':  return 'windows'
@@ -141,7 +139,6 @@ function libraryApplies(lib) {
   return allow
 }
 
-// ─── Download queue with concurrency ─────────────────────────────────────────
 async function downloadQueue(tasks, concurrency, onEach) {
   let idx = 0
   let done = 0
@@ -160,7 +157,6 @@ async function downloadQueue(tasks, concurrency, onEach) {
   await Promise.all(workers)
 }
 
-// ─── Speed tracker ────────────────────────────────────────────────────────────
 class SpeedTracker {
   constructor() {
     this.bytes = 0
@@ -180,8 +176,6 @@ class SpeedTracker {
     return this.speed
   }
 }
-
-// ─── Main download function ───────────────────────────────────────────────────
 
 async function downloadAssets(versionJson, gameDir, onProgress) {
   const os = getCurrentOS()
@@ -384,7 +378,6 @@ async function downloadAssets(versionJson, gameDir, onProgress) {
   }
 }
 
-// ─── Extract native jar (JAR = ZIP format) ───────────────────────────────────
 async function extractNative(jarPath, destDir, excludes) {
   if (!fs.existsSync(jarPath)) return
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
