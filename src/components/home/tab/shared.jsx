@@ -168,8 +168,12 @@ export function DropZoneWrapper({ children, onDrop, accept, color = 'green' }) {
     setDragging(false)
     const files = Array.from(e.dataTransfer.files || [])
     if (!files.length) return
-    const filtered = accept ? files.filter(f => accept.some(ext => f.name.toLowerCase().endsWith(ext))) : files
-    if (filtered.length) onDrop(filtered)
+    // Lọc theo extension — nếu không có accept thì cho qua hết
+    const filtered = accept
+      ? files.filter(f => accept.some(ext => f.name.toLowerCase().endsWith(ext)))
+      : files
+    // Luôn gọi onDrop với toàn bộ files đã drop (handler trong tab tự filter thêm)
+    if (files.length) onDrop(filtered.length ? filtered : files)
   }
 
   return (

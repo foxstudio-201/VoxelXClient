@@ -233,8 +233,11 @@ jobs:
 
             ### 🐛 Sửa lỗi
 
-            - Cài đặt mod, shader, resoucepack không đúng vị trí,
-            - Tối ưu hệ thống.
+            - Cài đặt mod, shader, resoucepack không đúng vị trí
+            - Sửa lỗi crash khi kéo thả file (`ERR_INVALID_ARG_TYPE: path undefined`) — dùng `webUtils.getPathForFile` thay vì `file.path`
+            - Tab Mods chỉ nhận `.jar`; tab Shaders và Resource Packs chỉ nhận `.zip` / `.rar`
+            - Discord RPC không còn spam log khi chỉnh settings
+            - Tối ưu hệ thống
             
             ---
 

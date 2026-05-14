@@ -50,10 +50,18 @@ export default function ShadersTab({ profile, accountId }) {
 
   async function handleDropFiles(files) {
     if (!isElectron || !profile?.id) return
-    setInstalling(files.map(f => f.name))
-    for (const file of files) {
+    // Shader nhận .zip và .rar, không nhận .jar
+    const valid = files.filter(f => {
+      const n = f.name.toLowerCase()
+      return n.endsWith('.zip') || n.endsWith('.rar')
+    })
+    if (!valid.length) return
+    setInstalling(valid.map(f => f.name))
+    for (const file of valid) {
       try {
-        const r = await window.electronAPI.profileInstallFile(profile.id, 'shader', file.path, accountId)
+        const srcPath = window.electronAPI.getFilePath(file)
+        if (!srcPath) continue
+        const r = await window.electronAPI.profileInstallFile(profile.id, 'shader', srcPath, accountId)
         if (r?.ok && !r.skipped) {
           setShaders(prev => [...prev, { fileName: r.fileName, displayName: r.fileName, size: r.size, mtime: r.mtime }])
         }
@@ -65,17 +73,17 @@ export default function ShadersTab({ profile, accountId }) {
   if (loading) return <LoadingState text="Đang tải shaders..." />
 
   if (shaders.length === 0) return (
-    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip']} color="yellow">
+    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip', '.rar']} color="yellow">
       <EmptyState
         icon={Icons.shader}
         title="Chưa có shader nào"
-        desc="Kéo thả file .zip vào đây hoặc cài vào thư mục shaderpacks"
+        desc="Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục shaderpacks"
       />
     </DropZoneWrapper>
   )
 
   return (
-    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip']} color="yellow">
+    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip', '.rar']} color="yellow">
       <div className="flex flex-col h-full">
         {installing.length > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-xs text-yellow-400">

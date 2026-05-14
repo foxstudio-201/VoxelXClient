@@ -50,10 +50,18 @@ export default function ResourcePacksTab({ profile, accountId }) {
 
   async function handleDropFiles(files) {
     if (!isElectron || !profile?.id) return
-    setInstalling(files.map(f => f.name))
-    for (const file of files) {
+    // Resource pack nhận .zip và .rar, không nhận .jar
+    const valid = files.filter(f => {
+      const n = f.name.toLowerCase()
+      return n.endsWith('.zip') || n.endsWith('.rar')
+    })
+    if (!valid.length) return
+    setInstalling(valid.map(f => f.name))
+    for (const file of valid) {
       try {
-        const r = await window.electronAPI.profileInstallFile(profile.id, 'resourcepack', file.path, accountId)
+        const srcPath = window.electronAPI.getFilePath(file)
+        if (!srcPath) continue
+        const r = await window.electronAPI.profileInstallFile(profile.id, 'resourcepack', srcPath, accountId)
         if (r?.ok && !r.skipped) {
           setPacks(prev => [...prev, { fileName: r.fileName, displayName: r.fileName, size: r.size, mtime: r.mtime }])
         }
@@ -65,17 +73,17 @@ export default function ResourcePacksTab({ profile, accountId }) {
   if (loading) return <LoadingState text="Đang tải resource packs..." />
 
   if (packs.length === 0) return (
-    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip']} color="purple">
+    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip', '.rar']} color="purple">
       <EmptyState
         icon={Icons.resourcepack}
         title="Chưa có resource pack nào"
-        desc="Kéo thả file .zip vào đây hoặc cài vào thư mục resourcepacks"
+        desc="Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục resourcepacks"
       />
     </DropZoneWrapper>
   )
 
   return (
-    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip']} color="purple">
+    <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip', '.rar']} color="purple">
       <div className="flex flex-col h-full">
         {installing.length > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 border-b border-purple-500/20 text-xs text-purple-400">
