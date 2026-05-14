@@ -19,7 +19,7 @@
     "gen:icon": "node scripts/generate-icon.cjs",
     "gen:png": "node scripts/generate-png-icon.cjs",
     "patch:icon": "node scripts/generate-icon.cjs && node scripts/patch-electron-icon.cjs",
-    "postinstall": "node scripts/generate-icon.cjs && node scripts/patch-electron-icon.cjs"
+    "postinstall": "node scripts/gen-app-secret.cjs & node scripts/generate-icon.cjs & node scripts/patch-electron-icon.cjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

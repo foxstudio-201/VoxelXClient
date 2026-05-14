@@ -47,72 +47,11 @@ export default function UpdateWindow() {
   const [errorMsg, setErrorMsg] = useState('')
   const unsubRef = useRef(null)
   const preloadReceivedRef = useRef(false)
+  // Ref để gọi download từ trong useEffect mà không bị stale closure
+  const startDownloadRef = useRef(null)
 
-  useEffect(() => {
-    if (isElectron) window.electronAPI.getVersion().then(setVersion)
-    else setVersion('1.0.0')
-
-    if (isElectron) {
-      unsubRef.current = window.electronAPI.onDownloadProgress(p => setDlProgress(p))
-    }
-
-    let unsubPreload = null
-    if (isElectron && window.electronAPI.onUpdaterPreloadResult) {
-      unsubPreload = window.electronAPI.onUpdaterPreloadResult((res) => {
-        preloadReceivedRef.current = true
-        setResult(res)
-        if (res?.hasUpdate) {
-          setStatus('updateAvailable')
-
-        } else {
-          setStatus('upToDate')
-        }
-      })
-    }
-
-    return () => {
-      unsubRef.current?.()
-      unsubPreload?.()
-    }
-  }, [])
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (status === 'idle' && !preloadReceivedRef.current) handleCheck()
-    }, 1000)
-    return () => clearTimeout(t)
-  }, [])
-
-  async function handleCheck() {
-    setStatus('checking')
-    setResult(null)
-    setErrorMsg('')
-    setDlProgress(null)
-    try {
-      const res = isElectron
-        ? await window.electronAPI.checkUpdate()
-        : { hasUpdate: false, currentVersion: '1.0.0', latestVersion: '1.0.0', message: 'Bạn đang dùng phiên bản mới nhất.' }
-
-      setResult(res)
-      if (res.error) {
-        setErrorMsg(res.message)
-        setStatus('error')
-      } else if (res.noRelease) {
-        setStatus('noRelease')
-      } else if (res.hasUpdate) {
-        setStatus('updateAvailable')
-
-      } else {
-        setStatus('upToDate')
-      }
-    } catch (err) {
-      setErrorMsg('Không thể kiểm tra cập nhật. Vui lòng thử lại.')
-      setStatus('error')
-    }
-  }
-
-  async function handleDownload(checkResult) {
-    const r = checkResult || result
+  // Hàm download — dùng ref để tránh stale closure khi gọi từ useEffect
+  async function runDownload(r) {
     if (!r?.installerAsset) {
       setErrorMsg('Không tìm thấy file cài đặt cho hệ điều hành này.')
       setStatus('error')
@@ -137,7 +76,7 @@ export default function UpdateWindow() {
       }
 
       setStatus('installing')
-      await new Promise(r => setTimeout(r, 600))
+      await new Promise(resolve => setTimeout(resolve, 600))
 
       const installRes = isElectron
         ? await window.electronAPI.installUpdate({ filePath: res.filePath })
@@ -147,11 +86,87 @@ export default function UpdateWindow() {
         setErrorMsg(`Cài đặt thất bại: ${installRes.error}`)
         setStatus('error')
       }
-
     } catch (err) {
       setErrorMsg(err.message)
       setStatus('error')
     }
+  }
+
+  // Gán ref để useEffect có thể gọi mà không stale
+  startDownloadRef.current = runDownload
+
+  useEffect(() => {
+    if (isElectron) window.electronAPI.getVersion().then(setVersion)
+    else setVersion('1.0.0')
+
+    if (isElectron) {
+      unsubRef.current = window.electronAPI.onDownloadProgress(p => setDlProgress(p))
+    }
+
+    let unsubPreload = null
+    if (isElectron && window.electronAPI.onUpdaterPreloadResult) {
+      unsubPreload = window.electronAPI.onUpdaterPreloadResult((res) => {
+        preloadReceivedRef.current = true
+        setResult(res)
+
+        if (res?.hasUpdate) {
+          if (res?.autoDownload) {
+            // Mở từ splash → tự động tải ngay, không hiện nút chọn
+            startDownloadRef.current(res)
+          } else {
+            // Mở từ tray → hiện nút để user chủ động bấm
+            setStatus('updateAvailable')
+          }
+        } else {
+          setStatus('upToDate')
+        }
+      })
+    }
+
+    return () => {
+      unsubRef.current?.()
+      unsubPreload?.()
+    }
+  }, [])
+
+  // Fallback: nếu sau 1s không nhận preloadResult (mở từ tray không truyền data)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (status === 'idle' && !preloadReceivedRef.current) handleCheck()
+    }, 1000)
+    return () => clearTimeout(t)
+  }, [])
+
+  async function handleCheck() {
+    setStatus('checking')
+    setResult(null)
+    setErrorMsg('')
+    setDlProgress(null)
+    try {
+      const res = isElectron
+        ? await window.electronAPI.checkUpdate()
+        : { hasUpdate: false, currentVersion: '1.0.0', latestVersion: '1.0.0', message: 'Bạn đang dùng phiên bản mới nhất.' }
+
+      setResult(res)
+      if (res.error) {
+        setErrorMsg(res.message)
+        setStatus('error')
+      } else if (res.noRelease) {
+        setStatus('noRelease')
+      } else if (res.hasUpdate) {
+        // Từ tray → hiện nút, không tự tải
+        setStatus('updateAvailable')
+      } else {
+        setStatus('upToDate')
+      }
+    } catch (err) {
+      setErrorMsg('Không thể kiểm tra cập nhật. Vui lòng thử lại.')
+      setStatus('error')
+    }
+  }
+
+  async function handleDownload(checkResult) {
+    await runDownload(checkResult || result)
   }
 
   function handleClose() {

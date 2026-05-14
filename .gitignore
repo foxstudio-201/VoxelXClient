@@ -32,6 +32,7 @@ scripts/strip-comments.cjs
 
 # Bot Discord — separate repo
 bot-discord/
+bot-update/
 
 # Large demo files
 modpack_demo/
@@ -44,6 +45,9 @@ certs/
 *.pfx
 *.p12
 *.cer
+
+# Auto-generated app secret (NEVER commit)
+electron/app-secret.cjs
 
 # Environment variables
 .env

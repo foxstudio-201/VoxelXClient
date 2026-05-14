@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps --ignore-scripts
 
+      - name: Generate app secret
+        run: node scripts/gen-app-secret.cjs
+
       - name: Download Electron binary
         run: npx electron --version
 
@@ -111,6 +114,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Generate app secret
+        run: node scripts/gen-app-secret.cjs
 
       - name: Build Vite
         run: npm run build

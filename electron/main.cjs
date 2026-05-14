@@ -33,6 +33,7 @@ const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell } = require(
 const path = require('path')
 const fs   = require('fs')
 const rpc  = require('./discordRPC.cjs')
+const { getHwid, getHwidFormatted } = require('./hwid.cjs')
 const { startDiscordLink } = require('./discordAuth.cjs')
 const { registerProfileHandlers, registerGroupHandlers, registerProfileContentHandlers, registerJavaDistroHandlers } = require('./profileManager.cjs')
 const { registerServerHandlers } = require('./serverManager.cjs')
@@ -528,17 +529,21 @@ ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
 
   createUpdateWindow()
 
+  // Đánh dấu autoDownload = true khi mở từ splash (có checkResult sẵn)
+  // UpdateWindow sẽ tự động tải ngay thay vì hiện nút
+  const payload = checkResult ? { ...checkResult, autoDownload: true } : checkResult
+
   if (updateWindow && !updateWindow.isDestroyed()) {
     updateWindow.webContents.once('did-finish-load', () => {
       if (!updateWindow.isDestroyed()) {
-        updateWindow.webContents.send('updater:preloadResult', checkResult)
+        updateWindow.webContents.send('updater:preloadResult', payload)
       }
     })
 
     if (updateWindow.webContents.getURL() !== '') {
       setTimeout(() => {
         if (updateWindow && !updateWindow.isDestroyed()) {
-          updateWindow.webContents.send('updater:preloadResult', checkResult)
+          updateWindow.webContents.send('updater:preloadResult', payload)
         }
       }, 300)
     }
@@ -838,6 +843,11 @@ ipcMain.handle('patchnotes:getCurrentVersion', async (e) => {
 ipcMain.handle('app:version', (e) => {
   if (!getTrustedWindow(e)) return null
   return app.getVersion()
+})
+
+ipcMain.handle('app:hwid', (e) => {
+  if (!getTrustedWindow(e)) return null
+  return { hwid: getHwid(), hwidFormatted: getHwidFormatted() }
 })
 
 ipcMain.handle('accounts:get', (e) => {

@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('updater:preloadResult', handler)
   },
   getVersion:  () => ipcRenderer.invoke('app:version'),
+  getHwid:     () => ipcRenderer.invoke('app:hwid'),
   getCurrentPatchNotes: () => ipcRenderer.invoke('patchnotes:getCurrentVersion'),
 
   getSettings:  ()       => ipcRenderer.invoke('settings:get'),
