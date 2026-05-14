@@ -196,34 +196,45 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập chung vào **chạy song song nhiều tài khoản** và **cải tiến Server Manager** sửa lỗi trên linux khi khởi chạy game.
+            > Bản cập nhật tập trung vào **nhạc nền launcher**, **Profile setting sửa lỗi và cải tiến**, **liên kết Discord vào tài khoản đã có**, và **sửa lỗi tải mod, shader, resoucepack sai vị trí**.
 
             ---
 
-            ### Chạy song song nhiều tài khoản
+            ### Cấu hình profile setting nâng cấp cải tiến
 
-            - Hỗ trợ chạy chung 1 profile với nhiều tài khoản khác nhau
-            - Mỗi instance là độc lập, không ảnh hưởng lẫn nhau
-            - Quản lý nhiều instance đang chạy từ cùng một giao diện
+            - Thêm drag & drop trực tiếp trong tab theo loại mod, shader, resoucepack
+            - Hiển thị root từ chỉnh tài khoản được chọn không hiển thị chung như trước
+            - Từ giờ khi chọn tài khoản nào là sẽ hiển thị đúng các thư mục theo tài khoản đó,
+            dù chung một profile với nhau
 
-            ---
+            ### 🎵 Nhạc nền Launcher
 
-            ### Server Manager — Cải tiến
-
-            - Thêm 2 loại server mới: **Arclight** (Forge + Paper) va **Magma** (Forge + Bukkit)
-            - Danh sách phiên bản theo đúng loại server, không còn hiện phiên bản không hỗ trợ, chung nhau
-            - Tab **Settings**: cấu hình MOTD, Max Players, Port, Gamemode, Difficulty
-            - Tab **Whitelist**: thêm/xoá player, avatar, chọn nhiều để xoá
-            - Tab **Banned**: countdown thời gian ban, auto-unban, unban hàng loạt
-            - Tab-complete lệnh Minecraft (60+ lệnh) với gợi ý theo ngữ cảnh
-            - IP nội bộ hiển thị trên panel, nút copy, ưu tiên tunnel address
-            - RAM bar hiển thị đúng theo -Xmx, không vượt 100%
+            - Phát nhạc tự động 
 
             ---
 
-            ### Linux fix khởi chạy game
+            ### ⚙️ Cài đặt âm nhạc (Settings → Âm nhạc)
 
-            - Chỉnh sửa hệ thống giải nén dữ liệu các file jar để phù hợp với OS Linux.
+            - Toggle bật/tắt nhạc nền
+            - Slider chỉnh âm lượng 0–100% với hiệu ứng smooth
+            - Thay đổi áp dụng realtime, không cần khởi động lại
+            - Trạng thái được lưu và khôi phục đúng khi mở lại app
+
+            ---
+
+            ### 🔗 Liên kết Discord vào tài khoản đã có
+
+            - Tab Discord trong modal "Thêm tài khoản" có 2 lựa chọn:
+              - **Tạo tài khoản mới** — tạo account mới liên kết với Discord
+              - **Liên kết tài khoản cũ** — gắn Discord vào account offline/Microsoft đã có
+            - Badge **"Linked"** màu tím hiển thị trên account đã liên kết Discord
+
+            ---
+
+            ### 🐛 Sửa lỗi
+
+            - Cài đặt mod, shader, resoucepack không đúng vị trí,
+            - Tối ưu hệ thống.
             
             ---
 
