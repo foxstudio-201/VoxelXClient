@@ -31,10 +31,11 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import ServerCodeEditor, { getFileExt } from './ServerCodeEditor'
+import { useLang } from '../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-function formatBytes(b) {
+function formatBytes(b, t) {
   if (!b) return '0 B'
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`
   return `${(b / 1024 / 1024).toFixed(1)} MB`
@@ -73,6 +74,7 @@ const EDITABLE_EXTS = ['json','yml','yaml','properties','toml','xml','conf','cfg
 const isEditable = (name) => EDITABLE_EXTS.includes(getFileExt(name))
 
 export default function ServerFileManager({ server }) {
+  const { t } = useLang()
   const [currentPath, setCurrentPath]     = useState('')
   const [entries, setEntries]             = useState([])
   const [selectedFiles, setSelectedFiles] = useState(new Set())
@@ -120,7 +122,7 @@ export default function ServerFileManager({ server }) {
   const openFile = useCallback(async (entry) => {
     if (entry.isDir || !isElectron) return
     const r = await window.electronAPI.serverReadFile(server.id, entry.path)
-    if (r?.error) { alert(`Lỗi đọc file: ${r.error}`); return }
+    if (r?.error) { alert(t('server.files.errorRead', { error: r.error })); return }
     setOpenedFile({ name: entry.name, path: entry.path })
     setEditorContent(r.content)
   }, [server?.id])
@@ -130,18 +132,18 @@ export default function ServerFileManager({ server }) {
     setEditorSaving(true)
     try {
       const r = await window.electronAPI.serverWriteFile(server.id, openedFile.path, editorContent)
-      if (r?.error) alert(`Lỗi lưu: ${r.error}`)
+      if (r?.error) alert(t('server.files.errorSave', { error: r.error }))
       else await loadDir(currentPath)
     } finally { setEditorSaving(false) }
   }, [openedFile, editorContent, server?.id, currentPath, loadDir])
 
   const deleteSelected = useCallback(async () => {
     if (!hasSelection || !isElectron) return
-    if (!window.confirm(`Xóa ${selectedArr.length} mục?`)) return
+    if (!window.confirm(t('server.files.confirmDelete', { count: selectedArr.length }))) return
     setBusy(true)
     try {
       const r = await window.electronAPI.serverDeleteItems(server.id, selectedArr)
-      if (r?.error) alert(`Lỗi xóa: ${r.error}`)
+      if (r?.error) alert(t('server.files.errorDelete', { error: r.error }))
       await loadDir(currentPath)
     } finally { setBusy(false) }
   }, [hasSelection, selectedArr, server?.id, currentPath, loadDir])
@@ -151,7 +153,7 @@ export default function ServerFileManager({ server }) {
     setBusy(true); setShowZipInput(false)
     try {
       const r = await window.electronAPI.serverCompress(server.id, selectedArr, name || 'archive.zip')
-      if (r?.error) alert(`Lỗi nén: ${r.error}`)
+      if (r?.error) alert(t('server.files.errorCompress', { error: r.error }))
       await loadDir(currentPath)
     } finally { setBusy(false) }
   }, [hasSelection, selectedArr, server?.id, currentPath, loadDir])
@@ -162,7 +164,7 @@ export default function ServerFileManager({ server }) {
     try {
       for (const p of selectedArr.filter(p => p.toLowerCase().endsWith('.zip'))) {
         const r = await window.electronAPI.serverExtract(server.id, p)
-        if (r?.error) alert(`Lỗi giải nén: ${r.error}`)
+        if (r?.error) alert(t('server.files.errorExtract', { error: r.error }))
       }
       await loadDir(currentPath)
     } finally { setBusy(false) }
@@ -176,7 +178,7 @@ export default function ServerFileManager({ server }) {
         const buf = await file.arrayBuffer()
         const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
         const r = await window.electronAPI.serverUploadFile(server.id, currentPath, file.name, b64)
-        if (r?.error) alert(`Lỗi upload ${file.name}: ${r.error}`)
+        if (r?.error) alert(t('server.files.errorUpload', { name: file.name, error: r.error }))
       }
       await loadDir(currentPath)
     } finally { setUploading(false) }
@@ -202,7 +204,7 @@ export default function ServerFileManager({ server }) {
         <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1.5 border-b border-white/5 bg-black/20 flex-wrap">
           {}
           <div className="flex items-center gap-1 text-[10px] flex-1 min-w-0 overflow-hidden">
-            <button onClick={() => loadDir('')} className="text-white/40 hover:text-white/70 transition-colors flex-shrink-0">root</button>
+            <button onClick={() => loadDir('')} className="text-white/40 hover:text-white/70 transition-colors flex-shrink-0">{t('server.files.root')}</button>
             {breadcrumbs.map((part, i, arr) => (
               <span key={i} className="flex items-center gap-1 min-w-0">
                 <span className="text-white/20 flex-shrink-0">/</span>
@@ -216,7 +218,7 @@ export default function ServerFileManager({ server }) {
 
           {}
           <button onClick={() => loadDir(currentPath)} disabled={loading || busy}
-            className="w-6 h-6 flex items-center justify-center rounded text-white/30 hover:text-white/60 hover:bg-white/5 transition-all disabled:opacity-30" title="Tải lại">
+            className="w-6 h-6 flex items-center justify-center rounded text-white/30 hover:text-white/60 hover:bg-white/5 transition-all disabled:opacity-30" title={t('server.files.reload')}>
             <svg viewBox="0 0 24 24" fill="currentColor" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}>
               <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
             </svg>
@@ -229,7 +231,7 @@ export default function ServerFileManager({ server }) {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || busy}
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold bg-green-500/10 text-green-400/80 hover:bg-green-500/20 hover:text-green-400 border border-green-500/15 transition-all disabled:opacity-30"
-            title="Tải file lên">
+            title={t('server.files.upload')}>
             {uploading ? (
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 animate-spin">
                 <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
@@ -239,7 +241,7 @@ export default function ServerFileManager({ server }) {
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
               </svg>
             )}
-            Thêm
+            {t('server.files.upload')}
           </button>
           <input ref={fileInputRef} type="file" multiple className="hidden"
             onChange={e => { uploadFiles(e.target.files); e.target.value = '' }} />
@@ -250,7 +252,7 @@ export default function ServerFileManager({ server }) {
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
               <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
             </svg>
-            Xóa
+            {t('server.files.delete')}
           </button>
 
           {}
@@ -271,7 +273,7 @@ export default function ServerFileManager({ server }) {
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
                 <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V6h2v2z"/>
               </svg>
-              Nén
+              {t('server.files.compress')}
             </button>
           )}
 
@@ -281,7 +283,7 @@ export default function ServerFileManager({ server }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
             </svg>
-            Giải nén
+            {t('server.files.extract')}
           </button>
         </div>
 
@@ -291,7 +293,7 @@ export default function ServerFileManager({ server }) {
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>
-            Thả file để tải lên
+            {t('server.files.dropHint')}
           </div>
         )}
 
@@ -311,7 +313,7 @@ export default function ServerFileManager({ server }) {
                   <input type="checkbox" checked={selectedFiles.size === entries.length && entries.length > 0}
                     onChange={toggleAll} className="w-3.5 h-3.5 rounded accent-green-400 cursor-pointer flex-shrink-0" />
                   <span className="text-[10px] text-white/25 select-none">
-                    {selectedFiles.size > 0 ? `${selectedFiles.size} đã chọn` : 'Chọn tất cả'}
+                    {selectedFiles.size > 0 ? t('server.files.selected', { count: selectedFiles.size }) : t('server.files.selectAll')}
                   </span>
                 </div>
               )}
@@ -332,7 +334,7 @@ export default function ServerFileManager({ server }) {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
                   </svg>
-                  <p className="text-xs">Thư mục trống — kéo thả file vào đây</p>
+                  <p className="text-xs">{t('server.files.emptyFolder')}</p>
                 </div>
               )}
 
@@ -354,7 +356,7 @@ export default function ServerFileManager({ server }) {
                       {entry.name}
                     </span>
                     {!entry.isDir && entry.size != null && (
-                      <span className="text-[10px] text-white/20 flex-shrink-0 font-mono">{formatBytes(entry.size)}</span>
+                      <span className="text-[10px] text-white/20 flex-shrink-0 font-mono">{formatBytes(entry.size, t)}</span>
                     )}
                     {canEdit && (
                       <button onClick={e => { e.stopPropagation(); openFile(entry) }}

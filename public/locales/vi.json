@@ -551,6 +551,8 @@
       "errorUpload": "Lỗi upload {{name}}: {{error}}"
     },
     "plugins": {
+      "labelPlugin": "Plugin",
+      "labelMod": "Mod",
       "searchPlaceholderModrinth": "Tìm plugin trên Modrinth (EssentialsX, LuckPerms...)",
       "searchPlaceholderSpigot": "Tìm plugin trên Spigot (EssentialsX, WorldEdit...)",
       "searchPlaceholderMod": "Tìm mod trên Modrinth (JEI, Sodium, Iris...)",

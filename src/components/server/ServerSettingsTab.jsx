@@ -31,16 +31,18 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import PlayerHead from '../ui/PlayerHead'
+import { useLang } from '../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 const inputCls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-green-500/50 transition-all placeholder-white/20'
 
 function Toggle({ value, onChange, label, desc }) {
+  const { t } = useLang()
   return (
     <div className="flex items-center justify-between gap-4 py-2.5 border-b border-white/5 last:border-0">
       <div className="min-w-0">
-        <p className="text-sm text-white/80 font-medium">{label}</p>
-        {desc && <p className="text-xs text-white/35 mt-0.5">{desc}</p>}
+        <p className="text-sm text-white/80 font-medium">{typeof label === 'string' ? t(label) : label}</p>
+        {desc && <p className="text-xs text-white/35 mt-0.5">{typeof desc === 'string' ? t(desc) : desc}</p>}
       </div>
       <button type="button" onClick={() => onChange(!value)}
         className="flex-shrink-0 relative transition-all"
@@ -53,16 +55,18 @@ function Toggle({ value, onChange, label, desc }) {
 }
 
 function Field({ label, desc, children }) {
+  const { t } = useLang()
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-white/45 uppercase tracking-wider">{label}</label>
+      <label className="text-xs font-semibold text-white/45 uppercase tracking-wider">{typeof label === 'string' ? t(label) : label}</label>
       {children}
-      {desc && <p className="text-[11px] text-white/25">{desc}</p>}
+      {desc && <p className="text-[11px] text-white/25">{typeof desc === 'string' ? t(desc) : desc}</p>}
     </div>
   )
 }
 
 function Select({ value, onChange, options }) {
+  const { t } = useLang()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -108,6 +112,7 @@ function Select({ value, onChange, options }) {
 }
 
 function ConfigTab({ server, onServerUpdated }) {
+  const { t } = useLang()
   const [props, setProps]     = useState({})
   const [config, setConfig]   = useState({
     ramGb:    server.ramGb   || 2,
@@ -170,7 +175,7 @@ function ConfigTab({ server, onServerUpdated }) {
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
       </svg>
-      <span className="text-sm">Đang tải cấu hình...</span>
+      <span className="text-sm">{t('server.settings.loadingConfig')}</span>
     </div>
   )
 
@@ -179,25 +184,25 @@ function ConfigTab({ server, onServerUpdated }) {
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 
         <div>
-          <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">Server Properties</p>
+          <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">{t('server.settings.serverProps')}</p>
           <div className="space-y-3">
-            <Field label="MOTD" desc="Dòng mô tả hiện trong danh sách server">
+            <Field label={t('server.settings.motdLabel')} desc={t('server.settings.motdDesc')}>
               <input className={inputCls} value={props.motd || ''} onChange={e => setProp('motd', e.target.value)} placeholder="A Minecraft Server" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Max Players">
+              <Field label={t('server.settings.maxPlayersLabel')}>
                 <input type="number" min="1" max="1000" className={inputCls}
                   value={props['max-players'] || '20'}
                   onChange={e => setProp('max-players', e.target.value)} />
               </Field>
-              <Field label="Port">
+              <Field label={t('server.settings.portLabel')}>
                 <input type="number" min="1" max="65535" className={inputCls}
                   value={props['server-port'] || '25565'}
                   onChange={e => setProp('server-port', e.target.value)} />
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Gamemode">
+              <Field label={t('server.settings.gamemodeLabel')}>
                 <Select value={props.gamemode || 'survival'} onChange={v => setProp('gamemode', v)}
                   options={[
                     { value: 'survival',  label: 'Survival'  },
@@ -206,7 +211,7 @@ function ConfigTab({ server, onServerUpdated }) {
                     { value: 'spectator', label: 'Spectator' },
                   ]} />
               </Field>
-              <Field label="Difficulty">
+              <Field label={t('server.settings.difficultyLabel')}>
                 <Select value={props.difficulty || 'easy'} onChange={v => setProp('difficulty', v)}
                   options={[
                     { value: 'peaceful', label: 'Peaceful' },
@@ -216,17 +221,17 @@ function ConfigTab({ server, onServerUpdated }) {
                   ]} />
               </Field>
             </div>
-            <Field label="Level Name" desc="Tên thư mục world">
+            <Field label={t('server.settings.levelNameLabel')} desc={t('server.settings.levelNameDesc')}>
               <input className={inputCls} value={props['level-name'] || 'world'} onChange={e => setProp('level-name', e.target.value)} />
             </Field>
             <div className="rounded-xl border border-white/8 bg-white/2 px-3 py-1 space-y-0">
-              <Toggle label="Online Mode" desc="Yêu cầu tài khoản Minecraft chính hãng"
+              <Toggle label={t('server.settings.onlineModeLabel')} desc={t('server.settings.onlineModeDesc')}
                 value={props['online-mode'] !== 'false'}
                 onChange={v => setProp('online-mode', v ? 'true' : 'false')} />
-              <Toggle label="Whitelist" desc="Chỉ cho phép player trong danh sách trắng"
+              <Toggle label={t('server.settings.whitelistLabel')} desc={t('server.settings.whitelistDesc')}
                 value={props['white-list'] === 'true'}
                 onChange={v => setProp('white-list', v ? 'true' : 'false')} />
-              <Toggle label="PvP" desc="Cho phép player tấn công nhau"
+              <Toggle label={t('server.settings.pvpLabel')} desc={t('server.settings.pvpDesc')}
                 value={props.pvp !== 'false'}
                 onChange={v => setProp('pvp', v ? 'true' : 'false')} />
             </div>
@@ -234,33 +239,33 @@ function ConfigTab({ server, onServerUpdated }) {
         </div>
 
         <div>
-          <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">Cấu hình Launcher</p>
+          <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">{t('server.settings.launcherConfig')}</p>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Field label={`RAM: ${config.ramGb} GB`}>
+              <Field label={t('server.settings.ramLabel', { value: config.ramGb })}>
                 <input type="range" min="1" max="32" step="1" value={config.ramGb}
                   onChange={e => setConfig(c => ({ ...c, ramGb: Number(e.target.value) }))}
                   className="w-full accent-green-500 cursor-pointer" />
                 <div className="flex justify-between text-[10px] text-white/20"><span>1 GB</span><span>32 GB</span></div>
               </Field>
-              <Field label={`CPU Cores: ${config.cores}`}>
+              <Field label={t('server.settings.coresLabel', { value: config.cores })}>
                 <input type="range" min="1" max="16" step="1" value={config.cores}
                   onChange={e => setConfig(c => ({ ...c, cores: Number(e.target.value) }))}
                   className="w-full accent-green-500 cursor-pointer" />
                 <div className="flex justify-between text-[10px] text-white/20"><span>1</span><span>16</span></div>
               </Field>
             </div>
-            <Field label="JVM Arguments">
+            <Field label={t('server.settings.jvmLabel')}>
               <textarea rows={3} className={`${inputCls} font-mono text-xs resize-none`}
                 value={config.jvmArgs}
                 onChange={e => setConfig(c => ({ ...c, jvmArgs: e.target.value }))}
                 placeholder="-Xmx2G -Xms1G -XX:+UseG1GC" />
             </Field>
-            <Field label="Java Path" desc="Để trống để tự động phát hiện">
+            <Field label={t('server.settings.javaPathLabel')} desc={t('server.settings.javaPathDesc')}>
               <input className={`${inputCls} font-mono text-xs`}
                 value={config.javaPath}
                 onChange={e => setConfig(c => ({ ...c, javaPath: e.target.value }))}
-                placeholder="Tự động" />
+                placeholder={t('server.settings.javaPathPlaceholder')} />
             </Field>
           </div>
         </div>
@@ -271,10 +276,10 @@ function ConfigTab({ server, onServerUpdated }) {
           className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
           style={{ background: saved ? 'rgba(34,197,94,0.3)' : 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: '0 4px 16px rgba(34,197,94,0.2)' }}>
           {saved
-            ? <><svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Đã lưu!</>
+            ? <><svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>{t('server.settings.saved')}</>
             : saving
-              ? <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang lưu...</>
-              : 'Lưu cấu hình'
+              ? <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>{t('server.settings.saving')}</>
+              : t('server.settings.saveBtn')
           }
         </button>
       </div>
@@ -283,6 +288,7 @@ function ConfigTab({ server, onServerUpdated }) {
 }
 
 function WhitelistTab({ server }) {
+  const { t } = useLang()
   const [list, setList]         = useState([])
   const [loading, setLoading]   = useState(true)
   const [selected, setSelected] = useState(new Set())
@@ -329,12 +335,12 @@ function WhitelistTab({ server }) {
         <div className="flex gap-2">
           <input value={addName} onChange={e => setAddName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            placeholder="Tên player..."
+            placeholder={t('server.settings.whitelistAddPlaceholder')}
             className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-green-500/50 transition-all placeholder-white/20" />
           <button onClick={handleAdd} disabled={!addName.trim() || adding}
             className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-400 text-white text-sm font-bold transition-all disabled:opacity-40 flex items-center gap-1.5">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            Thêm
+            {t('server.settings.whitelistAdd')}
           </button>
         </div>
       </div>
@@ -348,13 +354,13 @@ function WhitelistTab({ server }) {
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5 text-white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               )}
             </button>
-            <span className="text-xs text-white/40">{selected.size > 0 ? `${selected.size} đã chọn` : `${list.length} player`}</span>
+            <span className="text-xs text-white/40">{selected.size > 0 ? t('server.settings.whitelistSelected', { count: selected.size }) : t('server.settings.whitelistPlayers', { count: list.length })}</span>
           </div>
           {selected.size > 0 && (
             <button onClick={() => handleRemove([...selected])} disabled={removing}
               className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-500/15 text-red-400 text-xs font-semibold hover:bg-red-500/25 transition-all disabled:opacity-40">
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              Xoá {selected.size}
+              {t('server.settings.whitelistRemove', { count: selected.size })}
             </button>
           )}
         </div>
@@ -367,14 +373,14 @@ function WhitelistTab({ server }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            <span className="text-sm">Đang tải...</span>
+            <span className="text-sm">{t('server.settings.loadingConfig')}</span>
           </div>
         ) : list.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 gap-2 text-center">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-8 h-8 text-white/10">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            <p className="text-white/30 text-sm">Whitelist trống</p>
+            <p className="text-white/30 text-sm">{t('server.settings.whitelistEmpty')}</p>
           </div>
         ) : list.map(p => (
           <div key={p.name}
@@ -399,11 +405,11 @@ function WhitelistTab({ server }) {
   )
 }
 
-function fmtCountdown(expires) {
+function fmtCountdown(expires, t) {
   if (!expires || expires === 'forever') return null
   try {
     const diff = new Date(expires) - new Date()
-    if (diff <= 0) return 'Hết hạn'
+    if (diff <= 0) return t('server.settings.expired')
     const d = Math.floor(diff / 86400000)
     const h = Math.floor((diff % 86400000) / 3600000)
     const m = Math.floor((diff % 3600000) / 60000)
@@ -414,6 +420,7 @@ function fmtCountdown(expires) {
 }
 
 function BannedTab({ server }) {
+  const { t } = useLang()
   const [list, setList]         = useState([])
   const [loading, setLoading]   = useState(true)
   const [selected, setSelected] = useState(new Set())
@@ -471,12 +478,12 @@ function BannedTab({ server }) {
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5 text-white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               )}
             </button>
-            <span className="text-xs text-white/40">{selected.size > 0 ? `${selected.size} đã chọn` : `${list.length} player bị ban`}</span>
+            <span className="text-xs text-white/40">{selected.size > 0 ? t('server.settings.bannedSelected', { count: selected.size }) : t('server.settings.bannedPlayers', { count: list.length })}</span>
           </div>
           {selected.size > 0 && (
             <button onClick={() => handleUnban([...selected])} disabled={unbanning}
               className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-green-500/15 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-all disabled:opacity-40">
-              Unban {selected.size}
+              {t('server.settings.unbanCount', { count: selected.size })}
             </button>
           )}
         </div>
@@ -489,19 +496,19 @@ function BannedTab({ server }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            <span className="text-sm">Đang tải...</span>
+            <span className="text-sm">{t('server.settings.loadingConfig')}</span>
           </div>
         ) : list.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 gap-2 text-center">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-8 h-8 text-white/10">
               <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
             </svg>
-            <p className="text-white/30 text-sm">Không có player nào bị ban</p>
+            <p className="text-white/30 text-sm">{t('server.settings.bannedEmpty')}</p>
           </div>
         ) : list.map(p => {
           const isPermanent = !p.expires || p.expires === 'forever'
-          const countdown   = isPermanent ? null : fmtCountdown(p.expires)
-          const isExpired   = countdown === 'Hết hạn'
+          const countdown   = isPermanent ? null : fmtCountdown(p.expires, t)
+          const isExpired   = countdown === t('server.settings.expired')
           return (
             <div key={p.name}
               className={`flex items-start gap-3 px-3 py-3 rounded-xl transition-all ${selected.has(p.name) ? 'bg-red-500/8 border border-red-500/20' : 'bg-white/2 border border-white/6 hover:bg-white/4'}`}>
@@ -514,23 +521,23 @@ function BannedTab({ server }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-white/85">{p.name}</p>
                   {isPermanent
-                    ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 font-bold">Vĩnh viễn</span>
+                    ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 font-bold">{t('server.settings.permanent')}</span>
                     : isExpired
-                      ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/30 font-bold">Hết hạn</span>
+                      ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/30 font-bold">{t('server.settings.expired')}</span>
                       : <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 font-bold">{countdown}</span>
                   }
                 </div>
-                {p.reason && <p className="text-xs text-white/40 mt-0.5">Lý do: {p.reason}</p>}
-                {p.source && <p className="text-[10px] text-white/25 mt-0.5">Bởi: {p.source}</p>}
+                {p.reason && <p className="text-xs text-white/40 mt-0.5">{t('server.settings.reason', { reason: p.reason })}</p>}
+                {p.source && <p className="text-[10px] text-white/25 mt-0.5">{t('server.settings.bannedBy', { source: p.source })}</p>}
                 {!isPermanent && p.expires && (
                   <p className="text-[10px] text-white/20 mt-0.5 font-mono">
-                    Hết hạn: {new Date(p.expires).toLocaleString('vi-VN')}
+                    {t('server.settings.expiresAt', { date: new Date(p.expires).toLocaleString('vi-VN') })}
                   </p>
                 )}
               </div>
               <button onClick={() => handleUnban([p.name])}
                 className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-green-500/10 text-green-400 text-xs font-semibold hover:bg-green-500/20 transition-all">
-                Unban
+                {t('server.settings.unban')}
               </button>
             </div>
           )
@@ -541,24 +548,25 @@ function BannedTab({ server }) {
 }
 
 export default function ServerSettingsTab({ server, onServerUpdated }) {
+  const { t } = useLang()
   const [activeTab, setActiveTab] = useState('config')
 
   const tabs = [
     {
-      id: 'config', label: 'Cấu hình',
+      id: 'config', label: t('server.settings.tabConfig'),
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
       </svg>,
     },
     {
-      id: 'whitelist', label: 'Whitelist',
+      id: 'whitelist', label: t('server.settings.tabWhitelist'),
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
       </svg>,
     },
     {
-      id: 'banned', label: 'Banned',
+      id: 'banned', label: t('server.settings.tabBanned'),
       icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
       </svg>,

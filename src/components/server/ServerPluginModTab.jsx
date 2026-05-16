@@ -32,6 +32,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import modrinthIcon from '../../assets/server-icon/modrinth.png'
 import spigotIcon   from '../../assets/server-icon/spigot.png'
+import { useLang } from '../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -393,6 +394,7 @@ function ProjectCard({ project, onClick }) {
 }
 
 export default function ServerPluginModTab({ server, projectType }) {
+  const { t } = useLang()
   const [source, setSource]     = useState('modrinth')
   const [query, setQuery]       = useState('')
   const [results, setResults]   = useState([])
@@ -444,12 +446,12 @@ export default function ServerPluginModTab({ server, projectType }) {
   function loadMore() { const next = page + 1; setPage(next); doSearch(query, next, source) }
 
   const isPlugin   = projectType === 'plugin'
-  const label      = isPlugin ? 'Plugin' : 'Mod'
+  const label      = isPlugin ? t('server.plugins.labelPlugin') : t('server.plugins.labelMod')
   const placeholder = source === 'spigot'
-    ? 'Tìm plugin trên Spigot (EssentialsX, WorldEdit...)'
+    ? t('server.plugins.searchPlaceholderSpigot')
     : isPlugin
-      ? 'Tìm plugin trên Modrinth (EssentialsX, LuckPerms...)'
-      : 'Tìm mod trên Modrinth (JEI, Sodium, Iris...)'
+      ? t('server.plugins.searchPlaceholderModrinth')
+      : t('server.plugins.searchPlaceholderMod')
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
