@@ -53,9 +53,6 @@ import { useLang } from '../i18n/LangProvider'
 function markdownToHtml(text) {
   if (!text) return ''
   let html = String(text)
-  const {t} = useLang()
-  const tRef = useRef(t)
-  tRef.current = t
 
   html = html.replace(/<img[^>]*shields\.io[^>]*>/gi, '')
   html = html.replace(/!\[[^\]]*\]\(https?:\/\/img\.shields\.io[^)]*\)/g, '')
