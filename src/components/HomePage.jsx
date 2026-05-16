@@ -131,6 +131,7 @@ function renderInlineMarkdown(text) {
 }
 
 function renderPatchNotesBody(body) {
+  const {t} = useLang()
   const html = markdownToHtml(body)
   if (!html.trim()) return <p className="text-white/40">{t('homepage.patchnote.nopatchnote')}</p>
 
@@ -168,6 +169,7 @@ function renderPatchNotesBody(body) {
 }
 
 function PatchNotesModal({ patchNotes, onClose }) {
+  const {t} = useLang()
   if (!patchNotes) return null
 
   return (
