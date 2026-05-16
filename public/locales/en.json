@@ -548,9 +548,14 @@
       "errorDelete": "Error deleting: {{error}}",
       "errorCompress": "Error compressing: {{error}}",
       "errorExtract": "Error extracting: {{error}}",
-      "errorUpload": "Error uploading {{name}}: {{error}}"
+      "errorUpload": "Error uploading {{name}}: {{error}}",
+      "titleOpenDir": "Double-click to open",
+      "titleEditFile": "Double-click to edit",
+      "titleOpenEditor": "Open editor"
     },
     "plugins": {
+      "labelPlugin": "Plugin",
+      "labelMod": "Mod",
       "searchPlaceholderModrinth": "Search plugins on Modrinth (EssentialsX, LuckPerms...)",
       "searchPlaceholderSpigot": "Search plugins on Spigot (EssentialsX, WorldEdit...)",
       "searchPlaceholderMod": "Search mods on Modrinth (JEI, Sodium, Iris...)",

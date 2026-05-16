@@ -548,7 +548,10 @@
       "errorDelete": "Lỗi xóa: {{error}}",
       "errorCompress": "Lỗi nén: {{error}}",
       "errorExtract": "Lỗi giải nén: {{error}}",
-      "errorUpload": "Lỗi upload {{name}}: {{error}}"
+      "errorUpload": "Lỗi upload {{name}}: {{error}}",
+      "titleOpenDir": "Nhấn đúp để mở",
+      "titleEditFile": "Nhấn đúp để chỉnh sửa",
+      "titleOpenEditor": "Mở editor"
     },
     "plugins": {
       "labelPlugin": "Plugin",

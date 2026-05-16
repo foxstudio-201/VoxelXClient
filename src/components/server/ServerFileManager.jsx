@@ -352,7 +352,7 @@ export default function ServerFileManager({ server }) {
                       onClick={e => e.stopPropagation()} className="w-3.5 h-3.5 rounded accent-green-400 cursor-pointer flex-shrink-0" />
                     <FileIcon name={entry.name} isDir={entry.isDir} />
                     <span className={`text-xs flex-1 truncate ${entry.isDir ? 'text-white/70' : canEdit ? 'text-white/65 group-hover:text-white/85' : 'text-white/45'}`}
-                      title={entry.isDir ? 'Double-click để mở' : canEdit ? 'Double-click để chỉnh sửa' : entry.name}>
+                      title={entry.isDir ? t('server.files.titleOpenDir') : canEdit ? t('server.files.titleEditFile') : entry.name}>
                       {entry.name}
                     </span>
                     {!entry.isDir && entry.size != null && (
@@ -360,7 +360,7 @@ export default function ServerFileManager({ server }) {
                     )}
                     {canEdit && (
                       <button onClick={e => { e.stopPropagation(); openFile(entry) }}
-                        className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-white/25 hover:text-white/60 hover:bg-white/10 transition-all flex-shrink-0" title="Mở editor">
+                        className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-white/25 hover:text-white/60 hover:bg-white/10 transition-all flex-shrink-0" title={t('server.files.titleOpenEditor')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
