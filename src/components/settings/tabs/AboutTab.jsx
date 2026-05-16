@@ -97,14 +97,6 @@ export default function AboutTab() {
     }
   }, [])
 
-  function copyHwid() {
-    if (!hwid) return
-    navigator.clipboard.writeText(hwid).then(() => {
-      setHwidCopied(true)
-      setTimeout(() => setHwidCopied(false), 2000)
-    })
-  }
-
   return (
     <div className="h-full overflow-y-auto px-6 py-5">
 
@@ -148,43 +140,6 @@ export default function AboutTab() {
           <InfoRow label={t('settings.about.renderer')} value="Vite 8" />
           <InfoRow label={t('settings.about.license')}  value="MIT" mono />
           <InfoRow label={t('settings.about.version')}  value={version || '...'} mono />
-        </div>
-      </div>
-
-      {}
-      <div className="mb-6">
-        <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">{t('settings.about.device')}</p>
-        <div className="rounded-xl border border-white/5 bg-white/2 px-4 py-1">
-          <div className="flex items-center justify-between py-2.5">
-            <span className="text-xs text-white/40">Hardware ID</span>
-            <div className="flex items-center gap-2 group/hwid">
-              <span
-                className="text-[11px] font-mono text-green-400/80 select-all transition-all duration-200 blur-sm group-hover/hwid:blur-none"
-                title={t('settings.about.hwidHint')}
-              >
-                {hwid || '...'}
-              </span>
-              <button
-                onClick={copyHwid}
-                disabled={!hwid}
-                title={t('settings.about.hwidCopy')}
-                className="p-1 rounded-md text-white/20 hover:text-white/60 hover:bg-white/8 transition-all disabled:opacity-30 opacity-0 group-hover/hwid:opacity-100"
-              >
-                {hwidCopied ? (
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-          <p className="text-[10px] text-white/20 pb-2 -mt-1">
-            {t('settings.about.hwidDesc')}
-          </p>
         </div>
       </div>
 
