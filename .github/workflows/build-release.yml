@@ -202,52 +202,29 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **HWID mã hóa**, **sửa lỗi cửa sổ update**, và **fix kéo thả file**.
+            > Bản cập nhật tập trung vào **i18n đa ngôn ngữ (EN/VI)**, **sửa lỗi hiển thị phiên bản mod**, và **cập nhật AboutTab**.
 
             ---
 
-            ### Cấu hình profile setting nâng cấp cải tiến
+            ### 🌍 Localization (Tiếng Việt & English)
 
-            - Thêm drag & drop trực tiếp trong tab theo loại mod, shader, resoucepack
-            - Hiển thị root từ chỉnh tài khoản được chọn không hiển thị chung như trước
-            - Từ giờ khi chọn tài khoản nào là sẽ hiển thị đúng các thư mục theo tài khoản đó,
-            dù chung một profile với nhau
-
-            ### 🎵 Nhạc nền Launcher
-
-            - Phát nhạc tự động 
-
-            ---
-
-            ### ⚙️ Cài đặt âm nhạc (Settings → Âm nhạc)
-
-            - Toggle bật/tắt nhạc nền
-            - Slider chỉnh âm lượng 0–100% với hiệu ứng smooth
-            - Thay đổi áp dụng realtime, không cần khởi động lại
-            - Trạng thái được lưu và khôi phục đúng khi mở lại app
-
-            ---
-
-            ### 🔗 Liên kết Discord vào tài khoản đã có
-
-            - Tab Discord trong modal "Thêm tài khoản" có 2 lựa chọn:
-              - **Tạo tài khoản mới** — tạo account mới liên kết với Discord
-              - **Liên kết tài khoản cũ** — gắn Discord vào account offline/Microsoft đã có
-            - Badge **"Linked"** màu tím hiển thị trên account đã liên kết Discord
+            - Thêm đầy đủ bản dịch EN/VI
 
             ---
 
             ### 🐛 Sửa lỗi
 
-            - Cài đặt mod, shader, resoucepack không đúng vị trí
-            - Sửa lỗi crash khi kéo thả file (`ERR_INVALID_ARG_TYPE: path undefined`) — dùng `webUtils.getPathForFile` thay vì `file.path`
-            - Tab Mods chỉ nhận `.jar`; tab Shaders và Resource Packs chỉ nhận `.zip` / `.rar`
-            - Discord RPC không còn spam log khi chỉnh settings
-            - Tối ưu hệ thống
-            
+            - **ServerPluginModTab**: Hiện tất cả phiên bản mod khi không có phiên bản nào tương thích server
+            - Đồng bộ en.json và vi.json
+
             ---
 
-            ### 📦 Download
+            ### ⚡ Cập nhật khác
+
+            - Cập nhật AboutTab - giao diện thông tin ứng dụng
+            
+            ---
+            ###  Download
 
             | Nền tảng | File | Ghi chú |
             |----------|------|---------|
