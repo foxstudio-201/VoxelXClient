@@ -30,10 +30,12 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useLang } from '../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 function CopyBtn({ text }) {
+  const { t } = useLang()
   const [copied, setCopied] = useState(false)
   return (
     <button
@@ -43,12 +45,13 @@ function CopyBtn({ text }) {
         ? <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
         : <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
       }
-      {copied ? 'Đã copy' : 'Copy'}
+      {copied ? t('server.console.copied') : t('server.console.copyLogs')}
     </button>
   )
 }
 
 function InfoCard({ label, value, sub, accent = false }) {
+  const { t } = useLang()
   const [visible, setVisible] = useState(false)
   const isIp = value && /[\d.:]+/.test(value) && value !== '—' && !value.includes('Đang')
 
@@ -70,7 +73,7 @@ function InfoCard({ label, value, sub, accent = false }) {
             <button
               onClick={() => setVisible(v => !v)}
               className="flex items-center justify-center w-6 h-6 rounded text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
-              title={visible ? 'Ẩn IP' : 'Hiện IP'}
+              title={visible ? t('server.network.hideIp') : t('server.network.showIp')}
             >
               {visible ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
@@ -92,6 +95,7 @@ function InfoCard({ label, value, sub, accent = false }) {
 }
 
 function LanAddressRow({ value }) {
+  const { t } = useLang()
   const [visible, setVisible] = useState(false)
   const masked = value ? value.replace(/[\d]/g, '•') : '—'
   return (
@@ -102,7 +106,7 @@ function LanAddressRow({ value }) {
       <div className="flex items-center gap-1 flex-shrink-0">
         <button onClick={() => setVisible(v => !v)}
           className="flex items-center justify-center w-6 h-6 rounded text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
-          title={visible ? 'Ẩn' : 'Hiện'}>
+          title={visible ? t('server.network.hideIp') : t('server.network.showIp')}>
           {visible
             ? <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
             : <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -115,6 +119,7 @@ function LanAddressRow({ value }) {
 }
 
 function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setTunnelAddr, tunnelLog, setTunnelLog }) {
+  const { t } = useLang()
   const [localIp, setLocalIp]     = useState(null)
   const [port, setPort]           = useState('25565')
   const [publicIp, setPublicIp]   = useState(null)
@@ -158,32 +163,31 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
     <div className="h-full overflow-y-auto p-4 space-y-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
       {}
       <div>
-        <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">Mạng nội bộ (LAN)</p>
+        <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">{t('server.network.lanSection')}</p>
         <div className="grid grid-cols-2 gap-2">
-          <InfoCard label="IP nội bộ" value={loadingIp ? 'Đang tải...' : localIp} sub="Người cùng mạng WiFi" />
-          <InfoCard label="Port" value={port} sub="Mặc định Minecraft: 25565" />
+          <InfoCard label={t('server.network.lanIp')} value={loadingIp ? t('server.network.loadingIp') : localIp} sub={t('server.network.lanIpSub')} />
+          <InfoCard label={t('server.network.port')} value={port} sub={t('server.network.portSub')} />
         </div>
         {localIp && port && (
           <div className="mt-2 rounded-xl p-3 border border-white/8 bg-white/3">
-            <p className="text-xs text-white/45 uppercase tracking-wider mb-1">Địa chỉ kết nối (LAN)</p>
+            <p className="text-xs text-white/45 uppercase tracking-wider mb-1">{t('server.network.lanAddress')}</p>
             <LanAddressRow value={`${localIp}:${port}`} />
-            <p className="text-xs text-white/35 mt-1">Chia sẻ cho người cùng mạng</p>
+            <p className="text-xs text-white/35 mt-1">{t('server.network.lanAddressSub')}</p>
           </div>
         )}
       </div>
 
       {}
       <div>
-        <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">IP công cộng</p>
-        <InfoCard label="IP công cộng" value={loadingIp ? 'Đang tải...' : publicIp} sub="Cần mở port trên router để dùng" />
+        <p className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-2">{t('server.network.publicSection')}</p>
+        <InfoCard label={t('server.network.publicIp')} value={loadingIp ? t('server.network.loadingIp') : publicIp} sub={t('server.network.publicIpSub')} />
         <div className="mt-2 rounded-xl p-3 border border-yellow-500/15 bg-yellow-500/5">
           <div className="flex items-start gap-2">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-yellow-400/70 flex-shrink-0 mt-0.5">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
             </svg>
-            <p className="text-xs text-white/45 leading-relaxed">
-              Để dùng IP công cộng cần cấu hình Port Forwarding trên router. Hoặc dùng <span className="text-green-400">bore tunnel</span> bên dưới — không cần cấu hình gì.
-            </p>
+            <p className="text-xs text-white/45 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: t('server.network.portForwardHint').replace('<green>', '<span class="text-green-400">').replace('</green>', '</span>') }} />
           </div>
         </div>
       </div>
@@ -192,8 +196,8 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
       <div>
         <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-xs text-white/50 uppercase tracking-wider font-semibold">Tunnel công cộng (bore)</p>
-            <p className="text-xs text-white/35 mt-0.5">Miễn phí — không cần tài khoản, không cần cấu hình router</p>
+            <p className="text-xs text-white/50 uppercase tracking-wider font-semibold">{t('server.network.tunnelSection')}</p>
+            <p className="text-xs text-white/35 mt-0.5">{t('server.network.tunnelFree')}</p>
           </div>
           <a href="https://github.com/ekzhang/bore" target="_blank" rel="noopener noreferrer"
             className="text-[10px] text-green-400/60 hover:text-green-400 transition-colors">bore →</a>
@@ -201,8 +205,8 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
 
         {tunnelAddr && (
           <div className="mb-3">
-            <InfoCard label="Địa chỉ tunnel — chia sẻ cho bạn bè" value={tunnelAddr}
-              sub="Bạn bè dùng địa chỉ này để kết nối từ bất kỳ đâu" accent />
+            <InfoCard label={t('server.network.tunnelAddress')} value={tunnelAddr}
+              sub={t('server.network.tunnelAddressSub')} accent />
           </div>
         )}
 
@@ -215,10 +219,10 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
                 tunnelStatus === 'error' ? 'bg-red-400' : 'bg-white/20'
               }`} />
               <span className="text-xs text-white/60">
-                {isRunning ? 'Tunnel đang chạy' :
-                 isDownloading ? 'Đang khởi động...' :
-                 tunnelStatus === 'error' ? 'Lỗi tunnel' :
-                 tunnelStatus === 'stopped' ? 'Đã dừng' : 'Chưa khởi động'}
+                {isRunning ? t('server.network.tunnelRunning') :
+                 isDownloading ? t('server.network.tunnelStarting') :
+                 tunnelStatus === 'error' ? t('server.network.tunnelError') :
+                 tunnelStatus === 'stopped' ? t('server.network.tunnelStopped') : t('server.network.tunnelIdle')}
               </span>
             </div>
             <div className="flex gap-2">
@@ -226,14 +230,14 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
                 <button onClick={startTunnel} disabled={tunnelBusy}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500 hover:bg-green-400 text-white transition-all disabled:opacity-50">
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M8 5v14l11-7z"/></svg>
-                  Bật tunnel
+                  {t('server.network.tunnelStart')}
                 </button>
               )}
               {(isRunning || isDownloading) && (
                 <button onClick={stopTunnel} disabled={tunnelBusy}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/25 transition-all disabled:opacity-50">
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M6 6h12v12H6z"/></svg>
-                  Dừng
+                  {t('server.network.tunnelStop')}
                 </button>
               )}
             </div>
@@ -243,7 +247,7 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
             <div className="relative">
               <button onClick={() => navigator.clipboard.writeText(tunnelLog.join('\n'))}
                 className="absolute top-1.5 right-1.5 z-10 px-2 py-0.5 rounded text-[10px] bg-white/8 text-white/30 hover:text-white/60 hover:bg-white/12 transition-all">
-                Copy
+                {t('server.console.copyLogs')}
               </button>
               <div className="bg-black/40 rounded-lg p-2 max-h-32 overflow-y-auto font-mono text-xs text-white/50"
                 style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
@@ -266,29 +270,22 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
 
         {tunnelStatus === 'error' && tunnelLog.some(l => l.includes('Defender') || l.includes('exclusion') || l.includes('UNKNOWN')) && (
           <div className="mt-2 rounded-xl p-3 border border-red-500/20 bg-red-500/5">
-            <p className="text-xs text-red-400 font-semibold mb-1">⚠️ Windows Defender chặn bore.exe</p>
+            <p className="text-xs text-red-400 font-semibold mb-1">{t('server.network.defenderTitle')}</p>
             <p className="text-xs text-white/50 leading-relaxed mb-2">
-              Windows Defender xóa file tunnel vì không có chữ ký số. Cần thêm exclusion:
+              {t('server.network.defenderDesc')}
             </p>
             <div className="text-xs text-white/45 space-y-0.5">
-              <p>1. Mở <span className="text-white/60">Windows Security</span></p>
-              <p>2. Virus & threat protection → Manage settings</p>
-              <p>3. Add or remove exclusions → Add a folder</p>
-              <p>4. Chọn thư mục: <span className="text-green-400/70 font-mono text-[10px]">%APPDATA%\.VoxelXClient\bore</span></p>
-              <p>5. Bật tunnel lại</p>
+              {t('server.network.defenderSteps').map((step, i) => (
+                <p key={i}>{step}</p>
+              ))}
             </div>
           </div>
         )}
 
         <div className="mt-2 rounded-xl p-3 border border-white/5 bg-white/2">
-          <p className="text-xs text-white/45 font-semibold mb-1.5">Cách hoạt động</p>
+          <p className="text-xs text-white/45 font-semibold mb-1.5">{t('server.network.tunnelHowTitle')}</p>
           <div className="space-y-1">
-            {[
-              'Launcher tải bore binary về máy (lần đầu, ~6MB)',
-              'bore tạo TCP tunnel từ server của bạn đến bore.pub',
-              'Địa chỉ tunnel dạng bore.pub:XXXXX hiện ở trên',
-              'Bạn bè dùng địa chỉ đó để kết nối — không cần tài khoản',
-            ].map((step, i) => (
+            {t('server.network.tunnelHowSteps').map((step, i) => (
               <div key={i} className="flex items-start gap-2">
                 <span className="text-[10px] w-4 h-4 rounded-full bg-white/8 text-white/30 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
                 <p className="text-xs text-white/45">{step}</p>
@@ -302,6 +299,7 @@ function BoreTunnelTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setT
 }
 
 function VoxelXTunnelTab() {
+  const { t } = useLang()
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 
@@ -314,11 +312,11 @@ function VoxelXTunnelTab() {
         </div>
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/15 border border-yellow-500/25 mb-3">
           <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-          <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-widest">Đang phát triển</span>
+          <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-widest">{t('server.network.vxTunnelComingSoon')}</span>
         </div>
-        <h3 className="text-base font-bold text-white mb-1">VoxelX Tunnel Vietnam</h3>
+        <h3 className="text-base font-bold text-white mb-1">{t('server.network.vxTunnelTitle')}</h3>
         <p className="text-xs text-white/45 leading-relaxed max-w-xs mx-auto">
-          Dịch vụ tunnel Việt Nam đang trong quá trình phát triển. Chưa có sẵn để kết nối lúc này.
+          {t('server.network.vxTunnelDesc')}
         </p>
       </div>
 
@@ -330,15 +328,15 @@ function VoxelXTunnelTab() {
         <div className="relative">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-xs text-green-400/70 uppercase tracking-widest font-bold mb-1">Gói dịch vụ</p>
+              <p className="text-xs text-green-400/70 uppercase tracking-widest font-bold mb-1">{t('server.network.vxTunnelPlan')}</p>
               <h4 className="text-lg font-black text-white">VoxelX Tunnel VN</h4>
             </div>
             <div className="text-right">
               <div className="flex items-end gap-1">
-                <span className="text-3xl font-black text-green-400">10K</span>
-                <span className="text-sm text-white/50 mb-1">/ tháng</span>
+                <span className="text-3xl font-black text-green-400">{t('server.network.vxTunnelPrice')}</span>
+                <span className="text-sm text-white/50 mb-1">{t('server.network.vxTunnelPriceUnit')}</span>
               </div>
-              <p className="text-[10px] text-white/35">~0.4K / ngày</p>
+              <p className="text-[10px] text-white/35">{t('server.network.vxTunnelPriceDay')}</p>
             </div>
           </div>
 
@@ -370,27 +368,27 @@ function VoxelXTunnelTab() {
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
             </svg>
-            Mua tunnel — Chưa khả dụng
+            {t('server.network.vxTunnelBuyBtn')}
           </button>
-          <p className="text-center text-[10px] text-white/25 mt-2">Sẽ mở bán khi dịch vụ hoàn thiện</p>
+          <p className="text-center text-[10px] text-white/25 mt-2">{t('server.network.vxTunnelBuyNote')}</p>
         </div>
       </div>
 
       {}
       <div className="rounded-xl border border-white/8 bg-white/3 p-4">
-        <p className="text-xs text-white/45 uppercase tracking-wider font-semibold mb-3">Tunnel của bạn</p>
+        <p className="text-xs text-white/45 uppercase tracking-wider font-semibold mb-3">{t('server.network.vxTunnelMyTunnel')}</p>
         <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-black/20 border border-white/5">
           <div className="w-2 h-2 rounded-full bg-white/15 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-white/25 font-mono">Chưa có tunnel</p>
-            <p className="text-xs text-white/20 mt-0.5">Mua gói để nhận địa chỉ tunnel cố định</p>
+            <p className="text-sm text-white/25 font-mono">{t('server.network.vxTunnelNone')}</p>
+            <p className="text-xs text-white/20 mt-0.5">{t('server.network.vxTunnelNoneHint')}</p>
           </div>
         </div>
       </div>
 
       {}
       <div className="rounded-xl border border-white/5 bg-white/2 p-4">
-        <p className="text-xs text-white/45 font-semibold mb-2">So sánh với bore tunnel</p>
+        <p className="text-xs text-white/45 font-semibold mb-2">{t('server.network.vxTunnelCompare')}</p>
         <div className="space-y-2">
           {[
             { label: 'Ping', bore: '~100-200ms (quốc tế)', vx: '~5-20ms (Việt Nam)', better: true },
@@ -413,27 +411,28 @@ function VoxelXTunnelTab() {
 }
 
 export default function ServerNetworkTab({ server, tunnelStatus, setTunnelStatus, tunnelAddr, setTunnelAddr, tunnelLog, setTunnelLog }) {
+  const { t } = useLang()
   const [activeTab, setActiveTab] = useState('bore')
 
   const tabs = [
     {
       id: 'bore',
-      label: 'Bore Tunnel',
+      label: t('server.network.tabBore'),
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0 3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
         </svg>
       ),
     },
     {
       id: 'voxelx',
-      label: 'VoxelX Tunnel VN',
+      label: t('server.network.tabVoxelX'),
       icon: (
         <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
         </svg>
       ),
-      badge: 'Sắp ra mắt',
+      badge: t('server.network.vxTunnelComingSoon'),
     },
   ]
 

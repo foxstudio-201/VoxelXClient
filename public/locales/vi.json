@@ -137,7 +137,7 @@
     "errorInstall": "Cài đặt thất bại: {{detail}}",
     "errorCheck": "Không thể kiểm tra cập nhật. Vui lòng thử lại."
   },
-  "noaccounthint": {
+  "noacccounthint": {
     "noaccount": "Chưa có tài khoản",
     "needacccount": "Cần tài khoản để chơi",
     "createacccount": "Tạo tài khoản",
