@@ -32,6 +32,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import CreateServerModal from './CreateServerModal'
 import ServerConsole from './ServerConsole'
+import { useLang } from '../../i18n/LangProvider'
 
 import vanillaIcon  from '../../assets/server-icon/vanilla-server.png'
 import paperIcon    from '../../assets/server-icon/paper-server.png'
@@ -93,6 +94,7 @@ function StatusBadge({ status }) {
 }
 
 function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
+  const { t } = useLang()
   const icon = SERVER_ICONS[server.type] || vanillaIcon
   const isDownloadingJava = !!javaProgress
   const [ping, setPing] = useState(null)
@@ -162,7 +164,7 @@ function ServerCardGrid({ server, onClick, onDelete, javaProgress }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  {javaProgress.phase === 'extracting' ? 'Giải nén Java...' : 'Tải Java...'}
+                  {javaProgress.phase === 'extracting' ? t('server.card.extractingJava') : t('server.card.downloadingJava')}
                 </span>
                 <span className="text-[10px] font-mono text-white/40">{javaProgress.percent ?? 0}%</span>
               </div>
@@ -217,6 +219,7 @@ function StatChip({ icon, label, value, highlight }) {
 }
 
 function ServerCardList({ server, onClick, onDelete, javaProgress }) {
+  const { t } = useLang()
   const icon = SERVER_ICONS[server.type] || vanillaIcon
   const isDownloadingJava = !!javaProgress
   const [ping, setPing] = useState(null)
@@ -251,7 +254,7 @@ function ServerCardList({ server, onClick, onDelete, javaProgress }) {
           <div className="mt-1">
             <div className="flex items-center justify-between mb-0.5">
               <span className="text-[10px] text-blue-400/80">
-                {javaProgress.phase === 'extracting' ? 'Giải nén Java...' : 'Tải Java...'}
+                {javaProgress.phase === 'extracting' ? t('server.card.extractingJava') : t('server.card.downloadingJava')}
               </span>
               <span className="text-[10px] font-mono text-white/40">{javaProgress.percent ?? 0}%</span>
             </div>
@@ -297,6 +300,7 @@ function ServerCardList({ server, onClick, onDelete, javaProgress }) {
 }
 
 export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgress }) {
+  const { t } = useLang()
   const [servers, setServers]         = useState([])
   const [loading, setLoading]         = useState(true)
   const [view, setView]               = useState('grid')
@@ -391,11 +395,10 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
       {}
       <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
         <div>
-          <h1 className="text-lg font-bold text-white">Server</h1>
-          <p className="text-xs text-white/30 mt-0.5">Quản lý Minecraft server</p>
+          <h1 className="text-lg font-bold text-white">{t('server.page.title')}</h1>
+          <p className="text-xs text-white/30 mt-0.5">{t('server.page.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          {}
           <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/8">
             <button onClick={() => setView('list')}
               className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${view === 'list' ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'}`}>
@@ -411,14 +414,12 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
               </svg>
             </button>
           </div>
-
-          {}
           <button onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-green-500 hover:bg-green-400 text-white text-xs font-bold transition-all active:scale-95 shadow-lg shadow-green-500/20">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>
-            Tạo Server
+            {t('server.page.createBtn')}
           </button>
         </div>
       </div>
@@ -431,7 +432,7 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            <span className="text-sm">Đang tải...</span>
+            <span className="text-sm">{t('server.page.loading')}</span>
           </div>
         ) : servers.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
@@ -441,12 +442,12 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-white/40">Chưa có server nào</p>
-              <p className="text-xs text-white/20 mt-1">Nhấn "Tạo Server" để bắt đầu</p>
+              <p className="text-sm font-semibold text-white/40">{t('server.page.empty')}</p>
+              <p className="text-xs text-white/20 mt-1">{t('server.page.emptyHint')}</p>
             </div>
             <button onClick={() => setShowCreate(true)}
               className="px-4 py-2 rounded-xl bg-green-500/15 text-green-400 text-xs font-semibold border border-green-500/20 hover:bg-green-500/25 transition-all">
-              + Tạo server đầu tiên
+              {t('server.page.createFirst')}
             </button>
           </div>
         ) : view === 'grid' ? (
@@ -463,11 +464,11 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
                   />
                   {confirmDel === s.id && (
                     <div className="absolute inset-0 rounded-2xl bg-[#0a0a0a]/95 border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3">
-                      <span className="text-xs text-white/60 flex-1">Xóa server này?</span>
+                      <span className="text-xs text-white/60 flex-1">{t('server.page.deleteConfirm')}</span>
                       <button onClick={() => handleDelete(s)}
-                        className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">Xóa</button>
+                        className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">{t('server.page.delete')}</button>
                       <button onClick={() => setConfirmDel(null)}
-                        className="px-2.5 py-1 rounded-lg bg-white/8 text-white/50 text-xs transition-all">Hủy</button>
+                        className="px-2.5 py-1 rounded-lg bg-white/8 text-white/50 text-xs transition-all">{t('server.page.cancel')}</button>
                     </div>
                   )}
                 </div>
@@ -488,11 +489,11 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
                   />
                   {confirmDel === s.id && (
                     <div className="absolute inset-0 rounded-xl bg-[#0a0a0a]/95 border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3">
-                      <span className="text-xs text-white/60 flex-1">Xóa server này?</span>
+                      <span className="text-xs text-white/60 flex-1">{t('server.page.deleteConfirm')}</span>
                       <button onClick={() => handleDelete(s)}
-                        className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">Xóa</button>
+                        className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">{t('server.page.delete')}</button>
                       <button onClick={() => setConfirmDel(null)}
-                        className="px-2.5 py-1 rounded-lg bg-white/8 text-white/50 text-xs transition-all">Hủy</button>
+                        className="px-2.5 py-1 rounded-lg bg-white/8 text-white/50 text-xs transition-all">{t('server.page.cancel')}</button>
                     </div>
                   )}
                 </div>

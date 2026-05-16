@@ -29,8 +29,9 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BG_THEMES } from '../../AppBackground'
+import { useLang } from '../../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -88,7 +89,6 @@ function applyBackground(bgId) {
   window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: bgId }))
 }
 
-const UI_TABS = ['Kiểu chữ', 'Màu sắc', 'Đường viền', 'Nền']
 
 const FONTS = [
   { id: 'system',       label: 'System Default',  stack: 'system-ui, -apple-system, sans-serif',        google: null },
@@ -130,6 +130,7 @@ function applyBorder(radius, color) {
 }
 
 function FontTab({ settings, onChange }) {
+  const { t } = useLang()
   const fontId     = settings.fontId ?? 'system'
   const activeFont = FONTS.find(f => f.id === fontId) ?? FONTS[0]
 
@@ -141,7 +142,7 @@ function FontTab({ settings, onChange }) {
   return (
     <div className="py-4 space-y-4">
       <div>
-        <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Font chữ</p>
+        <p className="text-xs text-white/40 uppercase tracking-widest mb-2">{t('settings.launcher.fontLabel')}</p>
         <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1">
           {FONTS.map(font => (
             <button
@@ -168,7 +169,7 @@ function FontTab({ settings, onChange }) {
       </div>
 
       <div className="rounded-xl border border-white/5 bg-white/3 p-4">
-        <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">Preview</p>
+        <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">{t('settings.launcher.fontPreview')}</p>
         <div
           style={{ fontFamily: activeFont.stack }}
           className="text-white text-base"
@@ -183,18 +184,19 @@ function FontTab({ settings, onChange }) {
 }
 
 function BorderTab({ settings, onChange }) {
+  const { t } = useLang()
   const radius      = settings.borderRadius ?? 12
   const borderColor = settings.borderColor  ?? 'rgba(255,255,255,0.08)'
 
   const BORDER_PRESETS = [
-    { label: 'Mặc định',  value: 'rgba(255,255,255,0.08)' },
-    { label: 'Xanh lá',   value: 'rgba(74,222,128,0.25)'  },
-    { label: 'Xanh dương',value: 'rgba(96,165,250,0.25)'  },
-    { label: 'Tím',       value: 'rgba(167,139,250,0.25)' },
-    { label: 'Đỏ',        value: 'rgba(248,113,113,0.25)' },
-    { label: 'Vàng',      value: 'rgba(251,191,36,0.25)'  },
-    { label: 'Trắng',     value: 'rgba(255,255,255,0.20)' },
-    { label: 'Ẩn',        value: 'transparent'            },
+    { labelKey: 'default', value: 'rgba(255,255,255,0.08)' },
+    { labelKey: 'green',   value: 'rgba(74,222,128,0.25)'  },
+    { labelKey: 'blue',    value: 'rgba(96,165,250,0.25)'  },
+    { labelKey: 'purple',  value: 'rgba(167,139,250,0.25)' },
+    { labelKey: 'red',     value: 'rgba(248,113,113,0.25)' },
+    { labelKey: 'yellow',  value: 'rgba(251,191,36,0.25)'  },
+    { labelKey: 'white',   value: 'rgba(255,255,255,0.20)' },
+    { labelKey: 'hidden',  value: 'transparent'            },
   ]
 
   function handleRadius(v) {
@@ -207,16 +209,16 @@ function BorderTab({ settings, onChange }) {
     applyBorder(radius, v)
   }
 
-  const RADIUS_LABELS = { 0: 'Vuông', 4: 'Nhỏ', 8: 'Vừa', 12: 'Mặc định', 16: 'Lớn', 20: 'Tròn', 24: 'Pill' }
+  const RADIUS_LABEL_KEYS = { 0: '0', 4: '4', 8: '8', 12: '12', 16: '16', 20: '20', 24: '24' }
 
   return (
     <div className="py-4 space-y-5">
       {}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-white/40 uppercase tracking-widest">Độ cong góc</p>
+          <p className="text-xs text-white/40 uppercase tracking-widest">{t('settings.launcher.borderRadius')}</p>
           <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md">
-            {radius}px {RADIUS_LABELS[radius] ? `· ${RADIUS_LABELS[radius]}` : ''}
+            {radius}px {RADIUS_LABEL_KEYS[radius] ? `· ${t(`settings.launcher.radiusLabels.${RADIUS_LABEL_KEYS[radius]}`)}` : ''}
           </span>
         </div>
         <input
@@ -236,11 +238,11 @@ function BorderTab({ settings, onChange }) {
 
       {}
       <div>
-        <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Màu viền</p>
+        <p className="text-xs text-white/40 uppercase tracking-widest mb-2">{t('settings.launcher.borderColor')}</p>
         <div className="grid grid-cols-4 gap-2">
           {BORDER_PRESETS.map(p => (
             <button
-              key={p.label}
+              key={p.labelKey}
               onClick={() => handleColor(p.value)}
               className={`
                 flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all duration-150
@@ -259,7 +261,7 @@ function BorderTab({ settings, onChange }) {
                 }}
               />
               <span className={`text-[9px] font-medium ${borderColor === p.value ? 'text-green-400' : 'text-white/35'}`}>
-                {p.label}
+                {t(`settings.launcher.borderPresets.${p.labelKey}`)}
               </span>
             </button>
           ))}
@@ -268,7 +270,7 @@ function BorderTab({ settings, onChange }) {
 
       {}
       <div>
-        <p className="text-xs text-white/40 uppercase tracking-widest mb-2">Preview</p>
+        <p className="text-xs text-white/40 uppercase tracking-widest mb-2">{t('settings.launcher.fontPreview')}</p>
         <div className="flex gap-3">
           <div
             className="flex-1 p-3 bg-white/3 text-xs text-white/60"
@@ -297,19 +299,20 @@ function BorderTab({ settings, onChange }) {
 }
 
 function ColorTab({ settings, onChange }) {
+  const { t } = useLang()
   const accent = settings.colorAccent ?? '#4ade80'
   const hover  = settings.colorHover  ?? '#86efac'
   const active = settings.colorActive ?? '#22c55e'
 
   const swatches = [
-    { key: 'colorAccent', label: 'Màu nhấn (Accent)', value: accent },
-    { key: 'colorHover',  label: 'Màu hover',         value: hover  },
-    { key: 'colorActive', label: 'Màu active / click', value: active },
+    { key: 'colorAccent', labelKey: 'colorAccent', value: accent },
+    { key: 'colorHover',  labelKey: 'colorHover',  value: hover  },
+    { key: 'colorActive', labelKey: 'colorActive', value: active },
   ]
 
   return (
     <div className="py-4 space-y-4">
-      {swatches.map(({ key, label, value }) => (
+      {swatches.map(({ key, labelKey, value }) => (
         <div key={key} className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {}
@@ -318,7 +321,7 @@ function ColorTab({ settings, onChange }) {
               style={{ background: value }}
             />
             <div>
-              <p className="text-sm text-white/70">{label}</p>
+              <p className="text-sm text-white/70">{t(`settings.launcher.${labelKey}`)}</p>
               <p className="text-[10px] font-mono text-white/30">{value}</p>
             </div>
           </div>
@@ -334,7 +337,7 @@ function ColorTab({ settings, onChange }) {
 
       {}
       <div className="rounded-xl border border-white/5 bg-white/3 p-3 mt-2">
-        <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">Preview</p>
+        <p className="text-[10px] text-white/30 mb-2 uppercase tracking-widest">{t('settings.launcher.fontPreview')}</p>
         <div className="flex gap-2">
           <div className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: accent }}>
             Accent
@@ -352,6 +355,7 @@ function ColorTab({ settings, onChange }) {
 }
 
 function BgTab({ settings, onChange }) {
+  const { t } = useLang()
   const selected = settings.background ?? 'dark'
 
   function handleSelect(id) {
@@ -401,7 +405,7 @@ function BgTab({ settings, onChange }) {
           </div>
         </div>
       ))}
-      <p className="text-[10px] text-white/20 pt-1">✦ = có hiệu ứng động</p>
+      <p className="text-[10px] text-white/20 pt-1">✦ = {t('settings.launcher.animatedBg')}</p>
     </div>
   )
 }
@@ -413,11 +417,23 @@ function formatBytes(b) {
 }
 
 function UpdateChecker() {
-  const [status, setStatus]       = useState('idle')
-  const [result, setResult]       = useState(null)
+  const { t } = useLang()
+  const [status, setStatus]         = useState('idle')
+  const [result, setResult]         = useState(null)
   const [dlProgress, setDlProgress] = useState(null)
-  const [errorMsg, setErrorMsg]   = useState('')
+  const [errorMsg, setErrorMsg]     = useState('')
+  const [reinstallStatus, setReinstallStatus] = useState('idle')
+  const [reinstallProgress, setReinstallProgress] = useState(null)
+  const [reinstallError, setReinstallError] = useState('')
   const unsubRef = useState(null)
+  const unsubReinstallRef = useState(null)
+
+  useEffect(() => {
+    if (!isElectron || !window.electronAPI.onReinstallProgress) return
+    const unsub = window.electronAPI.onReinstallProgress(p => setReinstallProgress(p))
+    unsubReinstallRef[0] = unsub
+    return () => unsub?.()
+  }, [])
 
   async function handleCheck() {
     setStatus('checking')
@@ -427,7 +443,7 @@ function UpdateChecker() {
     try {
       const res = isElectron
         ? await window.electronAPI.checkUpdate()
-        : { hasUpdate: false, currentVersion: '1.0.0', latestVersion: '1.0.0', message: 'Bạn đang dùng phiên bản mới nhất.' }
+        : { hasUpdate: false, currentVersion: '1.0.0', latestVersion: '1.0.0' }
 
       setResult(res)
       if (res.error) {
@@ -442,7 +458,7 @@ function UpdateChecker() {
         setStatus('upToDate')
       }
     } catch (err) {
-      setErrorMsg('Không thể kiểm tra cập nhật.')
+      setErrorMsg(t('settings.launcher.errorCheck'))
       setStatus('error')
     }
   }
@@ -450,7 +466,7 @@ function UpdateChecker() {
   async function handleDownload(checkResult) {
     const r = checkResult || result
     if (!r?.installerAsset) {
-      setErrorMsg('Không tìm thấy file cài đặt cho hệ điều hành này.')
+      setErrorMsg(t('settings.launcher.errorNoInstaller'))
       setStatus('error')
       return
     }
@@ -474,7 +490,7 @@ function UpdateChecker() {
       unsub?.()
 
       if (res?.error) {
-        setErrorMsg(`Tải thất bại: ${res.error}`)
+        setErrorMsg(t('settings.launcher.errorDownload', { detail: res.error }))
         setStatus('error')
         return
       }
@@ -487,13 +503,34 @@ function UpdateChecker() {
         : { ok: true }
 
       if (installRes?.error) {
-        setErrorMsg(`Cài đặt thất bại: ${installRes.error}`)
+        setErrorMsg(t('settings.launcher.errorInstall', { detail: installRes.error }))
         setStatus('error')
       }
     } catch (err) {
       unsub?.()
       setErrorMsg(err.message)
       setStatus('error')
+    }
+  }
+
+  async function handleReinstall() {
+    if (!isElectron) return
+    setReinstallStatus('downloading')
+    setReinstallProgress({ percent: 0 })
+    setReinstallError('')
+    try {
+      const res = await window.electronAPI.reinstallCurrent()
+      if (res?.error) {
+        setReinstallError(res.error)
+        setReinstallStatus('error')
+        setReinstallProgress(null)
+      } else {
+        setReinstallStatus('installing')
+      }
+    } catch (err) {
+      setReinstallError(err.message)
+      setReinstallStatus('error')
+      setReinstallProgress(null)
     }
   }
 
@@ -509,7 +546,7 @@ function UpdateChecker() {
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
               <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
             </svg>
-            Kiểm tra cập nhật
+            {t('settings.launcher.checkUpdate')}
           </button>
 
           {status === 'upToDate' && (
@@ -517,11 +554,11 @@ function UpdateChecker() {
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400">
                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
               </svg>
-              Đang dùng phiên bản mới nhất
+              {t('settings.launcher.upToDate')}
             </span>
           )}
           {status === 'noRelease' && (
-            <span className="text-xs text-yellow-400/60">Chưa có bản phát hành nào</span>
+            <span className="text-xs text-yellow-400/60">{t('settings.launcher.noRelease')}</span>
           )}
           {status === 'error' && (
             <span className="text-xs text-red-400/80">{errorMsg}</span>
@@ -536,7 +573,7 @@ function UpdateChecker() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
-          Đang kiểm tra GitHub Releases...
+          {t('settings.launcher.checking')}
         </div>
       )}
 
@@ -548,7 +585,7 @@ function UpdateChecker() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
           <span className="text-xs text-green-400">
-            Phiên bản mới <span className="font-mono font-bold">{result.latestVersion}</span> — đang chuẩn bị tải...
+            {t('settings.launcher.updateAvailable', { version: result.latestVersion })}
           </span>
         </div>
       )}
@@ -562,7 +599,7 @@ function UpdateChecker() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              Đang tải bản cập nhật...
+              {t('settings.launcher.downloading')}
             </span>
             <span className="text-white/40 font-mono">{dlProgress?.percent ?? 0}%</span>
           </div>
@@ -587,24 +624,120 @@ function UpdateChecker() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
-          <span className="text-xs text-green-400">Đang khởi chạy trình cài đặt — ứng dụng sẽ đóng...</span>
+          <span className="text-xs text-green-400">{t('settings.launcher.installing')}</span>
         </div>
       )}
+
+      {}
+      <div className="pt-1 border-t border-white/5">
+        <p className="text-[11px] text-white/30 mb-2">{t('settings.launcher.reinstallTitle')}</p>
+
+        {['idle', 'error'].includes(reinstallStatus) && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleReinstall}
+              disabled={!isElectron}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/8 hover:bg-white/12 text-white/60 hover:text-white transition-all duration-150 active:scale-95 border border-white/8 disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+              </svg>
+              {t('settings.launcher.reinstall')}
+            </button>
+            {reinstallStatus === 'error' && (
+              <span className="text-xs text-red-400/80">{reinstallError}</span>
+            )}
+          </div>
+        )}
+
+        {reinstallStatus === 'downloading' && (
+          <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-white/50 font-semibold flex items-center gap-1.5">
+                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                {t('settings.launcher.reinstallDownloading')}
+              </span>
+              <span className="text-white/40 font-mono">{reinstallProgress?.percent ?? 0}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-white/40 rounded-full transition-all duration-300"
+                style={{ width: `${reinstallProgress?.percent ?? 0}%` }} />
+            </div>
+          </div>
+        )}
+
+        {reinstallStatus === 'installing' && (
+          <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 flex items-center gap-2">
+            <svg className="animate-spin w-3.5 h-3.5 text-white/50 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <span className="text-xs text-white/50">{t('settings.launcher.reinstallInstalling')}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 export default function LauncherTab({ settings, onChange }) {
   const [uiTab, setUiTab] = useState(0)
+  const { t, lang, setLang, langs, loading: langLoading } = useLang()
+
+  const UI_TABS = [
+    t('settings.launcher.uiTabs.0'),
+    t('settings.launcher.uiTabs.1'),
+    t('settings.launcher.uiTabs.2'),
+    t('settings.launcher.uiTabs.3'),
+  ]
 
   return (
     <div className="h-full overflow-y-auto px-6 py-5">
 
       {}
-      <Section title="Cập nhật">
+      <Section title={t('settings.launcher.language')}>
+        <div className="py-3">
+          <div className="grid grid-cols-2 gap-2">
+            {langs.map(l => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${
+                  lang === l.code
+                    ? 'border-green-500/40 bg-green-500/10 text-white'
+                    : 'border-white/8 bg-white/3 text-white/50 hover:border-white/15 hover:text-white/70'
+                }`}
+              >
+                <span className="text-lg">{l.flag}</span>
+                <span className="text-xs font-medium">{l.name}</span>
+                {lang === l.code && (
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400 ml-auto">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+          {langLoading && (
+            <p className="text-[10px] text-white/30 mt-2 flex items-center gap-1.5">
+              <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              {t('settings.language.updating')}
+            </p>
+          )}
+        </div>
+      </Section>
+
+      {}
+      <Section title={t('settings.launcher.update')}>
         <SettingRow
-          label="Tự động kiểm tra cập nhật khi khởi động"
-          description="Launcher sẽ kiểm tra phiên bản mới mỗi khi mở"
+          label={t('settings.launcher.autoCheckUpdate')}
+          description={t('settings.launcher.autoCheckUpdateDesc')}
         >
           <Toggle
             checked={settings.autoCheckUpdate ?? true}
@@ -617,10 +750,10 @@ export default function LauncherTab({ settings, onChange }) {
       </Section>
 
       {}
-      <Section title="Âm nhạc">
+      <Section title={t('settings.launcher.music')}>
         <SettingRow
-          label="Nhạc nền"
-          description="Phát nhạc LIGHTS sau khi khởi động, lặp lại sau 1–3 phút"
+          label={t('settings.launcher.musicEnabled')}
+          description={t('settings.launcher.musicEnabledDesc')}
         >
           <Toggle
             checked={settings.musicEnabled !== false}
@@ -632,13 +765,12 @@ export default function LauncherTab({ settings, onChange }) {
         </SettingRow>
         <div className="py-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-white/80">Âm lượng</p>
+            <p className="text-sm text-white/80">{t('settings.launcher.musicVolume')}</p>
             <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md">
               {settings.musicVolume ?? 35}%
             </span>
           </div>
           <div className="flex items-center gap-3">
-            {/* icon âm lượng thấp */}
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white/25 flex-shrink-0">
               <path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>
             </svg>
@@ -662,7 +794,6 @@ export default function LauncherTab({ settings, onChange }) {
                 ${settings.musicEnabled === false ? 'opacity-30 cursor-not-allowed' : 'bg-white/10'}
               `}
             />
-            {/* icon âm lượng cao */}
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white/25 flex-shrink-0">
               <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
             </svg>
@@ -671,10 +802,10 @@ export default function LauncherTab({ settings, onChange }) {
       </Section>
 
       {}
-      <Section title="Trò chơi">
+      <Section title={t('settings.launcher.game')}>
         <SettingRow
-          label="Tự động ẩn launcher khi khởi chạy game"
-          description="Launcher sẽ thu nhỏ xuống taskbar khi game đang chạy, tự động hiện lại khi thoát"
+          label={t('settings.launcher.hideLauncher')}
+          description={t('settings.launcher.hideLauncherDesc')}
         >
           <Toggle
             checked={settings.hideLauncherOnLaunch ?? true}
@@ -682,8 +813,8 @@ export default function LauncherTab({ settings, onChange }) {
           />
         </SettingRow>
         <SettingRow
-          label="Hiển thị cửa sổ log khi game chạy"
-          description="Mở cửa sổ log Minecraft riêng biệt khi khởi chạy game"
+          label={t('settings.launcher.showLogWindow')}
+          description={t('settings.launcher.showLogWindowDesc')}
         >
           <Toggle
             checked={settings.showLogWindow ?? true}
@@ -691,8 +822,8 @@ export default function LauncherTab({ settings, onChange }) {
           />
         </SettingRow>
         <SettingRow
-          label="Bật Discord Rich Presence"
-          description="Hiển thị trạng thái chơi game trên Discord"
+          label={t('settings.launcher.discordRPC')}
+          description={t('settings.launcher.discordRPCDesc')}
         >
           <Toggle
             checked={settings.discordRPC ?? false}
@@ -702,7 +833,7 @@ export default function LauncherTab({ settings, onChange }) {
       </Section>
 
       {}
-      <Section title="Giao diện">
+      <Section title={t('settings.launcher.ui')}>
         <div className="py-3">
           {}
           <div className="flex gap-1 p-1 rounded-xl bg-white/4 border border-white/5 mb-4">

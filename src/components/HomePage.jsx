@@ -48,10 +48,14 @@ import v118 from '../assets/minecraft-versions/1.18.png'
 import v119 from '../assets/minecraft-versions/1.19.png'
 import v120 from '../assets/minecraft-versions/1.20.png'
 import v121 from '../assets/minecraft-versions/1.21.png'
+import { useLang } from '../i18n/LangProvider'
 
 function markdownToHtml(text) {
   if (!text) return ''
   let html = String(text)
+  const {t} = useLang()
+  const tRef = useRef(t)
+  tRef.current = t
 
   html = html.replace(/<img[^>]*shields\.io[^>]*>/gi, '')
   html = html.replace(/!\[[^\]]*\]\(https?:\/\/img\.shields\.io[^)]*\)/g, '')
@@ -128,7 +132,7 @@ function renderInlineMarkdown(text) {
 
 function renderPatchNotesBody(body) {
   const html = markdownToHtml(body)
-  if (!html.trim()) return <p className="text-white/40">Không có nội dung patch note</p>
+  if (!html.trim()) return <p className="text-white/40">{t('homepage.patchnote.nopatchnote')}</p>
 
   return (
     <>
@@ -173,7 +177,7 @@ function PatchNotesModal({ patchNotes, onClose }) {
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-white mb-1">{patchNotes.title}</h2>
             <p className="text-xs text-white/40">
-              Phiên bản {patchNotes.version}
+              {t('homepage.patchnote.version')} {patchNotes.version}
               {patchNotes.publishedAt && (
                 <>
                   {' '} · {new Date(patchNotes.publishedAt).toLocaleDateString('vi-VN')}
@@ -181,15 +185,6 @@ function PatchNotesModal({ patchNotes, onClose }) {
               )}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 ml-4 w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-all"
-            title="Đóng"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-            </svg>
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -204,14 +199,14 @@ function PatchNotesModal({ patchNotes, onClose }) {
               onClick={() => window.electronAPI?.openExternal?.(patchNotes.htmlUrl)}
               className="text-xs text-green-400 hover:text-green-300 transition-colors underline underline-offset-2"
             >
-              Xem trên GitHub →
+              {t('homepage.patchnote.viewongithub')}
             </button>
           )}
           <button
             onClick={onClose}
             className="ml-auto px-4 py-2 rounded-lg bg-green-500/15 border border-green-500/25 text-green-400 text-xs font-semibold hover:bg-green-500/25 transition-all"
           >
-            Đóng
+            {t('homepage.patchnote.close')}
           </button>
         </div>
       </div>
@@ -226,6 +221,7 @@ function getAccountTypeLabel(type) {
 }
 
 function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate }) {
+  const {t} = useLang()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -248,7 +244,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
         <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
           <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
         </svg>
-        Thêm tài khoản
+        {t('homepage.acccount.addacccount')}
       </button>
     )
   }
@@ -278,10 +274,10 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
       {dropdownOpen && (
         <div className="absolute left-0 right-0 bottom-full mb-1 max-h-64 overflow-y-auto bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50">
           <div className="px-3 py-2 border-b border-white/5">
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Select Account</p>
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t("homepage.acccount.selectedaccount")}</p>
           </div>
           {accounts.length === 0 ? (
-            <div className="px-3 py-3 text-[11px] text-white/25 text-center">Không có tài khoản nào</div>
+            <div className="px-3 py-3 text-[11px] text-white/25 text-center">{t("homepage.acccount.noacccount")}</div>
           ) : (
             <>
               {accounts.map(account => (
@@ -318,7 +314,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
                   <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg>
-                <span>Thêm tài khoản</span>
+                <span>{t('homepage.acccount.addacccount')}</span>
               </button>
             </>
           )}
@@ -353,16 +349,16 @@ function getVersionImage(v) {
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-function formatRelativeTime(isoString) {
+function formatRelativeTime(isoString, t) {
   if (!isoString) return ''
   const diff = Date.now() - new Date(isoString).getTime()
   const m = Math.floor(diff / 60000)
   const h = Math.floor(m / 60)
   const d = Math.floor(h / 24)
-  if (d > 0) return `${d} ngày trước`
-  if (h > 0) return `${h} giờ trước`
-  if (m > 0) return `${m} phút trước`
-  return 'vừa xong'
+  if (d > 0) return t('homepage.relativetime.daysago', { count: d })
+  if (h > 0) return t('homepage.relativetime.hoursago', { count: h })
+  if (m > 0) return t('homepage.relativetime.minutesago', { count: m })
+  return t('homepage.relativetime.justnow')
 }
 
 const NEWS = [
@@ -399,11 +395,12 @@ const NEWS = [
 ]
 
 function NewsPanel() {
+  const { t } = useLang()
   return (
     <div className="overflow-y-auto px-6 py-5 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-white/50 uppercase tracking-widest">Latest News</h2>
-        <button className="text-xs text-green-400/60 hover:text-green-400 transition-colors">View all →</button>
+        <h2 className="text-sm font-semibold text-white/50 uppercase tracking-widest">{t('homepage.news.latestnews')}</h2>
+        <button className="text-xs text-green-400/60 hover:text-green-400 transition-colors">{t('homepage.news.viewall')}</button>
       </div>
       <div className="flex flex-col gap-3">
         {NEWS.map((item) => (
@@ -434,6 +431,7 @@ function NewsPanel() {
 }
 
 function InstanceLogPanel({ instance, onKill }) {
+  const {t} = useLang()
   const logEndRef = useRef(null)
   const [autoScroll, setAutoScroll] = useState(true)
   const [filter, setFilter] = useState('ALL')
@@ -502,9 +500,9 @@ function InstanceLogPanel({ instance, onKill }) {
         <div className="flex-shrink-0 px-4 py-2 border-b border-white/5 bg-black/20">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-white/50">
-              {progress.phase === 'java' ? 'Installing Java...' :
-                progress.phase === 'assets' ? 'Downloading assets...' :
-                  progress.phase === 'launching' ? 'Launching...' : 'Preparing...'}
+              {progress.phase === 'java' ? t('homepage.logconsole.installjava') :
+                progress.phase === 'assets' ? t('homepage.logconsole.downloadassest') :
+                  progress.phase === 'launching' ? t('homepage.logconsole.launching') : t('homepage.logconsole.preparing')}
             </span>
             <div className="flex items-center gap-3 text-[10px] text-white/30">
               {progress.speed > 0 && <span>{(progress.speed / 1024 / 1024).toFixed(1)} MB/s</span>}
@@ -526,7 +524,7 @@ function InstanceLogPanel({ instance, onKill }) {
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-red-400">{errorLines.length} error{errorLines.length > 1 ? 's' : ''} detected</p>
+            <p className="text-[10px] font-bold text-red-400">{t('homepage.logconsole.errorsdetected', { count: errorLines.length })}</p>
             <p className="text-[10px] text-red-400/60 truncate mt-0.5">{errorLines[errorLines.length - 1]}</p>
           </div>
           <button
@@ -536,7 +534,7 @@ function InstanceLogPanel({ instance, onKill }) {
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
               <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
             </svg>
-            Copy errors
+            {t('homepage.logconsole.copyerror')}
           </button>
         </div>
       )}
@@ -558,7 +556,7 @@ function InstanceLogPanel({ instance, onKill }) {
             </button>
           )
         })}
-        <span className="ml-auto text-[10px] text-white/20">{filteredLogs.length} lines</span>
+        <span className="ml-auto text-[10px] text-white/20">{filteredLogs.length} {t('homepage.logconsole.lines')}</span>
         <button
           onClick={copyFilteredLogs}
           title={`Copy ${filter === 'ALL' ? 'all' : filter} logs`}
@@ -568,12 +566,12 @@ function InstanceLogPanel({ instance, onKill }) {
           {copiedFilter ? (
             <>
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
-              Copied
+              {t('homepage.logconsole.copyed')}
             </>
           ) : (
             <>
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" /></svg>
-              Copy
+              {t('homepage.logconsole.copy')}
             </>
           )}
         </button>
@@ -598,9 +596,9 @@ function InstanceLogPanel({ instance, onKill }) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Đang khởi động...
+                {t('HomePage.logconsole.launch')}
               </span>
-              : 'No logs yet'
+              : t('homepage.logconsole.nolog')
             }
           </p>
         ) : (
@@ -627,7 +625,7 @@ function InstanceLogPanel({ instance, onKill }) {
                 {}
                 <span className={`flex-shrink-0 text-[9px] transition-all duration-150
                   ${copiedLine === i ? 'text-green-400 opacity-100' : 'text-white/20 opacity-0 group-hover:opacity-100'}`}>
-                  {copiedLine === i ? '✓' : '⎘'}
+                  {copiedLine === i ? '✓' : '♿'}
                 </span>
               </div>
             )
@@ -644,10 +642,10 @@ function InstanceLogPanel({ instance, onKill }) {
               instance.state === 'error' ? 'text-red-400' :
                 instance.state === 'downloading' ? 'text-yellow-400' : 'text-white/30'
         }>
-          {instance.state === 'running' ? '● Running' :
-            instance.state === 'stopped' ? '■ Stopped' :
-              instance.state === 'error' ? '✕ Error' :
-                instance.state === 'downloading' ? '⟳ Loading...' : ''}
+          {instance.state === 'running' ? t('homepage.state.running') :
+            instance.state === 'stopped' ? t('homepage.state.stopped') :
+              instance.state === 'error' ? t('homepage.state.error') :
+                instance.state === 'downloading' ? t('homepage.state.loading') : ''}
         </span>
         <div className="flex items-center gap-3">
           <span className="text-white/20">{instance.profileName} @ {instance.accountName}</span>
@@ -659,7 +657,7 @@ function InstanceLogPanel({ instance, onKill }) {
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
-              Kill
+              {t('homepage.launch.kill')}
             </button>
           )}
         </div>
@@ -669,6 +667,7 @@ function InstanceLogPanel({ instance, onKill }) {
 }
 
 export default function HomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, instances = [], onKillInstance }) {
+  const {t} = useLang()
   const [ram, setRam] = useState(4)
   const [activeLogTab, setActiveLogTab] = useState(null)
   const [logPanelOpen, setLogPanelOpen] = useState(false)
@@ -913,12 +912,12 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           {}
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-semibold tracking-widest text-green-400/70 uppercase">
-              Welcome back
+              {t('homepage.header.welcomeback')}
             </span>
           </div>
           <h1 className="text-4xl font-black text-white text-shadow mb-1">
             {username ?? (
-              <span className="text-white/30 text-2xl font-semibold">Chưa có tài khoản</span>
+              <span className="text-white/30 text-2xl font-semibold">{t('homepage.acccount.noacccount')}</span>
             )}
           </h1>
 
@@ -928,7 +927,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               isRunning ? (
                 <span className="flex items-center gap-2 text-green-400/80">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  Đang chơi: <span className="text-green-300 font-semibold">{selectedProfile?.name}</span>
+                  {t('homepage.play.playing')} <span className="text-green-300 font-semibold">{selectedProfile?.name}</span>
                 </span>
               ) : isError ? (
                 <span className="text-red-400/80">{launchError}</span>
@@ -938,16 +937,16 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  {progress?.log ?? 'Đang chuẩn bị...'}
+                  {progress?.log ?? t('homepage.logconsole.prepating')}
                 </span>
               )
             ) : username ? (
               profileStats?.lastPlayed
-                ? <>Last played: <span className="text-white/60">{selectedProfile?.name}</span> · {formatRelativeTime(profileStats.lastPlayed)}</>
-                : <span className="text-white/30">Chưa chơi lần nào</span>
+                ? <>{t('homepage.play.lastplayed')} <span className="text-white/60">{selectedProfile?.name}</span> · {formatRelativeTime(profileStats.lastPlayed, t)}</>
+                : <span className="text-white/30">{t('homepage.play.neverplayedbefore')}</span>
             ) : (
               <button onClick={() => onNavigate?.('account')} className="text-green-400/70 hover:text-green-400 transition-colors underline underline-offset-2">
-                Tạo tài khoản để bắt đầu
+                {t('homepage.play.createaccounttostart')}
               </button>
             )}
           </p>
@@ -960,17 +959,17 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 {}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white/50 uppercase tracking-widest">
-                    {progress?.phase === 'java' ? 'Cài đặt Java Runtime' :
-                      progress?.phase === 'assets' ? 'Tải tài nguyên Minecraft' :
-                        progress?.phase === 'launching' ? 'Khởi động game' :
-                          progress?.phase === 'resolve' ? 'Tải thông tin version' : 'Chuẩn bị'}
+                    {progress?.phase === 'java' ? t('homepage.progress.java') :
+                      progress?.phase === 'assets' ? t('homepage.progress.assets') :
+                        progress?.phase === 'launching' ? t('homepage.progress.launching') :
+                          progress?.phase === 'resolve' ? t('homepage.progress.resolve') : t('homepage.progress.preparing')}
                   </span>
                   <div className="flex items-center gap-3 text-xs text-white/30">
                     {progress?.speed > 0 && (
                       <span>{(progress.speed / 1024 / 1024).toFixed(1)} MB/s</span>
                     )}
                     {progress?.totalFiles > 0 && (
-                      <span>{progress.doneFiles ?? 0}/{progress.totalFiles} files</span>
+                      <span>{progress.doneFiles ?? 0}/{progress.totalFiles} {t('homepage.play.files')}</span>
                     )}
                     {progress?.percent > 0 && (
                       <span className="text-white/50 font-mono font-bold">{progress.percent}%</span>
@@ -989,9 +988,9 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
 
               <div className="flex gap-6">
                 {[
-                  { label: 'Hours Played', value: hoursPlayed > 0 ? hoursPlayed.toLocaleString() : '0' },
-                  { label: 'Worlds', value: worldCount.toString() },
-                  { label: 'Mods Active', value: modCount.toString() },
+                  { label: t('homepage.play.hoursplayed'), value: hoursPlayed > 0 ? hoursPlayed.toLocaleString() : '0' },
+                  { label: t('homepage.play.worlds'), value: worldCount.toString() },
+                  { label: t('homepage.play.modactive'), value: modCount.toString() },
                 ].map((stat) => (
                   <div key={stat.label}>
                     <div className="text-lg font-bold text-green-400">{stat.value}</div>
@@ -1044,7 +1043,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" />
                       </svg>
                       <span className="truncate max-w-[120px]">{savedLog.profileName}</span>
-                      <span className="text-[9px] text-white/30">saved</span>
+                      <span className="text-[9px] text-white/30">{t('homepage.instance.saved')}</span>
                     </button>
                   )}
 
@@ -1139,7 +1138,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
-                        <p className="text-xs">Đang tải log...</p>
+                        <p className="text-xs">{t('homepage.instance.loadinglog')}</p>
                       </div>
                     )
                     if (!savedLog) return (
@@ -1147,7 +1146,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 opacity-30">
                           <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                         </svg>
-                        <p className="text-xs">Chưa có log nào cho profile này</p>
+                        <p className="text-xs">{t('homepage.instance.nolog')}</p>
                       </div>
                     )
 
@@ -1168,7 +1167,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                       <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 opacity-30">
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                       </svg>
-                      <p className="text-xs">Không có instance nào đang chạy</p>
+                      <p className="text-xs">{t('homepage.instance.noinstance')}</p>
                     </div>
                   )
                   if (!inst) return <InstanceLogPanel instance={instances[0]} onKill={onKillInstance} />
@@ -1205,7 +1204,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-                Profile
+                {t('homepage.profile.label')}
               </label>
               {}
               <div className="relative" ref={logDropdownRef}>
@@ -1221,7 +1220,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
                     <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                   </svg>
-                  Logs
+                  {t('homepage.instance.logs')}
                   {instances.length > 0 && (
                     <span className="w-3.5 h-3.5 rounded-full bg-green-500/30 text-green-400 text-[8px] flex items-center justify-center font-bold">
                       {instances.length}
@@ -1233,10 +1232,10 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 {logDropdownOpen && (
                   <div className="absolute right-0 top-full mt-1 w-52 bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
                     <div className="px-3 py-2 border-b border-white/5">
-                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Instance Logs</p>
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t('homepage.instance.instancelogs')}</p>
                     </div>
                     {instances.length === 0 && !selectedProfile ? (
-                      <div className="px-3 py-3 text-[11px] text-white/25 text-center">Không có instance nào</div>
+                      <div className="px-3 py-3 text-[11px] text-white/25 text-center">{t('homepage.instance.noinstancedropdown')}</div>
                     ) : (
                       <>
                         {}
@@ -1259,7 +1258,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                             {inst.state === 'error' && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
                             <div className="min-w-0 flex-1">
                               <p className="text-xs text-white/80 font-semibold truncate">{inst.profileName || 'Profile'}</p>
-                              <p className="text-[10px] text-white/30 truncate">Live · @{inst.accountName}</p>
+                              <p className="text-[10px] text-white/30 truncate">{t('homepage.instance.live')} · @{inst.accountName}</p>
                             </div>
                             {activeLogTab === inst.key && logPanelOpen && !savedLog && (
                               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
@@ -1300,7 +1299,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                               </svg>
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs text-white/80 font-semibold truncate">{selectedProfile.name}</p>
-                                <p className="text-[10px] text-white/30">Log lần chơi gần nhất</p>
+                                <p className="text-[10px] text-white/30">{t('homepage.instance.lastlog')}</p>
                               </div>
                               {logPanelOpen && savedLog && (
                                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
@@ -1323,7 +1322,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
                             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                           </svg>
-                          <span className="text-[11px]">Đóng log panel</span>
+                          <span className="text-[11px]">{t('homepage.instance.closelogpanel')}</span>
                         </button>
                       </>
                     )}
@@ -1369,7 +1368,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
                           <path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.06 15.94 0 13.36 0c-1.46 0-2.75.67-3.6 1.72L9 3 8.24 1.72C7.39.67 6.1 0 4.64 0 2.06 0 0 2.06 0 4.64c0 .48.11.92.18 1.36H0v2h20V6zm-9.5-3.5c.55-.67 1.38-1.1 2.36-1.1 1.58 0 2.64 1.06 2.64 2.64 0 .48-.13.92-.32 1.36H11V3.5l-.5-1zm-5.86 0C5.19 2.5 6.06 2 7 2c.98 0 1.81.43 2.36 1.1L10 4.5H6.68c-.19-.44-.32-.88-.32-1.36 0-.24.04-.47.1-.68l-.82.04zM0 8v14h20V8H0zm9 11H2v-2h7v2zm0-4H2v-2h7v2zm0-4H2v-2h7v2zm9 8h-7v-2h7v2zm0-4h-7v-2h7v2zm0-4h-7v-2h7v2z" />
                         </svg>
-                        Modpack
+                        {t('homepage.profile.modpack')}
                       </span>
                     )}
                   </div>
@@ -1405,7 +1404,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 opacity-40">
                   <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg>
-                <span>Tạo profile để chơi</span>
+                <span>{t('homepage.profile.createprofile')}</span>
               </button>
             )}
           </div>
@@ -1413,7 +1412,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
           {}
           <div>
             <label className="text-xs font-semibold text-white/40 uppercase tracking-widest block mb-2">
-              Account
+              {t('homepage.account.label')}
             </label>
             <AccountDropdown
               accounts={accounts}
@@ -1439,7 +1438,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              {profileSettingsOpen ? 'Đóng cài đặt' : 'Cài đặt profile'}
+              {profileSettingsOpen ? t('homepage.profile.closesettings') : t('homepage.profile.settings')}
               <span className="ml-auto text-[10px] text-white/20">{selectedProfile.ramGb ?? 4} GB RAM</span>
             </button>
           )}
@@ -1471,29 +1470,29 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Đang tải...
+                {t('homepage.launch.loading')}
               </span>
             ) : isRunning ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                Đang chạy
+                {t('homepage.launch.playing')}
               </span>
             ) : isError ? (
               <span className="flex items-center justify-center gap-2">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                 </svg>
-                Thử lại
+                {t('homepage.launch.retry')}
               </span>
             ) : !selectedProfile ? (
               <span className="flex items-center justify-center gap-2">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z" /></svg>
-                Chọn profile
+                {t('homepage.launch.selectprofile')}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z" /></svg>
-                PLAY
+                {t('homepage.launch.play')}
               </span>
             )}
           </button>

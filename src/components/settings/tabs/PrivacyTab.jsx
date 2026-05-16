@@ -30,6 +30,7 @@
  */
 
 import { useState } from 'react'
+import { useLang } from '../../../i18n/LangProvider'
 
 const TOS_TEXT = `Chào mừng bạn đến với VoxelXClient. Bằng cách sử dụng phần mềm này, bạn đồng ý tuân thủ các điều khoản và điều kiện được nêu dưới đây. Vui lòng đọc kỹ trước khi tiếp tục sử dụng.
 
@@ -98,7 +99,7 @@ Chúng tôi có thể cập nhật Chính sách Quyền riêng tư này theo th�
 9. Liên hệ
 Nếu bạn có câu hỏi về Chính sách Quyền riêng tư này hoặc muốn thực hiện quyền của mình, vui lòng liên hệ với chúng tôi qua Discord hoặc GitHub của FoxStudio.`
 
-function PolicySection({ title, badge, badgeColor, content, agreedKey, agreed, onAgree }) {
+function PolicySection({ title, badge, badgeColor, content, agreedKey, agreed, onAgree, agreeLabel }) {
   return (
     <div className="mb-6">
       {}
@@ -143,7 +144,7 @@ function PolicySection({ title, badge, badgeColor, content, agreedKey, agreed, o
             onClick={() => onAgree(agreedKey, !agreed)}
             className="text-xs text-white/50 cursor-pointer select-none hover:text-white/70 transition-colors"
           >
-            Tôi đã đọc và đồng ý với {title.toLowerCase()}
+            {agreeLabel}
           </label>
         </div>
       </div>
@@ -152,6 +153,7 @@ function PolicySection({ title, badge, badgeColor, content, agreedKey, agreed, o
 }
 
 export default function PrivacyTab({ settings, onChange }) {
+  const { t } = useLang()
   const agreedTos     = settings.agreedTos     ?? false
   const agreedPrivacy = settings.agreedPrivacy ?? false
 
@@ -165,23 +167,25 @@ export default function PrivacyTab({ settings, onChange }) {
     <div className="h-full overflow-y-auto px-6 py-5">
 
       <PolicySection
-        title="Điều khoản sử dụng"
+        title={t('settings.privacy.tos')}
         badge="Terms of Service"
         badgeColor="bg-blue-500/15 text-blue-400"
         content={TOS_TEXT}
         agreedKey="agreedTos"
         agreed={agreedTos}
         onAgree={handleAgree}
+        agreeLabel={t('settings.privacy.agreeWith', { title: t('settings.privacy.tos').toLowerCase() })}
       />
 
       <PolicySection
-        title="Chính sách thu thập dữ liệu"
+        title={t('settings.privacy.privacy')}
         badge="Privacy Policy"
         badgeColor="bg-purple-500/15 text-purple-400"
         content={PRIVACY_TEXT}
         agreedKey="agreedPrivacy"
         agreed={agreedPrivacy}
         onAgree={handleAgree}
+        agreeLabel={t('settings.privacy.agreeWith', { title: t('settings.privacy.privacy').toLowerCase() })}
       />
 
       {}
@@ -208,13 +212,10 @@ export default function PrivacyTab({ settings, onChange }) {
         </div>
         <div>
           <p className={`text-xs font-semibold ${bothAgreed ? 'text-green-400' : 'text-white/30'}`}>
-            {bothAgreed ? 'Đã đồng ý tất cả' : 'Chưa đồng ý đầy đủ'}
+            {bothAgreed ? t('settings.privacy.agreedAll') : t('settings.privacy.notAgreedAll')}
           </p>
           <p className="text-[10px] text-white/25 mt-0.5">
-            {bothAgreed
-              ? 'Bạn đã đọc và đồng ý với tất cả điều khoản.'
-              : 'Vui lòng đọc và đồng ý với cả hai điều khoản để tiếp tục.'
-            }
+            {bothAgreed ? t('settings.privacy.agreedAllDesc') : t('settings.privacy.notAgreedAllDesc')}
           </p>
         </div>
       </div>
