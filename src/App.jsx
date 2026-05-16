@@ -44,6 +44,7 @@ import AppBackground from './components/AppBackground'
 import { ToastContext, useToastState } from './hooks/useToast'
 import { AccountsProvider, useAccounts } from './hooks/useAccounts'
 import { loadAppSettings, applyAppSettings } from './utils/appSettings'
+import { LangProvider } from './i18n/LangProvider'
 
 import ModsPage from './components/mods/ModsPage'
 import ServerPage from './components/server/ServerPage'
@@ -337,24 +338,30 @@ export default function App() {
   const params = new URLSearchParams(window.location.search)
   const isUpdateWindow = params.get('window') === 'update'
   if (isUpdateWindow) {
-    return <UpdateWindow />
+    return (
+      <LangProvider>
+        <UpdateWindow />
+      </LangProvider>
+    )
   }
 
   return (
-    <AccountsProvider>
-      <ToastContext.Provider value={toastState}>
-        <AppBackground bgId={bgId} />
-        {!splashDone && (
-          <SplashScreen onDone={() => setSplashDone(true)} />
-        )}
-        <AppInner />
-        <Toast
-          toast={toastState.toast}
-          visible={toastState.visible}
-          onDismiss={toastState.dismiss}
-        />
-      </ToastContext.Provider>
-    </AccountsProvider>
+    <LangProvider>
+      <AccountsProvider>
+        <ToastContext.Provider value={toastState}>
+          <AppBackground bgId={bgId} />
+          {!splashDone && (
+            <SplashScreen onDone={() => setSplashDone(true)} />
+          )}
+          <AppInner />
+          <Toast
+            toast={toastState.toast}
+            visible={toastState.visible}
+            onDismiss={toastState.dismiss}
+          />
+        </ToastContext.Provider>
+      </AccountsProvider>
+    </LangProvider>
   )
 }
 

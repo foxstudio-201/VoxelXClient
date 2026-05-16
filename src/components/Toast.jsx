@@ -31,6 +31,7 @@
 
 import { useEffect, useRef } from 'react'
 import notifySound from '../assets/sound/notify.mp3'
+import { useLang } from '../i18n/LangProvider'
 
 const ICONS = {
   success: (

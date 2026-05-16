@@ -579,7 +579,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
 }
 
 function registerJavaDistroHandlers(getTrustedWindow) {
-  const { fetchAllDistros, installDistro, deleteDistro, getProfileJreInfo } = require('./launcher/java/javaDistros.cjs')
+  const { fetchAllDistros, installDistro, deleteDistro, getProfileJreInfo, getAllInstalledJavas, isDistroInstalled, getJavaExe } = require('./launcher/java/javaDistros.cjs')
   
   ipcMain.handle('java:fetchDistros', async (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
@@ -587,18 +587,63 @@ function registerJavaDistroHandlers(getTrustedWindow) {
     return { ok: true, distros }
   })
 
+  ipcMain.handle('java:getInstalled', (e, profileId) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readProfiles()
+    const profile = data.profiles.find(p => p.id === profileId)
+    if (!profile) return { error: 'Profile not found' }
+    const list = getAllInstalledJavas(profile.instancePath)
+    return { ok: true, installed: list }
+  })
+
   ipcMain.handle('java:install', async (e, pkg, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const data = readProfiles()
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile not found' }
-    const jreDir = path.join(profile.instancePath, 'jre')
-    const javaExe = await installDistro(pkg, jreDir, (progress) => {
-      getTrustedWindow(e).webContents.send('java:installProgress', progress)
+    const jreBaseDir = path.join(profile.instancePath, 'jre')
+    const win = getTrustedWindow(e)
+    const javaExe = await installDistro(pkg, jreBaseDir, (progress) => {
+      if (win && !win.isDestroyed()) win.webContents.send('java:installProgress', progress)
     })
+    return { ok: true, javaExe }
+  })
+
+  ipcMain.handle('java:installToDir', async (e, pkg, dir) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (typeof dir !== 'string' || !dir) return { error: 'Invalid directory' }
+    const win = getTrustedWindow(e)
+    const javaExe = await installDistro(pkg, dir, (progress) => {
+      if (win && !win.isDestroyed()) win.webContents.send('java:installProgress', progress)
+    })
+    return { ok: true, javaExe }
+  })
+
+  ipcMain.handle('java:select', (e, profileId, javaExe) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (typeof javaExe !== 'string') return { error: 'Invalid javaExe' }
+    const data = readProfiles()
+    const profile = data.profiles.find(p => p.id === profileId)
+    if (!profile) return { error: 'Profile not found' }
     profile.javaPath = javaExe
     writeProfiles(data)
-    return { ok: true, javaExe }
+    return { ok: true }
+  })
+
+  ipcMain.handle('java:delete', (e, profileId, distro, javaVersion) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    const data = readProfiles()
+    const profile = data.profiles.find(p => p.id === profileId)
+    if (!profile) return { error: 'Profile not found' }
+    const jreDir = distro && javaVersion
+      ? path.join(profile.instancePath, 'jre', `${distro}-${javaVersion}`)
+      : path.join(profile.instancePath, 'jre')
+    const deleted = deleteDistro(jreDir)
+    if (deleted && profile.javaPath?.startsWith(jreDir)) {
+      profile.javaPath = null
+      writeProfiles(data)
+    }
+    return { ok: true, deleted }
   })
 }
 

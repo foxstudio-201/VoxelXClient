@@ -31,9 +31,70 @@
 
 'use strict'
 
-const { spawn } = require('child_process')
+const { spawn, execFileSync } = require('child_process')
 const path  = require('path')
 const fs    = require('fs')
+
+function detectJavaMajorVersion(javaPath) {
+  try {
+    const out = execFileSync(javaPath, ['-version'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 5000,
+    }).toString()
+    const errOut = (() => {
+      try {
+        return require('child_process').execFileSync(javaPath, ['-version'], {
+          stdio: ['ignore', 'ignore', 'pipe'],
+          timeout: 5000,
+        }).toString()
+      } catch (e) { return e.stderr?.toString() || '' }
+    })()
+    const combined = out + errOut
+    const match = combined.match(/version "(\d+)(?:\.(\d+))?/)
+    if (!match) return 17
+    const major = parseInt(match[1], 10)
+    return major === 1 ? parseInt(match[2] || '8', 10) : major
+  } catch {
+    return 17
+  }
+}
+
+function buildGcArgs(javaMajor, ramMb) {
+  if (javaMajor >= 21) {
+    return [
+      '-XX:+UseZGC',
+      '-XX:+ZGenerational',
+      '-XX:+UnlockExperimentalVMOptions',
+      '-XX:+DisableExplicitGC',
+      '-XX:+AlwaysPreTouch',
+      '-XX:+UseStringDeduplication',
+      '-XX:+PerfDisableSharedMem',
+      '-XX:ZUncommitDelay=300',
+    ]
+  }
+
+  return [
+    '-XX:+UseG1GC',
+    '-XX:+ParallelRefProcEnabled',
+    '-XX:MaxGCPauseMillis=200',
+    '-XX:+UnlockExperimentalVMOptions',
+    '-XX:+DisableExplicitGC',
+    '-XX:+AlwaysPreTouch',
+    '-XX:+UseStringDeduplication',
+    '-XX:G1NewSizePercent=30',
+    '-XX:G1MaxNewSizePercent=40',
+    '-XX:G1HeapRegionSize=8M',
+    '-XX:G1ReservePercent=20',
+    '-XX:G1HeapWastePercent=5',
+    '-XX:G1MixedGCCountTarget=4',
+    '-XX:InitiatingHeapOccupancyPercent=15',
+    '-XX:G1MixedGCLiveThresholdPercent=90',
+    '-XX:G1RSetUpdatingPauseTimePercent=5',
+    '-XX:SurvivorRatio=32',
+    '-XX:+PerfDisableSharedMem',
+    '-XX:MaxTenuringThreshold=1',
+  ]
+}
 
 function substituteArgs(args, vars) {
   if (!Array.isArray(args)) return []
@@ -119,9 +180,15 @@ function launchGame(opts) {
     resolution_height: '480',
   }
 
+  const xmx = ramMb
+  const xms = Math.max(512, Math.floor(ramMb * 0.5))
+
+  const javaMajor = detectJavaMajorVersion(javaPath)
+  const gcArgs    = buildGcArgs(javaMajor, ramMb)
+
   const jvmArgs = [
-    `-Xmx${ramMb}m`,
-    `-Xms${Math.min(512, ramMb)}m`,
+    `-Xmx${xmx}m`,
+    `-Xms${xms}m`,
     `-Djava.library.path=${nativesDir}`,
     `-Dminecraft.launcher.brand=VoxelXClient`,
     `-Dminecraft.launcher.version=1.0.0`,
@@ -130,23 +197,12 @@ function launchGame(opts) {
     '-Dstdout.encoding=UTF-8',
     '-Dstderr.encoding=UTF-8',
     '-Djava.util.logging.config.file=',
-    '-XX:+UseG1GC',
-    '-XX:+ParallelRefProcEnabled',
-    '-XX:MaxGCPauseMillis=200',
-    '-XX:+UnlockExperimentalVMOptions',
-    '-XX:+DisableExplicitGC',
-    '-XX:G1NewSizePercent=30',
-    '-XX:G1MaxNewSizePercent=40',
-    '-XX:G1HeapRegionSize=8M',
-    '-XX:G1ReservePercent=20',
-    '-XX:G1HeapWastePercent=5',
-    '-XX:G1MixedGCCountTarget=4',
-    '-XX:InitiatingHeapOccupancyPercent=15',
-    '-XX:G1MixedGCLiveThresholdPercent=90',
-    '-XX:G1RSetUpdatingPauseTimePercent=5',
-    '-XX:SurvivorRatio=32',
-    '-XX:+PerfDisableSharedMem',
-    '-XX:MaxTenuringThreshold=1',
+    '-Djava.awt.headless=false',
+
+    ...gcArgs,
+
+    '-Dorg.lwjgl.util.NoChecks=true',
+    '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=false',
   ]
 
   const needsVanillaCP = extraJvmArgs.includes('__needsVanillaClasspath__')
@@ -220,6 +276,7 @@ function launchGame(opts) {
   const spawnCwd = shimWorkDir || instancePath
 
   onLog?.(`[Launcher] Java: ${javaPath}`)
+  onLog?.(`[Launcher] Java version: ${javaMajor} → GC: ${javaMajor >= 21 ? 'ZGC Generational' : 'G1GC'}`)
   onLog?.(`[Launcher] Main: ${mainClass}`)
   onLog?.(`[Launcher] Args: ${spawnArgs.slice(0, 5).join(' ')}...`)
 

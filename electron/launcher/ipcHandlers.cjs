@@ -531,6 +531,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           if (game) {
             const elapsed = game.stopTracker()
             runningGames.delete(gameKey)
+            try { process.setProcessPriority(process.pid, 'normal') } catch {}
             if (!win.isDestroyed()) {
               win.show()
               win.focus()
@@ -545,6 +546,15 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       if (hideLauncher && !win.isDestroyed()) {
         win.hide()
+      }
+
+      if (proc.pid) {
+        try {
+          process.setProcessPriority(proc.pid, 'below normal')
+        } catch {}
+        try {
+          process.setProcessPriority(process.pid, 'below normal')
+        } catch {}
       }
 
       const stopTracker = startPlaytimeTracker(profileId, profilesData, writeProfiles)
