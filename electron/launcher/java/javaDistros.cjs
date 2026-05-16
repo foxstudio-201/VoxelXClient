@@ -197,17 +197,18 @@ async function fetchAllDistros() {
   }
 }
 
-async function installDistro(pkg, installDir, onProgress) {
+async function installDistro(pkg, installBaseDir, onProgress) {
   const { distro, javaVersion, fileName, downloadUrl, isZip, isTarGz } = pkg
 
-  const javaExe = getJavaExe(installDir)
+  const installDir = path.join(installBaseDir, `${distro}-${javaVersion}`)
+  const javaExe    = getJavaExe(installDir)
 
   if (fs.existsSync(javaExe)) {
     onProgress?.({ phase: 'already_installed', percent: 100 })
     return javaExe
   }
 
-  const tmpDir  = path.join(path.dirname(installDir), '.jre-tmp')
+  const tmpDir  = path.join(path.dirname(installBaseDir), '.jre-tmp')
   const tmpFile = path.join(tmpDir, fileName || `java-${distro}-${javaVersion}.archive`)
   if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
@@ -267,13 +268,11 @@ async function installDistro(pkg, installDir, onProgress) {
   }
 
   if (!fs.existsSync(javaExe)) {
-
     const subDirs = fs.readdirSync(installDir, { withFileTypes: true })
       .filter(e => e.isDirectory())
     for (const sub of subDirs) {
       const candidate = getJavaExe(path.join(installDir, sub.name))
       if (fs.existsSync(candidate)) {
-
         const subPath = path.join(installDir, sub.name)
         const entries = fs.readdirSync(subPath)
         for (const entry of entries) {
@@ -288,6 +287,14 @@ async function installDistro(pkg, installDir, onProgress) {
   if (!fs.existsSync(javaExe)) {
     throw new Error(`Java executable not found after extraction: ${javaExe}`)
   }
+
+  try {
+    fs.writeFileSync(
+      path.join(installDir, '.vxc-java-meta.json'),
+      JSON.stringify({ distro, javaVersion, releaseVersion: pkg.releaseVersion, installedAt: new Date().toISOString() }, null, 2),
+      { encoding: 'utf-8' }
+    )
+  } catch {}
 
   onProgress?.({ phase: 'done', percent: 100 })
   return javaExe
@@ -316,6 +323,37 @@ function getProfileJreInfo(instancePath) {
   try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) } catch {}
 
   return { javaExe, jreDir, ...meta }
+}
+
+function getAllInstalledJavas(instancePath) {
+  const jreBaseDir = path.join(instancePath, 'jre')
+  if (!fs.existsSync(jreBaseDir)) return []
+
+  const results = []
+
+  const metaPath = path.join(jreBaseDir, '.vxc-java-meta.json')
+  const javaExe  = getJavaExe(jreBaseDir)
+  if (fs.existsSync(javaExe)) {
+    let meta = {}
+    try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) } catch {}
+    results.push({ javaExe, jreDir: jreBaseDir, ...meta })
+  }
+
+  try {
+    const entries = fs.readdirSync(jreBaseDir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const subDir  = path.join(jreBaseDir, entry.name)
+      const subExe  = getJavaExe(subDir)
+      if (!fs.existsSync(subExe)) continue
+      const subMeta = path.join(subDir, '.vxc-java-meta.json')
+      let meta = {}
+      try { meta = JSON.parse(fs.readFileSync(subMeta, 'utf-8')) } catch {}
+      results.push({ javaExe: subExe, jreDir: subDir, ...meta })
+    }
+  } catch {}
+
+  return results
 }
 
 async function extractZip(zipPath, destDir) {
@@ -353,6 +391,7 @@ module.exports = {
   deleteDistro,
   isDistroInstalled,
   getProfileJreInfo,
+  getAllInstalledJavas,
   getJavaExe,
   MC_JAVA_VERSIONS,
 }

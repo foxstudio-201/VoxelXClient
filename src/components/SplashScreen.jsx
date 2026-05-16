@@ -31,10 +31,14 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { loadAppSettings } from '../utils/appSettings'
+import { useLang } from '../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 export default function SplashScreen({ onDone }) {
+  const { t } = useLang()
+  const tRef = useRef(t)
+  tRef.current = t
   const [pct, setPct]         = useState(0)
   const [log, setLog]         = useState('Khởi tạo...')
   const [fadeOut, setFadeOut] = useState(false)
@@ -53,7 +57,7 @@ export default function SplashScreen({ onDone }) {
 
     async function run() {
 
-      setProgress(5, 'Khởi tạo ứng dụng...')
+      setProgress(5, (tRef.current('splash.init')))
       if (isElectron) {
         try {
           const v = await window.electronAPI.getVersion()
@@ -64,7 +68,7 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      setProgress(20, 'Tải cài đặt người dùng...')
+      setProgress(20, (tRef.current('splahs.loadSettings')))
       let autoCheckUpdate = true
       try {
         const s = await loadAppSettings()
@@ -80,12 +84,12 @@ export default function SplashScreen({ onDone }) {
       if (cancelled) return
 
       if (autoCheckUpdate && isElectron) {
-        setProgress(30, 'Kiểm tra cập nhật...')
+        setProgress(30, (tRef.current('splash.checkUpdate')))
         try {
           const updateResult = await window.electronAPI.checkUpdate()
           if (!cancelled && updateResult?.hasUpdate) {
 
-            setProgress(35, `Phiên bản mới ${updateResult.latestVersion} — đang mở cửa sổ cập nhật...`)
+            setProgress(35, (tRef.current('splash.newVersion')))
             await delay(400)
             window.electronAPI.openUpdateWindow(updateResult)
             return
@@ -93,14 +97,14 @@ export default function SplashScreen({ onDone }) {
         } catch {}
       }
 
-      setProgress(45, 'Tải dữ liệu tài khoản...')
+      setProgress(45, (tRef.current('splash.loadAccounts')))
       if (isElectron) {
         try {
           const accountData = await window.electronAPI.getAccounts()
           const selected = (accountData?.accounts || []).find(a => a.id === accountData?.selectedId)
 
           if (selected?.type === 'microsoft') {
-            setProgress(50, `Đồng bộ tài khoản Microsoft (${selected.username})...`)
+            setProgress(50, (tRef.current('splash.syncMs')))
             try {
               await window.electronAPI.msRefreshToken(selected.id)
             } catch {}
@@ -118,7 +122,7 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      setProgress(65, 'Tải danh sách profile...')
+      setProgress(65, (tRef.current('splash.loadProfiles')))
       if (isElectron) {
         try { await window.electronAPI.getProfiles() } catch {}
       }
@@ -126,7 +130,7 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      setProgress(80, 'Tải danh sách phiên bản game...')
+      setProgress(80, (tRef.current('splash.loadVersions')))
       if (isElectron) {
         try { await window.electronAPI.minecraftListVersions() } catch {}
       }
@@ -134,12 +138,12 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      setProgress(95, 'Hoàn tất khởi động...')
+      setProgress(95, (tRef.current('splash.finishing')))
       await delay(200)
 
       if (cancelled) return
 
-      setProgress(100, 'Sẵn sàng!')
+      setProgress(100, (tRef.current('splash.ready')))
       await delay(350)
 
       if (cancelled) return

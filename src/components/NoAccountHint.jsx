@@ -30,8 +30,10 @@
  */
 
 import { useEffect, useState } from 'react'
+import { useLang } from '../i18n/LangProvider'
 
 export default function NoAccountHint({ onGoToAccount }) {
+  const { t } = useLang()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -124,14 +126,14 @@ export default function NoAccountHint({ onGoToAccount }) {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white leading-tight">Chưa có tài khoản</p>
-                  <p className="text-[11px] text-white/35">Cần tài khoản để chơi</p>
+                  <p className="text-sm font-bold text-white leading-tight">{t('noacccounthint.noaccount')}</p>
+                  <p className="text-[11px] text-white/35">{t('noacccounthint.needacccount')}</p>
                 </div>
               </div>
 
               <p className="text-[11px] text-white/45 leading-relaxed mb-3.5">
-                Tạo tài khoản <span className="text-white/70 font-medium">Offline</span> hoặc đăng nhập{' '}
-                <span className="text-white/70 font-medium">Microsoft</span> để bắt đầu khởi động Minecraft.
+                {t('noacccounthint.createacccount')} <span className="text-white/70 font-medium">Offline</span> {t('noacccounthint.ofloggins')}{' '}
+                <span className="text-white/70 font-medium">Microsoft</span> {t('noacccounthint.tostartmc')}
               </p>
 
               {}
@@ -147,7 +149,7 @@ export default function NoAccountHint({ onGoToAccount }) {
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                   <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                 </svg>
-                Tạo tài khoản ngay
+                {t('noacccounthint.createnow')}
               </button>
             </div>
           </div>

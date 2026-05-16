@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VoxelXClient — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
@@ -30,6 +30,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { useLang } from '../../i18n/LangProvider'
 import adoptiumIcon from '../../assets/java-icon/adoptium.png'
 import azulIcon     from '../../assets/java-icon/azul.png'
 import vanillaIcon  from '../../assets/server-icon/vanilla-server.png'
@@ -65,6 +66,7 @@ const JAVA_DISTROS = {
 const MC_JAVA_MAP = { 8: 'MC ≤ 1.16', 11: 'MC 1.17 (mod)', 17: 'MC 1.17–1.20', 21: 'MC 1.21+', 25: 'Tương lai' }
 
 function JavaDropdown({ value, onChange }) {
+  const {t} = useLang()
   const [open, setOpen]       = useState(false)
   const [distros, setDistros] = useState({ adoptium: [], azul: [], graalvm: [] })
   const [loading, setLoading] = useState(false)
@@ -105,7 +107,7 @@ function JavaDropdown({ value, onChange }) {
               {value.javaVersion}
             </div>
             <span className="text-white/80 flex-1">Java {value.javaVersion} — {JAVA_DISTROS[value.distro]?.name || value.distro}</span>
-            <span className="text-[10px] text-white/30">Tải sau khi tạo</span>
+            <span className="text-[10px] text-white/30">{t('server.create.javaDownloadLater')}</span>
             <div role="button" tabIndex={0}
               onClick={e => { e.stopPropagation(); onChange(null) }}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onChange(null) } }}
@@ -120,7 +122,7 @@ function JavaDropdown({ value, onChange }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4 text-white/25 flex-shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
-            <span className="text-white/35 flex-1">Chọn Java runtime...</span>
+            <span className="text-white/35 flex-1">{t('server.create.javaPlaceholder')}</span>
             <svg viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 text-white/25 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}>
               <path d="M7 10l5 5 5-5z"/>
             </svg>
@@ -144,7 +146,7 @@ function JavaDropdown({ value, onChange }) {
               </button>
             )}
             <span className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-              {step === 'distro' ? 'Chọn Java Distribution' : `${JAVA_DISTROS[selDistro]?.name} — Chọn phiên bản`}
+              {step === 'distro' ? t('server.create.javaSelectDistro') : t('server.create.javaSelectVersion', { name: JAVA_DISTROS[selDistro]?.name })}
             </span>
             {loading && (
               <svg className="animate-spin w-3 h-3 text-green-400/50 ml-auto" viewBox="0 0 24 24" fill="none">
@@ -170,7 +172,7 @@ function JavaDropdown({ value, onChange }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white/80">{d.name}</p>
-                  <p className="text-[10px] text-white/30">{(distros[d.id] || []).length} phiên bản</p>
+                  <p className="text-[10px] text-white/30">{t('server.create.javaVersions', { count: (distros[d.id] || []).length })}</p>
                 </div>
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0">
                   <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
@@ -180,7 +182,7 @@ function JavaDropdown({ value, onChange }) {
           ) : (
 
             currentVersions.length === 0
-              ? <div className="px-3 py-4 text-xs text-white/25 text-center">Không có phiên bản nào</div>
+              ? <div className="px-3 py-4 text-xs text-white/25 text-center">{t('server.create.javaNoVersions')}</div>
               : currentVersions.map(pkg => {
                   const d = JAVA_DISTROS[pkg.distro]
                   const mcNote = MC_JAVA_MAP[pkg.javaVersion] || ''
@@ -196,7 +198,7 @@ function JavaDropdown({ value, onChange }) {
                         <p className="text-sm font-semibold text-white/80">Java {pkg.javaVersion}</p>
                         {mcNote && <p className="text-[10px] text-green-400/70">{mcNote}</p>}
                       </div>
-                      <span className="text-[10px] text-white/20 group-hover:text-green-400/60 transition-colors">Chọn →</span>
+                      <span className="text-[10px] text-white/20 group-hover:text-green-400/60 transition-colors">{t('server.create.javaSelect')}</span>
                     </button>
                   )
                 })
@@ -207,18 +209,14 @@ function JavaDropdown({ value, onChange }) {
   )
 }
 
-const JVM_PRESETS = [
+const JVM_PRESET_IDS = [
   {
     id: 'default',
-    label: 'Mặc định',
-    desc: 'Cấu hình cơ bản, phù hợp mọi server',
     badge: null,
     args: (ram) => `-Xmx${ram}G -Xms${Math.min(1, ram)}G -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200`,
   },
   {
     id: 'aikar',
-    label: 'Aikar Flags',
-    desc: 'Tối ưu GC cho server đông người, giảm lag spike',
     badge: 'Recommended',
     badgeColor: 'bg-green-500/20 text-green-400',
     args: (ram) =>
@@ -232,8 +230,6 @@ const JVM_PRESETS = [
   },
   {
     id: 'graalvm',
-    label: 'GraalVM Optimized',
-    desc: 'Tối ưu cho GraalVM JIT, hiệu năng cao nhất',
     badge: 'Best Perf',
     badgeColor: 'bg-purple-500/20 text-purple-400',
     args: (ram) =>
@@ -247,8 +243,6 @@ const JVM_PRESETS = [
   },
   {
     id: 'zgc',
-    label: 'ZGC (Java 21+)',
-    desc: 'Garbage collector thế hệ mới, pause cực thấp',
     badge: 'Low Latency',
     badgeColor: 'bg-blue-500/20 text-blue-400',
     args: (ram) =>
@@ -257,26 +251,29 @@ const JVM_PRESETS = [
   },
   {
     id: 'minimal',
-    label: 'Minimal',
-    desc: 'Nhẹ nhất, dành cho máy yếu hoặc server nhỏ',
     badge: 'Lightweight',
     badgeColor: 'bg-yellow-500/20 text-yellow-400',
     args: (ram) => `-Xmx${ram}G -Xms256M -XX:+UseSerialGC`,
   },
   {
     id: 'custom',
-    label: 'Tuỳ chỉnh',
-    desc: 'Nhập JVM flags thủ công',
     badge: null,
     args: () => '',
   },
 ]
 
 function JvmPresetDropdown({ value, onChange, ramGb }) {
+  const { t } = useLang()
   const [open, setOpen]           = useState(false)
   const [selectedId, setSelectedId] = useState('default')
   const [customValue, setCustomValue] = useState('')
   const ref = useRef(null)
+
+  const JVM_PRESETS = JVM_PRESET_IDS.map(p => ({
+    ...p,
+    label: t(`server.jvmPreset.${p.id}`),
+    desc:  t(`server.jvmPreset.${p.id}Desc`),
+  }))
 
   useEffect(() => {
     const preset = JVM_PRESETS.find(p => p.id === 'default')
@@ -375,14 +372,15 @@ function JvmPresetDropdown({ value, onChange, ramGb }) {
         rows={3}
         className="w-full bg-white/3 border border-white/8 rounded-lg px-3 py-2 text-[11px] text-white/55 font-mono focus:outline-none focus:border-white/20 transition-all resize-none"
         style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
-        placeholder="JVM flags sẽ hiện ở đây..."
+        placeholder={t('server.create.jvmFlagsPlaceholder')}
       />
-      <p className="text-[10px] text-white/20">Chỉnh sửa trực tiếp để tuỳ chỉnh. RAM được tự động điền theo cấu hình.</p>
+      <p className="text-[10px] text-white/20">{t('server.create.jvmFlagsHint')}</p>
     </div>
   )
 }
 
 export default function CreateServerModal({ onClose, onCreate }) {
+  const { t } = useLang()
   const [step, setStep]           = useState(1)
   const [selectedType, setType]   = useState(null)
   const [versions, setVersions]   = useState([])
@@ -469,10 +467,10 @@ export default function CreateServerModal({ onClose, onCreate }) {
   }
 
   async function handleCreate() {
-    if (!form.name.trim())     { setError('Vui lòng nhập tên server'); return }
-    if (!form.gameVersion)     { setError('Vui lòng chọn phiên bản'); return }
-    if (!selectedJavaPkg)      { setError('Chưa chọn Java'); return }
-    if (!form.acceptEula)      { setError('Bạn phải chấp nhận EULA của Minecraft'); return }
+    if (!form.name.trim())     { setError(t('server.create.errorName')); return }
+    if (!form.gameVersion)     { setError(t('server.create.errorVersion')); return }
+    if (!selectedJavaPkg)      { setError(t('server.create.errorJava')); return }
+    if (!form.acceptEula)      { setError(t('server.create.errorEula')); return }
 
     setCreating(true)
     setError('')
@@ -518,9 +516,11 @@ export default function CreateServerModal({ onClose, onCreate }) {
         <div className="flex-shrink-0 border-b border-white/5">
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <h3 className="text-white font-bold text-sm">Tạo Server Minecraft</h3>
+              <h3 className="text-white font-bold text-sm">{t('server.create.title')}</h3>
               <p className="text-white/30 text-xs mt-0.5">
-                {step === 1 ? 'Bước 1: Chọn loại server' : `Bước 2: Cấu hình — ${selectedType?.label}`}
+                {step === 1
+                  ? t('server.create.step1')
+                  : t('server.create.step2', { type: selectedType?.label || '' })}
               </p>
             </div>
             <button onClick={onClose}
@@ -537,9 +537,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
               </svg>
-              <p className="text-xs text-yellow-300/80 leading-relaxed">
-                Bạn phải <span className="font-bold text-yellow-300">chấp nhận Minecraft EULA</span> trước khi tạo server. Kéo xuống cuối để tích chọn.
-              </p>
+              <p className="text-xs text-yellow-300/80 leading-relaxed">{t('server.create.eulaWarning')}</p>
             </div>
           )}
         </div>
@@ -581,7 +579,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                  </div>
                  <button onClick={() => setStep(1)}
                    className="ml-auto text-xs text-white/30 hover:text-white/60 transition-colors">
-                   Đổi
+                   {t('server.create.changeType')}
                  </button>
                </div>
 
@@ -592,27 +590,27 @@ export default function CreateServerModal({ onClose, onCreate }) {
                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                    </svg>
                    <p className="text-xs text-red-300/80 leading-relaxed">
-                     <span className="font-bold">{selectedType.label}</span> không hỗ trợ phiên bản <span className="font-bold">{form.gameVersion}</span>. Vui lòng chọn loại server khác hoặc phiên bản khác.
+                     {t('server.create.unsupportedVersion', { type: selectedType.label, version: form.gameVersion })}
                    </p>
                  </div>
                )}
 
               {}
               <div>
-                <label className={labelCls}>Tên server</label>
+                <label className={labelCls}>{t('server.create.nameLabel')}</label>
                 <input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="My Minecraft Server" />
               </div>
 
               {}
               <div>
-                <label className={labelCls}>Phiên bản Minecraft</label>
+                <label className={labelCls}>{t('server.create.versionLabel')}</label>
                 <div ref={versionRef} className="relative">
                   <button
                     type="button"
                     onClick={() => setVersionOpen(v => !v)}
                     className={`${inputCls} flex items-center justify-between text-left cursor-pointer ${!form.gameVersion ? 'text-white/30' : ''}`}
                   >
-                    <span>{form.gameVersion || 'Chọn phiên bản...'}</span>
+                    <span>{form.gameVersion || t('server.create.versionPlaceholder')}</span>
                     <svg viewBox="0 0 24 24" fill="currentColor"
                       className={`w-4 h-4 text-white/30 flex-shrink-0 transition-transform duration-150 ${versionOpen ? 'rotate-180' : ''}`}>
                       <path d="M7 10l5 5 5-5z"/>
@@ -628,10 +626,10 @@ export default function CreateServerModal({ onClose, onCreate }) {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                           </svg>
-                          <span className="text-xs text-white/30">Đang tải phiên bản {selectedType?.label}...</span>
+                          <span className="text-xs text-white/30">{t('server.create.versionLoading', { type: selectedType?.label || '' })}</span>
                         </div>
                       ) : versions.length === 0 ? (
-                        <div className="px-3 py-3 text-xs text-white/30 text-center">Không có phiên bản nào</div>
+                        <div className="px-3 py-3 text-xs text-white/30 text-center">{t('server.create.noVersions')}</div>
                       ) : (
                         versions.map(v => {
                           const hasBuild = versionBuildStatus[v] !== false
@@ -650,7 +648,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                               <span>{v}</span>
                               {!hasBuild && (
                                 <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-orange-500/15 text-orange-300 border border-orange-500/25 flex-shrink-0">
-                                  Chưa có build
+                                  {t('server.create.versionNoBuilds')}
                                 </span>
                               )}
                             </button>
@@ -665,14 +663,14 @@ export default function CreateServerModal({ onClose, onCreate }) {
               {}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>RAM: <span className="text-green-400 normal-case font-bold">{form.ramGb} GB</span></label>
+                  <label className={labelCls}>{t('server.create.ramLabel')}: <span className="text-green-400 normal-case font-bold">{form.ramGb} GB</span></label>
                   <input type="range" min="1" max="32" step="1" value={form.ramGb}
                     onChange={e => set('ramGb', Number(e.target.value))}
                     className="w-full accent-green-500 cursor-pointer" />
                   <div className="flex justify-between text-[10px] text-white/20 mt-1"><span>1 GB</span><span>32 GB</span></div>
                 </div>
                 <div>
-                  <label className={labelCls}>CPU Cores: <span className="text-green-400 normal-case font-bold">{form.cores}</span></label>
+                  <label className={labelCls}>{t('server.create.coresLabel')}: <span className="text-green-400 normal-case font-bold">{form.cores}</span></label>
                   <input type="range" min="1" max="16" step="1" value={form.cores}
                     onChange={e => set('cores', Number(e.target.value))}
                     className="w-full accent-green-500 cursor-pointer" />
@@ -684,7 +682,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
               <div className="grid grid-cols-2 gap-3">
                 {}
                 <div className="flex flex-col gap-2">
-                  <label className={labelCls}>Online Mode</label>
+                  <label className={labelCls}>{t('server.create.onlineModeLabel')}</label>
                   <button type="button"
                     onClick={() => set('onlineMode', !form.onlineMode)}
                     className={`flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all ${
@@ -697,7 +695,7 @@ export default function CreateServerModal({ onClose, onCreate }) {
                         <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
                       </svg>
                       <span className={`text-xs font-semibold ${form.onlineMode ? 'text-green-400' : 'text-white/40'}`}>
-                        {form.onlineMode ? 'Bật' : 'Tắt'}
+                        {form.onlineMode ? t('server.create.toggleOn') : t('server.create.toggleOff')}
                       </span>
                     </div>
                     {}
@@ -707,28 +705,28 @@ export default function CreateServerModal({ onClose, onCreate }) {
                   </button>
                   <p className="text-[10px] text-white/25 leading-relaxed">
                     {form.onlineMode
-                      ? 'Yêu cầu tài khoản Minecraft chính hãng'
-                      : 'Cho phép tài khoản offline (cracked)'}
+                      ? t('server.create.onlineModeDesc')
+                      : t('server.create.onlineModeOffDesc')}
                   </p>
                 </div>
 
                 {}
                 <div className="flex flex-col gap-2">
-                  <label className={labelCls}>Max Players</label>
+                  <label className={labelCls}>{t('server.create.maxPlayersLabel')}</label>
                   <input
                     type="number" min="1" max="1000" step="1"
                     value={form.maxPlayers}
                     onChange={e => set('maxPlayers', Math.max(1, Math.min(1000, parseInt(e.target.value) || 20)))}
                     className={`${inputCls} font-mono`}
-                    placeholder="20"
+                    placeholder={t('server.create.maxPlayersPlaceholder')}
                   />
-                  <p className="text-[10px] text-white/25">Số người chơi tối đa (1–1000)</p>
+                  <p className="text-[10px] text-white/25">{t('server.create.maxPlayersHint')}</p>
                 </div>
               </div>
 
               {}
               <div>
-                <label className={labelCls}>JVM Arguments</label>
+                <label className={labelCls}>{t('server.create.jvmLabel')}</label>
                 <JvmPresetDropdown
                   value={form.jvmArgs}
                   onChange={v => set('jvmArgs', v)}
@@ -738,23 +736,23 @@ export default function CreateServerModal({ onClose, onCreate }) {
 
               {}
               <div>
-                <label className={labelCls}>Java Runtime</label>
+                <label className={labelCls}>{t('server.create.javaLabel')}</label>
                 <JavaDropdown value={selectedJavaPkg} onChange={setSelectedJavaPkg} />
                 <p className="text-[10px] text-white/20 mt-1">
-                  Hãy chọn Java runtime trước khi tạo server. Java sẽ được tải vào thư mục server sau khi tạo xong.
+                  {t('server.create.javaHint')}
                 </p>
               </div>
 
               {}
               <div>
-                <label className={labelCls}>Thư mục server (để trống = tự động)</label>
+                <label className={labelCls}>{t('server.create.serverPathLabel')}</label>
                 <div className="flex gap-2">
                   <input className={`${inputCls} flex-1 font-mono text-xs`} value={form.serverPath}
                     onChange={e => set('serverPath', e.target.value)}
-                    placeholder="Tự động tạo trong thư mục servers/" />
+                    placeholder={t('server.create.serverPathPlaceholder')} />
                   <button onClick={handleBrowse}
                     className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/8 transition-all text-xs flex-shrink-0">
-                    Chọn
+                    {t('server.create.serverPathBrowse')}
                   </button>
                 </div>
               </div>
@@ -772,10 +770,10 @@ export default function CreateServerModal({ onClose, onCreate }) {
                   )}
                 </button>
                 <div>
-                  <p className="text-xs font-semibold text-white/70">Chấp nhận Minecraft EULA</p>
+                  <p className="text-xs font-semibold text-white/70">{t('server.create.eulaLabel')}</p>
                   <p className="text-[10px] text-white/30 mt-0.5">
-                    Tôi đồng ý với{' '}
-                    <span className="text-green-400/70">Minecraft End User License Agreement</span>.
+                    {t('server.create.eulaDesc')}{' '}
+                    <span className="text-green-400/70">{t('server.create.eulaFullName')}</span>.
                   </p>
                 </div>
               </div>
@@ -792,21 +790,21 @@ export default function CreateServerModal({ onClose, onCreate }) {
           <div className="flex gap-2 px-5 py-4 border-t border-white/5 flex-shrink-0">
             <button onClick={() => setStep(1)}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/50 hover:text-white border border-white/8 hover:bg-white/5 transition-all">
-              Quay lại
+              {t('server.create.backBtn')}
             </button>
             <button onClick={handleCreate} disabled={creating || !form.acceptEula}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
               style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: '0 4px 16px rgba(34,197,94,0.25)' }}
-              title={!form.acceptEula ? 'Vui lòng chấp nhận EULA trước' : ''}>
+              title={!form.acceptEula ? t('server.create.errorEula') : ''}>
               {creating ? (
                 <>
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  Đang tạo...
+                  {t('server.create.creating')}
                 </>
-              ) : 'Tạo Server'}
+              ) : t('server.create.createBtn')}
             </button>
           </div>
         )}
@@ -814,4 +812,3 @@ export default function CreateServerModal({ onClose, onCreate }) {
     </div>
   )
 }
-

@@ -30,6 +30,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useLang } from '../../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -80,6 +81,7 @@ function LinkButton({ href, icon, label }) {
 }
 
 export default function AboutTab() {
+  const { t } = useLang()
   const [version, setVersion] = useState('')
   const [hwid, setHwid]       = useState('')
   const [hwidCopied, setHwidCopied] = useState(false)
@@ -108,7 +110,6 @@ export default function AboutTab() {
 
       {}
       <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07] p-6 mb-6 relative overflow-hidden">
-        {}
         <div
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
@@ -119,11 +120,9 @@ export default function AboutTab() {
             backgroundSize: '20px 20px',
           }}
         />
-        {}
         <div className="absolute bottom-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-5">
-          {}
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400/20 to-emerald-600/20 border border-green-500/20 flex items-center justify-center flex-shrink-0">
             <VXCLogo size={32} />
           </div>
@@ -142,34 +141,33 @@ export default function AboutTab() {
 
       {}
       <div className="mb-6">
-        <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">Thông tin kỹ thuật</p>
+        <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">{t('settings.about.techInfo')}</p>
         <div className="rounded-xl border border-white/5 bg-white/2 px-4">
-          <InfoRow label="Nhà phát triển"  value="FoxStudio" />
-          <InfoRow label="Engine"          value="Electron + React" />
-          <InfoRow label="Renderer"        value="Vite 8" />
-          <InfoRow label="License"         value="MIT" mono />
-          <InfoRow label="Phiên bản"       value={version || '...'} mono />
+          <InfoRow label={t('settings.about.developer')} value="FoxStudio" />
+          <InfoRow label="Engine"                        value="Electron + React" />
+          <InfoRow label={t('settings.about.renderer')} value="Vite 8" />
+          <InfoRow label={t('settings.about.license')}  value="MIT" mono />
+          <InfoRow label={t('settings.about.version')}  value={version || '...'} mono />
         </div>
       </div>
 
       {}
       <div className="mb-6">
-        <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">Thiết bị</p>
+        <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">{t('settings.about.device')}</p>
         <div className="rounded-xl border border-white/5 bg-white/2 px-4 py-1">
           <div className="flex items-center justify-between py-2.5">
             <span className="text-xs text-white/40">Hardware ID</span>
             <div className="flex items-center gap-2 group/hwid">
-              {/* Blur mặc định, hover mới hiện rõ */}
               <span
                 className="text-[11px] font-mono text-green-400/80 select-all transition-all duration-200 blur-sm group-hover/hwid:blur-none"
-                title="Hover để xem HWID"
+                title={t('settings.about.hwidHint')}
               >
                 {hwid || '...'}
               </span>
               <button
                 onClick={copyHwid}
                 disabled={!hwid}
-                title="Sao chép HWID"
+                title={t('settings.about.hwidCopy')}
                 className="p-1 rounded-md text-white/20 hover:text-white/60 hover:bg-white/8 transition-all disabled:opacity-30 opacity-0 group-hover/hwid:opacity-100"
               >
                 {hwidCopied ? (
@@ -185,14 +183,14 @@ export default function AboutTab() {
             </div>
           </div>
           <p className="text-[10px] text-white/20 pb-2 -mt-1">
-            ID duy nhất của thiết bị này. Dùng để hỗ trợ kỹ thuật.
+            {t('settings.about.hwidDesc')}
           </p>
         </div>
       </div>
 
       {}
       <div className="mb-6">
-        <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">Liên kết</p>
+        <p className="text-xs uppercase tracking-widest text-white/40 mb-2 px-1">{t('settings.about.links')}</p>
         <div className="flex flex-col gap-2">
           <LinkButton
             href="#"

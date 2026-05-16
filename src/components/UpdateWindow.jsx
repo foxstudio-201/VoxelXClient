@@ -30,6 +30,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { useLang } from '../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -40,6 +41,9 @@ function formatBytes(b) {
 }
 
 export default function UpdateWindow() {
+  const { t } = useLang()
+  const tRef = useRef(t)
+  tRef.current = t
   const [status, setStatus]     = useState('idle')
   const [result, setResult]     = useState(null)
   const [version, setVersion]   = useState('')
@@ -47,13 +51,10 @@ export default function UpdateWindow() {
   const [errorMsg, setErrorMsg] = useState('')
   const unsubRef = useRef(null)
   const preloadReceivedRef = useRef(false)
-  // Ref để gọi download từ trong useEffect mà không bị stale closure
   const startDownloadRef = useRef(null)
-
-  // Hàm download — dùng ref để tránh stale closure khi gọi từ useEffect
   async function runDownload(r) {
     if (!r?.installerAsset) {
-      setErrorMsg('Không tìm thấy file cài đặt cho hệ điều hành này.')
+      setErrorMsg(tRef.current('update.errorNoInstaller'))
       setStatus('error')
       return
     }
@@ -70,7 +71,7 @@ export default function UpdateWindow() {
         : { ok: true, filePath: '/tmp/fake.exe' }
 
       if (res?.error) {
-        setErrorMsg(`Tải thất bại: ${res.error}`)
+        setErrorMsg(tRef.current('update.errorDownload', { detail: res.error }))
         setStatus('error')
         return
       }
@@ -83,7 +84,7 @@ export default function UpdateWindow() {
         : { ok: true }
 
       if (installRes?.error) {
-        setErrorMsg(`Cài đặt thất bại: ${installRes.error}`)
+        setErrorMsg(tRef.current('update.errorInstall', { detail: installRes.error }))
         setStatus('error')
       }
     } catch (err) {
@@ -92,7 +93,6 @@ export default function UpdateWindow() {
     }
   }
 
-  // Gán ref để useEffect có thể gọi mà không stale
   startDownloadRef.current = runDownload
 
   useEffect(() => {
@@ -111,10 +111,8 @@ export default function UpdateWindow() {
 
         if (res?.hasUpdate) {
           if (res?.autoDownload) {
-            // Mở từ splash → tự động tải ngay, không hiện nút chọn
             startDownloadRef.current(res)
           } else {
-            // Mở từ tray → hiện nút để user chủ động bấm
             setStatus('updateAvailable')
           }
         } else {
@@ -129,12 +127,11 @@ export default function UpdateWindow() {
     }
   }, [])
 
-  // Fallback: nếu sau 1s không nhận preloadResult (mở từ tray không truyền data)
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (status === 'idle' && !preloadReceivedRef.current) handleCheck()
     }, 1000)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [])
 
   async function handleCheck() {
@@ -154,13 +151,12 @@ export default function UpdateWindow() {
       } else if (res.noRelease) {
         setStatus('noRelease')
       } else if (res.hasUpdate) {
-        // Từ tray → hiện nút, không tự tải
         setStatus('updateAvailable')
       } else {
         setStatus('upToDate')
       }
     } catch (err) {
-      setErrorMsg('Không thể kiểm tra cập nhật. Vui lòng thử lại.')
+      setErrorMsg(tRef.current('update.errorCheck'))
       setStatus('error')
     }
   }
@@ -192,7 +188,7 @@ export default function UpdateWindow() {
             </svg>
           </div>
           <span className="text-xs font-semibold text-white/50 tracking-widest uppercase">
-            Cập nhật VoxelXClient
+            {t('update.title')}
           </span>
         </div>
         <button onClick={handleClose}
@@ -218,7 +214,7 @@ export default function UpdateWindow() {
         <div className="text-center flex-shrink-0">
           <h1 className="text-lg font-bold text-white">VoxelXClient</h1>
           <p className="text-xs text-white/30 mt-1">
-            Phiên bản hiện tại: <span className="text-white/50 font-mono">{version || '...'}</span>
+            {t('update.currentVersion')} <span className="text-white/50 font-mono">{version || '...'}</span>
           </p>
         </div>
 
@@ -232,7 +228,7 @@ export default function UpdateWindow() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              <p className="text-sm text-white/40">Đang kiểm tra cập nhật...</p>
+              <p className="text-sm text-white/40">{t('update.checking')}</p>
             </div>
           )}
 
@@ -244,7 +240,7 @@ export default function UpdateWindow() {
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                 </svg>
               </div>
-              <p className="text-sm font-semibold text-white/70">Bạn đang dùng phiên bản mới nhất</p>
+              <p className="text-sm font-semibold text-white/70">{t('update.upToDate')}</p>
               <p className="text-xs text-white/30 mt-1 font-mono">{result?.currentVersion}</p>
             </div>
           )}
@@ -252,7 +248,7 @@ export default function UpdateWindow() {
           {}
           {status === 'noRelease' && (
             <div className="rounded-xl border border-yellow-500/15 bg-yellow-500/5 p-5 text-center">
-              <p className="text-sm text-yellow-400/80 font-semibold">Chưa có bản phát hành nào</p>
+              <p className="text-sm text-yellow-400/80 font-semibold">{t('update.noRelease')}</p>
               <p className="text-xs text-white/30 mt-1">Phiên bản hiện tại là bản mới nhất.</p>
             </div>
           )}
@@ -267,7 +263,7 @@ export default function UpdateWindow() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-green-400">Có phiên bản mới!</p>
+                  <p className="text-sm font-bold text-green-400">{t('update.hasUpdate')}</p>
                   <p className="text-xs text-white/40 mt-0.5">
                     <span className="font-mono">{result.currentVersion}</span>
                     <span className="mx-1.5 text-white/20">→</span>
@@ -281,7 +277,7 @@ export default function UpdateWindow() {
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                     <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                   </svg>
-                  Tải & Cài đặt v{result.latestVersion}
+                  {t('update.downloadBtn', { version: result.latestVersion })}
                 </button>
               ) : (
                 <button onClick={() => openUrl(result.releaseUrl)}
@@ -289,7 +285,7 @@ export default function UpdateWindow() {
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                     <path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
                   </svg>
-                  Mở trang tải xuống
+                  {t('update.openRelease')}
                 </button>
               )}
             </div>
@@ -303,15 +299,12 @@ export default function UpdateWindow() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
-                <p className="text-sm font-semibold text-white/80">Đang tải bản cập nhật...</p>
+                <p className="text-sm font-semibold text-white/80">{t('update.downloading')}</p>
               </div>
-
-              {}
               <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-2">
                 <div className="h-full bg-green-400 rounded-full transition-all duration-300"
                   style={{ width: `${dlProgress?.percent ?? 0}%` }} />
               </div>
-
               <div className="flex items-center justify-between text-xs text-white/30">
                 <span>
                   {dlProgress?.downloaded ? formatBytes(dlProgress.downloaded) : '0 KB'}
@@ -324,7 +317,6 @@ export default function UpdateWindow() {
                   <span className="font-mono font-bold text-white/50">{dlProgress?.percent ?? 0}%</span>
                 </div>
               </div>
-
               {result?.installerAsset && (
                 <p className="text-[10px] text-white/20 mt-2 truncate">{result.installerAsset.name}</p>
               )}
@@ -338,8 +330,7 @@ export default function UpdateWindow() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              <p className="text-sm font-bold text-green-400">Đang khởi chạy trình cài đặt...</p>
-              <p className="text-xs text-white/30 mt-1">Ứng dụng sẽ đóng và tự động cập nhật.</p>
+              <p className="text-sm font-bold text-green-400">{t('update.installing')}</p>
             </div>
           )}
 
@@ -352,7 +343,7 @@ export default function UpdateWindow() {
               <p className="text-sm text-red-400">{errorMsg}</p>
               <button onClick={handleCheck}
                 className="mt-3 text-xs text-white/40 hover:text-white/70 transition-colors">
-                Thử lại
+                {t('update.errorRetry')}
               </button>
             </div>
           )}
@@ -362,7 +353,7 @@ export default function UpdateWindow() {
         {['idle', 'upToDate', 'noRelease', 'error'].includes(status) && (
           <button onClick={handleCheck}
             className="px-8 py-2.5 rounded-xl text-sm font-bold bg-green-500 hover:bg-green-400 text-white transition-all duration-200 active:scale-95 flex-shrink-0">
-            Kiểm tra lại
+            {t('update.checkBtn')}
           </button>
         )}
 

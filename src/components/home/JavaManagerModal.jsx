@@ -106,19 +106,24 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
   const [installing, setInstalling]   = useState(null)
   const [installProgress, setInstallProgress] = useState(null)
   const [installError, setInstallError] = useState(null)
+  const [successMsg, setSuccessMsg]   = useState(null)
   const unsubRef = useRef(null)
 
   useEffect(() => {
     if (!isElectron) { setLoading(false); return }
     setLoading(true)
-    window.electronAPI.javaFetchDistros(profile?.id)
-      .then(r => {
-        if (r?.ok) {
-          setDistros(r.distros || { adoptium: [], azul: [], graalvm: [] })
-
-          setInstalled(r.installedInfo ? [r.installedInfo] : [])
+    Promise.all([
+      window.electronAPI.javaFetchDistros(profile?.id),
+      window.electronAPI.javaGetInstalled(profile?.id),
+    ])
+      .then(([r1, r2]) => {
+        if (r1?.ok) {
+          setDistros(r1.distros || { adoptium: [], azul: [], graalvm: [] })
         } else {
-          setFetchError(r?.error || 'Không thể tải danh sách Java')
+          setFetchError(r1?.error || 'Không thể tải danh sách Java')
+        }
+        if (r2?.ok) {
+          setInstalled(r2.installed || [])
         }
       })
       .catch(err => setFetchError(err.message))
@@ -152,9 +157,9 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
     setInstalling({ distro: pkg.distro, javaVersion: pkg.javaVersion })
     setInstallProgress({ phase: 'starting', percent: 0 })
     setInstallError(null)
+    setSuccessMsg(null)
 
     try {
-
       let r
       if (installDir) {
         r = await window.electronAPI.javaInstallToDir(pkg, installDir)
@@ -165,18 +170,19 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
       }
 
       if (r?.ok) {
-
+        // Refresh danh sách installed
         if (!serverId) {
           const r2 = await window.electronAPI.javaGetInstalled(profile?.id)
-          if (r2?.ok) setInstalled(r2.installedInfo ? [r2.installedInfo] : [])
+          if (r2?.ok) setInstalled(r2.installed || [])
         }
 
-        onJavaSelected?.(r.javaExe, pkg)
         setInstallProgress({ phase: 'done', percent: 100 })
+        setSuccessMsg(`Java ${pkg.javaVersion} (${DISTROS[pkg.distro]?.short || pkg.distro}) đã tải xong!`)
+
         setTimeout(() => {
           setInstalling(null)
           setInstallProgress(null)
-          onClose()
+          // Không tự đóng modal, không tự chọn
         }, 1200)
       } else {
         setInstallError(r?.error || 'Cài đặt thất bại')
@@ -190,12 +196,19 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
     }
   }
 
-  function handleUseInstalled(distro, javaVersion) {
+  async function handleSelect(distro, javaVersion) {
     const exe = getInstalledExe(distro, javaVersion)
-    if (exe) {
-      onJavaSelected?.(exe, { distro, javaVersion })
-      onClose()
-    }
+    if (!exe || !isElectron) return
+    await window.electronAPI.javaSelect(profile?.id, exe)
+    onJavaSelected?.(exe, { distro, javaVersion })
+    onClose()
+  }
+
+  async function handleDelete(distro, javaVersion) {
+    if (!isElectron) return
+    await window.electronAPI.javaDelete(profile?.id, distro, javaVersion)
+    const r = await window.electronAPI.javaGetInstalled(profile?.id)
+    if (r?.ok) setInstalled(r.installed || [])
   }
 
   const distroList = Object.values(DISTROS)
@@ -214,7 +227,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
           maxHeight: '85vh',
         }}>
 
-        {}
+        {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             {step === 'versions' && (
@@ -232,7 +245,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
               <p className="text-white/30 text-xs mt-0.5">
                 {step === 'distro'
                   ? 'Chỉ hiển thị các phiên bản Java mà Minecraft hỗ trợ'
-                  : 'Chọn phiên bản Java phù hợp với Minecraft bạn chơi'
+                  : 'Tải nhiều phiên bản Java khác nhau và chọn bất kỳ cái nào đã cài'
                 }
               </p>
             </div>
@@ -245,7 +258,22 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
           </button>
         </div>
 
-        {}
+        {/* Success message banner */}
+        {successMsg && (
+          <div className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-green-500/10 border-b border-green-500/20">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-green-400 flex-shrink-0">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+            <p className="text-xs text-green-400">{successMsg}</p>
+            <button onClick={() => setSuccessMsg(null)} className="ml-auto text-green-400/50 hover:text-green-400 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Body */}
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -276,7 +304,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                   <button key={d.id}
                     onClick={() => { setSelectedDistro(d.id); setStep('versions') }}
                     className="flex items-start gap-4 p-4 rounded-2xl border border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/15 transition-all text-left group">
-                    {}
+                    {/* Icon */}
                     <div className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
                       style={{ background: `${d.color}15`, border: `1px solid ${d.color}30` }}>
                       {d.icon
@@ -284,7 +312,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                         : <GraalIcon size={32} />
                       }
                     </div>
-                    {}
+                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="text-sm font-bold text-white/90">{d.name}</span>
@@ -302,7 +330,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                         ))}
                       </div>
                     </div>
-                    {}
+                    {/* Arrow */}
                     <div className="flex-shrink-0 flex items-center gap-2 mt-1">
                       {versions.length > 0 ? (
                         <span className="text-[10px] text-white/25">{versions.length} phiên bản</span>
@@ -331,6 +359,8 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                     const isThisInstalling = installing?.distro === pkg.distro && installing?.javaVersion === pkg.javaVersion
                     const d = DISTROS[pkg.distro]
                     const mcNote = MC_JAVA_MAP[pkg.javaVersion] || ''
+                    const installedExe = getInstalledExe(pkg.distro, pkg.javaVersion)
+                    const isCurrentlyUsed = profile?.javaPath && installedExe && profile.javaPath === installedExe
 
                     return (
                       <div key={`${pkg.distro}-${pkg.javaVersion}`}
@@ -340,7 +370,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                           borderColor: alreadyInstalled ? `${d.color}30` : 'var(--app-border-color)',
                         }}>
 
-                        {}
+                        {/* Card body */}
                         <div className="px-4 pt-4 pb-3">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2">
@@ -353,16 +383,23 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                                 <p className="text-[10px] text-white/30">{pkg.releaseVersion}</p>
                               </div>
                             </div>
-                            {alreadyInstalled && (
-                              <div className="w-5 h-5 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400">
-                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                                </svg>
-                              </div>
-                            )}
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0 mt-0.5">
+                              {alreadyInstalled && (
+                                <div className="w-5 h-5 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+                                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                  </svg>
+                                </div>
+                              )}
+                              {isCurrentlyUsed && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 whitespace-nowrap">
+                                  Đang dùng
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          {}
+                          {/* MC note */}
                           {mcNote && (
                             <div className="flex items-center gap-1.5 mb-3">
                               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400/60 flex-shrink-0">
@@ -372,12 +409,12 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                             </div>
                           )}
 
-                          {}
+                          {/* Size */}
                           {pkg.size > 0 && (
                             <p className="text-[10px] text-white/20 mb-3">{formatBytes(pkg.size)}</p>
                           )}
 
-                          {}
+                          {/* Progress bar */}
                           {isThisInstalling && installProgress && (
                             <div className="mb-3">
                               <div className="flex items-center justify-between mb-1">
@@ -406,47 +443,66 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
                             </div>
                           )}
 
-                          {}
-                          {isThisInstalling === false && installError && (
+                          {/* Install error */}
+                          {!isThisInstalling && installError && installing?.distro === pkg.distro && installing?.javaVersion === pkg.javaVersion && (
                             <p className="text-[10px] text-red-400 mb-2 truncate">{installError}</p>
                           )}
                         </div>
 
-                        {}
+                        {/* Card footer buttons */}
                         <div className="px-4 pb-4 flex gap-2">
-                          {alreadyInstalled ? (
+                          {isThisInstalling ? (
+                            // Đang tải — disabled spinner
                             <button
-                              onClick={() => handleUseInstalled(pkg.distro, pkg.javaVersion)}
-                              className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-white"
-                              style={{ background: d.color, boxShadow: `0 4px 12px ${d.color}30` }}>
-                              Sử dụng
+                              disabled
+                              className="flex-1 py-2 rounded-xl text-xs font-bold transition-all opacity-60 flex items-center justify-center gap-1.5"
+                              style={{
+                                background: `${d.color}20`,
+                                border: `1px solid ${d.color}30`,
+                                color: d.color,
+                              }}>
+                              <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                              </svg>
+                              Đang cài...
                             </button>
+                          ) : alreadyInstalled ? (
+                            // Đã cài — nút Chọn + nút xóa
+                            <>
+                              <button
+                                onClick={() => handleSelect(pkg.distro, pkg.javaVersion)}
+                                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-white flex items-center justify-center gap-1.5"
+                                style={{ background: '#22c55e', boxShadow: '0 4px 12px rgba(34,197,94,0.25)' }}>
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                                Chọn
+                              </button>
+                              <button
+                                onClick={() => handleDelete(pkg.distro, pkg.javaVersion)}
+                                className="w-8 h-8 flex items-center justify-center rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-all flex-shrink-0"
+                                title="Xóa Java này">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                              </button>
+                            </>
                           ) : (
+                            // Chưa cài — nút Tải xuống
                             <button
                               onClick={() => handleInstall(pkg)}
                               disabled={!!installing}
                               className="flex-1 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
                               style={{
-                                background: isThisInstalling ? `${d.color}20` : `${d.color}15`,
+                                background: `${d.color}15`,
                                 border: `1px solid ${d.color}30`,
                                 color: d.color,
                               }}>
-                              {isThisInstalling ? (
-                                <>
-                                  <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                  </svg>
-                                  Đang cài...
-                                </>
-                              ) : (
-                                <>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                  </svg>
-                                  Tải & Dùng
-                                </>
-                              )}
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                              </svg>
+                              Tải xuống
                             </button>
                           )}
                         </div>
@@ -459,7 +515,7 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
           )}
         </div>
 
-        {}
+        {/* Footer */}
         <div className="flex-shrink-0 px-5 py-3 border-t border-white/5 flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-white/20 flex-shrink-0">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
@@ -475,4 +531,3 @@ export default function JavaManagerModal({ profile, onClose, onJavaSelected, ser
     </div>
   )
 }
-

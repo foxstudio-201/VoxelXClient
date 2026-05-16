@@ -46,6 +46,7 @@ import {
 } from '@heroicons/react/24/solid'
 
 import PlayerHead from './ui/PlayerHead'
+import { useLang } from '../i18n/LangProvider'
 
 function ServerOutline({ className }) {
   return (
@@ -69,16 +70,17 @@ function ServerSolid({ className }) {
   )
 }
 
-const navItems = [
-  { id: 'home',     label: 'Home',     Outline: HomeOutline,   Solid: HomeSolid   },
-  { id: 'play',     label: 'Play',     Outline: PlayOutline,   Solid: PlaySolid   },
-  { id: 'mods',     label: 'Mods',     Outline: PuzzleOutline, Solid: PuzzleSolid },
-  { id: 'worlds',   label: 'Server',   Outline: ServerOutline, Solid: ServerSolid },
-  { id: 'settings', label: 'Settings', Outline: CogOutline,    Solid: CogSolid    },
-]
-
 export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
   const isAccountPage = activePage === 'account'
+  const { t } = useLang()
+
+  const navItems = [
+    { id: 'home',     label: t('sidebar.home'),     Outline: HomeOutline,   Solid: HomeSolid   },
+    { id: 'play',     label: t('sidebar.play'),     Outline: PlayOutline,   Solid: PlaySolid   },
+    { id: 'mods',     label: t('sidebar.mods'),     Outline: PuzzleOutline, Solid: PuzzleSolid },
+    { id: 'worlds',   label: t('sidebar.worlds'),   Outline: ServerOutline, Solid: ServerSolid },
+    { id: 'settings', label: t('sidebar.settings'), Outline: CogOutline,    Solid: CogSolid    },
+  ]
 
   return (
     <aside className="w-[68px] flex flex-col items-center py-4 gap-0.5 bg-black/25 backdrop-blur-md border-r border-white/[0.06] z-50 overflow-visible">

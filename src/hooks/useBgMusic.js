@@ -1,13 +1,3 @@
-/**
- * useBgMusic — phát nhạc nền sau khi splash xong.
- * Bài nhạc phát một lần, sau đó chờ ngẫu nhiên 1–3 phút rồi phát lại.
- * Volume fade-in khi bắt đầu, fade-out khi unmount.
- *
- * Không nhận props React — tự lắng nghe event để tránh re-render App.
- *   vxc-music-init   → load settings ban đầu từ file
- *   vxc-music-change → bật/tắt hoặc đổi volume realtime từ Settings
- */
-
 import { useEffect, useRef } from 'react'
 
 const MUSIC_SRC = new URL('../assets/sound/LIGHTS.mp3', import.meta.url).href
@@ -23,10 +13,9 @@ export function useBgMusic(splashDone) {
   const audioRef   = useRef(null)
   const timerRef   = useRef(null)
   const activeRef  = useRef(false)
-  const enabledRef = useRef(true)          // default: bật
-  const volumeRef  = useRef(35 / 100)      // default: 35%
+  const enabledRef = useRef(true)          
+  const volumeRef  = useRef(35 / 100)      
 
-  // ── Lắng nghe settings ban đầu (load từ file) ──────────────────────────
   useEffect(() => {
     function handleInit(e) {
       const { enabled, volume } = e.detail ?? {}
@@ -37,7 +26,6 @@ export function useBgMusic(splashDone) {
     return () => window.removeEventListener('vxc-music-init', handleInit)
   }, [])
 
-  // ── Lắng nghe thay đổi realtime từ Settings ────────────────────────────
   useEffect(() => {
     function handleChange(e) {
       const { enabled, volume } = e.detail ?? {}
@@ -48,12 +36,10 @@ export function useBgMusic(splashDone) {
         if (!audio) return
 
         if (!enabled) {
-          // Fade-out rồi pause — không ảnh hưởng gì khác
           fadeOutAudio(audio, 800).then(() => {
             if (!enabledRef.current) audio.pause()
           })
         } else {
-          // Bật lại: fade-in từ đầu bài
           if (audio.paused) {
             audio.currentTime = 0
             audio.volume = 0
@@ -75,7 +61,6 @@ export function useBgMusic(splashDone) {
     return () => window.removeEventListener('vxc-music-change', handleChange)
   }, [])
 
-  // ── Khởi động nhạc sau splash ──────────────────────────────────────────
   useEffect(() => {
     if (!splashDone) return
 
@@ -115,8 +100,6 @@ export function useBgMusic(splashDone) {
     }
   }, [splashDone])
 }
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function fadeInAudio(audio, targetVolume, durationMs) {
   const steps    = 40

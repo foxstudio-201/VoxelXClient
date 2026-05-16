@@ -47,10 +47,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openUpdateWindow: (result) => ipcRenderer.invoke('updater:openUpdateWindow', result),
   downloadUpdate:   (opts) => ipcRenderer.invoke('updater:download', opts),
   installUpdate:    (opts) => ipcRenderer.invoke('updater:install', opts),
+  reinstallCurrent: () => ipcRenderer.invoke('updater:reinstall'),
   onDownloadProgress: (cb) => {
     const handler = (_e, data) => cb(data)
     ipcRenderer.on('updater:downloadProgress', handler)
     return () => ipcRenderer.removeListener('updater:downloadProgress', handler)
+  },
+  onReinstallProgress: (cb) => {
+    const handler = (_e, data) => cb(data)
+    ipcRenderer.on('updater:reinstallProgress', handler)
+    return () => ipcRenderer.removeListener('updater:reinstallProgress', handler)
   },
   onUpdaterPreloadResult: (cb) => {
     const handler = (_e, data) => cb(data)
@@ -222,7 +228,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   javaGetInstalled: (profileId) => ipcRenderer.invoke('java:getInstalled', profileId),
   javaInstall:      (pkg, profileId) => ipcRenderer.invoke('java:install', pkg, profileId),
   javaInstallToDir: (pkg, dir)       => ipcRenderer.invoke('java:installToDir', pkg, dir),
-  javaDelete:       (profileId)      => ipcRenderer.invoke('java:delete', profileId),
+  javaSelect:       (profileId, javaExe) => ipcRenderer.invoke('java:select', profileId, javaExe),
+  javaDelete:       (profileId, distro, javaVersion) => ipcRenderer.invoke('java:delete', profileId, distro, javaVersion),
   onJavaInstallProgress: (cb) => {
     const handler = (_e, data) => cb(data)
     ipcRenderer.on('java:installProgress', handler)

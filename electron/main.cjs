@@ -480,7 +480,7 @@ app.whenReady().then(() => {
           "font-src 'self' data:;" +
           "img-src 'self' data: blob: https:;" +
           "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://youtube-nocookie.com https://youtube.com;" +
-          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com;"
+          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com;"
         ],
       },
     })
@@ -734,7 +734,6 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
     await new Promise(r => setTimeout(r, 1500))
 
     if (process.platform === 'win32') {
-
       spawn(filePath, [], {
         detached: true,
         stdio:    'ignore',
@@ -742,7 +741,6 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
     } else if (process.platform === 'darwin') {
       spawn('open', [filePath], { detached: true, stdio: 'ignore' }).unref()
     } else {
-
       fs.chmodSync(filePath, 0o755)
       spawn(filePath, [], { detached: true, stdio: 'ignore' }).unref()
     }
@@ -752,6 +750,106 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
       app.isQuitting = true
       app.quit()
     }, 500)
+    return { ok: true }
+  } catch (err) {
+    return { error: err.message }
+  }
+})
+
+ipcMain.handle('updater:reinstall', async (e) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+
+  const win = getTrustedWindow(e)
+  const currentVersion = app.getVersion()
+  const https = require('https')
+  const os    = require('os')
+
+  try {
+    const release =
+      await fetchGitHubReleaseByTag(GITHUB_REPO, `v${currentVersion}`, currentVersion) ||
+      await fetchGitHubReleaseByTag(GITHUB_REPO, currentVersion, currentVersion)
+
+    if (!release) {
+      return { error: `Không tìm thấy release v${currentVersion} trên GitHub.` }
+    }
+
+    const assets = (release.assets || [])
+    let installerAsset = null
+    if (process.platform === 'win32') {
+      const exePath = process.execPath || ''
+      const isInstalled = /program files/i.test(exePath) || /appdata/i.test(exePath)
+      if (isInstalled) {
+        installerAsset = assets.find(a => /setup/i.test(a.name) && /\.exe$/i.test(a.name))
+      }
+      if (!installerAsset) {
+        installerAsset = assets.find(a => /\.exe$/i.test(a.name))
+      }
+    } else if (process.platform === 'darwin') {
+      installerAsset = assets.find(a => /\.dmg$/i.test(a.name))
+    } else {
+      installerAsset = assets.find(a => /\.AppImage$/i.test(a.name)) ||
+                       assets.find(a => /\.deb$/i.test(a.name))
+    }
+
+    if (!installerAsset) {
+      return { error: 'Không tìm thấy file installer cho hệ điều hành này.' }
+    }
+
+    const tmpDir  = path.join(os.tmpdir(), 'VoxelXClient-update')
+    const tmpFile = path.join(tmpDir, installerAsset.name)
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
+
+    try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile) } catch {}
+
+    await new Promise((resolve, reject) => {
+      function doGet(url) {
+        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/' + currentVersion } }, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            return doGet(res.headers.location)
+          }
+          if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
+
+          const total = parseInt(res.headers['content-length'] || '0', 10)
+          let downloaded = 0
+          const startTime = Date.now()
+          const out = fs.createWriteStream(tmpFile)
+
+          res.on('data', chunk => {
+            downloaded += chunk.length
+            const elapsed = (Date.now() - startTime) / 1000
+            const speed   = elapsed > 0 ? Math.round(downloaded / elapsed) : 0
+            const percent = total > 0 ? Math.round(downloaded / total * 100) : 0
+            if (!win.isDestroyed()) {
+              win.webContents.send('updater:reinstallProgress', { downloaded, total, percent, speed })
+            }
+          })
+          res.pipe(out)
+          out.on('finish', resolve)
+          out.on('error', reject)
+          res.on('error', reject)
+        }).on('error', reject)
+      }
+      doGet(installerAsset.browser_download_url)
+    })
+
+    const { spawn } = require('child_process')
+    await new Promise(r => setTimeout(r, 800))
+
+    if (process.platform === 'win32') {
+      spawn(tmpFile, [], { detached: true, stdio: 'ignore' }).unref()
+    } else if (process.platform === 'darwin') {
+      spawn('open', [tmpFile], { detached: true, stdio: 'ignore' }).unref()
+    } else {
+      fs.chmodSync(tmpFile, 0o755)
+      spawn(tmpFile, [], { detached: true, stdio: 'ignore' }).unref()
+    }
+
+    setTimeout(() => {
+      try { fs.unlinkSync(tmpFile) } catch {}
+      app.isQuitting = true
+      app.quit()
+    }, 500)
+
     return { ok: true }
   } catch (err) {
     return { error: err.message }
