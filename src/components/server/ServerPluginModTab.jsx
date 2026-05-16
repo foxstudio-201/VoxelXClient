@@ -84,6 +84,7 @@ function getLoaderStyle(loader) {
 }
 
 function VersionModal({ project, server, projectType, source, onClose }) {
+  const { t } = useLang()
   const [allVersions, setAllVersions] = useState([])
   const [versions, setVersions]   = useState([])
   const [loading, setLoading]     = useState(true)
@@ -106,9 +107,16 @@ function VersionModal({ project, server, projectType, source, onClose }) {
     window.electronAPI.modrinthGetVersions(project.project_id || project.id, { game_versions: [server.gameVersion] })
       .then(r => {
         const list = Array.isArray(r) ? r : (r?.data || [])
-        const filtered = serverLoaders.length > 0
-          ? list.filter(v => v.loaders?.some(l => serverLoaders.includes(l.toLowerCase())))
-          : list
+        let filtered
+        if (serverLoaders.length > 0) {
+          filtered = list.filter(v => v.loaders?.some(l => serverLoaders.includes(l.toLowerCase())))
+          // Fallback: if no versions match server loaders, show all versions for that game version
+          if (filtered.length === 0) {
+            filtered = list
+          }
+        } else {
+          filtered = list
+        }
         setAllVersions(filtered)
       })
       .catch(() => {})
@@ -128,8 +136,8 @@ function VersionModal({ project, server, projectType, source, onClose }) {
 
   async function handleInstall() {
     if (!selected || !isElectron) return
-    const file = selected.files?.[0]
-    if (!file?.url) { setError('Không tìm thấy file tải xuống'); return }
+        const file = selected.files?.[0]
+        if (!file?.url) { setError(t('server.plugins.versionModal.errorNoFile')); return }
     setInstalling(true); setError('')
     try {
       const r = await window.electronAPI.serverInstallMod({
@@ -141,11 +149,11 @@ function VersionModal({ project, server, projectType, source, onClose }) {
       if (r?.error) { setError(r.error); return }
       setDone(true); setTimeout(onClose, 1200)
     } catch (e) {
-      setError(e.message || 'Lỗi không xác định')
+        setError(e.message || t('server.plugins.versionModal.errorUnknown'))
     } finally { setInstalling(false) }
   }
 
-  const loaderLabel = projectType === 'plugin' ? 'Plugin' : 'Mod'
+  const loaderLabel = projectType === 'plugin' ? t('server.plugins.labelPlugin') : t('server.plugins.labelMod')
 
   return (
     <div className="fixed inset-0 z-[600] flex items-center justify-center px-4"
@@ -181,26 +189,26 @@ function VersionModal({ project, server, projectType, source, onClose }) {
           {!isSpigot && !loading && allVersions.length > 0 && (
             <div className="px-5 pb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-1.5 flex-wrap">
-                {['all', ...availableTypes].map(t => {
-                  const isActive = typeFilter === t
-                  const cfg = t === 'all'     ? { bg: 'rgba(255,255,255,0.12)', text: '#fff',    border: 'rgba(255,255,255,0.2)' }
-                            : t === 'release' ? { bg: 'rgba(34,197,94,0.15)',   text: '#4ade80', border: 'rgba(34,197,94,0.3)' }
-                            : t === 'beta'    ? { bg: 'rgba(234,179,8,0.15)',   text: '#facc15', border: 'rgba(234,179,8,0.3)' }
-                            :                   { bg: 'rgba(255,255,255,0.08)', text: 'rgba(255,255,255,0.45)', border: 'rgba(255,255,255,0.15)' }
+                {['all', ...availableTypes].map(typeValue => {
+                  const isActive = typeFilter === typeValue
+                  const cfg = typeValue === 'all'     ? { bg: 'rgba(255,255,255,0.12)', text: '#fff',    border: 'rgba(255,255,255,0.2)' }
+                            : typeValue === 'release' ? { bg: 'rgba(34,197,94,0.15)',   text: '#4ade80', border: 'rgba(34,197,94,0.3)' }
+                            : typeValue === 'beta'    ? { bg: 'rgba(234,179,8,0.15)',   text: '#facc15', border: 'rgba(234,179,8,0.3)' }
+                            :                            { bg: 'rgba(255,255,255,0.08)', text: 'rgba(255,255,255,0.45)', border: 'rgba(255,255,255,0.15)' }
                   return (
-                    <button key={t} onClick={() => setTypeFilter(t)}
+                    <button key={typeValue} onClick={() => setTypeFilter(typeValue)}
                       className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-all capitalize"
                       style={{
                         background: isActive ? cfg.bg : 'rgba(255,255,255,0.04)',
                         color:      isActive ? cfg.text : 'rgba(255,255,255,0.35)',
                         border:     `1px solid ${isActive ? cfg.border : 'rgba(255,255,255,0.07)'}`,
                       }}>
-                      {t === 'all' ? 'Tất cả' : t}
+                      {typeValue === 'all' ? t('server.plugins.versionModal.allVersions') : typeValue}
                     </button>
                   )
                 })}
               </div>
-              <span className="text-xs text-white/25 flex-shrink-0">{versions.length} phiên bản</span>
+              <span className="text-xs text-white/25 flex-shrink-0">{t('server.plugins.versionModal.versions', { count: versions.length })}</span>
             </div>
           )}
         </div>
@@ -211,17 +219,15 @@ function VersionModal({ project, server, projectType, source, onClose }) {
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <img src={spigotIcon} alt="Spigot" className="w-12 h-12 rounded-xl object-contain opacity-60" />
               <div>
-                <p className="text-white/70 text-sm font-semibold mb-1">Tải từ SpigotMC</p>
-                <p className="text-white/35 text-xs leading-relaxed">
-                  SpigotMC không hỗ trợ tải trực tiếp qua API.<br/>
-                  Nhấn nút bên dưới để mở trang plugin trên SpigotMC và tải thủ công vào thư mục{' '}
-                  <span className="text-green-400/70 font-mono">plugins/</span> của server.
+                <p className="text-white/70 text-sm font-semibold mb-1">{t('server.plugins.versionModal.spigotDownload')}</p>
+                <p className="text-white/35 text-xs leading-relaxed whitespace-pre-line">
+                  {t('server.plugins.versionModal.spigotDesc', { pluginsFolder: 'plugins/' })}
                 </p>
               </div>
               <div className="w-full rounded-xl p-3 text-left"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p className="text-xs text-white/40 mb-1">Thư mục đích</p>
-                <p className="text-xs text-green-400/70 font-mono">[server]/plugins/{title}.jar</p>
+                <p className="text-xs text-white/40 mb-1">{t('server.plugins.versionModal.spigotTarget')}</p>
+                <p className="text-xs text-green-400/70 font-mono">[server]/{t('server.plugins.versionModal.spigotFolder')}{title}.jar</p>
               </div>
             </div>
           ) : loading ? (
@@ -230,12 +236,12 @@ function VersionModal({ project, server, projectType, source, onClose }) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              <span className="text-sm">Đang tải phiên bản...</span>
+              <span className="text-sm">{t('server.plugins.versionModal.loadingVersions')}</span>
             </div>
           ) : versions.length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-white/35 text-sm">Không có phiên bản nào cho {server.gameVersion}</p>
-              <p className="text-white/20 text-xs mt-1">Thử tìm phiên bản khác trên Modrinth</p>
+              <p className="text-white/35 text-sm">{t('server.plugins.versionModal.noVersions', { version: server.gameVersion })}</p>
+              <p className="text-white/20 text-xs mt-1">{t('server.plugins.versionModal.noVersionsHint')}</p>
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -296,7 +302,7 @@ function VersionModal({ project, server, projectType, source, onClose }) {
           <div className="flex gap-2">
             <button onClick={onClose}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/50 hover:text-white border border-white/8 hover:bg-white/5 transition-all">
-              {isSpigot ? 'Đóng' : 'Huỷ'}
+              {isSpigot ? t('server.plugins.versionModal.close') : t('server.plugins.versionModal.cancel')}
             </button>
             {isSpigot ? (
               <button
@@ -311,23 +317,23 @@ function VersionModal({ project, server, projectType, source, onClose }) {
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                   <path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
                 </svg>
-                Mở SpigotMC
+                {t('server.plugins.versionModal.openSpigot')}
               </button>
             ) : (
               <button onClick={handleInstall} disabled={!selected || installing || done || versions.length === 0}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
                 style={{ background: done ? 'rgba(34,197,94,0.3)' : 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: '0 4px 16px rgba(34,197,94,0.2)' }}>
                 {done ? (
-                  <><svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Đã cài!</>
+                  <><svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>{t('server.plugins.versionModal.installed')}</>
                 ) : installing ? (
                   <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>Đang tải...</>
+                  </svg>{t('server.plugins.versionModal.installing')}</>
                 ) : (
                   <><svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                     <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                  </svg>Tải {loaderLabel}</>
+                  </svg>{t('server.plugins.versionModal.downloadType', { type: loaderLabel })}</>
                 )}
               </button>
             )}
@@ -498,7 +504,7 @@ export default function ServerPluginModTab({ server, projectType }) {
         <p className="text-xs text-white/30 mt-1.5">
           {label} cho <span className="text-green-400/80 font-semibold">{server.gameVersion}</span>
           {' · '}
-          <span className="text-white/40">Nguồn: {source === 'spigot' ? 'SpigotMC' : 'Modrinth'}</span>
+          <span className="text-white/40">{t('server.plugins.sourceLabel', { source: source === 'spigot' ? 'SpigotMC' : 'Modrinth' })}</span>
         </p>
       </div>
 
@@ -512,7 +518,7 @@ export default function ServerPluginModTab({ server, projectType }) {
               <circle cx="11" cy="11" r="8"/><path strokeLinecap="round" d="M21 21l-4.35-4.35"/>
             </svg>
             <p className="text-white/30 text-sm">
-              {query ? `Không tìm thấy "${query}"` : `Không có ${label.toLowerCase()} nào`}
+              {query ? t('server.plugins.noResultsQuery', { query }) : t('server.plugins.noResults', { type: label.toLowerCase() })}
             </p>
           </div>
         )}
@@ -528,8 +534,8 @@ export default function ServerPluginModTab({ server, projectType }) {
               ? <><svg className="animate-spin w-3.5 h-3.5 text-green-400/50" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>Đang tải...</>
-              : 'Tải thêm'
+                </svg>{t('server.plugins.loadingType', { type: label.toLowerCase() })}</>
+              : t('server.plugins.loadMore')
             }
           </button>
         )}
@@ -540,7 +546,7 @@ export default function ServerPluginModTab({ server, projectType }) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            <span className="text-sm">Đang tải {label.toLowerCase()}...</span>
+            <span className="text-sm">{t('server.plugins.loadingType', { type: label.toLowerCase() })}</span>
           </div>
         )}
       </div>

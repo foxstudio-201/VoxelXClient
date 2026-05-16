@@ -564,7 +564,7 @@
       "noResults": "No {{type}} found",
       "noResultsQuery": "No results for \"{{query}}\"",
       "loadMore": "Load more",
-      "loading": "Loading {{type}}...",
+      "loadingType": "Loading {{type}}...",
       "versionModal": {
         "allVersions": "All",
         "versions": "{{count}} versions",
@@ -577,9 +577,13 @@
         "cancel": "Cancel",
         "close": "Close",
         "openSpigot": "Open SpigotMC",
+        "spigotDownload": "Download from SpigotMC",
         "spigotDesc": "SpigotMC does not support direct download via API.\nClick below to open the plugin page on SpigotMC and manually download to the <code>plugins/</code> folder.",
         "spigotTarget": "Target folder",
-        "errorNoFile": "No download file found"
+        "errorNoFile": "No download file found",
+        "errorUnknown": "Unknown error",
+        "spigotFolder": "plugins/",
+        "downloadType": "Download {{type}}"
       }
     }
   }

@@ -564,7 +564,7 @@
       "noResults": "Không có {{type}} nào",
       "noResultsQuery": "Không tìm thấy \"{{query}}\"",
       "loadMore": "Tải thêm",
-      "loading": "Đang tải {{type}}...",
+      "loadingType": "Đang tải {{type}}...",
       "versionModal": {
         "allVersions": "Tất cả",
         "versions": "{{count}} phiên bản",
@@ -577,9 +577,13 @@
         "cancel": "Huỷ",
         "close": "Đóng",
         "openSpigot": "Mở SpigotMC",
+        "spigotDownload": "Tải từ SpigotMC",
         "spigotDesc": "SpigotMC không hỗ trợ tải trực tiếp qua API.\nNhấn nút bên dưới để mở trang plugin trên SpigotMC và tải thủ công vào thư mục plugins/ của server.",
         "spigotTarget": "Thư mục đích",
-        "errorNoFile": "Không tìm thấy file tải xuống"
+        "errorNoFile": "Không tìm thấy file tải xuống",
+        "errorUnknown": "Lỗi không xác định",
+        "spigotFolder": "plugins/",
+        "downloadType": "Tải {{type}}"
       }
     }
   }
