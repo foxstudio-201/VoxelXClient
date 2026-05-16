@@ -46,6 +46,8 @@ import v119 from '../../assets/minecraft-versions/1.19.png'
 import v120 from '../../assets/minecraft-versions/1.20.png'
 import v121 from '../../assets/minecraft-versions/1.21.png'
 
+import { useLang } from '../../i18n/LangProvider'
+
 const VERSION_IMAGES = {
   '1.12': v112, '1.15': v115, '1.16': v116, '1.17': v117,
   '1.18': v118, '1.19': v119, '1.20': v120, '1.21': v121,
@@ -108,7 +110,7 @@ export default function ProfileCard({
   onDelete,
   onCancelDelete,
 }) {
-
+  const { t } = useLang()
   const bgImage    = profile.importBgUrl || getVersionImage(profile.gameVersion)
 
   const loaderIcon = profile.importIconUrl || LOADER_ICONS[profile.loader] || vanillaIcon
@@ -147,7 +149,7 @@ export default function ProfileCard({
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
               <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
             </svg>
-            Đang chọn
+            {t ? t('playpage.card.selected') : 'Selected'}
           </div>
         )}
 
@@ -172,7 +174,7 @@ export default function ProfileCard({
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
                 <path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18s-.41-.06-.57-.18l-7.9-4.44A1 1 0 013 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18s.41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9M12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15M5 15.91l6 3.38v-6.71L5 9.21v6.7m14 0v-6.7l-6 3.37v6.71l6-3.38z"/>
               </svg>
-              Modpack
+              {t ? t('playpage.card.modpack') : 'Modpack'}
             </span>
           )}
         </div>
@@ -212,14 +214,14 @@ export default function ProfileCard({
       <div className="relative px-3 py-2.5 flex gap-2 items-center justify-center">
         {confirmDelete && (
           <div className="absolute inset-0 rounded-b-2xl bg-[#141414]/97 border-t border-red-500/20 flex items-center justify-center gap-2 px-3 z-10">
-            <span className="text-xs text-white/50 flex-1">Xóa profile này?</span>
+            <span className="text-xs text-white/50 flex-1">{t ? t('playpage.card.deleteConfirm') : 'Delete this profile?'}</span>
             <button onClick={() => onDelete(profile.id)}
               className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">
-              Xóa
+              {t ? t('playpage.card.delete') : 'Delete'}
             </button>
             <button onClick={onCancelDelete}
               className="px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/50 text-xs transition-all">
-              Hủy
+              {t ? t('playpage.card.cancel') : 'Cancel'}
             </button>
           </div>
         )}
@@ -235,13 +237,13 @@ export default function ProfileCard({
             }
           `}
         >
-          {isSelected ? '✓ Đang chọn' : 'Chọn'}
+          {isSelected ? `✓ ${t ? t('playpage.card.selected') : 'Selected'}` : (t ? t('playpage.card.select') : 'Select')}
         </button>
 
         {isElectron && (
           <button onClick={handleOpenFolder}
             className="w-8 h-8 flex items-center justify-center rounded-xl text-white/25 hover:text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/15 transition-all duration-150"
-            title={`Mở thư mục: ${profile.instancePath}`}>
+            title={t ? t('playpage.card.openFolder', { path: profile.instancePath }) : `Open folder: ${profile.instancePath}`}>
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
               <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
             </svg>
@@ -250,7 +252,7 @@ export default function ProfileCard({
 
         <button onClick={() => onDelete(profile.id)}
           className="w-8 h-8 flex items-center justify-center rounded-xl text-white/25 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/15 transition-all duration-150"
-          title="Xóa profile">
+          title={t ? t('playpage.card.deleteProfile') : 'Delete profile'}>
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
           </svg>

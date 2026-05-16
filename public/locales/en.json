@@ -586,5 +586,127 @@
         "downloadType": "Download {{type}}"
       }
     }
+  },
+  "playpage": {
+    "tabs": {
+      "allProfiles": "All Profiles",
+      "groups": "Groups"
+    },
+    "buttons": {
+      "newGroup": "New Group",
+      "create": "Create",
+      "newProfile": "New Profile",
+      "importProfile": "Import Profile"
+    },
+    "filters": {
+      "all": "All",
+      "vanilla": "Vanilla",
+      "fabric": "Fabric",
+      "forge": "Forge",
+      "neoforge": "NeoForge",
+      "modpack": "Modpack"
+    },
+    "loading": {
+      "loading": "Loading...",
+      "loadingProfile": "Loading profile..."
+    },
+    "empty": {
+      "noGroups": "No groups yet",
+      "noGroupsHint": "Create a group to organize your profiles",
+      "createFirstGroup": "+ Create first group",
+      "noProfiles": "No profiles yet",
+      "noProfilesHint": "Create a profile to start playing Minecraft",
+      "noProfilesMatch": "No matching profiles",
+      "noProfilesMatchHint": "Try selecting a different filter",
+      "createFirstProfile": "+ Create first profile",
+      "noProfilesInGroup": "This group has no profiles yet"
+    },
+    "toast": {
+      "profileSelected": "Profile selected",
+      "profileDeleted": "Profile deleted",
+      "groupCreated": "Group created",
+      "groupDeleted": "Group deleted",
+      "profileCreated": "Profile created",
+      "errorSelecting": "Error",
+      "errorDeleting": "Error deleting profile",
+      "errorCreatingGroup": "Error creating group",
+      "errorDeletingGroup": "Error deleting group"
+    },
+    "group": {
+      "allGroups": "All groups",
+      "profiles": "profiles",
+      "removeFromGroup": "Remove from group"
+    },
+    "modal": {
+      "createGroupTitle": "Create new group",
+      "groupName": "Group name",
+      "groupNamePlaceholder": "Enter group name...",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "createGroup": "Create group"
+    },
+    "card": {
+      "deleteGroup": "Delete group"
+    },
+    "createProfile": {
+      "title": "Create Profile",
+      "loader": "Loader",
+      "selectMinecraftVersion": "Select Minecraft version",
+      "selectLoaderVersion": "Select {{loader}} version",
+      "profileName": "Profile name",
+      "profileNamePlaceholder": "Empty = auto",
+      "gameFolder": "Game folder",
+      "gameFolderPlaceholder": "Default in instances",
+      "browse": "Browse",
+      "group": "Group (optional)",
+      "backToMinecraft": "Minecraft {{version}}",
+      "loadingLoaderVersions": "Loading {{loader}} loader for {{version}}...",
+      "retry": "Retry",
+      "noLoaderVersions": "No versions available",
+      "recommended": "Recommended",
+      "stable": "Stable",
+      "beta": "Beta",
+      "old": "Old",
+      "latest": "Latest",
+      "all": "All",
+      "neoforgeHint": "NeoForge supports Minecraft 1.20.2 and above",
+      "createBtn": "Create {{loader}} Profile",
+      "creating": "Loading...",
+      "cancel": "Cancel"
+    },
+    "importProfile": {
+      "title": "Import Profile",
+      "subtitle": "Import from modpack .zip / .mrpack",
+      "minimize": "Minimize",
+      "close": "Close",
+      "group": "Group (optional)",
+      "dropHere": "Drop file here",
+      "dragDrop": "Drag & drop or click to select file",
+      "supportedFormats": "Supported {{source}}",
+      "readingFile": "Reading file...",
+      "readyToImport": "Ready to import",
+      "selectFile": "Select file to import",
+      "minimizedTitle": "Click to reopen",
+      "huy": "Cancel",
+      "import": "Import",
+      "creatingProfile": "Creating profile...",
+      "startImport": "Starting import...",
+      "downloadMods": "Download mods {{current}}/{{total}}",
+      "extracting": "Extracting...",
+      "importDone": "Import complete!",
+      "importing": "Importing...",
+      "errorCreatingProfile": "Error creating profile: {{error}}",
+      "errorImport": "Error: {{error}}",
+      "errorNetwork": "Check your network connection. Some mods may require CurseForge API key.",
+      "unnamed": "Unnamed",
+      "mods": "mods"
+    },
+    "profileCard": {
+      "delete": "Delete",
+      "settings": "Settings",
+      "lastPlayed": "Last played",
+      "never": "Never",
+      "hours": "Hours"
+    }
   }
 }

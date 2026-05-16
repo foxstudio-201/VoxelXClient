@@ -30,6 +30,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useLang } from '../../i18n/LangProvider'
 import GroupSelect from '../ui/GroupSelect'
 
 import vanillaIcon   from '../../assets/loader/vanilla.png'
@@ -632,6 +633,7 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
 }
 
 export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
+  const { t } = useLang()
   const [loader, setLoader]               = useState('vanilla')
   const [gameVersion, setGameVersion]     = useState('')
   const [loaderVersion, setLoaderVersion] = useState('')
@@ -705,7 +707,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
         >
           {}
           <div>
-            <h2 className="text-base font-bold text-white">Tạo Profile</h2>
+            <h2 className="text-base font-bold text-white">{t('playpage.createProfile.title')}</h2>
             <p className={`text-xs mt-0.5 ${loaderCfg?.text}`}>
               {loaderCfg?.label}
               {gameVersion ? ` · ${gameVersion}` : ''}
@@ -725,13 +727,13 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
           {}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-              Tên profile
+              {t('playpage.createProfile.profileName')}
             </label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Để trống = tự động"
+              placeholder={t('playpage.createProfile.profileNamePlaceholder')}
               maxLength={64}
               className="
                 w-full px-3 py-2 rounded-xl bg-white/5 border border-white/8
@@ -745,14 +747,14 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
           {}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-              Thư mục game
+              {t('playpage.createProfile.gameFolder')}
             </label>
             <div className="flex gap-1.5">
               <input
                 type="text"
                 value={instancePath}
                 onChange={e => setInstancePath(e.target.value)}
-                placeholder="Mặc định trong instances"
+                placeholder={t('playpage.createProfile.gameFolderPlaceholder')}
                 className="
                   flex-1 min-w-0 px-3 py-2 rounded-xl bg-white/5 border border-white/8
                   text-xs text-white placeholder-white/20
@@ -770,7 +772,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
                     hover:bg-white/10 hover:text-white/70 hover:border-white/15
                     transition-all
                   "
-                  title="Chọn thư mục"
+                  title={t('playpage.createProfile.browse')}
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                     <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
@@ -784,7 +786,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
           {groups.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                Group (tuỳ chọn)
+                {t('playpage.createProfile.group')}
               </label>
               <GroupSelect
                 groups={groups}
@@ -797,7 +799,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
           {}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-              Loader
+              {t('playpage.createProfile.loader')}
             </label>
             <div className="flex gap-2">
               {LOADERS.map(l => (
@@ -842,10 +844,10 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
-                Đang tạo...
+                {t('playpage.createProfile.creating')}
               </span>
             ) : (
-              `Tạo Profile ${loaderCfg?.label}`
+              t('playpage.createProfile.createBtn', { loader: loaderCfg?.label })
             )}
           </button>
         </div>
@@ -856,10 +858,10 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
           <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
             <p className="text-xs text-white/30 font-semibold uppercase tracking-wider">
               {loader === 'vanilla'
-                ? 'Chọn phiên bản Minecraft'
+                ? t('playpage.createProfile.selectMinecraftVersion')
                 : gameVersion
-                  ? `Chọn phiên bản ${loaderCfg?.label}`
-                  : 'Chọn phiên bản Minecraft'
+                  ? t('playpage.createProfile.selectLoaderVersion', { loader: loaderCfg?.label })
+                  : t('playpage.createProfile.selectMinecraftVersion')
               }
             </p>
             <button
@@ -887,14 +889,14 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center text-[10px] font-bold text-white">1</div>
-                  <p className="text-xs font-semibold text-white/60">Chọn phiên bản Minecraft</p>
+                  <p className="text-xs font-semibold text-white/60">{t('playpage.createProfile.selectMinecraftVersion')}</p>
                 </div>
                 {loader === 'neoforge' && (
                   <div className="mb-3 px-3 py-2 rounded-xl bg-rose-500/8 border border-rose-500/20 flex items-center gap-2">
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-rose-400 flex-shrink-0">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                     </svg>
-                    <p className="text-[10px] text-rose-400/80">NeoForge hỗ trợ từ Minecraft 1.20.2 trở lên</p>
+                    <p className="text-[10px] text-rose-400/80">{t('playpage.createProfile.neoforgeHint')}</p>
                   </div>
                 )}
                 <VersionAccordion
@@ -923,12 +925,12 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                     <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
                   </svg>
-                  Minecraft {gameVersion}
+                  {t('playpage.createProfile.backToMinecraft', { version: gameVersion })}
                 </button>
 
                 <div className="flex items-center gap-2 mb-3">
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${loaderCfg?.bg || 'bg-white/15'}`}>2</div>
-                  <p className="text-xs font-semibold text-white/60">Chọn phiên bản {loaderCfg?.label}</p>
+                  <p className="text-xs font-semibold text-white/60">{t('playpage.createProfile.selectLoaderVersion', { loader: loaderCfg?.label })}</p>
                 </div>
                 <LoaderVersionList
                   loader={loader}

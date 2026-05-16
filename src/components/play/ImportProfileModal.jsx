@@ -30,6 +30,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useLang } from '../../i18n/LangProvider'
 import GroupSelect from '../ui/GroupSelect'
 import fabricIcon    from '../../assets/loader/fabric.png'
 import forgeIcon     from '../../assets/loader/forge.png'
@@ -139,6 +140,7 @@ function PreviewCard({ source, meta }) {
 const MINIMIZED_LEFT = 80
 
 export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
+  const { t } = useLang()
   const [activeSource, setActiveSource] = useState('curseforge')
   const [filePath, setFilePath]         = useState(null)
   const [fileName, setFileName]         = useState(null)
@@ -219,7 +221,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
   async function handleImport() {
     if (!filePath || !meta) return
     setImporting(true)
-    setProgress({ phase: 'create', log: 'Tạo profile...', percent: 1 })
+      setProgress({ phase: 'create', log: t('playpage.importProfile.creatingProfile'), percent: 1 })
 
     try {
       const loader = meta.loader || (activeSource === 'modrinth' ? 'fabric' : 'forge')
@@ -238,7 +240,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
       })
 
       if (createResult?.error) {
-        setProgress({ phase: 'error', log: `Lỗi tạo profile: ${createResult.error}`, percent: 0 })
+        setProgress({ phase: 'error', log: t('playpage.importProfile.errorCreatingProfile', { error: createResult.error }), percent: 0 })
         return
       }
 
@@ -246,20 +248,20 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
       if (!profileId || !isElectron) { onClose(); return }
 
       const unsub = window.electronAPI.onImportProgress?.((data) => setProgress(data))
-      setProgress({ phase: 'start', log: 'Bắt đầu import...', percent: 2 })
+      setProgress({ phase: 'start', log: t('playpage.importProfile.startImport'), percent: 2 })
 
       const result = await window.electronAPI.importModpack({ filePath, source: activeSource, profileId })
       unsub?.()
 
       if (result?.error) {
-        setProgress({ phase: 'error', log: `Lỗi: ${result.error}`, percent: 0 })
+        setProgress({ phase: 'error', log: t('playpage.importProfile.errorImport', { error: result.error }), percent: 0 })
         return
       }
 
-      setProgress({ phase: 'done', log: 'Import hoàn tất!', percent: 100 })
+      setProgress({ phase: 'done', log: t('playpage.importProfile.importDone'), percent: 100 })
       setTimeout(() => onClose(), 900)
     } catch (err) {
-      setProgress({ phase: 'error', log: `Lỗi: ${err.message}`, percent: 0 })
+      setProgress({ phase: 'error', log: t('playpage.importProfile.errorImport', { error: err.message }), percent: 0 })
     } finally {
       setImporting(false)
     }
@@ -284,7 +286,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
           maxWidth: 340,
         }}
         onClick={() => setMinimized(false)}
-        title="Click để mở lại"
+        title={t('playpage.importProfile.minimizedTitle')}
       >
         {}
         <div className="flex-shrink-0 w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center"
@@ -312,7 +314,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
             </div>
           ) : (
             <p className="text-[10px] text-white/30 mt-0.5">
-              {filePath ? 'Sẵn sàng import' : 'Chọn file để import'}
+              {filePath ? t('playpage.importProfile.readyToImport') : t('playpage.importProfile.selectFile')}
             </p>
           )}
         </div>
@@ -364,15 +366,15 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
         {}
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
           <div>
-            <h2 className="text-base font-bold text-white">Import Profile</h2>
-            <p className="text-xs text-white/30 mt-0.5">Import từ modpack .zip / .mrpack</p>
+            <h2 className="text-base font-bold text-white">{t('playpage.importProfile.title')}</h2>
+            <p className="text-xs text-white/30 mt-0.5">{t('playpage.importProfile.subtitle')}</p>
           </div>
           <div className="flex items-center gap-1">
             {}
             <button
               onClick={() => setMinimized(true)}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-all"
-              title="Thu gọn"
+              title={t('playpage.importProfile.minimize')}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                 <path d="M19 13H5v-2h14v2z"/>
@@ -382,7 +384,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
             <button
               onClick={() => { if (!importing) onClose() }}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white hover:bg-white/8 transition-all"
-              title="Đóng"
+              title={t('playpage.importProfile.close')}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -419,7 +421,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
           {groups.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                Group (tuỳ chọn)
+                {t('playpage.importProfile.group')}
               </label>
               <GroupSelect
                 groups={groups}
@@ -458,9 +460,9 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
               </div>
               <div className="text-center">
                 <p className="text-sm font-semibold" style={{ color: isDragging ? theme.color : 'rgba(255,255,255,0.7)' }}>
-                  {isDragging ? 'Thả file vào đây' : 'Kéo & thả hoặc click để chọn'}
+                  {isDragging ? t('playpage.importProfile.dropHere') : t('playpage.importProfile.dragDrop')}
                 </p>
-                <p className="text-xs text-white/30 mt-1">Hỗ trợ {theme.label} ({theme.ext})</p>
+                <p className="text-xs text-white/30 mt-1">{t('playpage.importProfile.supportedFormats', { source: `${theme.label} (${theme.ext})` })}</p>
               </div>
             </div>
           ) : (
@@ -488,7 +490,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  <span className="text-xs text-white/40">Đang đọc file...</span>
+                  <span className="text-xs text-white/40">{t('playpage.importProfile.readingFile')}</span>
                 </div>
               )}
 
@@ -515,7 +517,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
               )}
               {progress.phase === 'error' && (
                 <p className="text-[10px] text-red-400/70 mt-1">
-                  Kiểm tra kết nối mạng. Một số mod có thể cần CurseForge API key.
+                  {t('playpage.importProfile.errorNetwork')}
                 </p>
               )}
             </div>
@@ -528,7 +530,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
               disabled={importing}
               className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/8 border border-white/5 hover:border-white/10 transition-all disabled:opacity-40"
             >
-              Hủy
+              {t('playpage.importProfile.huy')}
             </button>
             <button
               onClick={handleImport}
@@ -545,12 +547,12 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  {progress?.phase === 'mods' ? `Tải mods ${progress.done ?? 0}/${progress.total ?? 0}`
-                    : progress?.phase === 'overrides' ? 'Giải nén...'
-                    : progress?.phase === 'done' ? 'Hoàn tất!'
-                    : 'Đang import...'}
+                  {progress?.phase === 'mods' ? t('playpage.importProfile.downloadMods', { current: progress.done ?? 0, total: progress.total ?? 0 })
+                    : progress?.phase === 'overrides' ? t('playpage.importProfile.extracting')
+                    : progress?.phase === 'done' ? t('playpage.importProfile.importDone')
+                    : t('playpage.importProfile.importing')}
                 </span>
-              ) : 'Import'}
+              ) : t('playpage.importProfile.import')}
             </button>
           </div>
         </div>

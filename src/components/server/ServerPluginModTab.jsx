@@ -107,17 +107,7 @@ function VersionModal({ project, server, projectType, source, onClose }) {
     window.electronAPI.modrinthGetVersions(project.project_id || project.id, { game_versions: [server.gameVersion] })
       .then(r => {
         const list = Array.isArray(r) ? r : (r?.data || [])
-        let filtered
-        if (serverLoaders.length > 0) {
-          filtered = list.filter(v => v.loaders?.some(l => serverLoaders.includes(l.toLowerCase())))
-          // Fallback: if no versions match server loaders, show all versions for that game version
-          if (filtered.length === 0) {
-            filtered = list
-          }
-        } else {
-          filtered = list
-        }
-        setAllVersions(filtered)
+        setAllVersions(list)
       })
       .catch(() => {})
       .finally(() => setLoading(false))

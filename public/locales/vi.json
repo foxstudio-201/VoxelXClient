@@ -584,7 +584,129 @@
         "errorUnknown": "Lỗi không xác định",
         "spigotFolder": "plugins/",
         "downloadType": "Tải {{type}}"
-      }
+    }
+    }
+  },
+  "playpage": {
+    "tabs": {
+      "allProfiles": "Tất cả Profiles",
+      "groups": "Nhóm"
+    },
+    "buttons": {
+      "newGroup": "Nhóm mới",
+      "create": "Tạo",
+      "newProfile": "Profile mới",
+      "importProfile": "Nhập Profile"
+    },
+    "filters": {
+      "all": "Tất cả",
+      "vanilla": "Vanilla",
+      "fabric": "Fabric",
+      "forge": "Forge",
+      "neoforge": "NeoForge",
+      "modpack": "Modpack"
+    },
+    "loading": {
+      "loading": "Đang tải...",
+      "loadingProfile": "Đang tải profile..."
+    },
+    "empty": {
+      "noGroups": "Chưa có nhóm nào",
+      "noGroupsHint": "Tạo nhóm để tổ chức profiles của bạn",
+      "createFirstGroup": "+ Tạo nhóm đầu tiên",
+      "noProfiles": "Chưa có profile nào",
+      "noProfilesHint": "Tạo profile để bắt đầu chơi Minecraft",
+      "noProfilesMatch": "Không có profile nào khớp",
+      "noProfilesMatchHint": "Thử chọn bộ lọc khác",
+      "createFirstProfile": "+ Tạo profile đầu tiên",
+      "noProfilesInGroup": "Nhóm này chưa có profile nào"
+    },
+    "toast": {
+      "profileSelected": "Đã chọn profile",
+      "profileDeleted": "Đã xóa profile",
+      "groupCreated": "Đã tạo nhóm",
+      "groupDeleted": "Đã xóa nhóm",
+      "profileCreated": "Đã tạo profile",
+      "errorSelecting": "Lỗi",
+      "errorDeleting": "Lỗi xóa profile",
+      "errorCreatingGroup": "Lỗi tạo nhóm",
+      "errorDeletingGroup": "Lỗi xóa nhóm"
+    },
+    "group": {
+      "allGroups": "Tất cả nhóm",
+      "profiles": "profiles",
+      "removeFromGroup": "Xóa khỏi nhóm"
+    },
+    "modal": {
+      "createGroupTitle": "Tạo nhóm mới",
+      "groupName": "Tên nhóm",
+      "groupNamePlaceholder": "Nhập tên nhóm...",
+      "cancel": "Hủy",
+      "creating": "Đang tạo...",
+      "createGroup": "Tạo nhóm"
+    },
+    "card": {
+      "deleteGroup": "Xóa nhóm"
+    },
+    "createProfile": {
+      "title": "Tạo Profile",
+      "loader": "Loader",
+      "selectMinecraftVersion": "Chọn phiên bản Minecraft",
+      "selectLoaderVersion": "Chọn phiên bản {{loader}}",
+      "profileName": "Tên profile",
+      "profileNamePlaceholder": "Để trống = tự động",
+      "gameFolder": "Thư mục game",
+      "gameFolderPlaceholder": "Mặc định trong instances",
+      "browse": "Chọn thư mục",
+      "group": "Group (tuỳ chọn)",
+      "backToMinecraft": "Minecraft {{version}}",
+      "loadingLoaderVersions": "Đang tải {{loader}} loader cho {{version}}...",
+      "retry": "Thử lại",
+      "noLoaderVersions": "Không có phiên bản nào",
+      "recommended": "Recommended",
+      "stable": "Stable",
+      "beta": "Beta",
+      "old": "Old",
+      "latest": "Latest",
+      "all": "All",
+      "neoforgeHint": "NeoForge hỗ trợ từ Minecraft 1.20.2 trở lên",
+      "createBtn": "Tạo Profile {{loader}}",
+      "creating": "Đang tải...",
+      "cancel": "Hủy"
+    },
+    "importProfile": {
+      "title": "Nhập Profile",
+      "subtitle": "Nhập từ modpack .zip / .mrpack",
+      "minimize": "Thu gọn",
+      "close": "Đóng",
+      "group": "Nhóm (tuỳ chọn)",
+      "dropHere": "Thả file vào đây",
+      "dragDrop": "Kéo & thả hoặc click để chọn file",
+      "supportedFormats": "Hỗ trợ {{source}}",
+      "readingFile": "Đang đọc file...",
+      "readyToImport": "Sẵn sàng nhập",
+      "selectFile": "Chọn file để nhập",
+      "minimizedTitle": "Click để mở lại",
+      "huy": "Hủy",
+      "import": "Nhập",
+      "creatingProfile": "Đang tạo profile...",
+      "startImport": "Bắt đầu nhập...",
+      "downloadMods": "Tải mods {{current}}/{{total}}",
+      "extracting": "Đang giải nén...",
+      "importDone": "Nhập hoàn tất!",
+      "importing": "Đang nhập...",
+      "errorCreatingProfile": "Lỗi tạo profile: {{error}}",
+      "errorImport": "Lỗi: {{error}}",
+      "errorNetwork": "Kiểm tra kết nối mạng. Một số mod có thể cần CurseForge API key.",
+      "unnamed": "Không tên",
+      "mods": "mods"
+    },
+    "profileCard": {
+      "delete": "Xóa",
+      "settings": "Cài đặt",
+      "lastPlayed": "Chơi lần cuối",
+      "never": "Chưa chơi",
+      "hours": "Giờ"
     }
   }
 }

@@ -31,6 +31,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useToast } from '../../hooks/useToast'
+import { useLang } from '../../i18n/LangProvider'
 import ProfileCard from './ProfileCard'
 import CreateProfileModal from './CreateProfileModal'
 import ImportProfileModal from './ImportProfileModal'
@@ -40,13 +41,13 @@ import fabricIcon    from '../../assets/loader/fabric.png'
 import forgeIcon     from '../../assets/loader/forge.png'
 import neoforgeIcon  from '../../assets/loader/neoforge.png'
 
-const LOADER_FILTERS = [
-  { id: 'all',      label: 'All',      icon: null },
-  { id: 'vanilla',  label: 'Vanilla',  icon: vanillaIcon,  color: '#4ade80' },
-  { id: 'fabric',   label: 'Fabric',   icon: fabricIcon,   color: '#a855f7' },
-  { id: 'forge',    label: 'Forge',    icon: forgeIcon,    color: '#f97316' },
-  { id: 'neoforge', label: 'NeoForge', icon: neoforgeIcon, color: '#f43f5e' },
-  { id: 'modpack',  label: 'Modpack',  icon: null,         color: '#3b82f6' },
+const LOADER_FILTERS = (t) => [
+  { id: 'all',      label: t('playpage.filters.all'),      icon: null },
+  { id: 'vanilla',  label: t('playpage.filters.vanilla'),  icon: vanillaIcon,  color: '#4ade80' },
+  { id: 'fabric',   label: t('playpage.filters.fabric'),   icon: fabricIcon,   color: '#a855f7' },
+  { id: 'forge',    label: t('playpage.filters.forge'),    icon: forgeIcon,    color: '#f97316' },
+  { id: 'neoforge', label: t('playpage.filters.neoforge'), icon: neoforgeIcon, color: '#f43f5e' },
+  { id: 'modpack',  label: t('playpage.filters.modpack'),  icon: null,         color: '#3b82f6' },
 ]
 
 function SplashLogoInline({ size = 64, label }) {
@@ -183,7 +184,7 @@ const LOADER_ICONS_MAP = {
   neoforge: neoforgeIcon,
 }
 
-function GroupCard({ group, onOpen, onDelete }) {
+function GroupCard({ group, onOpen, onDelete, t }) {
   const previewProfiles = (group.profiles || []).slice(0, 4)
   const placeholders = Array(Math.max(0, 4 - previewProfiles.length)).fill(null)
 
@@ -228,13 +229,13 @@ function GroupCard({ group, onOpen, onDelete }) {
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm text-white truncate">{group.name}</p>
           <p className="text-[10px] text-white/35 mt-0.5">
-            {group.profileCount} profile{group.profileCount !== 1 ? 's' : ''} · {formatSize(group.totalSize)}
+            {group.profileCount} {t ? t('playpage.group.profiles') : 'profiles'} · {formatSize(group.totalSize)}
           </p>
         </div>
         <button
           onClick={e => { e.stopPropagation(); onDelete(group.id) }}
           className="w-7 h-7 flex items-center justify-center rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0"
-          title="Xóa nhóm"
+          title={t ? t('playpage.card.deleteGroup') : 'Delete group'}
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -245,7 +246,7 @@ function GroupCard({ group, onOpen, onDelete }) {
   )
 }
 
-function CreateGroupModal({ onClose, onCreate }) {
+function CreateGroupModal({ onClose, onCreate, t }) {
   const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -274,7 +275,7 @@ function CreateGroupModal({ onClose, onCreate }) {
         style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)' }}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
-          <h2 className="text-base font-bold text-white">Tạo nhóm mới</h2>
+          <h2 className="text-base font-bold text-white">{t ? t('playpage.modal.createGroupTitle') : 'Create new group'}</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white hover:bg-white/8 transition-all">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -283,13 +284,13 @@ function CreateGroupModal({ onClose, onCreate }) {
         </div>
         <form onSubmit={handleSubmit} className="px-5 pb-5 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">Tên nhóm</label>
+            <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">{t ? t('playpage.modal.groupName') : 'Group name'}</label>
             <input
               autoFocus
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Nhập tên nhóm..."
+              placeholder={t ? t('playpage.modal.groupNamePlaceholder') : 'Enter group name...'}
               maxLength={64}
               className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/8 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/20 focus:bg-white/8 transition-all"
             />
@@ -297,11 +298,11 @@ function CreateGroupModal({ onClose, onCreate }) {
           <div className="flex gap-2">
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white/40 hover:text-white/70 bg-white/5 hover:bg-white/8 border border-white/5 transition-all">
-              Hủy
+              {t ? t('playpage.modal.cancel') : 'Cancel'}
             </button>
             <button type="submit" disabled={!name.trim() || submitting}
               className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-500 hover:bg-blue-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-              {submitting ? 'Đang tạo...' : 'Tạo nhóm'}
+              {submitting ? (t ? t('playpage.modal.creating') : 'Creating...') : (t ? t('playpage.modal.createGroup') : 'Create group')}
             </button>
           </div>
         </form>
@@ -310,7 +311,7 @@ function CreateGroupModal({ onClose, onCreate }) {
   )
 }
 
-function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSelect, onDelete, onCancelDelete, onRemoveFromGroup }) {
+function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSelect, onDelete, onCancelDelete, onRemoveFromGroup, t }) {
   return (
     <div className="flex flex-col h-full">
       {}
@@ -320,11 +321,11 @@ function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSe
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
           </svg>
-          Tất cả nhóm
+          {t ? t('playpage.group.allGroups') : 'All groups'}
         </button>
         <span className="text-white/15">·</span>
         <span className="text-sm font-bold text-white">{group.name}</span>
-        <span className="text-xs text-white/30">({group.profileCount} profiles)</span>
+        <span className="text-xs text-white/30">({group.profileCount} {t ? t('playpage.group.profiles') : 'profiles'})</span>
       </div>
       <div className="border-t border-white/5 flex-shrink-0" />
 
@@ -336,7 +337,7 @@ function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSe
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
               </svg>
             </div>
-            <p className="text-sm text-white/30">Nhóm này chưa có profile nào</p>
+            <p className="text-sm text-white/30">{t ? t('playpage.empty.noProfilesInGroup') : 'This group has no profiles yet'}</p>
           </div>
         ) : (
           <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
@@ -353,12 +354,12 @@ function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSe
                 <button
                   onClick={() => onRemoveFromGroup(group.id, profile.id)}
                   className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 border border-white/10 text-[10px] text-white/50 hover:text-white/80 hover:bg-black/80 transition-all"
-                  title="Xóa khỏi nhóm"
+                  title={t ? t('playpage.group.removeFromGroup') : 'Remove from group'}
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                   </svg>
-                  Xóa khỏi nhóm
+                  {t ? t('playpage.group.removeFromGroup') : 'Remove'}
                 </button>
               </div>
             ))}
@@ -370,6 +371,7 @@ function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSe
 }
 
 export default function PlayPage() {
+  const { t } = useLang()
   const toast = useToast()
   const [profiles, setProfiles]                   = useState([])
   const [selectedProfileId, setSelectedProfileId] = useState(null)
@@ -421,12 +423,12 @@ export default function PlayPage() {
     if (id === selectedProfileId) return
     const result = await apiSelectProfile(id)
     if (result?.error) {
-      toast({ type: 'error', title: 'Lỗi', message: result.error })
+      toast({ type: 'error', title: t('playpage.toast.errorSelecting'), message: result.error })
       return
     }
     setSelectedProfileId(id)
     const p = profiles.find(x => x.id === id)
-    toast({ type: 'success', title: 'Đã chọn profile', message: p?.name })
+    toast({ type: 'success', title: t('playpage.toast.profileSelected'), message: p?.name })
   }
 
   async function handleDelete(id) {
@@ -438,7 +440,7 @@ export default function PlayPage() {
     const p = profiles.find(x => x.id === id)
     const result = await apiDeleteProfile(id)
     if (result?.error) {
-      toast({ type: 'error', title: 'Lỗi xóa profile', message: result.error })
+      toast({ type: 'error', title: t('playpage.toast.errorDeleting'), message: result.error })
       return
     }
     setDeleteConfirm(null)
@@ -449,13 +451,13 @@ export default function PlayPage() {
       const gd = await window.electronAPI.getGroups()
       setGroups(gd.groups || [])
     }
-    toast({ type: 'info', title: 'Đã xóa profile', message: p?.name })
+    toast({ type: 'info', title: t('playpage.toast.profileDeleted'), message: p?.name })
   }
 
   async function handleCreate(profileData) {
     const result = await apiCreateProfile(profileData)
     if (result?.error) {
-      toast({ type: 'error', title: 'Lỗi tạo profile', message: result.error })
+      toast({ type: 'error', title: t('playpage.toast.errorCreatingProfile'), message: result.error })
       return result
     }
     setProfiles(result.data.profiles || [])
@@ -467,14 +469,14 @@ export default function PlayPage() {
       setGroups(gd.groups || [])
     }
     setShowCreate(false)
-    toast({ type: 'success', title: 'Đã tạo profile', message: result.profile?.name })
+    toast({ type: 'success', title: t('playpage.toast.profileCreated'), message: result.profile?.name })
     return result
   }
 
   async function handleCreateForImport(profileData) {
     const result = await apiCreateProfile(profileData)
     if (result?.error) {
-      toast({ type: 'error', title: 'Lỗi tạo profile', message: result.error })
+      toast({ type: 'error', title: t('playpage.toast.errorCreatingProfile'), message: result.error })
       return result
     }
     setProfiles(result.data.profiles || [])
@@ -496,13 +498,13 @@ export default function PlayPage() {
     if (!isElectron) return
     const result = await window.electronAPI.createGroup({ name })
     if (result?.error) {
-      toast({ type: 'error', title: 'Lỗi tạo nhóm', message: result.error })
+      toast({ type: 'error', title: t('playpage.toast.errorCreatingGroup'), message: result.error })
       return
     }
     const gd = await window.electronAPI.getGroups()
     setGroups(gd.groups || [])
     setShowCreateGroup(false)
-    toast({ type: 'success', title: 'Đã tạo nhóm', message: name })
+    toast({ type: 'success', title: t('playpage.toast.groupCreated'), message: name })
   }
 
   async function handleDeleteGroup(id) {
@@ -510,12 +512,12 @@ export default function PlayPage() {
     const g = groups.find(x => x.id === id)
     const result = await window.electronAPI.deleteGroup(id)
     if (result?.error) {
-      toast({ type: 'error', title: 'Lỗi xóa nhóm', message: result.error })
+      toast({ type: 'error', title: t('playpage.toast.errorDeletingGroup'), message: result.error })
       return
     }
     setGroups(prev => prev.filter(x => x.id !== id))
     if (selectedGroupId === id) setSelectedGroupId(null)
-    toast({ type: 'info', title: 'Đã xóa nhóm', message: g?.name })
+    toast({ type: 'info', title: t('playpage.toast.groupDeleted'), message: g?.name })
   }
 
   async function handleRemoveFromGroup(groupId, profileId) {
@@ -547,7 +549,7 @@ export default function PlayPage() {
                 : 'text-white/40 hover:text-white/70 hover:bg-white/6'
             }`}
           >
-            All Profiles
+            {t('playpage.tabs.allProfiles')}
           </button>
           <button
             onClick={() => { setActiveTab('groups'); setSelectedGroupId(null) }}
@@ -557,7 +559,7 @@ export default function PlayPage() {
                 : 'text-white/40 hover:text-white/70 hover:bg-white/6'
             }`}
           >
-            Groups
+            {t('playpage.tabs.groups')}
             {groups.length > 0 && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-white/10 text-white/50 min-w-[20px] text-center">{groups.length}</span>
             )}
@@ -574,7 +576,7 @@ export default function PlayPage() {
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
               </svg>
-              New Group
+              {t('playpage.buttons.newGroup')}
             </button>
           )}
           {}
@@ -586,7 +588,7 @@ export default function PlayPage() {
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
               </svg>
-              Create
+              {t('playpage.buttons.create')}
               <svg viewBox="0 0 24 24" fill="currentColor" className={`w-3 h-3 transition-transform duration-150 ${showDropdown ? 'rotate-180' : ''}`}>
                 <path d="M7 10l5 5 5-5z"/>
               </svg>
@@ -600,7 +602,7 @@ export default function PlayPage() {
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                   </svg>
-                  New Profile
+                  {t('playpage.buttons.newProfile')}
                 </button>
                 <div className="h-px bg-white/5 mx-2" />
                 <button
@@ -610,7 +612,7 @@ export default function PlayPage() {
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-blue-400">
                     <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                   </svg>
-                  Import Profile
+                  {t('playpage.buttons.importProfile')}
                 </button>
               </div>
             )}
@@ -621,7 +623,7 @@ export default function PlayPage() {
       {}
       {activeTab === 'profiles' && (
         <div className="flex-shrink-0 flex items-center gap-2 px-6 pb-3 flex-wrap">
-          {LOADER_FILTERS.map(f => {
+          {LOADER_FILTERS(t).map(f => {
             const isActive = loaderFilter === f.id
             return (
               <button
@@ -665,13 +667,14 @@ export default function PlayPage() {
           onDelete={handleDelete}
           onCancelDelete={() => setDeleteConfirm(null)}
           onRemoveFromGroup={handleRemoveFromGroup}
+          t={t}
         />
       ) : activeTab === 'groups' ? (
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {loading ? (
             <div className="flex items-center justify-center h-48">
-              <SplashLogoInline size={64} label="Đang tải..." />
+              <SplashLogoInline size={64} label={t('playpage.loading.loading')} />
             </div>
           ) : groups.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center gap-4">
@@ -681,14 +684,14 @@ export default function PlayPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-white/30 font-medium">Chưa có nhóm nào</p>
-                <p className="text-xs text-white/15 mt-0.5">Tạo nhóm để tổ chức profiles của bạn</p>
+                <p className="text-sm text-white/30 font-medium">{t('playpage.empty.noGroups')}</p>
+                <p className="text-xs text-white/15 mt-0.5">{t('playpage.empty.noGroupsHint')}</p>
               </div>
               <button
                 onClick={() => setShowCreateGroup(true)}
                 className="px-4 py-2 rounded-xl bg-blue-500/15 text-blue-400 text-xs font-semibold border border-blue-500/20 hover:bg-blue-500/25 transition-all"
               >
-                + Tạo nhóm đầu tiên
+                {t('playpage.empty.createFirstGroup')}
               </button>
             </div>
           ) : (
@@ -699,6 +702,7 @@ export default function PlayPage() {
                   group={group}
                   onOpen={id => setSelectedGroupId(id)}
                   onDelete={handleDeleteGroup}
+                  t={t}
                 />
               ))}
             </div>
@@ -709,7 +713,7 @@ export default function PlayPage() {
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4">
           {loading ? (
             <div className="flex items-center justify-center h-48">
-              <SplashLogoInline size={64} label="Đang tải profile..." />
+              <SplashLogoInline size={64} label={t('playpage.loading.loadingProfile')} />
             </div>
           ) : filteredProfiles.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center gap-4">
@@ -720,10 +724,10 @@ export default function PlayPage() {
               </div>
               <div>
                 <p className="text-sm text-white/30 font-medium">
-                  {profiles.length === 0 ? 'Chưa có profile nào' : 'Không có profile nào khớp'}
+                  {profiles.length === 0 ? t('playpage.empty.noProfiles') : t('playpage.empty.noProfilesMatch')}
                 </p>
                 <p className="text-xs text-white/15 mt-0.5">
-                  {profiles.length === 0 ? 'Tạo profile để bắt đầu chơi Minecraft' : 'Thử chọn bộ lọc khác'}
+                  {profiles.length === 0 ? t('playpage.empty.noProfilesHint') : t('playpage.empty.noProfilesMatchHint')}
                 </p>
               </div>
               {profiles.length === 0 && (
@@ -731,7 +735,7 @@ export default function PlayPage() {
                   onClick={() => setShowCreate(true)}
                   className="px-4 py-2 rounded-xl bg-green-500/15 text-green-400 text-xs font-semibold border border-green-500/20 hover:bg-green-500/25 transition-all"
                 >
-                  + Tạo profile đầu tiên
+                  {t('playpage.empty.createFirstProfile')}
                 </button>
               )}
             </div>
@@ -776,6 +780,7 @@ export default function PlayPage() {
         <CreateGroupModal
           onClose={() => setShowCreateGroup(false)}
           onCreate={handleCreateGroup}
+          t={t}
         />
       )}
     </div>
