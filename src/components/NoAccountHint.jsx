@@ -126,13 +126,13 @@ export default function NoAccountHint({ onGoToAccount }) {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white leading-tight">{t('noacccounthint.noacccount')}</p>
-                  <p className="text-[11px] text-white/35">{t("noacccounthint.needacccount")}</p>
+                  <p className="text-sm font-bold text-white leading-tight">{t('noacccounthint.noaccount')}</p>
+                  <p className="text-[11px] text-white/35">{t('noacccounthint.needacccount')}</p>
                 </div>
               </div>
 
               <p className="text-[11px] text-white/45 leading-relaxed mb-3.5">
-                {t('noacccounthint.createaccount')} <span className="text-white/70 font-medium">Offline</span> {t('noacccounthint.ofloggins')}{' '}
+                {t('noacccounthint.createacccount')} <span className="text-white/70 font-medium">Offline</span> {t('noacccounthint.ofloggins')}{' '}
                 <span className="text-white/70 font-medium">Microsoft</span> {t('noacccounthint.tostartmc')}
               </p>
 
