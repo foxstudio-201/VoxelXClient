@@ -622,15 +622,6 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       logWinRef = logWin
 
-      // Lấy screen resolution thực từ Electron để game chạy đúng resolution
-      let screenWidth = 0, screenHeight = 0
-      try {
-        const { screen } = require('electron')
-        const primaryDisplay = screen.getPrimaryDisplay()
-        screenWidth  = primaryDisplay.size.width
-        screenHeight = primaryDisplay.size.height
-      } catch {}
-
       const proc = launchGame({
         javaPath,
         clientJar:         assets.clientJar,
@@ -651,8 +642,6 @@ function registerLauncherHandlers(getTrustedWindow) {
         accessToken,
         ramMb:             ramMb || 2048,
         boostMode,
-        screenWidth,
-        screenHeight,
         onLog: (line) => {
           writeLog(line)
         },
