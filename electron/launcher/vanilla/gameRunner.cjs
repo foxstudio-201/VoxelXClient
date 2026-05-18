@@ -159,6 +159,7 @@ function launchGame(opts) {
     ramMb = 2048, mainClassOverride, extraJvmArgs = [], extraGameArgs = [],
     shimJar = null, shimWorkDir = null,
     boostMode = false,
+    screenWidth = 0, screenHeight = 0,
     onLog, onExit,
   } = opts
 
@@ -167,9 +168,13 @@ function launchGame(opts) {
 
   if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
 
+  // Dùng resolution màn hình thực nếu có, fallback về 1280x720
+  const resW = screenWidth  > 0 ? String(screenWidth)  : '1280'
+  const resH = screenHeight > 0 ? String(screenHeight) : '720'
+
   const vars = {
     _os:              os,
-    _features:        { is_demo_user: false, has_custom_resolution: false },
+    _features:        { is_demo_user: false, has_custom_resolution: true },
     auth_player_name: username,
     auth_uuid:        uuid,
     auth_access_token: accessToken || '0',
@@ -185,8 +190,8 @@ function launchGame(opts) {
     launcher_version: '1.0.0',
     classpath,
 
-    resolution_width:  '854',
-    resolution_height: '480',
+    resolution_width:  resW,
+    resolution_height: resH,
   }
 
   const xmx = ramMb
@@ -301,6 +306,7 @@ function launchGame(opts) {
 
   onLog?.(`[Launcher] Java: ${javaPath}`)
   onLog?.(`[Launcher] Java version: ${javaMajor} → GC: ${javaMajor >= 21 ? 'ZGC Generational' : 'G1GC'}${boostMode ? ' | Boost Mode ON' : ''}`)
+  onLog?.(`[Launcher] Resolution: ${resW}x${resH}`)
   onLog?.(`[Launcher] Main: ${mainClass}`)
   onLog?.(`[Launcher] Args: ${spawnArgs.slice(0, 5).join(' ')}...`)
 
