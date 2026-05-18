@@ -47,6 +47,8 @@
       "showLogWindowDesc": "Opens a separate Minecraft log window on game launch",
       "discordRPC": "Enable Discord Rich Presence",
       "discordRPCDesc": "Show game status on Discord",
+      "boostMode": "Boost Mode on game launch",
+      "boostModeDesc": "Automatically kills unnecessary background processes (OneDrive, Teams, Spotify...) to free up CPU/RAM for the game and boost FPS",
       "ui": "Interface",
       "uiTabs": ["Font", "Colors", "Borders", "Background"],
       "fontLabel": "Font",

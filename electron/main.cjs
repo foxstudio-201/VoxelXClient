@@ -234,6 +234,7 @@ const DEFAULT_SETTINGS = {
   hideLauncherOnLaunch: true,
   showLogWindow:        true,
   discordRPC:           false,
+  boostMode:            false,
   fontId:               'system',
   colorAccent:          '#4ade80',
   colorHover:           '#86efac',
@@ -1600,6 +1601,82 @@ ipcMain.handle('settings:save', (e, patch) => {
 
   return { ok: true, data: updated }
 })
+
+// Boost Mode: tắt tiến trình nền không cần thiết để dồn tài nguyên cho game
+ipcMain.handle('system:boostMode', async (e, enable) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  if (process.platform !== 'win32') return { ok: true, skipped: true, reason: 'Windows only' }
+
+  const { exec } = require('child_process')
+
+  // Danh sách tiến trình không cần thiết khi chơi game
+  // Chỉ tắt những tiến trình an toàn, không ảnh hưởng hệ thống
+  const BOOST_KILL_LIST = [
+    'OneDrive.exe',
+    'Teams.exe',
+    'Slack.exe',
+    'Spotify.exe',
+    'Discord.exe',
+    'EpicGamesLauncher.exe',
+    'steam.exe',
+    'GalaxyClient.exe',
+    'upc.exe',
+    'origin.exe',
+    'OriginWebHelperService.exe',
+    'SearchIndexer.exe',
+    'SearchProtocolHost.exe',
+    'SearchFilterHost.exe',
+    'SgrmBroker.exe',
+    'MsMpEng.exe',
+    'NisSrv.exe',
+    'SecurityHealthSystray.exe',
+    'OneDriveSetup.exe',
+    'SkypeApp.exe',
+    'SkypeBridge.exe',
+    'msedge.exe',
+    'chrome.exe',
+    'firefox.exe',
+    'opera.exe',
+    'brave.exe',
+    'Cortana.exe',
+    'WinStore.App.exe',
+    'XboxApp.exe',
+    'XboxGameBarWidgets.exe',
+    'GameBar.exe',
+    'GameBarFTServer.exe',
+    'RiotClientServices.exe',
+    'LeagueClient.exe',
+    'valorant.exe',
+    'EADesktop.exe',
+    'BattleNet.exe',
+    'Agent.exe',
+  ]
+
+  if (enable) {
+    const killed = []
+    const failed = []
+
+    for (const proc of BOOST_KILL_LIST) {
+      await new Promise(resolve => {
+        exec(`taskkill /F /IM "${proc}" /T`, { windowsHide: true }, (err) => {
+          if (!err) killed.push(proc)
+          else failed.push(proc)
+          resolve()
+        })
+      })
+    }
+
+    // Set độ ưu tiên cao cho tiến trình launcher (sẽ truyền xuống game)
+    try {
+      exec(`wmic process where ProcessId=${process.pid} CALL setpriority "above normal"`, { windowsHide: true })
+    } catch {}
+
+    return { ok: true, killed, failed }
+  } else {
+    return { ok: true, restored: true }
+  }
+})
+
 ipcMain.handle('discord:startLink', async (e) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   try {

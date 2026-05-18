@@ -830,6 +830,15 @@ export default function LauncherTab({ settings, onChange }) {
             onChange={v => onChange({ discordRPC: v })}
           />
         </SettingRow>
+        <SettingRow
+          label={t('settings.launcher.boostMode')}
+          description={t('settings.launcher.boostModeDesc')}
+        >
+          <Toggle
+            checked={settings.boostMode ?? false}
+            onChange={v => onChange({ boostMode: v })}
+          />
+        </SettingRow>
       </Section>
 
       {}

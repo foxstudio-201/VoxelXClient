@@ -47,6 +47,8 @@
       "showLogWindowDesc": "Mở cửa sổ log Minecraft riêng biệt khi khởi chạy game",
       "discordRPC": "Bật Discord Rich Presence",
       "discordRPCDesc": "Hiển thị trạng thái chơi game trên Discord",
+      "boostMode": "Boost Mode khi khởi động game",
+      "boostModeDesc": "Tự động tắt các tiến trình nền không cần thiết (OneDrive, Teams, Spotify...) để dồn tài nguyên CPU/RAM cho game, giúp tăng FPS",
       "ui": "Giao diện",
       "uiTabs": ["Kiểu chữ", "Màu sắc", "Đường viền", "Nền"],
       "fontLabel": "Font chữ",

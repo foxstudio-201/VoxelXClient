@@ -151,9 +151,11 @@ async function extractZip(zipPath, destDir) {
   })
 }
 
-async function ensureJava(gameVersion, runtimesDir, onProgress) {
-  const component   = getJavaComponent(gameVersion)
-  const javaVersion = getJavaVersion(component)
+async function ensureJava(gameVersion, runtimesDir, onProgress, versionJson) {
+  const component   = versionJson?.javaVersion?.component || getJavaComponent(gameVersion)
+  const javaVersion = versionJson?.javaVersion?.majorVersion
+    ? String(versionJson.javaVersion.majorVersion)
+    : getJavaVersion(component)
   const javaDir     = path.join(runtimesDir, component)
   const javaExe     = getJavaExecutable(javaDir)
 

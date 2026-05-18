@@ -37,30 +37,37 @@ const fs    = require('fs')
 
 function detectJavaMajorVersion(javaPath) {
   try {
-    const out = execFileSync(javaPath, ['-version'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: 5000,
-    }).toString()
-    const errOut = (() => {
+    let combined = ''
+    try {
+      execFileSync(javaPath, ['-version'], {
+        stdio: ['ignore', 'ignore', 'pipe'],
+        timeout: 5000,
+      })
+    } catch (e) {
+      combined = e.stderr?.toString() || ''
+    }
+    if (!combined) {
       try {
-        return require('child_process').execFileSync(javaPath, ['-version'], {
-          stdio: ['ignore', 'ignore', 'pipe'],
+        combined = execFileSync(javaPath, ['-version'], {
+          stdio: ['ignore', 'pipe', 'pipe'],
           timeout: 5000,
         }).toString()
-      } catch (e) { return e.stderr?.toString() || '' }
-    })()
-    const combined = out + errOut
+      } catch (e2) {
+        combined = e2.stderr?.toString() || e2.stdout?.toString() || ''
+      }
+    }
     const match = combined.match(/version "(\d+)(?:\.(\d+))?/)
-    if (!match) return 17
+    if (!match) return null
     const major = parseInt(match[1], 10)
     return major === 1 ? parseInt(match[2] || '8', 10) : major
   } catch {
-    return 17
+    return null
   }
 }
 
 function buildGcArgs(javaMajor, ramMb) {
   if (javaMajor >= 21) {
+    // ZGC Generational — Java 21+
     return [
       '-XX:+UseZGC',
       '-XX:+ZGenerational',
@@ -73,6 +80,7 @@ function buildGcArgs(javaMajor, ramMb) {
     ]
   }
 
+  // G1GC — Java 8/11/17
   return [
     '-XX:+UseG1GC',
     '-XX:+ParallelRefProcEnabled',
@@ -150,6 +158,7 @@ function launchGame(opts) {
     versionJson, instancePath, gameVersion, username, uuid, accessToken,
     ramMb = 2048, mainClassOverride, extraJvmArgs = [], extraGameArgs = [],
     shimJar = null, shimWorkDir = null,
+    boostMode = false,
     onLog, onExit,
   } = opts
 
@@ -183,8 +192,16 @@ function launchGame(opts) {
   const xmx = ramMb
   const xms = Math.max(512, Math.floor(ramMb * 0.5))
 
-  const javaMajor = detectJavaMajorVersion(javaPath)
+  const javaMajor = detectJavaMajorVersion(javaPath) ?? (versionJson?.javaVersion?.majorVersion ?? 17)
   const gcArgs    = buildGcArgs(javaMajor, ramMb)
+
+  // Boost Mode: thêm JVM flags ưu tiên thread và tối ưu thêm
+  const boostJvmArgs = boostMode ? [
+    '-XX:+UseThreadPriorities',
+    '-XX:ThreadPriorityPolicy=1',
+    '-XX:+OptimizeStringConcat',
+    '-XX:+UseCompressedOops',
+  ] : []
 
   const jvmArgs = [
     `-Xmx${xmx}m`,
@@ -200,6 +217,7 @@ function launchGame(opts) {
     '-Djava.awt.headless=false',
 
     ...gcArgs,
+    ...boostJvmArgs,
 
     '-Dorg.lwjgl.util.NoChecks=true',
     '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=false',
@@ -276,7 +294,7 @@ function launchGame(opts) {
   const spawnCwd = shimWorkDir || instancePath
 
   onLog?.(`[Launcher] Java: ${javaPath}`)
-  onLog?.(`[Launcher] Java version: ${javaMajor} → GC: ${javaMajor >= 21 ? 'ZGC Generational' : 'G1GC'}`)
+  onLog?.(`[Launcher] Java version: ${javaMajor} → GC: ${javaMajor >= 21 ? 'ZGC Generational' : 'G1GC'}${boostMode ? ' | Boost Mode ON' : ''}`)
   onLog?.(`[Launcher] Main: ${mainClass}`)
   onLog?.(`[Launcher] Args: ${spawnArgs.slice(0, 5).join(' ')}...`)
 

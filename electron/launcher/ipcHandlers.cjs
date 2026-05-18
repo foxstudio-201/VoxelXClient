@@ -153,6 +153,7 @@ function registerLauncherHandlers(getTrustedWindow) {
     const settings      = readSettings()
     const hideLauncher  = settings.hideLauncherOnLaunch !== false
     const showLog       = settings.showLogWindow !== false
+    const boostMode     = settings.boostMode === true
 
     const instancePath = profile.instancePath
     if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
@@ -564,6 +565,35 @@ function registerLauncherHandlers(getTrustedWindow) {
       }
 
       sendProgressAndLog({ phase: 'launching', log: `Launching as ${account.username}...`, percent: 98 })
+
+      // Boost Mode: tắt tiến trình nền trước khi khởi động game
+      if (boostMode && process.platform === 'win32') {
+        sendProgressAndLog({ phase: 'launching', log: 'Boost Mode: đang tắt tiến trình nền...', percent: 98 })
+        try {
+          const { exec } = require('child_process')
+          const BOOST_KILL_LIST = [
+            'OneDrive.exe', 'Teams.exe', 'Slack.exe', 'Spotify.exe',
+            'EpicGamesLauncher.exe', 'GalaxyClient.exe', 'upc.exe',
+            'origin.exe', 'OriginWebHelperService.exe',
+            'SearchIndexer.exe', 'SearchProtocolHost.exe', 'SearchFilterHost.exe',
+            'SgrmBroker.exe', 'OneDriveSetup.exe',
+            'SkypeApp.exe', 'SkypeBridge.exe',
+            'Cortana.exe', 'WinStore.App.exe',
+            'XboxApp.exe', 'XboxGameBarWidgets.exe', 'GameBar.exe', 'GameBarFTServer.exe',
+            'RiotClientServices.exe', 'EADesktop.exe', 'BattleNet.exe', 'Agent.exe',
+          ]
+          const killPromises = BOOST_KILL_LIST.map(proc =>
+            new Promise(resolve => {
+              exec(`taskkill /F /IM "${proc}" /T`, { windowsHide: true }, () => resolve())
+            })
+          )
+          await Promise.all(killPromises)
+          sendProgressAndLog({ phase: 'launching', log: 'Boost Mode: đã dọn tiến trình nền ✓', percent: 98 })
+        } catch (boostErr) {
+          writeLog(`[WARN] Boost Mode error: ${boostErr.message}`)
+        }
+      }
+
       const logWin = showLog ? createLogWindow(win, profile.name, account.username) : null
 
       logWinRef = logWin
@@ -587,6 +617,7 @@ function registerLauncherHandlers(getTrustedWindow) {
         uuid:              account.uuid,
         accessToken,
         ramMb:             ramMb || 2048,
+        boostMode,
         onLog: (line) => {
           writeLog(line)
         },
@@ -616,10 +647,15 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       if (proc.pid) {
         try {
-          process.setProcessPriority(proc.pid, 'below normal')
-        } catch {}
-        try {
-          process.setProcessPriority(process.pid, 'below normal')
+          // Boost Mode: game được priority cao, launcher thấp để nhường tài nguyên
+          // Bình thường: game below normal (launcher ưu tiên hơn)
+          if (boostMode) {
+            process.setProcessPriority(proc.pid, 'high')
+            process.setProcessPriority(process.pid, 'below normal')
+          } else {
+            process.setProcessPriority(proc.pid, 'below normal')
+            process.setProcessPriority(process.pid, 'below normal')
+          }
         } catch {}
       }
 

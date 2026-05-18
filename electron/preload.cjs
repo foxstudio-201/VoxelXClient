@@ -69,6 +69,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   getSettings:  ()       => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch)  => ipcRenderer.invoke('settings:save', patch),
+  systemBoostMode: (enable) => ipcRenderer.invoke('system:boostMode', enable),
 
   getProfiles:    ()            => ipcRenderer.invoke('profiles:get'),
   createProfile:  (profileData) => ipcRenderer.invoke('profiles:create', profileData),
