@@ -39,8 +39,19 @@ const path   = require('path')
 const MODRINTH_API = 'https://api.modrinth.com/v2'
 
 const FABRIC_AUTO_MODS = [
-  { id: 'P7dR8mSH', name: 'Fabric API' },
-  { id: 'mOgUt4GM', name: 'Mod Menu'   },
+  // Core / API
+  { id: 'P7dR8mSH', name: 'Fabric API'            },
+  { id: 'mOgUt4GM', name: 'Mod Menu'               },
+  { id: 'Ha28R6CL', name: 'Fabric Language Kotlin' },
+
+  // Performance — render
+  { id: 'AANobbMI', name: 'Sodium'                 },
+  { id: 'PtjYWJkn', name: 'Sodium Extra'           },
+  { id: '5ZwThgaR', name: 'ImmediatelyFast'        },
+
+  // Performance — memory / CPU
+  { id: 'uXXizFIs', name: 'FerriteCore'            },
+  { id: 'LQ3K71Q1', name: 'Dynamic FPS'            },
 ]
 
 function httpsGetJson(url) {
@@ -138,15 +149,17 @@ async function ensureFabricMods(mcVersion, modsDir, onProgress) {
       continue
     }
 
+    // Xóa file jar cũ của cùng mod (khác version) dựa trên tên file gốc từ Modrinth
     try {
+      const allFiles = version.files?.map(f => f.filename) || []
       const existing = fs.readdirSync(modsDir)
       for (const f of existing) {
-
-        if (f !== fileName && version.files?.some(vf => {
-
-          const slug = vf.filename.split('-')[0]
-          return f.startsWith(slug + '-') && f.endsWith('.jar')
-        })) {
+        if (!f.endsWith('.jar') && !f.endsWith('.jar.off') && !f.endsWith('.jar.disabled')) continue
+        if (f === fileName) continue
+        // So sánh slug: lấy phần trước số version đầu tiên
+        const fSlug    = f.replace(/[-_](v?\d[\d._\-+]*).*\.jar.*$/i, '').toLowerCase()
+        const newSlug  = fileName.replace(/[-_](v?\d[\d._\-+]*).*\.jar.*$/i, '').toLowerCase()
+        if (fSlug === newSlug && fSlug.length > 3) {
           fs.unlinkSync(path.join(modsDir, f))
           onProgress?.({ log: `Removed old ${mod.name}: ${f}`, done, total })
         }
