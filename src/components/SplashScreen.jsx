@@ -40,7 +40,7 @@ export default function SplashScreen({ onDone }) {
   const tRef = useRef(t)
   tRef.current = t
   const [pct, setPct]         = useState(0)
-  const [log, setLog]         = useState('Khởi tạo...')
+  const [log, setLog]         = useState('')
   const [fadeOut, setFadeOut] = useState(false)
   const [version, setVersion] = useState('')
   const doneRef               = useRef(false)
@@ -68,7 +68,7 @@ export default function SplashScreen({ onDone }) {
 
       if (cancelled) return
 
-      setProgress(20, (tRef.current('splahs.loadSettings')))
+      setProgress(20, (tRef.current('splash.loadSettings')))
       let autoCheckUpdate = true
       try {
         const s = await loadAppSettings()
@@ -89,7 +89,7 @@ export default function SplashScreen({ onDone }) {
           const updateResult = await window.electronAPI.checkUpdate()
           if (!cancelled && updateResult?.hasUpdate) {
 
-            setProgress(35, (tRef.current('splash.newVersion')))
+            setProgress(35, (tRef.current('splash.newVersion', { version: updateResult.latestVersion || '' })))
             await delay(400)
             window.electronAPI.openUpdateWindow(updateResult)
             return
@@ -104,7 +104,7 @@ export default function SplashScreen({ onDone }) {
           const selected = (accountData?.accounts || []).find(a => a.id === accountData?.selectedId)
 
           if (selected?.type === 'microsoft') {
-            setProgress(50, (tRef.current('splash.syncMs')))
+            setProgress(50, (tRef.current('splash.syncMs', { username: selected.username || '' })))
             try {
               await window.electronAPI.msRefreshToken(selected.id)
             } catch {}
