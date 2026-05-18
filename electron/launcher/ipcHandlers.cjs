@@ -74,6 +74,57 @@ function makeKey(profileId, accountId) {
   return `${profileId}::${accountId}`
 }
 
+function syncDirRecursive(srcDir, destDir) {
+  if (!fs.existsSync(srcDir)) return
+
+  const stat = fs.statSync(srcDir)
+  if (!stat.isDirectory()) return
+
+  fs.mkdirSync(destDir, { recursive: true })
+
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry.name)
+    const destPath = path.join(destDir, entry.name)
+
+    if (entry.isDirectory()) {
+      syncDirRecursive(srcPath, destPath)
+      continue
+    }
+
+    if (!entry.isFile()) continue
+
+    let shouldCopy = true
+    if (fs.existsSync(destPath)) {
+      try {
+        const srcStat = fs.statSync(srcPath)
+        const destStat = fs.statSync(destPath)
+        shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
+      } catch {
+        shouldCopy = true
+      }
+    }
+
+    if (shouldCopy) {
+      fs.mkdirSync(path.dirname(destPath), { recursive: true })
+      fs.copyFileSync(srcPath, destPath)
+    }
+  }
+}
+
+function syncModpackSharedDirs(profile, gameDataDir) {
+  if (!profile?.importSource) return []
+
+  const synced = []
+  for (const dirName of ['mods', 'config', 'resourcepacks']) {
+    const srcDir = path.join(profile.instancePath, dirName)
+    if (!fs.existsSync(srcDir)) continue
+    syncDirRecursive(srcDir, path.join(gameDataDir, dirName))
+    synced.push(dirName)
+  }
+  return synced
+}
+
 const { createLogWindow } = require('./logWindow.cjs')
 
 function registerLauncherHandlers(getTrustedWindow) {
@@ -121,6 +172,21 @@ function registerLauncherHandlers(getTrustedWindow) {
     const runtimesDir = path.join(instancePath, 'runtimes')
     const gameDataDir = path.join(instancePath, 'accounts', account.id)
     if (!fs.existsSync(gameDataDir)) fs.mkdirSync(gameDataDir, { recursive: true })
+
+    try {
+      const syncedDirs = syncModpackSharedDirs(profile, gameDataDir)
+      if (syncedDirs.length > 0) {
+        if (!win.isDestroyed()) {
+          win.webContents.send('launcher:progress', {
+            phase: 'prepare_modpack',
+            log: `Syncing modpack data: ${syncedDirs.join(', ')}...`,
+            percent: 1,
+          })
+        }
+      }
+    } catch (syncErr) {
+      return { error: `Failed to sync modpack files: ${syncErr.message}` }
+    }
 
     function sendProgress(data) {
       if (!win.isDestroyed()) win.webContents.send('launcher:progress', data)

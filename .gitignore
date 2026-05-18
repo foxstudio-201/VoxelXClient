@@ -33,6 +33,7 @@ scripts/strip-comments.cjs
 # Bot Discord — separate repo
 bot-discord/
 bot-update/
+bot-admin/
 
 # Large demo files
 modpack_demo/
