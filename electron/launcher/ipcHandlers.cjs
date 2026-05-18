@@ -594,6 +594,30 @@ function registerLauncherHandlers(getTrustedWindow) {
         }
       }
 
+      // Force GPU: set Windows GPU preference cho java process dùng discrete GPU
+      if (process.platform === 'win32') {
+        try {
+          const { exec } = require('child_process')
+          // GpuPreference=2 = High Performance (discrete GPU)
+          // Áp dụng cho cả java.exe và javaw.exe
+          const javaExeNorm = javaPath.replace(/\//g, '\\')
+          const javawExe    = javaExeNorm.replace(/java\.exe$/i, 'javaw.exe')
+          const regEntries  = [javaExeNorm, javawExe].filter(Boolean)
+          for (const exe of regEntries) {
+            await new Promise(resolve => {
+              exec(
+                `reg add "HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences" /v "${exe}" /t REG_SZ /d "GpuPreference=2;" /f`,
+                { windowsHide: true },
+                () => resolve()
+              )
+            })
+          }
+          sendProgressAndLog({ phase: 'launching', log: 'GPU: đã set High Performance GPU cho Java ✓', percent: 98 })
+        } catch (gpuErr) {
+          writeLog(`[WARN] GPU preference error: ${gpuErr.message}`)
+        }
+      }
+
       const logWin = showLog ? createLogWindow(win, profile.name, account.username) : null
 
       logWinRef = logWin

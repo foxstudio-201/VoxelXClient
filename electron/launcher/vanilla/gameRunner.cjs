@@ -221,6 +221,12 @@ function launchGame(opts) {
 
     '-Dorg.lwjgl.util.NoChecks=true',
     '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=false',
+    // Force hardware GPU — tắt software fallback, bật hardware acceleration
+    '-Dorg.lwjgl.opengl.Display.enableHighDPI=true',
+    '-Dorg.lwjgl.system.allocator=system',
+    '-Dsun.java2d.opengl=true',
+    '-Dsun.java2d.d3d=false',
+    '-Dsun.java2d.noddraw=true',
   ]
 
   const needsVanillaCP = extraJvmArgs.includes('__needsVanillaClasspath__')
