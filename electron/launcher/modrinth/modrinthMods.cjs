@@ -39,19 +39,35 @@ const path   = require('path')
 const MODRINTH_API = 'https://api.modrinth.com/v2'
 
 const FABRIC_AUTO_MODS = [
-  // Core / API
+  // ── Core / API ──────────────────────────────────────────────────────────
   { id: 'P7dR8mSH', name: 'Fabric API'            },
   { id: 'mOgUt4GM', name: 'Mod Menu'               },
   { id: 'Ha28R6CL', name: 'Fabric Language Kotlin' },
 
-  // Performance — render
-  { id: 'AANobbMI', name: 'Sodium'                 },
-  { id: 'PtjYWJkn', name: 'Sodium Extra'           },
-  { id: '5ZwThgaR', name: 'ImmediatelyFast'        },
+  // ── Render / GPU ────────────────────────────────────────────────────────
+  { id: 'AANobbMI', name: 'Sodium'                 }, // modern OpenGL renderer
+  { id: 'PtjYWJkn', name: 'Sodium Extra'           }, // extra Sodium settings
+  { id: '5ZwThgaR', name: 'ImmediatelyFast'        }, // immediate mode render opt
+  { id: 'NNAgCjsB', name: 'Entity Culling'         }, // skip hidden entity render
+  { id: '51shyZVL', name: 'More Culling'           }, // skip hidden block render
 
-  // Performance — memory / CPU
-  { id: 'uXXizFIs', name: 'FerriteCore'            },
-  { id: 'LQ3K71Q1', name: 'Dynamic FPS'            },
+  // ── Memory / CPU ────────────────────────────────────────────────────────
+  { id: 'uXXizFIs', name: 'FerriteCore'            }, // -30~40% RAM usage
+  { id: 'gvQqBUqZ', name: 'Lithium'                }, // game logic / AI / physics
+  { id: 'nmDcB62a', name: 'ModernFix'              }, // misc vanilla perf fixes
+  { id: 'hEOCdOgW', name: 'BadOptimizations'       }, // misc optimizations
+
+  // ── Chunk / World ────────────────────────────────────────────────────────
+  { id: 'VSNURh3q', name: 'C2ME'                   }, // multithreaded chunk loading
+  { id: 'KuNKN7d2', name: 'Noisium'                }, // faster world gen noise
+  { id: 'H8CaAYZC', name: 'Starlight'              }, // rewritten lighting engine
+
+  // ── Network ─────────────────────────────────────────────────────────────
+  { id: 'fQEb0iXm', name: 'Krypton'                }, // networking stack opt
+
+  // ── Misc FPS ────────────────────────────────────────────────────────────
+  { id: 'LQ3K71Q1', name: 'Dynamic FPS'            }, // reduce FPS when unfocused
+  { id: 'Wnxd13zP', name: 'Clumps'                 }, // merge XP orbs → less entities
 ]
 
 function httpsGetJson(url) {
