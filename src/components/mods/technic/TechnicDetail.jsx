@@ -33,6 +33,7 @@ import { useState, useMemo } from 'react'
 import { DownloadSimple, Heart, CalendarBlank, ArrowLeft, ArrowSquareOut } from '@phosphor-icons/react'
 import { useTechnicProject, useTechnicVersions } from './useTechnic'
 import InstallModal from '../shared/InstallModal'
+import { useModpackInstall } from '../shared/ModpackInstallContext'
 
 function SplashLogoInline({ size = 64, label }) {
   const s = size / 4.5
@@ -143,6 +144,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
   const [activeTab, setActiveTab] = useState('versions')
   const [selectedVersion, setVersion] = useState(null)
   const [showInstall, setShowInstall] = useState(false)
+  const { openModpackInstall } = useModpackInstall()
 
   const [filterLoader, setFilterLoader] = useState(() => activeLoaders[0] || 'all')
 
@@ -475,7 +477,12 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
                   </div>
                 </div>
                 <button
-                  onClick={e => { e.stopPropagation(); setVersion(v); setShowInstall(true) }}
+                  onClick={e => {
+                    e.stopPropagation()
+                    setVersion(v)
+                    if (projectType === 'modpack') openModpackInstall({ project, version: v, source: 'technic' })
+                    else setShowInstall(true)
+                  }}
                   className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white transition-all hover:-translate-y-0.5"
                   style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: '0 2px 12px rgba(74,222,128,0.2)' }}
                 >
@@ -506,7 +513,7 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
       </div>
 
       {}
-      {showInstall && selectedVersion && (
+      {showInstall && selectedVersion && projectType !== 'modpack' && (
         <InstallModal
           project={project}
           versions={[selectedVersion, ...versions.filter(v => v.id !== selectedVersion.id)]}
@@ -518,4 +525,3 @@ export default function TechnicDetail({ projectId, projectType, activeLoaders = 
     </div>
   )
 }
-

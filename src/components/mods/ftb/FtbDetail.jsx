@@ -32,7 +32,7 @@
 import { useState, useMemo } from 'react'
 import { DownloadSimple, Heart, CalendarBlank, ArrowLeft, ArrowSquareOut } from '@phosphor-icons/react'
 import { useFtbProject, useFtbVersions } from './useFtb'
-import InstallModal from '../shared/InstallModal'
+import { useModpackInstall } from '../shared/ModpackInstallContext'
 
 function SplashLogoInline({ size = 64, label }) {
   const s = size / 4.5
@@ -101,8 +101,7 @@ export default function FtbDetail({ projectId, onBack }) {
   const { versions, loading: vLoading } = useFtbVersions(projectId)
 
   const [activeTab, setActiveTab] = useState('versions')
-  const [selectedVersion, setVersion] = useState(null)
-  const [showInstall, setShowInstall] = useState(false)
+  const { openModpackInstall } = useModpackInstall()
 
   if (loading) {
     return (
@@ -303,7 +302,10 @@ export default function FtbDetail({ projectId, onBack }) {
                   </div>
                 </div>
                 <button
-                  onClick={e => { e.stopPropagation(); setVersion(v); setShowInstall(true) }}
+                  onClick={e => {
+                    e.stopPropagation()
+                    openModpackInstall({ project, version: v, source: 'ftb' })
+                  }}
                   className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white transition-all hover:-translate-y-0.5"
                   style={{ background: 'linear-gradient(135deg,#f97316,#ea580c)', boxShadow: '0 2px 12px rgba(249,115,22,0.2)' }}
                 >
@@ -332,18 +334,6 @@ export default function FtbDetail({ projectId, onBack }) {
           </div>
         )}
       </div>
-
-      {}
-      {showInstall && selectedVersion && (
-        <InstallModal
-          project={project}
-          versions={[selectedVersion, ...versions.filter(v => v.id !== selectedVersion.id)]}
-          projectType="modpack"
-          source="ftb"
-          onClose={() => { setShowInstall(false); setVersion(null) }}
-        />
-      )}
     </div>
   )
 }
-

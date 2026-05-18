@@ -45,6 +45,7 @@ import { ToastContext, useToastState } from './hooks/useToast'
 import { AccountsProvider, useAccounts } from './hooks/useAccounts'
 import { loadAppSettings, applyAppSettings } from './utils/appSettings'
 import { LangProvider } from './i18n/LangProvider'
+import { ModpackInstallProvider } from './components/mods/shared/ModpackInstallContext'
 
 import ModsPage from './components/mods/ModsPage'
 import ServerPage from './components/server/ServerPage'
@@ -348,18 +349,20 @@ export default function App() {
   return (
     <LangProvider>
       <AccountsProvider>
-        <ToastContext.Provider value={toastState}>
-          <AppBackground bgId={bgId} />
-          {!splashDone && (
-            <SplashScreen onDone={() => setSplashDone(true)} />
-          )}
-          <AppInner />
-          <Toast
-            toast={toastState.toast}
-            visible={toastState.visible}
-            onDismiss={toastState.dismiss}
-          />
-        </ToastContext.Provider>
+        <ModpackInstallProvider>
+          <ToastContext.Provider value={toastState}>
+            <AppBackground bgId={bgId} />
+            {!splashDone && (
+              <SplashScreen onDone={() => setSplashDone(true)} />
+            )}
+            <AppInner />
+            <Toast
+              toast={toastState.toast}
+              visible={toastState.visible}
+              onDismiss={toastState.dismiss}
+            />
+          </ToastContext.Provider>
+        </ModpackInstallProvider>
       </AccountsProvider>
     </LangProvider>
   )

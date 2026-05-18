@@ -646,7 +646,15 @@
       "createGroup": "Create group"
     },
     "card": {
-      "deleteGroup": "Delete group"
+      "deleteGroup": "Delete group",
+      "selected": "Selected",
+      "select": "Select",
+      "modpack": "Modpack",
+      "deleteConfirm": "Delete this profile?",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "openFolder": "Open folder: {{path}}",
+      "deleteProfile": "Delete profile"
     },
     "createProfile": {
       "title": "Create Profile",

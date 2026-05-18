@@ -646,7 +646,15 @@
       "createGroup": "Tạo nhóm"
     },
     "card": {
-      "deleteGroup": "Xóa nhóm"
+      "deleteGroup": "Xóa nhóm",
+      "selected": "Đã chọn",
+      "select": "Chọn",
+      "modpack": "Modpack",
+      "deleteConfirm": "Xóa profile này?",
+      "delete": "Xóa",
+      "cancel": "Hủy",
+      "openFolder": "Mở thư mục: {{path}}",
+      "deleteProfile": "Xóa profile"
     },
     "createProfile": {
       "title": "Tạo Profile",

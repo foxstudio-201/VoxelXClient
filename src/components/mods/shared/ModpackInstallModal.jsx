@@ -58,6 +58,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
   const [errorMsg, setErrorMsg] = useState(null)
   const [minimized, setMinimized] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState('')
+  const [availableGroups, setAvailableGroups] = useState(groups)
   const unsubRef = useRef(null)
 
   const src = SOURCE_META[source] || SOURCE_META.modrinth
@@ -71,6 +72,17 @@ export default function ModpackInstallModal({ project, version, source, onClose,
     })
     return () => { unsubRef.current?.() }
   }, [])
+
+  useEffect(() => {
+    setAvailableGroups(groups)
+  }, [groups])
+
+  useEffect(() => {
+    if (groups.length > 0 || !isElectron) return
+    window.electronAPI.getGroups?.().then(data => {
+      setAvailableGroups(data?.groups || [])
+    }).catch(() => {})
+  }, [groups])
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape' && phase !== 'running') onClose() }
@@ -274,13 +286,13 @@ export default function ModpackInstallModal({ project, version, source, onClose,
           )}
 
           {}
-          {groups.length > 0 && (
+          {availableGroups.length > 0 && (
             <div>
               <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
                 Group (tuỳ chọn)
               </label>
               <GroupSelect
-                groups={groups}
+                groups={availableGroups}
                 value={selectedGroupId}
                 onChange={setSelectedGroupId}
                 disabled={isRunning}
@@ -363,4 +375,3 @@ export default function ModpackInstallModal({ project, version, source, onClose,
     </div>
   )
 }
-
