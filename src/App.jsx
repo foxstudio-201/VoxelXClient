@@ -46,6 +46,7 @@ import { AccountsProvider, useAccounts } from './hooks/useAccounts'
 import { loadAppSettings, applyAppSettings } from './utils/appSettings'
 import { LangProvider } from './i18n/LangProvider'
 import { ModpackInstallProvider } from './components/mods/shared/ModpackInstallContext'
+import CrashAnalyzerModal, { isFabricIncompatibleCrash } from './components/crash/CrashAnalyzerModal'
 
 import ModsPage from './components/mods/ModsPage'
 import ServerPage from './components/server/ServerPage'
@@ -75,6 +76,7 @@ function AppInner() {
   const [progress, setProgress]       = useState(null)
   const [launchError, setLaunchError] = useState(null)
   const [activeKey, setActiveKey]     = useState(null)
+  const [crashData, setCrashData]     = useState(null)
 
   const [serverJavaProgress, setServerJavaProgress] = useState({})
   const cleanupRef = useRef([])
@@ -174,6 +176,56 @@ function AppInner() {
       const realKey = data?.profileId && data?.accountId
         ? `${data.profileId}::${data.accountId}`
         : null
+
+      // Crash detection: exit code !== 0 → phân tích log
+      const exitCode = data?.code ?? 0
+      if (exitCode !== 0 && isElectron) {
+        setInstances(prev => {
+          // Lấy logs của instance bị crash
+          const inst = realKey
+            ? prev.get(realKey)
+            : data?.profileId
+              ? [...prev.values()].find(i => i.profileId === data.profileId)
+              : null
+
+          if (inst?.logs?.length) {
+            const logs = inst.logs
+            // Chỉ hiện crash modal nếu là Fabric incompatible crash hoặc exit code lạ
+            const shouldShow = isFabricIncompatibleCrash(logs) || exitCode !== 0
+
+            if (shouldShow) {
+              // Lấy profile info để có instancePath, gameVersion, loader
+              window.electronAPI.getProfiles().then(profilesData => {
+                const profile = profilesData?.profiles?.find(p => p.id === data.profileId)
+                if (!profile) return
+                setCrashData({
+                  logs,
+                  profileId: data.profileId,
+                  accountId: data.accountId || null,
+                  instancePath: profile.instancePath,
+                  gameVersion: profile.gameVersion,
+                  loader: profile.loader,
+                  profileName: inst.profileName || profile.name,
+                  exitCode,
+                })
+              }).catch(() => {
+                // Fallback: hiện modal không có profile info
+                setCrashData({
+                  logs,
+                  profileId: data.profileId,
+                  accountId: data.accountId || null,
+                  instancePath: null,
+                  gameVersion: null,
+                  loader: null,
+                  profileName: inst.profileName || '',
+                  exitCode,
+                })
+              })
+            }
+          }
+          return prev
+        })
+      }
 
       setInstances(prev => {
         const next = new Map(prev)
@@ -305,6 +357,10 @@ function AppInner() {
           <NoAccountHint onGoToAccount={() => setActivePage('account')} />
         )}
       </div>
+      <CrashAnalyzerModal
+        crashData={crashData}
+        onClose={() => setCrashData(null)}
+      />
     </div>
   )
 }

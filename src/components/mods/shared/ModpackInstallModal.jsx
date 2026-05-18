@@ -59,30 +59,47 @@ export default function ModpackInstallModal({ project, version, source, onClose,
   const [minimized, setMinimized] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState('')
   const [availableGroups, setAvailableGroups] = useState(groups)
+  const [groupsLoading, setGroupsLoading] = useState(false)
   const unsubRef = useRef(null)
+  // Track max percent seen to prevent backward jumps
+  const maxPctRef = useRef(0)
 
   const src = SOURCE_META[source] || SOURCE_META.modrinth
 
   useEffect(() => {
     if (!isElectron) return
     unsubRef.current = window.electronAPI.onImportProgress?.((data) => {
-      setProgress(data)
+      // Clamp percent to never go backwards
+      const rawPct = data.percent ?? 0
+      const clampedPct = Math.max(maxPctRef.current, rawPct)
+      maxPctRef.current = clampedPct
+
+      setProgress(prev => ({ ...prev, ...data, percent: clampedPct }))
       if (data.phase === 'done')  setPhase('done')
       if (data.phase === 'error') { setPhase('error'); setErrorMsg(data.log) }
     })
-    return () => { unsubRef.current?.() }
+    return () => {
+      unsubRef.current?.()
+      maxPctRef.current = 0
+    }
   }, [])
 
+  // Load groups một lần duy nhất khi modal mở
   useEffect(() => {
-    setAvailableGroups(groups)
-  }, [groups])
-
-  useEffect(() => {
-    if (groups.length > 0 || !isElectron) return
-    window.electronAPI.getGroups?.().then(data => {
-      setAvailableGroups(data?.groups || [])
-    }).catch(() => {})
-  }, [groups])
+    if (!isElectron) return
+    // Nếu prop đã có data thì dùng luôn
+    if (groups.length > 0) {
+      setAvailableGroups(groups)
+      return
+    }
+    // Không có thì fetch
+    setGroupsLoading(true)
+    window.electronAPI.getGroups?.()
+      .then(data => { setAvailableGroups(data?.groups || []) })
+      .catch(() => { setAvailableGroups([]) })
+      .finally(() => setGroupsLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // chỉ chạy 1 lần khi mount, không phụ thuộc groups prop
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape' && phase !== 'running') onClose() }
@@ -92,6 +109,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
 
   async function handleInstall() {
     if (phase === 'running') return
+    maxPctRef.current = 0
 
     const primaryFile = version?.files?.find(f => f.primary) || version?.files?.[0]
     const downloadUrl = primaryFile?.url
@@ -312,27 +330,37 @@ export default function ModpackInstallModal({ project, version, source, onClose,
           {}
           {(isRunning || isDone || isError) && (
             <div className="flex flex-col gap-2 px-1">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-white/50 truncate flex-1">{progress?.log}</span>
-                <span className="text-xs font-mono font-bold flex-shrink-0"
+              <div className="flex items-center justify-between gap-2 min-h-[20px]">
+                <span className="text-xs text-white/50 truncate flex-1 min-w-0">{progress?.log}</span>
+                <span className="text-xs font-mono font-bold flex-shrink-0 w-10 text-right tabular-nums"
                   style={{ color: isError ? '#f87171' : isDone ? '#4ade80' : src.color }}>
                   {pct}%
                 </span>
               </div>
               <div className="w-full h-1.5 bg-white/8 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{ width: `${pct}%`, background: isError ? '#ef4444' : src.color }}
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${pct}%`,
+                    background: isError ? '#ef4444' : src.color,
+                    transition: pct > 0 ? 'width 0.4s ease-out' : 'none',
+                  }}
                 />
               </div>
-              {progress?.total > 0 && (
-                <p className="text-[10px] text-white/25 text-right">{progress.done ?? 0} / {progress.total} mods</p>
-              )}
-              {isError && (
-                <p className="text-[10px] text-red-400/70 mt-1">
-                  Kiểm tra kết nối mạng hoặc thử lại.
-                </p>
-              )}
+              <div className="flex items-center justify-between min-h-[16px]">
+                {progress?.total > 0 ? (
+                  <p className="text-[10px] text-white/25 tabular-nums">
+                    {progress.done ?? 0} / {progress.total} mods
+                  </p>
+                ) : (
+                  <span />
+                )}
+                {isError && (
+                  <p className="text-[10px] text-red-400/70">
+                    Kiểm tra kết nối mạng hoặc thử lại.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -354,13 +382,16 @@ export default function ModpackInstallModal({ project, version, source, onClose,
               >
                 {isRunning ? (
                   <>
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <svg className="animate-spin w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
-                    {progress?.phase === 'mods' ? `Tải mods ${progress.done ?? 0}/${progress.total ?? 0}`
-                      : progress?.phase === 'overrides' ? 'Giải nén...'
-                      : 'Đang cài đặt...'}
+                    <span className="truncate">
+                      {progress?.phase === 'mods' && progress?.total > 0
+                        ? `Tải mods ${progress.done ?? 0}/${progress.total}`
+                        : progress?.phase === 'overrides' ? 'Giải nén...'
+                        : 'Đang cài đặt...'}
+                    </span>
                   </>
                 ) : isError ? (
                   <><DownloadSimple size={15} weight="bold" /> Thử lại</>

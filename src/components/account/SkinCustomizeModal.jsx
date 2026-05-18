@@ -30,21 +30,23 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useLang } from '../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 const TABS = [
-  { id: 'skin',   label: 'Skin' },
-  { id: 'cape',   label: 'Cape' },
-  { id: 'elytra', label: 'Elytra' },
+  { id: 'skin',   labelKey: 'account.skinModal.tabSkin' },
+  { id: 'cape',   labelKey: 'account.skinModal.tabCape' },
+  { id: 'elytra', labelKey: 'account.skinModal.tabElytra' },
 ]
 
 const SKIN_TYPES = [
-  { id: 'wide', label: 'Classic (Wide)' },
-  { id: 'slim', label: 'Slim (Alex)' },
+  { id: 'wide', labelKey: 'account.skinModal.skinTypeWide' },
+  { id: 'slim', labelKey: 'account.skinModal.skinTypeSlim' },
 ]
 
 export default function SkinCustomizeModal({ account, cosmeticData = [], onClose, onApply }) {
+  const { t } = useLang()
   const [activeTab, setActiveTab]         = useState('skin')
   const [selectedFile, setSelectedFile]   = useState(null)
   const [previewUrl, setPreviewUrl]       = useState(null)
@@ -195,7 +197,7 @@ async function handleApply() {
         {}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
           <div>
-            <h3 className="text-white font-bold text-sm">Tuỳ chỉnh Cosmetics</h3>
+            <h3 className="text-white font-bold text-sm">{t('account.skinModal.title')}</h3>
             <p className="text-white/30 text-xs mt-0.5">{account?.username}</p>
           </div>
           <button onClick={onClose}
@@ -215,7 +217,7 @@ async function handleApply() {
                   ? 'border-green-500 text-green-400'
                   : 'border-transparent text-white/30 hover:text-white/60'
               }`}>
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           ))}
         </div>
@@ -229,7 +231,7 @@ async function handleApply() {
             {activeTab === 'skin' && (
               <div>
                 <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-1.5 block">
-                  Loại skin
+                  {t('account.skinModal.skinTypeLabel')}
                 </label>
                 <div className="flex gap-2">
                   {SKIN_TYPES.map(st => (
@@ -239,7 +241,7 @@ async function handleApply() {
                           ? 'bg-green-500/15 border-green-500/30 text-green-400'
                           : 'bg-white/3 border-white/8 text-white/40 hover:text-white/60 hover:bg-white/6'
                       }`}>
-                      {st.label}
+                      {t(st.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -249,7 +251,7 @@ async function handleApply() {
             {}
             <div>
               <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-1.5 block">
-                Tải lên từ máy
+                {t('account.skinModal.uploadLabel')}
               </label>
               <div
                 onDragEnter={onDragEnter}
@@ -278,9 +280,9 @@ async function handleApply() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-white/60">
-                    {isDragging ? 'Thả file vào đây' : selectedFile ? selectedFile.name : 'Kéo & thả hoặc click để chọn'}
+                    {isDragging ? t('account.skinModal.dropHint') : selectedFile ? selectedFile.name : t('account.skinModal.uploadHint')}
                   </p>
-                  <p className="text-[10px] text-white/25 mt-0.5">PNG, 64×64 hoặc 128×128</p>
+                  <p className="text-[10px] text-white/25 mt-0.5">{t('account.skinModal.uploadFormat')}</p>
                 </div>
                 {selectedFile && (
                   <button onClick={e => { e.stopPropagation(); setSelectedFile(null); setPreviewUrl(null) }}
@@ -298,7 +300,7 @@ async function handleApply() {
             {apiItems.length > 0 && (
               <div className="flex items-center justify-between">
                 <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                  Từ thư viện ({apiItems.length})
+                  {t('account.skinModal.libraryLabel', { count: apiItems.length })}
                 </label>
               </div>
             )}
@@ -331,7 +333,7 @@ async function handleApply() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-6 gap-2">
-                <p className="text-xs text-white/25">Không có {activeTab} nào trong thư viện</p>
+                <p className="text-xs text-white/25">{t('account.skinModal.libraryEmpty', { type: activeTab })}</p>
               </div>
             )}
           </div>
@@ -341,7 +343,7 @@ async function handleApply() {
         <div className="flex gap-2 px-5 py-4 border-t border-white/5 flex-shrink-0">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/50 hover:text-white transition-all border border-white/8 hover:bg-white/5">
-            Hủy
+            {t('account.skinModal.cancel')}
           </button>
           <button onClick={handleApply} disabled={!canApply}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
@@ -349,9 +351,9 @@ async function handleApply() {
             {done ? (
               <>
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Đã áp dụng
+                {t('account.skinModal.applied')}
               </>
-            ) : applying ? 'Đang áp dụng...' : 'Áp dụng'}
+            ) : applying ? t('account.skinModal.applying') : t('account.skinModal.apply')}
           </button>
         </div>
       </div>

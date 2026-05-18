@@ -32,6 +32,7 @@
 import { useState } from 'react'
 import PlayerHead from '../ui/PlayerHead'
 import { offlineUUID } from '../../utils/offlineUUID'
+import { useLang } from '../../i18n/LangProvider'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -43,9 +44,9 @@ const TABS = [
 
 function validatePlayerName(name) {
   const trimmed = name.trim()
-  if (!trimmed) return 'Vui lòng nhập tên người dùng'
-  if (trimmed.length < 3 || trimmed.length > 16) return 'Tên phải từ 3–16 ký tự'
-  if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) return 'Chỉ dùng chữ, số và dấu _'
+  if (!trimmed) return 'account.addModal.usernameError'
+  if (trimmed.length < 3 || trimmed.length > 16) return 'account.addModal.usernameLengthError'
+  if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) return 'account.addModal.usernameCharError'
   return null
 }
 
@@ -104,6 +105,7 @@ function normalizeDiscordProfile(profile) {
 }
 
 export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existingAccounts = [] }) {
+  const { t } = useLang()
   const [tab, setTab] = useState('offline')
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
@@ -139,7 +141,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
     const name = username.trim()
     const validationError = validatePlayerName(name)
     if (validationError) {
-      setError(validationError)
+      setError(t(validationError))
       setLoading(false)
       return
     }
@@ -156,7 +158,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
 
   async function startMsLogin() {
     if (!isElectron) {
-      setError('Đăng nhập Microsoft chỉ khả dụng trong ứng dụng Electron.')
+      setError(t('account.addModal.msOnlyElectron'))
       return
     }
 
@@ -175,14 +177,14 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
       setMsState('success')
       if (onAdd) await onAdd({ _msAlreadySaved: true, ...result.account })
     } catch (err) {
-      setError(err?.message || 'Không thể đăng nhập Microsoft lúc này.')
+      setError(err?.message || t('account.addModal.msOnlyElectron'))
       setMsState('idle')
     }
   }
 
   async function startDiscordLink() {
     if (!isElectron) {
-      setError('Liên kết Discord chỉ khả dụng trong ứng dụng Electron.')
+      setError(t('account.addModal.discordOnlyElectron'))
       return
     }
 
@@ -199,7 +201,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
 
       const normalizedProfile = normalizeDiscordProfile(result?.profile)
       if (!normalizedProfile) {
-        setError('Dữ liệu tài khoản Discord trả về không hợp lệ.')
+        setError(t('account.addModal.discordInvalidData'))
         setDiscordState('idle')
         return
       }
@@ -207,7 +209,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
       setDiscordProfile(normalizedProfile)
       setDiscordState('linked')
     } catch (err) {
-      setError(err?.message || 'Không thể liên kết Discord lúc này.')
+      setError(err?.message || t('account.addModal.discordOnlyElectron'))
       setDiscordState('idle')
     }
   }
@@ -218,7 +220,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
     setLoading(true)
 
     if (!discordProfile?.discordId) {
-      setError('Bạn cần liên kết Discord trước.')
+      setError(t('account.addModal.discordNeedAuth'))
       setLoading(false)
       return
     }
@@ -226,7 +228,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
     if (discordMode === 'link') {
       // Liên kết Discord vào account đã có
       if (!linkTargetId) {
-        setError('Vui lòng chọn tài khoản muốn liên kết.')
+        setError(t('account.addModal.discordSelectAccount'))
         setLoading(false)
         return
       }
@@ -244,7 +246,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
     const name = discordPlayerName.trim()
     const validationError = validatePlayerName(name)
     if (validationError) {
-      setError(validationError)
+      setError(t(validationError))
       setLoading(false)
       return
     }
@@ -285,7 +287,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
     >
       <div className="w-[460px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h2 className="text-base font-bold text-white">Thêm tài khoản</h2>
+          <h2 className="text-base font-bold text-white">{t('account.addModal.title')}</h2>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
@@ -317,29 +319,29 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
           {tab === 'offline' && (
             <form onSubmit={handleOfflineSubmit} className="flex flex-col gap-4">
               <TextField
-                label="Tên người dùng"
+                label={t('account.addModal.usernameLabel')}
                 value={username}
                 onChange={setUsername}
-                placeholder="Steve"
+                placeholder={t('account.addModal.usernamePlaceholder')}
                 autoFocus
               />
               <p className="text-[11px] text-white/25 -mt-2">
-                Tài khoản offline không cần internet. Chỉ chơi được server không yêu cầu xác thực.
+                {t('account.addModal.offlineHint')}
               </p>
 
               <AccountPreview
                 type="offline"
                 uuid={offlinePreviewUuid}
-                username={username.trim() || 'Chưa đặt tên'}
+                username={username.trim() || t('account.addModal.noNameYet')}
                 subtitle={`Offline · ${offlinePreviewUuid || '—'}`}
               />
 
               {error && <ErrorBanner message={error} />}
 
               <div className="flex gap-2 pt-1">
-                <SecondaryButton type="button" onClick={onClose}>Huỷ</SecondaryButton>
+                <SecondaryButton type="button" onClick={onClose}>{t('account.addModal.cancel')}</SecondaryButton>
                 <PrimaryButton type="submit" disabled={loading}>
-                  {loading ? 'Đang xử lý...' : 'Thêm tài khoản'}
+                  {loading ? t('account.addModal.processing') : t('account.addModal.addBtn')}
                 </PrimaryButton>
               </div>
             </form>
@@ -359,9 +361,9 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                       </svg>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-white/80">Đăng nhập Microsoft</p>
+                      <p className="text-sm font-semibold text-white/80">{t('account.addModal.msTitle')}</p>
                       <p className="text-xs text-white/35 mt-1 leading-relaxed">
-                        Launcher sẽ mở một cửa sổ đăng nhập để đồng bộ tài khoản Microsoft đã mua Minecraft Java Edition.
+                        {t('account.addModal.msDesc')}
                       </p>
                     </div>
                   </div>
@@ -369,7 +371,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                   {error && <ErrorBanner message={error} />}
 
                   <div className="flex gap-2">
-                    <SecondaryButton onClick={onClose}>Huỷ</SecondaryButton>
+                    <SecondaryButton onClick={onClose}>{t('account.addModal.cancel')}</SecondaryButton>
                     <button
                       onClick={startMsLogin}
                       disabled={!isElectron}
@@ -381,7 +383,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                         <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
                         <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
                       </svg>
-                      Đăng nhập với Microsoft
+                      {t('account.addModal.msLoginBtn')}
                     </button>
                   </div>
                 </>
@@ -389,8 +391,8 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
 
               {msState === 'waiting' && (
                 <WaitingState
-                  title="Đang chờ đăng nhập..."
-                  description="Hoàn thành đăng nhập trong cửa sổ Microsoft vừa mở."
+                  title={t('account.addModal.msWaiting')}
+                  description={t('account.addModal.msWaitingDesc')}
                   colorClass="text-[#0078d4]"
                 />
               )}
@@ -398,8 +400,8 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
               {msState === 'success' && msAccount && (
                 <SuccessState
                   title={msAccount.username}
-                  description="Đăng nhập thành công · Microsoft"
-                  actionLabel="Xong"
+                  description={t('account.addModal.msSuccess')}
+                  actionLabel={t('account.addModal.msDone')}
                   onAction={onClose}
                 />
               )}
@@ -416,9 +418,9 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                       <DiscordGlyph className="w-8 h-8 text-[#5865F2]" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-white/80">Liên kết tài khoản Discord</p>
+                      <p className="text-sm font-semibold text-white/80">{t('account.addModal.discordTitle')}</p>
                       <p className="text-xs text-white/35 mt-1 leading-relaxed">
-                        Xác thực qua Discord rồi chọn tạo tài khoản mới hoặc liên kết vào tài khoản đã có.
+                        {t('account.addModal.discordDesc')}
                       </p>
                     </div>
                   </div>
@@ -437,8 +439,8 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                       <svg viewBox="0 0 24 24" fill="currentColor" className={`w-5 h-5 ${discordMode === 'new' ? 'text-[#8b9cf4]' : 'text-white/25'}`}>
                         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                       </svg>
-                      <span className="text-xs font-semibold">Tạo tài khoản mới</span>
-                      <span className="text-[10px] text-white/30 text-center leading-tight">Tạo account mới liên kết với Discord</span>
+                      <span className="text-xs font-semibold">{t('account.addModal.discordModeNew')}</span>
+                      <span className="text-[10px] text-white/30 text-center leading-tight">{t('account.addModal.discordModeNewHint')}</span>
                     </button>
                     <button
                       type="button"
@@ -453,15 +455,15 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                       <svg viewBox="0 0 24 24" fill="currentColor" className={`w-5 h-5 ${discordMode === 'link' ? 'text-[#8b9cf4]' : 'text-white/25'}`}>
                         <path d="M17 7H13V9H17C18.65 9 20 10.35 20 12C20 13.65 18.65 15 17 15H13V17H17C19.76 17 22 14.76 22 12C22 9.24 19.76 7 17 7ZM11 15H7C5.35 15 4 13.65 4 12C4 10.35 5.35 9 7 9H11V7H7C4.24 7 2 9.24 2 12C2 14.76 4.24 17 7 17H11V15ZM8 13H16V11H8V13Z"/>
                       </svg>
-                      <span className="text-xs font-semibold">Liên kết tài khoản cũ</span>
-                      <span className="text-[10px] text-white/30 text-center leading-tight">Gắn Discord vào account đã có</span>
+                      <span className="text-xs font-semibold">{t('account.addModal.discordModeLink')}</span>
+                      <span className="text-[10px] text-white/30 text-center leading-tight">{t('account.addModal.discordModeLinkHint')}</span>
                     </button>
                   </div>
 
                   {error && <ErrorBanner message={error} />}
 
                   <div className="flex gap-2">
-                    <SecondaryButton type="button" onClick={onClose}>Huỷ</SecondaryButton>
+                    <SecondaryButton type="button" onClick={onClose}>{t('account.addModal.cancel')}</SecondaryButton>
                     <button
                       type="button"
                       onClick={startDiscordLink}
@@ -469,7 +471,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                       className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#5865F2] hover:bg-[#4752c4] text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <DiscordGlyph className="w-4 h-4" />
-                      Xác thực Discord
+                      {t('account.addModal.discordAuthBtn')}
                     </button>
                   </div>
                 </>
@@ -477,8 +479,8 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
 
               {discordState === 'waiting' && (
                 <WaitingState
-                  title="Đang chờ xác thực Discord..."
-                  description="Trình duyệt đã được mở. Hoàn thành xác nhận Discord rồi quay lại launcher."
+                  title={t('account.addModal.discordWaiting')}
+                  description={t('account.addModal.discordWaitingDesc')}
                   colorClass="text-[#5865F2]"
                 />
               )}
@@ -500,7 +502,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                     </div>
                     <span className="flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
                       <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                      Đã xác thực
+                      {t('account.addModal.discordVerified')}
                     </span>
                   </div>
 
@@ -508,19 +510,19 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                   {discordMode === 'new' && (
                     <>
                       <TextField
-                        label="Tên player"
+                        label={t('account.addModal.discordPlayerLabel')}
                         value={discordPlayerName}
                         onChange={setDiscordPlayerName}
-                        placeholder="Steve"
+                        placeholder={t('account.addModal.usernamePlaceholder')}
                         autoFocus
                       />
                       <p className="text-[11px] text-white/25 -mt-2">
-                        Tên này dùng trong Minecraft. Discord chỉ dùng để xác minh danh tính.
+                        {t('account.addModal.discordPlayerHint')}
                       </p>
                       <AccountPreview
                         type="discord"
                         uuid={discordPreviewUuid}
-                        username={discordPlayerName.trim() || 'Chưa đặt tên'}
+                        username={discordPlayerName.trim() || t('account.addModal.noNameYet')}
                         subtitle={`Discord · ${discordPreviewUuid || '—'}`}
                       />
                     </>
@@ -531,7 +533,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                     <>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-                          Chọn tài khoản để liên kết
+                          {t('account.addModal.discordLinkLabel')}
                         </label>
                         <div className="flex flex-col gap-1 max-h-36 overflow-y-auto">
                           {existingAccounts.map(acc => (
@@ -550,7 +552,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                                 <p className="text-xs font-semibold text-white/80 truncate">{acc.username}</p>
                                 <p className="text-[10px] text-white/30 truncate">
                                   {acc.type === 'microsoft' ? 'Microsoft' : acc.type === 'discord' ? 'Discord' : 'Offline'}
-                                  {acc.discordId ? ' · Đã liên kết Discord' : ''}
+                                  {acc.discordId ? ` · ${t('account.addModal.discordLinked')}` : ''}
                                 </p>
                               </div>
                               {linkTargetId === acc.id && (
@@ -564,7 +566,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                       </div>
                       {linkTargetId && (
                         <p className="text-[11px] text-white/30 -mt-1">
-                          Discord <span className="text-[#8b9cf4]">@{discordProfile.discordUsername}</span> sẽ được gắn vào tài khoản đã chọn.
+                          {t('account.addModal.discordLinkHint', { username: discordProfile.discordUsername })}
                         </p>
                       )}
                     </>
@@ -583,12 +585,12 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                         setError('')
                       }}
                     >
-                      Xác thực lại
+                      {t('account.addModal.discordReauth')}
                     </SecondaryButton>
                     <PrimaryButton type="submit" disabled={loading}>
                       {loading
-                        ? 'Đang xử lý...'
-                        : discordMode === 'link' ? 'Liên kết' : 'Tạo tài khoản'
+                        ? t('account.addModal.processing')
+                        : discordMode === 'link' ? t('account.addModal.discordLinkBtn') : t('account.addModal.discordCreateBtn')
                       }
                     </PrimaryButton>
                   </div>

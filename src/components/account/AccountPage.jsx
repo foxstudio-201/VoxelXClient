@@ -32,12 +32,14 @@
 import { useState, useEffect } from 'react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
+import { useLang } from '../../i18n/LangProvider'
 import AddAccountModal from './AddAccountModal'
 import SkinCustomizeModal from './SkinCustomizeModal'
 import PlayerHead from '../ui/PlayerHead'
 import PlayerModel3D from '../ui/PlayerModel3D'
 
 function AccountTypeTag({ type }) {
+  const { t } = useLang()
   if (type === 'offline') {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/8 text-white/35">
@@ -147,6 +149,7 @@ function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
 export default function AccountPage() {
   const { accounts, selectedId, loading, addAccount, updateAccount, removeAccount, selectAccount } = useAccounts()
   const toast = useToast()
+  const { t } = useLang()
   const [showModal, setShowModal]             = useState(false)
   const [showSkinModal, setShowSkinModal]     = useState(false)
   const [removeConfirm, setRemoveConfirm]     = useState(null)
@@ -206,7 +209,7 @@ export default function AccountPage() {
     if (!selected?.uuid) return
     navigator.clipboard.writeText(selected.uuid).then(() => {
       setCopied(true)
-      toast({ type: 'success', title: 'Đã sao chép UUID', message: selected.uuid.slice(0, 18) + '...' })
+      toast({ type: 'success', title: t('account.page.copiedUuid'), message: selected.uuid.slice(0, 18) + '...' })
       setTimeout(() => setCopied(false), 2000)
     })
   }
@@ -216,7 +219,7 @@ export default function AccountPage() {
       const acc = accounts.find(a => a.id === id)
       await removeAccount(id)
       setRemoveConfirm(null)
-      toast({ type: 'info', title: 'Đã xóa tài khoản', message: acc?.username })
+      toast({ type: 'info', title: t('account.page.toastRemoved'), message: acc?.username })
     } else {
       setRemoveConfirm(id)
       setTimeout(() => setRemoveConfirm(prev => prev === id ? null : prev), 3000)
@@ -227,13 +230,13 @@ export default function AccountPage() {
     if (id === selectedId) return
     await selectAccount(id)
     const acc = accounts.find(a => a.id === id)
-    toast({ type: 'success', title: 'Đã chọn tài khoản', message: acc?.username })
+    toast({ type: 'success', title: t('account.page.toastSelected'), message: acc?.username })
   }
 
   async function handleAdd(account) {
     const result = await addAccount(account)
     if (!result?.error) {
-      toast({ type: 'success', title: 'Thêm thành công', message: account.username })
+      toast({ type: 'success', title: t('account.page.toastAdded'), message: account.username })
     }
     return result
   }
@@ -248,7 +251,7 @@ export default function AccountPage() {
       linkedAt:             new Date().toISOString(),
     })
     if (!result?.error) {
-      toast({ type: 'success', title: 'Đã liên kết Discord', message: discordProfile.discordUsername })
+      toast({ type: 'success', title: t('account.page.toastLinkedDiscord'), message: discordProfile.discordUsername })
     }
     return result
   }
@@ -271,11 +274,11 @@ export default function AccountPage() {
       } catch {}
       setAppliedSkinUrl(null)
       setSlim(false)
-      toast({ type: 'success', title: 'Đã áp dụng', message: 'Skin mặc định' })
+      toast({ type: 'success', title: t('account.page.toastApplied'), message: t('account.page.skinDefault') })
     } else {
 
       setAppliedSkinUrl(item.url)
-      toast({ type: 'success', title: 'Đã áp dụng', message: 'Skin custom' })
+      toast({ type: 'success', title: t('account.page.toastApplied'), message: t('account.page.skinCustom') })
     }
   }
 
@@ -290,8 +293,8 @@ export default function AccountPage() {
           {}
           <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
             <div>
-              <h1 className="text-lg font-bold text-white">Tài khoản</h1>
-              <p className="text-xs text-white/30 mt-0.5">Quản lý tài khoản Minecraft</p>
+              <h1 className="text-lg font-bold text-white">{t('account.page.title')}</h1>
+              <p className="text-xs text-white/30 mt-0.5">{t('account.page.subtitle')}</p>
             </div>
             <button
               onClick={() => setShowModal(true)}
@@ -304,7 +307,7 @@ export default function AccountPage() {
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
               </svg>
-              Thêm tài khoản
+              {t('account.page.addAccount')}
             </button>
           </div>
 
@@ -325,14 +328,14 @@ export default function AccountPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-white/30 font-medium">Chưa có tài khoản</p>
-                  <p className="text-xs text-white/15 mt-0.5">Nhấn "Thêm tài khoản" để bắt đầu</p>
+                  <p className="text-sm text-white/30 font-medium">{t('account.page.noAccounts')}</p>
+                  <p className="text-xs text-white/15 mt-0.5">{t('account.page.noAccountsHint')}</p>
                 </div>
                 <button
                   onClick={() => setShowModal(true)}
                   className="px-4 py-2 rounded-xl bg-green-500/15 text-green-400 text-xs font-semibold border border-green-500/20 hover:bg-green-500/25 transition-all"
                 >
-                  + Thêm tài khoản đầu tiên
+                  {t('account.page.addFirst')}
                 </button>
               </div>
             ) : (
@@ -348,17 +351,17 @@ export default function AccountPage() {
                     />
                     {removeConfirm === account.id && (
                       <div className="absolute inset-0 rounded-xl bg-[#141414]/95 border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3">
-                        <span className="text-xs text-white/60 flex-1">Xóa tài khoản này?</span>
+                        <span className="text-xs text-white/60 flex-1">{t('account.page.deleteConfirm')}</span>
                         <button onClick={() => handleRemove(account.id)}
-                          className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">Xóa</button>
+                          className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">{t('account.page.delete')}</button>
                         <button onClick={() => setRemoveConfirm(null)}
-                          className="px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/50 text-xs transition-all">Hủy</button>
+                          className="px-2.5 py-1 rounded-lg bg-white/8 hover:bg-white/12 text-white/50 text-xs transition-all">{t('account.page.cancel')}</button>
                       </div>
                     )}
                   </div>
                 ))}
                 <p className="text-[10px] text-white/15 mt-2 px-1">
-                  {accounts.length} tài khoản
+                  {t('account.page.accountCount', { count: accounts.length })}
                 </p>
               </div>
             )}
@@ -397,7 +400,7 @@ export default function AccountPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              Tuỳ chỉnh
+              {t('account.page.customize')}
             </button>
           </div>
 
@@ -412,25 +415,31 @@ export default function AccountPage() {
   if (skinSubTab === 'skin' && defaultSkinUrl) {
     savedItems.push({
       url: defaultSkinUrl,
-      label: 'Skin mặc định',
+      label: t('account.page.skinDefault'),
       active: !appliedSkinUrl,
       isDefault: true
     })
   }
 
   if (skinSubTab === 'skin' && appliedSkinUrl) {
-    savedItems.push({ url: appliedSkinUrl, label: 'Custom', active: true, isDefault: false })
+    savedItems.push({ url: appliedSkinUrl, label: t('account.page.skinCustom'), active: true, isDefault: false })
   }
 
   if (savedItems.length === 0) {
+    const noneKey = skinSubTab === 'skin' ? 'account.page.skinNone'
+      : skinSubTab === 'cape' ? 'account.page.capeNone'
+      : 'account.page.elytraNone'
+    const chooseKey = skinSubTab === 'skin' ? 'account.page.chooseSkin'
+      : skinSubTab === 'cape' ? 'account.page.chooseCape'
+      : 'account.page.chooseElytra'
     return (
       <div className="flex flex-col items-center justify-center h-24 gap-2">
         <p className="text-xs text-white/20">
-          {skinSubTab === 'skin' ? 'Chưa áp dụng skin nào' : `Chưa áp dụng ${skinSubTab} nào`}
+          {t(noneKey)}
         </p>
         <button onClick={() => setShowSkinModal(true)}
           className="text-xs text-green-400/60 hover:text-green-400 transition-colors">
-          + Chọn {skinSubTab}
+          {t(chooseKey)}
         </button>
       </div>
     )
@@ -456,11 +465,11 @@ export default function AccountPage() {
           <span className="text-[9px] text-white/40 truncate w-full text-center">{item.label}</span>
           {!item.active && (
             <span className="text-[9px] text-green-400/50 group-hover:text-green-400 transition-colors opacity-0 group-hover:opacity-100">
-              Áp dụng
+              {t('account.page.skinApply')}
             </span>
           )}
           {item.active && (
-            <span className="text-[9px] text-green-400/60">Đang dùng</span>
+            <span className="text-[9px] text-green-400/60">{t('account.page.skinActive')}</span>
           )}
         </div>
       ))}
@@ -521,7 +530,7 @@ export default function AccountPage() {
                 <button
                   onClick={() => setShowUuid(v => !v)}
                   className="text-white/20 hover:text-white/60 transition-colors flex-shrink-0"
-                  title={showUuid ? 'Ẩn UUID' : 'Hiện UUID'}
+                  title={showUuid ? t('account.page.hideUuid') : t('account.page.showUuid')}
                 >
                   {showUuid ? (
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
@@ -537,7 +546,7 @@ export default function AccountPage() {
                 <button
                   onClick={handleCopyUuid}
                   className="text-white/20 hover:text-white/60 transition-colors flex-shrink-0"
-                  title="Sao chép UUID"
+                  title={t('account.page.copyUuid')}
                 >
                   {copied ? (
                     <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400">
@@ -557,7 +566,7 @@ export default function AccountPage() {
                   onClick={() => setSlim(v => !v)}
                   className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-all"
                 >
-                  {slim ? 'Slim' : 'Wide'}
+                  {slim ? t('account.page.slim') : t('account.page.wide')}
                 </button>
               </div>
             </div>
@@ -569,7 +578,7 @@ export default function AccountPage() {
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
             </div>
-            <p className="text-xs text-white/20">Chọn tài khoản để xem skin</p>
+            <p className="text-xs text-white/20">{t('account.page.selectToViewSkin')}</p>
           </div>
         )}
       </div>
@@ -596,7 +605,7 @@ export default function AccountPage() {
               if (skinType === 'slim') setSlim(true)
               else setSlim(false)
             }
-            toast({ type: 'success', title: 'Đã áp dụng', message: `${type} mới` })
+            toast({ type: 'success', title: t('account.page.toastApplied'), message: t('account.page.toastAppliedNew', { type }) })
           }}
         />
       )}
