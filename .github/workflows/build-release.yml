@@ -202,27 +202,39 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **i18n đa ngôn ngữ (EN/VI)**, **sửa lỗi hiển thị phiên bản mod**, và **cập nhật AboutTab**.
+            > Bản cập nhật tập trung vào **tối ưu hiệu năng game**, **Boost Mode**, **tự động cài performance mods** và **sửa Java version detection**.
 
             ---
 
-            ### 🌍 Localization (Tiếng Việt & English)
+            ### ⚡ Tối ưu hiệu năng
 
-            - Thêm đầy đủ bản dịch EN/VI
-
-            ---
-
-            ### 🐛 Sửa lỗi
-
-            - **ServerPluginModTab**: Hiện tất cả phiên bản mod khi không có phiên bản nào tương thích server
-            - Đồng bộ en.json và vi.json
+            - **Boost Mode**: Tự động tắt tiến trình nền (OneDrive, Teams, Spotify...) trước khi khởi động game để dồn CPU/RAM cho Minecraft
+            - **GPU Priority**: Set Windows GPU preference sang High Performance (discrete GPU) cho java.exe trước mỗi lần launch
+            - **Process Priority**: Game process được set `high` priority khi Boost Mode bật, launcher hạ xuống `below normal`
+            - **JVM Thread Priority**: Thêm `-XX:+UseThreadPriorities` và `-XX:ThreadPriorityPolicy=1` khi Boost Mode bật
 
             ---
 
-            ### ⚡ Cập nhật khác
+            ### � Sửa lỗi Java
 
-            - Cập nhật AboutTab - giao diện thông tin ứng dụng
-            
+            - **Fix Java version detection**: `ensureJava` giờ đọc `javaVersion.component` từ Mojang version manifest thay vì hardcode — ZGC/G1GC theo đúng Java thực tế
+            - **Fix `detectJavaMajorVersion`**: Đọc stderr đúng cách (java -version ghi ra stderr), không còn fallback cứng về Java 17
+            - **GC tự động**: Java 21+ dùng ZGC Generational, Java 8/11/17 dùng G1GC
+
+            ---
+
+            ### 🎮 Auto Performance Mods (Fabric)
+
+            Tự động tải 18 performance mod khi launch Fabric profile:
+
+            | Nhóm | Mod |
+            |------|-----|
+            | Render/GPU | Sodium, Sodium Extra, ImmediatelyFast, Entity Culling, More Culling |
+            | Memory/CPU | FerriteCore, Lithium, ModernFix, BadOptimizations |
+            | Chunk/World | C2ME, Noisium, Starlight |
+            | Network | Krypton |
+            | Misc | Dynamic FPS, Clumps, Fabric API, Mod Menu, Fabric Language Kotlin |
+
             ---
             ###  Download
 
