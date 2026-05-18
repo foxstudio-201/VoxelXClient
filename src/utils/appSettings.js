@@ -39,6 +39,7 @@ export const DEFAULT_SETTINGS = {
   hideLauncherOnLaunch: true,
   showLogWindow:        true,
   discordRPC:           false,
+  boostMode:            false,
   fontId:               'system',
   colorAccent:          '#4ade80',
   colorHover:           '#86efac',
