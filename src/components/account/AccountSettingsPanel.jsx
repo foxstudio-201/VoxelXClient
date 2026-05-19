@@ -110,6 +110,16 @@ export default function AccountSettingsPanel({ account, onBack }) {
   // Discord
   const [discordLoading, setDiscordLoading] = useState(false)
 
+  // 2FA / TOTP
+  const [totpEnabled, setTotpEnabled]     = useState(false)
+  const [totpSetupData, setTotpSetupData] = useState(null)  // { secret, qrUrl }
+  const [totpSetupStep, setTotpSetupStep] = useState('idle') // idle | scanning | verifying | done
+  const [totpCode, setTotpCode]           = useState('')
+  const [totpLoading, setTotpLoading]     = useState(false)
+  const [totpMsg, setTotpMsg]             = useState(null)
+  const [totpDisableCode, setTotpDisableCode] = useState('')
+  const [totpDisableLoading, setTotpDisableLoading] = useState(false)
+
   const strength = pwdStrength(newPwd)
   const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -146,7 +156,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
         .finally(() => setWebLoading(false))
     }
 
-    // Kiểm tra token có thuộc về account này không (để hiện section đổi mật khẩu)
+    // Kiểm tra token có thuộc về account này không (để hiện section đổi mật khẩu + 2FA)
     if (token) {
       fetch(`${WEB_API}?action=me`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -156,9 +166,16 @@ export default function AccountSettingsPanel({ account, onBack }) {
           if (data.ok) {
             const webUuid = data.user?.uuid
             const webUsername = data.user?.username
-            setTokenBelongsToThis(
-              webUuid === account.uuid || webUsername === account.username
-            )
+            const belongs = webUuid === account.uuid || webUsername === account.username
+            setTokenBelongsToThis(belongs)
+            if (belongs) {
+              fetch(`${WEB_API}?action=2fa-status`, {
+                headers: { Authorization: `Bearer ${token}` },
+              })
+                .then(r => r.json())
+                .then(d => { if (d.ok) setTotpEnabled(d.totpEnabled) })
+                .catch(() => {})
+            }
           } else {
             setTokenBelongsToThis(false)
           }
@@ -168,6 +185,79 @@ export default function AccountSettingsPanel({ account, onBack }) {
       setTokenBelongsToThis(false)
     }
   }, [account.uuid, account.username])
+
+  // ── 2FA handlers ──────────────────────────────────────────────────────────
+  async function handle2faSetup() {
+    const token = getWebToken()
+    if (!token) return
+    setTotpLoading(true)
+    setTotpMsg(null)
+    try {
+      const res = await fetch(`${WEB_API}?action=2fa-setup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Lỗi khởi tạo 2FA')
+      setTotpSetupData({ secret: data.secret, qrUrl: data.qrUrl })
+      setTotpSetupStep('scanning')
+    } catch (err) {
+      setTotpMsg({ type: 'err', text: err.message })
+    } finally {
+      setTotpLoading(false)
+    }
+  }
+
+  async function handle2faEnable(e) {
+    e.preventDefault()
+    const token = getWebToken()
+    if (!token || !totpCode) return
+    setTotpLoading(true)
+    setTotpMsg(null)
+    try {
+      const res = await fetch(`${WEB_API}?action=2fa-enable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ totpToken: totpCode }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Mã không đúng')
+      setTotpEnabled(true)
+      setTotpSetupStep('done')
+      setTotpSetupData(null)
+      setTotpCode('')
+      toast({ type: 'success', title: '2FA đã được kích hoạt' })
+    } catch (err) {
+      setTotpMsg({ type: 'err', text: err.message })
+    } finally {
+      setTotpLoading(false)
+    }
+  }
+
+  async function handle2faDisable(e) {
+    e.preventDefault()
+    const token = getWebToken()
+    if (!token || !totpDisableCode) return
+    setTotpDisableLoading(true)
+    setTotpMsg(null)
+    try {
+      const res = await fetch(`${WEB_API}?action=2fa-disable`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ totpToken: totpDisableCode }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Mã không đúng')
+      setTotpEnabled(false)
+      setTotpSetupStep('idle')
+      setTotpDisableCode('')
+      toast({ type: 'info', title: '2FA đã được tắt' })
+    } catch (err) {
+      setTotpMsg({ type: 'err', text: err.message })
+    } finally {
+      setTotpDisableLoading(false)
+    }
+  }
 
   // Link email handler
   async function handleLinkEmail(e) {
@@ -433,21 +523,153 @@ export default function AccountSettingsPanel({ account, onBack }) {
           )}
         </Section>
 
-        {/* ── 2FA (placeholder) ── */}
+        {/* ── 2FA Google Authenticator ── */}
         <Section title="Bảo mật 2 lớp (2FA)" icon={
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
           </svg>
         }>
-          <div className="flex items-center gap-2 p-2.5 rounded-lg"
-            style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)' }}>
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-yellow-400 flex-shrink-0">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-            </svg>
-            <p className="text-[11px] text-yellow-400/70">
-              Tính năng 2FA đang được phát triển và sẽ ra mắt sớm.
+          {!tokenBelongsToThis ? (
+            <p className="text-[11px] text-white/30 leading-relaxed">
+              Cần đăng nhập web account để quản lý 2FA.
             </p>
-          </div>
+          ) : totpEnabled ? (
+            /* ── 2FA đang bật — cho phép tắt ── */
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2.5 p-2.5 rounded-lg"
+                style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)' }}>
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-green-400 flex-shrink-0">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
+                </svg>
+                <div>
+                  <p className="text-xs font-semibold text-green-400">2FA đang hoạt động</p>
+                  <p className="text-[10px] text-white/35 mt-0.5">Tài khoản được bảo vệ bằng Google Authenticator</p>
+                </div>
+              </div>
+              {totpSetupStep !== 'disabling' ? (
+                <button
+                  onClick={() => { setTotpSetupStep('disabling'); setTotpMsg(null); setTotpDisableCode('') }}
+                  className="w-full py-2 rounded-lg text-xs font-semibold text-red-400 transition-all hover:bg-red-500/10"
+                  style={{ border: '1px solid rgba(248,113,113,0.2)' }}>
+                  Tắt 2FA
+                </button>
+              ) : (
+                <form onSubmit={handle2faDisable} className="flex flex-col gap-2.5">
+                  <p className="text-[11px] text-white/40">Nhập mã từ Google Authenticator để xác nhận tắt 2FA:</p>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={totpDisableCode}
+                    onChange={e => setTotpDisableCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="000000"
+                    className="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-sm text-white text-center tracking-[0.4em] placeholder-white/20 focus:outline-none focus:border-red-500/40 transition-all font-mono"
+                  />
+                  {totpMsg && (
+                    <p className={`text-[10px] ${totpMsg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>
+                      {totpMsg.type === 'ok' ? '✓ ' : '✗ '}{totpMsg.text}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setTotpSetupStep('idle')}
+                      className="flex-1 py-2 rounded-lg text-xs text-white/40 hover:bg-white/8 transition-all border border-white/8">
+                      Hủy
+                    </button>
+                    <button type="submit" disabled={totpDisableLoading || totpDisableCode.length !== 6}
+                      className="flex-1 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
+                      style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)' }}>
+                      {totpDisableLoading ? 'Đang xử lý...' : 'Xác nhận tắt'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : totpSetupStep === 'idle' || totpSetupStep === 'done' ? (
+            /* ── 2FA chưa bật — nút bắt đầu setup ── */
+            <div className="flex flex-col gap-2.5">
+              <p className="text-[11px] text-white/35 leading-relaxed">
+                Thêm lớp bảo mật thứ 2 bằng Google Authenticator. Mỗi lần đăng nhập sẽ yêu cầu mã 6 số từ app.
+              </p>
+              {totpMsg && (
+                <p className={`text-[10px] ${totpMsg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>
+                  {totpMsg.type === 'ok' ? '✓ ' : '✗ '}{totpMsg.text}
+                </p>
+              )}
+              <button onClick={handle2faSetup} disabled={totpLoading}
+                className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}>
+                {totpLoading
+                  ? <><div className="w-3 h-3 rounded-full border border-white border-t-transparent animate-spin" />Đang tạo...</>
+                  : <>
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                      </svg>
+                      Bật 2FA với Google Authenticator
+                    </>
+                }
+              </button>
+            </div>
+          ) : totpSetupStep === 'scanning' && totpSetupData ? (
+            /* ── Bước 1: quét QR ── */
+            <div className="flex flex-col gap-3">
+              <p className="text-[11px] text-white/50 leading-relaxed">
+                <strong className="text-white/70">Bước 1:</strong> Mở Google Authenticator → nhấn <strong className="text-white/70">+</strong> → quét mã QR bên dưới.
+              </p>
+              {/* QR Code */}
+              <div className="flex justify-center">
+                <div className="p-2 rounded-xl bg-white">
+                  <img src={totpSetupData.qrUrl} alt="QR Code 2FA" className="w-40 h-40" />
+                </div>
+              </div>
+              {/* Manual secret */}
+              <div className="rounded-lg p-2.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="text-[9px] text-white/30 uppercase tracking-wider mb-1">Hoặc nhập thủ công</p>
+                <p className="text-[11px] font-mono text-green-400 break-all tracking-wider">{totpSetupData.secret}</p>
+              </div>
+              <button onClick={() => { setTotpSetupStep('verifying'); setTotpMsg(null); setTotpCode('') }}
+                className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all"
+                style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}>
+                Đã quét xong → Tiếp tục
+              </button>
+              <button onClick={() => { setTotpSetupStep('idle'); setTotpSetupData(null) }}
+                className="w-full py-1.5 rounded-lg text-xs text-white/30 hover:text-white/60 transition-all">
+                Hủy
+              </button>
+            </div>
+          ) : totpSetupStep === 'verifying' ? (
+            /* ── Bước 2: nhập mã xác nhận ── */
+            <form onSubmit={handle2faEnable} className="flex flex-col gap-3">
+              <p className="text-[11px] text-white/50 leading-relaxed">
+                <strong className="text-white/70">Bước 2:</strong> Nhập mã 6 số từ Google Authenticator để xác nhận kích hoạt.
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={totpCode}
+                onChange={e => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="000000"
+                autoFocus
+                className="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-3 text-lg text-white text-center tracking-[0.5em] placeholder-white/20 focus:outline-none focus:border-green-500/40 transition-all font-mono"
+              />
+              {totpMsg && (
+                <p className={`text-[10px] ${totpMsg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>
+                  {totpMsg.type === 'ok' ? '✓ ' : '✗ '}{totpMsg.text}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setTotpSetupStep('scanning')}
+                  className="flex-1 py-2 rounded-lg text-xs text-white/40 hover:bg-white/8 transition-all border border-white/8">
+                  ← Quay lại
+                </button>
+                <button type="submit" disabled={totpLoading || totpCode.length !== 6}
+                  className="flex-1 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
+                  style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}>
+                  {totpLoading ? 'Đang xác nhận...' : 'Kích hoạt 2FA'}
+                </button>
+              </div>
+            </form>
+          ) : null}
         </Section>
 
         </div>{/* end inner flex col */}
