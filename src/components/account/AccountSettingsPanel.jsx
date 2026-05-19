@@ -9,9 +9,31 @@ import { useLang } from '../../i18n/LangProvider'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
 import PlayerHead from '../ui/PlayerHead'
+import QRCode from 'qrcode'
 
 const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
 const TOKEN_KEY = 'vxc_auth_token'
+
+// ── QR Code component — dùng dataURL thay vì canvas để tránh ref timing issues ──
+function QrCanvas({ uri, size = 160 }) {
+  const [dataUrl, setDataUrl] = useState(null)
+  useEffect(() => {
+    if (!uri) return
+    QRCode.toDataURL(uri, {
+      width: size,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+      .then(url => setDataUrl(url))
+      .catch(err => console.error('QR gen error:', err))
+  }, [uri, size])
+  if (!dataUrl) return (
+    <div style={{ width: size, height: size, background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-transparent animate-spin" />
+    </div>
+  )
+  return <img src={dataUrl} alt="QR Code 2FA" style={{ width: size, height: size, borderRadius: 8, display: 'block' }} />
+}
 
 function getWebToken() {
   try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
@@ -199,7 +221,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Lỗi khởi tạo 2FA')
-      setTotpSetupData({ secret: data.secret, qrUrl: data.qrUrl })
+      setTotpSetupData({ secret: data.secret, otpauthUri: data.otpauthUri })
       setTotpSetupStep('scanning')
     } catch (err) {
       setTotpMsg({ type: 'err', text: err.message })
@@ -618,7 +640,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
               {/* QR Code */}
               <div className="flex justify-center">
                 <div className="p-2 rounded-xl bg-white">
-                  <img src={totpSetupData.qrUrl} alt="QR Code 2FA" className="w-40 h-40" />
+                  <QrCanvas uri={totpSetupData.otpauthUri} size={160} />
                 </div>
               </div>
               {/* Manual secret */}
