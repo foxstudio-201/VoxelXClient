@@ -185,25 +185,19 @@ function buildQrSvg(text, px=160) {
 }
 /* eslint-enable */
 
-function QrCanvas({ uri, size = 160 }) {
-  const [svg, setSvg] = useState(null)
-  useEffect(() => {
-    if (!uri) return
-    // Chạy trong setTimeout để không block render
-    const t = setTimeout(() => setSvg(buildQrSvg(uri, size)), 0)
-    return () => clearTimeout(t)
-  }, [uri, size])
-
-  if (!uri) return <div style={{ width: size, height: size, background: '#f9fafb', borderRadius: 8 }} />
-  if (!svg) return (
+function QrCanvas({ svgStr, size = 160 }) {
+  if (!svgStr) return (
     <div style={{ width: size, height: size, background: '#f9fafb', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid #d1d5db', borderTopColor: '#22c55e', animation: 'spin 0.8s linear infinite' }} />
+      <p style={{ color: '#9ca3af', fontSize: 10, textAlign: 'center', padding: 8 }}>Dùng mã thủ công bên dưới</p>
     </div>
   )
+  const fixed = svgStr
+    .replace(/width="[^"]*"/, `width="${size}"`)
+    .replace(/height="[^"]*"/, `height="${size}"`)
   return (
     <div
-      style={{ width: size, height: size, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}
-      dangerouslySetInnerHTML={{ __html: svg }}
+      style={{ width: size, height: size, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#fff' }}
+      dangerouslySetInnerHTML={{ __html: fixed }}
     />
   )
 }
@@ -394,7 +388,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Lỗi khởi tạo 2FA')
-      setTotpSetupData({ secret: data.secret, otpauthUri: data.otpauthUri })
+      setTotpSetupData({ secret: data.secret, otpauthUri: data.otpauthUri, qrSvg: data.qrSvg || null })
       setTotpSetupStep('scanning')
     } catch (err) {
       setTotpMsg({ type: 'err', text: err.message })
@@ -813,7 +807,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
               {/* QR Code */}
               <div className="flex justify-center">
                 <div className="p-2 rounded-xl bg-white">
-                  <QrCanvas uri={totpSetupData.otpauthUri} size={160} />
+                  <QrCanvas svgStr={totpSetupData.qrSvg} size={160} />
                 </div>
               </div>
               {/* Manual secret */}
