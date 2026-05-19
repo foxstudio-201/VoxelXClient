@@ -333,7 +333,7 @@ function AppInner() {
         {}
         <div
           style={{ display: activePage === 'account' ? 'flex' : 'none' }}
-          className="flex-1 h-full overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden"
         >
           <AccountPage />
         </div>
@@ -350,7 +350,7 @@ function AppInner() {
           onNavigate={setActivePage}
           selectedAccount={selectedAccount}
         />
-        <main className="flex-1 flex flex-col overflow-hidden relative">
+        <main className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
           {renderPage()}
         </main>
         {showHint && (

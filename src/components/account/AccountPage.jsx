@@ -307,15 +307,17 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="flex w-full h-full overflow-hidden">
+    <div className="flex w-full min-h-0 flex-1 overflow-hidden">
 
       {/* Nếu đang mở settings — hiển thị AccountSettingsPanel thay thế toàn bộ left panel */}
       {settingsAccount ? (
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/5">
-          <AccountSettingsPanel
-            account={settingsAccount}
-            onBack={() => setSettingsAccount(null)}
-          />
+        <div className="relative flex-1 min-w-0 border-r border-white/5">
+          <div className="absolute inset-0 flex flex-col overflow-hidden">
+            <AccountSettingsPanel
+              account={settingsAccount}
+              onBack={() => setSettingsAccount(null)}
+            />
+          </div>
         </div>
       ) : (
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/5">
@@ -439,76 +441,76 @@ export default function AccountPage() {
 
           {}
           <div className="flex-1 overflow-y-auto px-4 pb-4" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
-{(() => {
+              {(() => {
 
-  const defaultSkinUrl = selected?.username ? `https://minotar.net/skin/${selected.username}` : null
+                const defaultSkinUrl = selected?.username ? `https://minotar.net/skin/${selected.username}` : null
 
-  const savedItems = []
+                const savedItems = []
 
-  if (skinSubTab === 'skin' && defaultSkinUrl) {
-    savedItems.push({
-      url: defaultSkinUrl,
-      label: t('account.page.skinDefault'),
-      active: !appliedSkinUrl,
-      isDefault: true
-    })
-  }
+                if (skinSubTab === 'skin' && defaultSkinUrl) {
+                  savedItems.push({
+                    url: defaultSkinUrl,
+                    label: t('account.page.skinDefault'),
+                    active: !appliedSkinUrl,
+                    isDefault: true
+                  })
+                }
 
-  if (skinSubTab === 'skin' && appliedSkinUrl) {
-    savedItems.push({ url: appliedSkinUrl, label: t('account.page.skinCustom'), active: true, isDefault: false })
-  }
+                if (skinSubTab === 'skin' && appliedSkinUrl) {
+                  savedItems.push({ url: appliedSkinUrl, label: t('account.page.skinCustom'), active: true, isDefault: false })
+                }
 
-  if (savedItems.length === 0) {
-    const noneKey = skinSubTab === 'skin' ? 'account.page.skinNone'
-      : skinSubTab === 'cape' ? 'account.page.capeNone'
-      : 'account.page.elytraNone'
-    const chooseKey = skinSubTab === 'skin' ? 'account.page.chooseSkin'
-      : skinSubTab === 'cape' ? 'account.page.chooseCape'
-      : 'account.page.chooseElytra'
-    return (
-      <div className="flex flex-col items-center justify-center h-24 gap-2">
-        <p className="text-xs text-white/20">
-          {t(noneKey)}
-        </p>
-        <button onClick={() => setShowSkinModal(true)}
-          className="text-xs text-green-400/60 hover:text-green-400 transition-colors">
-          {t(chooseKey)}
-        </button>
-      </div>
-    )
-  }
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {savedItems.map((item, i) => (
-        <div key={i}
-          onClick={() => handleSelectSkinFromGrid(item)}
-          className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all cursor-pointer group relative"
-          style={{
-            background: item.active ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',
-            border: `1px solid ${item.active ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.07)'}`,
-          }}
-        >
-          {item.active && (
-            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-green-400" />
-          )}
-          <img src={item.url} alt={item.label}
-            className="w-10 h-10 rounded-lg object-contain"
-            style={{ imageRendering: 'pixelated', background: 'rgba(255,255,255,0.05)' }}
-            onError={e => { e.currentTarget.style.display = 'none' }} />
-          <span className="text-[9px] text-white/40 truncate w-full text-center">{item.label}</span>
-          {!item.active && (
-            <span className="text-[9px] text-green-400/50 group-hover:text-green-400 transition-colors opacity-0 group-hover:opacity-100">
-              {t('account.page.skinApply')}
-            </span>
-          )}
-          {item.active && (
-            <span className="text-[9px] text-green-400/60">{t('account.page.skinActive')}</span>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-})()}
+                if (savedItems.length === 0) {
+                  const noneKey = skinSubTab === 'skin' ? 'account.page.skinNone'
+                    : skinSubTab === 'cape' ? 'account.page.capeNone'
+                    : 'account.page.elytraNone'
+                  const chooseKey = skinSubTab === 'skin' ? 'account.page.chooseSkin'
+                    : skinSubTab === 'cape' ? 'account.page.chooseCape'
+                    : 'account.page.chooseElytra'
+                  return (
+                    <div className="flex flex-col items-center justify-center h-24 gap-2">
+                      <p className="text-xs text-white/20">
+                        {t(noneKey)}
+                      </p>
+                      <button onClick={() => setShowSkinModal(true)}
+                        className="text-xs text-green-400/60 hover:text-green-400 transition-colors">
+                        {t(chooseKey)}
+                      </button>
+                    </div>
+                  )
+                }
+                return (
+                  <div className="grid grid-cols-3 gap-2">
+                    {savedItems.map((item, i) => (
+                      <div key={i}
+                        onClick={() => handleSelectSkinFromGrid(item)}
+                        className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all cursor-pointer group relative"
+                        style={{
+                          background: item.active ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${item.active ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                        }}
+                      >
+                        {item.active && (
+                          <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-green-400" />
+                        )}
+                        <img src={item.url} alt={item.label}
+                          className="w-10 h-10 rounded-lg object-contain"
+                          style={{ imageRendering: 'pixelated', background: 'rgba(255,255,255,0.05)' }}
+                          onError={e => { e.currentTarget.style.display = 'none' }} />
+                        <span className="text-[9px] text-white/40 truncate w-full text-center">{item.label}</span>
+                        {!item.active && (
+                          <span className="text-[9px] text-green-400/50 group-hover:text-green-400 transition-colors opacity-0 group-hover:opacity-100">
+                            {t('account.page.skinApply')}
+                          </span>
+                        )}
+                        {item.active && (
+                          <span className="text-[9px] text-green-400/60">{t('account.page.skinActive')}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
         </div>
       </div>

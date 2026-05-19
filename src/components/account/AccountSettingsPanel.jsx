@@ -20,7 +20,7 @@ function getWebToken() {
 // ── Section wrapper ───────────────────────────────────────────────────────────
 function Section({ title, icon, children }) {
   return (
-    <div className="rounded-xl border border-white/6 overflow-hidden">
+    <div className="rounded-xl border border-white/6">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5"
         style={{ background: 'rgba(255,255,255,0.02)' }}>
         {icon && <span className="text-white/40">{icon}</span>}
@@ -90,6 +90,8 @@ export default function AccountSettingsPanel({ account, onBack }) {
   const [webUser, setWebUser]   = useState(null)
   const [webLoading, setWebLoading] = useState(false)
   const [webError, setWebError] = useState(null)
+  // true chỉ khi token trong localStorage thuộc về account đang xem
+  const [tokenBelongsToThis, setTokenBelongsToThis] = useState(false)
 
   // Change password
   const [oldPwd, setOldPwd]     = useState('')
@@ -114,30 +116,58 @@ export default function AccountSettingsPanel({ account, onBack }) {
   // Fetch web account info
   useEffect(() => {
     const token = getWebToken()
-    if (!token) {
-      // Không có web token — thử lấy thông tin qua UUID
-      if (account.uuid) {
-        fetch(`${WEB_API}?action=lookup&username=${encodeURIComponent(account.username)}`)
-          .then(r => r.json())
-          .then(data => {
-            if (data.ok) setWebUser({ ...data, hasPassword: data.hasPassword })
-          })
-          .catch(() => {})
-      }
-      return
+
+    // Luôn thử lookup-by-uuid trước để lấy email/verified của đúng account này
+    if (account.uuid) {
+      setWebLoading(true)
+      fetch(`${WEB_API}?action=lookup-by-uuid&uuid=${encodeURIComponent(account.uuid)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            // Nếu account này có email thật → hiển thị
+            if (data.email) {
+              setWebUser({
+                uuid: data.uuid,
+                username: data.username,
+                email: data.email,
+                verified: data.verified,
+                hasPassword: data.hasPassword,
+              })
+            } else {
+              // Không có email thật → account chưa liên kết
+              setWebUser(null)
+            }
+          } else {
+            // Không tìm thấy trên web → account chỉ tồn tại local
+            setWebUser(null)
+          }
+        })
+        .catch(() => setWebUser(null))
+        .finally(() => setWebLoading(false))
     }
-    setWebLoading(true)
-    fetch(`${WEB_API}?action=me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) setWebUser(data.user)
-        else setWebError(data.error)
+
+    // Kiểm tra token có thuộc về account này không (để hiện section đổi mật khẩu)
+    if (token) {
+      fetch(`${WEB_API}?action=me`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .catch(() => setWebError('Không thể kết nối web API'))
-      .finally(() => setWebLoading(false))
-  }, [])
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            const webUuid = data.user?.uuid
+            const webUsername = data.user?.username
+            setTokenBelongsToThis(
+              webUuid === account.uuid || webUsername === account.username
+            )
+          } else {
+            setTokenBelongsToThis(false)
+          }
+        })
+        .catch(() => setTokenBelongsToThis(false))
+    } else {
+      setTokenBelongsToThis(false)
+    }
+  }, [account.uuid, account.username])
 
   // Link email handler
   async function handleLinkEmail(e) {
@@ -231,7 +261,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
     : '—'
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 pt-4 pb-3 border-b border-white/5">
         <button
@@ -255,8 +285,9 @@ export default function AccountSettingsPanel({ account, onBack }) {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4"
+      <div className="flex-1 overflow-y-auto px-4 py-4"
         style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
+        <div className="flex flex-col gap-4">
 
         {/* ── Thông tin tài khoản ── */}
         <Section title="Thông tin tài khoản" icon={
@@ -282,13 +313,10 @@ export default function AccountSettingsPanel({ account, onBack }) {
               <InfoRow label="Trạng thái" value={webUser.verified ? '✓ Đã xác nhận' : '⚠ Chưa xác nhận'} />
             </>
           )}
-          {webError && (
-            <p className="text-[10px] text-white/25 italic">{webError}</p>
-          )}
         </Section>
 
         {/* ── Liên kết Email (cho tài khoản app chưa có email) ── */}
-        {!webUser && !getWebToken() && (
+        {!webUser && !tokenBelongsToThis && (
           <Section title="Liên kết Email & Mật khẩu" icon={
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
               <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
@@ -316,7 +344,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
         )}
 
         {/* ── Đổi mật khẩu ── */}
-        {getWebToken() && (
+        {tokenBelongsToThis && (
           <Section title="Đổi mật khẩu" icon={
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
               <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
@@ -422,7 +450,8 @@ export default function AccountSettingsPanel({ account, onBack }) {
           </div>
         </Section>
 
-      </div>
+        </div>{/* end inner flex col */}
+      </div>{/* end scroll */}
     </div>
   )
 }
