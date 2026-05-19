@@ -35,6 +35,7 @@ import { useToast } from '../../hooks/useToast'
 import { useLang } from '../../i18n/LangProvider'
 import AddAccountModal from './AddAccountModal'
 import SkinCustomizeModal from './SkinCustomizeModal'
+import AccountSettingsPanel from './AccountSettingsPanel'
 import PlayerHead from '../ui/PlayerHead'
 import PlayerModel3D from '../ui/PlayerModel3D'
 
@@ -77,7 +78,7 @@ function AccountTypeTag({ type }) {
   )
 }
 
-function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
+function AccountRow({ account, isSelected, onSelect, onRemove, confirmId, onOpenSettings }) {
   return (
     <div
       onClick={() => onSelect(account.id)}
@@ -124,6 +125,26 @@ function AccountRow({ account, isSelected, onSelect, onRemove, confirmId }) {
         </svg>
       )}
 
+      {/* Nút settings — chỉ offline/discord, hiện khi hover */}
+      {account.type !== 'microsoft' && confirmId !== account.id && (
+        <button
+          onClick={e => { e.stopPropagation(); onOpenSettings(account) }}
+          className="
+            absolute right-8 top-1/2 -translate-y-1/2
+            w-6 h-6 flex items-center justify-center rounded-md
+            opacity-0 group-hover:opacity-100
+            text-white/25 hover:text-green-400 hover:bg-green-500/10
+            transition-all duration-150
+          "
+          title="Account Settings"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </button>
+      )}
+
       {}
       {confirmId !== account.id && (
         <button
@@ -160,6 +181,7 @@ export default function AccountPage() {
   const [cosmeticData, setCosmeticData]       = useState([])
   const [cosmeticLoading, setCosmeticLoading] = useState(false)
   const [appliedSkinUrl, setAppliedSkinUrl]   = useState(null)
+  const [settingsAccount, setSettingsAccount] = useState(null) // account đang mở settings
   const isElectronCtx = typeof window !== 'undefined' && window.electronAPI
 
   const selected = accounts.find(a => a.id === selectedId) ?? accounts[0] ?? null
@@ -285,7 +307,15 @@ export default function AccountPage() {
   return (
     <div className="flex w-full h-full overflow-hidden">
 
-      {}
+      {/* Nếu đang mở settings — hiển thị AccountSettingsPanel thay thế toàn bộ left panel */}
+      {settingsAccount ? (
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/5">
+          <AccountSettingsPanel
+            account={settingsAccount}
+            onBack={() => setSettingsAccount(null)}
+          />
+        </div>
+      ) : (
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/5">
 
         {}
@@ -348,6 +378,7 @@ export default function AccountPage() {
                       onSelect={handleSelect}
                       onRemove={handleRemove}
                       confirmId={removeConfirm}
+                      onOpenSettings={setSettingsAccount}
                     />
                     {removeConfirm === account.id && (
                       <div className="absolute inset-0 rounded-xl bg-[#141414]/95 border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3">
@@ -479,8 +510,9 @@ export default function AccountPage() {
             </div>
         </div>
       </div>
+      )}
 
-      {}
+      {/* Right: 3D model panel */}
       <div
         className="flex-shrink-0 flex flex-col relative overflow-hidden"
         style={{ width: 240, minWidth: 200, maxWidth: 260 }}
