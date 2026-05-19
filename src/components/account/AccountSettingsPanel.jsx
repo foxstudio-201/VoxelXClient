@@ -14,25 +14,45 @@ import QRCode from 'qrcode'
 const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
 const TOKEN_KEY = 'vxc_auth_token'
 
-// ── QR Code component — dùng dataURL thay vì canvas để tránh ref timing issues ──
+// ── QR Code component — dùng SVG string để tránh canvas CSP issues ──────────
 function QrCanvas({ uri, size = 160 }) {
-  const [dataUrl, setDataUrl] = useState(null)
+  const [svgStr, setSvgStr] = useState(null)
+  const [error, setError] = useState(null)
   useEffect(() => {
     if (!uri) return
-    QRCode.toDataURL(uri, {
+    setSvgStr(null)
+    setError(null)
+    QRCode.toString(uri, {
+      type: 'svg',
       width: size,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' },
+      errorCorrectionLevel: 'M',
     })
-      .then(url => setDataUrl(url))
-      .catch(err => console.error('QR gen error:', err))
+      .then(svg => setSvgStr(svg))
+      .catch(err => {
+        console.error('QR gen error:', err)
+        setError(err?.message || 'QR error')
+      })
   }, [uri, size])
-  if (!dataUrl) return (
+
+  if (error) return (
+    <div style={{ width: size, height: size, background: '#1a1a1a', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+      <p style={{ color: '#f87171', fontSize: 10, textAlign: 'center', wordBreak: 'break-all' }}>QR Error: {error}</p>
+    </div>
+  )
+  if (!svgStr) return (
     <div style={{ width: size, height: size, background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-transparent animate-spin" />
     </div>
   )
-  return <img src={dataUrl} alt="QR Code 2FA" style={{ width: size, height: size, borderRadius: 8, display: 'block' }} />
+  // Render SVG inline — không cần canvas, không bị CSP block
+  return (
+    <div
+      style={{ width: size, height: size, borderRadius: 8, overflow: 'hidden', background: '#fff' }}
+      dangerouslySetInnerHTML={{ __html: svgStr }}
+    />
+  )
 }
 
 function getWebToken() {
