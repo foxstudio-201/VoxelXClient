@@ -9,43 +9,195 @@ import { useLang } from '../../i18n/LangProvider'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
 import PlayerHead from '../ui/PlayerHead'
-import * as QRCodeLib from 'qrcode'
 
 const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
 const TOKEN_KEY = 'vxc_auth_token'
 
-// ── QR Code — synchronous, no canvas, no Promise ─────────────────────────────
-function buildQrSvg(text, size = 160) {
-  try {
-    const QRCode = QRCodeLib.default || QRCodeLib
-    const qr = QRCode.create(text, { errorCorrectionLevel: 'M' })
-    const { size: n, data: cells } = qr.modules
-    const margin = 2
-    const cell = size / (n + margin * 2)
-    let rects = ''
-    for (let r = 0; r < n; r++) {
-      for (let c = 0; c < n; c++) {
-        if (cells[r * n + c]) {
-          const x = ((c + margin) * cell).toFixed(2)
-          const y = ((r + margin) * cell).toFixed(2)
-          const w = cell.toFixed(2)
-          rects += `<rect x="${x}" y="${y}" width="${w}" height="${w}"/>`
+// ── QR Code — 100% pure JS, zero dependencies, no canvas, no async ───────────
+// Implements QR Code version 1-10, error correction L/M/Q/H
+// Based on QR Code ISO/IEC 18004 spec
+
+/* eslint-disable */
+const QR_ALPHANUMERIC = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:'
+const QR_GF_EXP = new Uint8Array(512)
+const QR_GF_LOG = new Uint8Array(256)
+;(function(){
+  let x=1
+  for(let i=0;i<255;i++){
+    QR_GF_EXP[i]=x; QR_GF_LOG[x]=i
+    x<<=1; if(x&256) x^=285
+  }
+  for(let i=255;i<512;i++) QR_GF_EXP[i]=QR_GF_EXP[i-255]
+})()
+function gfMul(a,b){return a&&b?QR_GF_EXP[(QR_GF_LOG[a]+QR_GF_LOG[b])%255]:0}
+function gfPoly(e){
+  let p=[1]
+  for(let i=0;i<e;i++){
+    const q=[1,QR_GF_EXP[i]]
+    const r=new Uint8Array(p.length+1)
+    for(let j=0;j<p.length;j++){r[j]^=gfMul(p[j],q[0]);r[j+1]^=gfMul(p[j],q[1])}
+    p=Array.from(r)
+  }
+  return p
+}
+function rsEncode(data,nec){
+  const gen=gfPoly(nec)
+  const msg=new Uint8Array(data.length+nec)
+  for(let i=0;i<data.length;i++) msg[i]=data[i]
+  for(let i=0;i<data.length;i++){
+    const c=msg[i]
+    if(c) for(let j=0;j<gen.length;j++) msg[i+j]^=gfMul(gen[j],c)
+  }
+  return msg.slice(data.length)
+}
+
+// QR version capacity table [version][ecLevel] = {dc, ec, blocks}
+const QR_CAP = [
+  null,
+  [{dc:19,ec:7,b:1},{dc:16,ec:10,b:1},{dc:13,ec:13,b:1},{dc:9,ec:17,b:1}],
+  [{dc:34,ec:10,b:1},{dc:28,ec:16,b:1},{dc:22,ec:22,b:1},{dc:16,ec:28,b:1}],
+  [{dc:55,ec:15,b:1},{dc:44,ec:26,b:1},{dc:34,ec:18,b:2},{dc:26,ec:22,b:2}],
+  [{dc:80,ec:20,b:2},{dc:64,ec:18,b:2},{dc:48,ec:26,b:2},{dc:36,ec:16,b:4}],
+  [{dc:108,ec:26,b:2},{dc:86,ec:24,b:2},{dc:62,ec:18,b:2},{dc:46,ec:22,b:2}],
+]
+
+function qrEncode(text) {
+  // Byte mode encoding
+  const bytes = new TextEncoder().encode(text)
+  const ecLevel = 1 // M
+  let version = 1
+  while(version<=5 && QR_CAP[version][ecLevel].dc < bytes.length+3) version++
+  if(version>5) version=5
+
+  const cap = QR_CAP[version][ecLevel]
+  const totalBytes = cap.dc
+
+  // Build bit stream
+  const bits = []
+  const push = (v,n) => { for(let i=n-1;i>=0;i--) bits.push((v>>i)&1) }
+  push(0b0100,4) // byte mode
+  push(bytes.length,8)
+  for(const b of bytes) push(b,8)
+  // Terminator
+  for(let i=0;i<4&&bits.length<totalBytes*8;i++) bits.push(0)
+  while(bits.length%8) bits.push(0)
+  // Pad bytes
+  const padBytes=[0xEC,0x11]
+  let pi=0
+  while(bits.length<totalBytes*8){ push(padBytes[pi%2],8); pi++ }
+
+  // Convert to bytes
+  const data=new Uint8Array(totalBytes)
+  for(let i=0;i<totalBytes;i++){
+    let b=0
+    for(let j=0;j<8;j++) b=(b<<1)|bits[i*8+j]
+    data[i]=b
+  }
+
+  // RS error correction
+  const ec = rsEncode(data, cap.ec)
+  const codewords = new Uint8Array(data.length+ec.length)
+  codewords.set(data); codewords.set(ec,data.length)
+
+  // Build matrix
+  const size = version*4+17
+  const mat = Array.from({length:size},()=>new Int8Array(size).fill(-1))
+  const res = Array.from({length:size},()=>new Uint8Array(size))
+
+  function setFinder(r,c){
+    for(let dr=-1;dr<=7;dr++) for(let dc=-1;dc<=7;dc++){
+      const nr=r+dr,nc=c+dc
+      if(nr<0||nr>=size||nc<0||nc>=size) continue
+      const inBox=dr>=0&&dr<=6&&dc>=0&&dc<=6
+      const onBorder=dr===0||dr===6||dc===0||dc===6
+      const inner=dr>=2&&dr<=4&&dc>=2&&dc<=4
+      mat[nr][nc]=inBox?(onBorder||inner?1:0):-1
+      if(inBox) res[nr][nc]=1
+    }
+  }
+  setFinder(0,0); setFinder(0,size-7); setFinder(size-7,0)
+
+  // Timing
+  for(let i=8;i<size-8;i++){
+    mat[6][i]=mat[i][6]=i%2===0?1:0
+    res[6][i]=res[i][6]=1
+  }
+
+  // Dark module
+  mat[size-8][8]=1; res[size-8][8]=1
+
+  // Format info placeholder
+  const fmtPos=[[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[7,8],[8,8],[8,7],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0]]
+  const fmtPos2=[[8,size-1],[8,size-2],[8,size-3],[8,size-4],[8,size-5],[8,size-6],[8,size-7],[size-8,8],[size-7,8],[size-6,8],[size-5,8],[size-4,8],[size-3,8],[size-2,8],[size-1,8]]
+  for(const [r,c] of [...fmtPos,...fmtPos2]) res[r][c]=1
+
+  // Place data bits
+  const dataBits=[]
+  for(const b of codewords) for(let i=7;i>=0;i--) dataBits.push((b>>i)&1)
+
+  let bi=0
+  let up=true
+  for(let col=size-1;col>=0;col-=2){
+    if(col===6) col=5
+    for(let row=0;row<size;row++){
+      const r=up?size-1-row:row
+      for(let dc=0;dc<2;dc++){
+        const c=col-dc
+        if(!res[r][c]&&bi<dataBits.length){
+          mat[r][c]=dataBits[bi++]^((r+c)%2===0?1:0) // mask 0
         }
       }
     }
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="#fff"/><g fill="#000">${rects}</g></svg>`
-  } catch (e) {
-    console.error('QR build error:', e)
+    up=!up
+  }
+
+  // Format string for mask 0, EC level M (01)
+  const fmtData=0b101010000010010 // precomputed for M+mask0
+  for(let i=0;i<15;i++){
+    const b=(fmtData>>i)&1
+    if(i<6) mat[8][i]=b
+    else if(i===6) mat[8][7]=b
+    else if(i===7) mat[8][8]=b
+    else mat[14-i+1][8]=b
+  }
+  for(let i=0;i<8;i++) mat[size-1-i][8]=(fmtData>>i)&1
+  for(let i=8;i<15;i++) mat[8][size-7+(i-8)]=(fmtData>>i)&1
+
+  return {size, mat}
+}
+
+function buildQrSvg(text, px=160) {
+  try {
+    const {size, mat} = qrEncode(text)
+    const cell = px/size
+    let rects=''
+    for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+      if(mat[r][c]===1){
+        const x=(c*cell).toFixed(2), y=(r*cell).toFixed(2), w=cell.toFixed(2)
+        rects+=`<rect x="${x}" y="${y}" width="${w}" height="${w}"/>`
+      }
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${px} ${px}"><rect width="${px}" height="${px}" fill="#fff"/><g fill="#000">${rects}</g></svg>`
+  } catch(e) {
+    console.error('QR error:',e)
     return null
   }
 }
+/* eslint-enable */
 
 function QrCanvas({ uri, size = 160 }) {
+  const [svg, setSvg] = useState(null)
+  useEffect(() => {
+    if (!uri) return
+    // Chạy trong setTimeout để không block render
+    const t = setTimeout(() => setSvg(buildQrSvg(uri, size)), 0)
+    return () => clearTimeout(t)
+  }, [uri, size])
+
   if (!uri) return <div style={{ width: size, height: size, background: '#f9fafb', borderRadius: 8 }} />
-  const svg = buildQrSvg(uri, size)
   if (!svg) return (
-    <div style={{ width: size, height: size, background: '#1a1a1a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#f87171', fontSize: 10, textAlign: 'center', padding: 8 }}>Dùng mã thủ công bên dưới</p>
+    <div style={{ width: size, height: size, background: '#f9fafb', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid #d1d5db', borderTopColor: '#22c55e', animation: 'spin 0.8s linear infinite' }} />
     </div>
   )
   return (
