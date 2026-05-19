@@ -9,62 +9,49 @@ import { useLang } from '../../i18n/LangProvider'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
 import PlayerHead from '../ui/PlayerHead'
+import * as QRCodeLib from 'qrcode'
 
 const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
 const TOKEN_KEY = 'vxc_auth_token'
 
-// ── QR Code — pure JS implementation, no canvas, no external deps ─────────────
-function QrCanvas({ uri, size = 160 }) {
-  const [svgContent, setSvgContent] = useState(null)
-
-  useEffect(() => {
-    if (!uri) return
-    setSvgContent(null)
-
-    import('qrcode').then(mod => {
-      const QRCode = mod.default || mod
-      // create() là synchronous — không cần await
-      const qr = QRCode.create(uri, { errorCorrectionLevel: 'M' })
-      const modules = qr.modules
-      const size_n = modules.size
-      const cells = modules.data
-      const margin = 2
-      const total = size_n + margin * 2
-      const cellSize = size / total
-
-      let rects = ''
-      for (let r = 0; r < size_n; r++) {
-        for (let c = 0; c < size_n; c++) {
-          if (cells[r * size_n + c]) {
-            const x = ((c + margin) * cellSize).toFixed(2)
-            const y = ((r + margin) * cellSize).toFixed(2)
-            const w = cellSize.toFixed(2)
-            rects += `<rect x="${x}" y="${y}" width="${w}" height="${w}" fill="#000"/>`
-          }
+// ── QR Code — synchronous, no canvas, no Promise ─────────────────────────────
+function buildQrSvg(text, size = 160) {
+  try {
+    const QRCode = QRCodeLib.default || QRCodeLib
+    const qr = QRCode.create(text, { errorCorrectionLevel: 'M' })
+    const { size: n, data: cells } = qr.modules
+    const margin = 2
+    const cell = size / (n + margin * 2)
+    let rects = ''
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (cells[r * n + c]) {
+          const x = ((c + margin) * cell).toFixed(2)
+          const y = ((r + margin) * cell).toFixed(2)
+          const w = cell.toFixed(2)
+          rects += `<rect x="${x}" y="${y}" width="${w}" height="${w}"/>`
         }
       }
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="background:#fff;display:block">${rects}</svg>`
-      setSvgContent(svg)
-    }).catch(err => {
-      console.error('QR error:', err)
-      setSvgContent('ERROR')
-    })
-  }, [uri, size])
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="#fff"/><g fill="#000">${rects}</g></svg>`
+  } catch (e) {
+    console.error('QR build error:', e)
+    return null
+  }
+}
 
-  if (svgContent === 'ERROR') return (
+function QrCanvas({ uri, size = 160 }) {
+  if (!uri) return <div style={{ width: size, height: size, background: '#f9fafb', borderRadius: 8 }} />
+  const svg = buildQrSvg(uri, size)
+  if (!svg) return (
     <div style={{ width: size, height: size, background: '#1a1a1a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#f87171', fontSize: 10, textAlign: 'center', padding: 8 }}>Không thể tạo QR. Dùng mã thủ công bên dưới.</p>
-    </div>
-  )
-  if (!svgContent) return (
-    <div style={{ width: size, height: size, background: '#f9fafb', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid #d1d5db', borderTopColor: '#22c55e', animation: 'spin 0.8s linear infinite' }} />
+      <p style={{ color: '#f87171', fontSize: 10, textAlign: 'center', padding: 8 }}>Dùng mã thủ công bên dưới</p>
     </div>
   )
   return (
     <div
       style={{ width: size, height: size, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}
-      dangerouslySetInnerHTML={{ __html: svgContent }}
+      dangerouslySetInnerHTML={{ __html: svg }}
     />
   )
 }
