@@ -19,12 +19,15 @@ function QrCanvas({ uri, size = 160 }) {
   if (!uri) return <div style={{ width: size, height: size, background: '#f9fafb', borderRadius: 8 }} />
   try {
     const svg = renderSVG(uri)
-    // Fix viewBox size để fit container
-    const fixed = svg.replace('<svg ', `<svg width="${size}" height="${size}" `)
+    // Encode SVG thành data URL để dùng với <img> — tránh CSS override issues
+    const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
     return (
-      <div
-        style={{ width: size, height: size, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#fff' }}
-        dangerouslySetInnerHTML={{ __html: fixed }}
+      <img
+        src={dataUrl}
+        alt="QR Code"
+        width={size}
+        height={size}
+        style={{ display: 'block', borderRadius: 8, flexShrink: 0, imageRendering: 'pixelated' }}
       />
     )
   } catch {
