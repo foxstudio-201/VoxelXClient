@@ -98,6 +98,13 @@ export default function AccountSettingsPanel({ account, onBack }) {
   const [pwdLoading, setPwdLoading] = useState(false)
   const [pwdMsg, setPwdMsg]     = useState(null)
 
+  // Link email (for app accounts without email)
+  const [linkEmail, setLinkEmail]   = useState('')
+  const [linkPwd, setLinkPwd]       = useState('')
+  const [linkPwd2, setLinkPwd2]     = useState('')
+  const [linkLoading, setLinkLoading] = useState(false)
+  const [linkMsg, setLinkMsg]       = useState(null)
+
   // Discord
   const [discordLoading, setDiscordLoading] = useState(false)
 
@@ -107,7 +114,18 @@ export default function AccountSettingsPanel({ account, onBack }) {
   // Fetch web account info
   useEffect(() => {
     const token = getWebToken()
-    if (!token) return
+    if (!token) {
+      // Không có web token — thử lấy thông tin qua UUID
+      if (account.uuid) {
+        fetch(`${WEB_API}?action=lookup&username=${encodeURIComponent(account.username)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.ok) setWebUser({ ...data, hasPassword: data.hasPassword })
+          })
+          .catch(() => {})
+      }
+      return
+    }
     setWebLoading(true)
     fetch(`${WEB_API}?action=me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -121,7 +139,32 @@ export default function AccountSettingsPanel({ account, onBack }) {
       .finally(() => setWebLoading(false))
   }, [])
 
-  // Change password via web API
+  // Link email handler
+  async function handleLinkEmail(e) {
+    e.preventDefault()
+    setLinkMsg(null)
+    if (linkPwd !== linkPwd2) return setLinkMsg({ type: 'err', text: 'Mật khẩu không khớp' })
+    if (linkPwd.length < 8) return setLinkMsg({ type: 'err', text: 'Mật khẩu phải ít nhất 8 ký tự' })
+    setLinkLoading(true)
+    try {
+      const res = await fetch(`${WEB_API}?action=link-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid: account.uuid, email: linkEmail, password: linkPwd }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Liên kết thất bại')
+      setLinkMsg({ type: 'ok', text: 'Đã liên kết! Kiểm tra email để xác nhận.' })
+      setLinkEmail(''); setLinkPwd(''); setLinkPwd2('')
+      toast({ type: 'success', title: 'Liên kết email thành công' })
+    } catch (err) {
+      setLinkMsg({ type: 'err', text: err.message })
+    } finally {
+      setLinkLoading(false)
+    }
+  }
+
+  // Change password handler
   async function handleChangePassword(e) {
     e.preventDefault()
     setPwdMsg(null)
@@ -243,6 +286,34 @@ export default function AccountSettingsPanel({ account, onBack }) {
             <p className="text-[10px] text-white/25 italic">{webError}</p>
           )}
         </Section>
+
+        {/* ── Liên kết Email (cho tài khoản app chưa có email) ── */}
+        {!webUser && !getWebToken() && (
+          <Section title="Liên kết Email & Mật khẩu" icon={
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+            </svg>
+          }>
+            <p className="text-[11px] text-white/35 leading-relaxed">
+              Thêm email và mật khẩu để bảo vệ tài khoản. Sau khi liên kết, chỉ bạn mới có thể đăng nhập bằng tên này.
+            </p>
+            <form onSubmit={handleLinkEmail} className="flex flex-col gap-2.5 mt-1">
+              <Field label="Email" type="email" value={linkEmail} onChange={setLinkEmail} placeholder="you@example.com" />
+              <Field label="Mật khẩu" type="password" value={linkPwd} onChange={setLinkPwd} placeholder="••••••••" />
+              <Field label="Xác nhận mật khẩu" type="password" value={linkPwd2} onChange={setLinkPwd2} placeholder="••••••••" />
+              {linkMsg && (
+                <p className={`text-[10px] ${linkMsg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>
+                  {linkMsg.type === 'ok' ? '✓ ' : '✗ '}{linkMsg.text}
+                </p>
+              )}
+              <button type="submit" disabled={linkLoading || !linkEmail || !linkPwd || !linkPwd2}
+                className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
+                style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}>
+                {linkLoading ? 'Đang liên kết...' : 'Liên kết Email'}
+              </button>
+            </form>
+          </Section>
+        )}
 
         {/* ── Đổi mật khẩu ── */}
         {getWebToken() && (
