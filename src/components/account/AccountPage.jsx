@@ -200,7 +200,9 @@ export default function AccountPage() {
           console.warn('Invalid blob URL found in prefs, clearing:', skinUrl)
           setAppliedSkinUrl(null)
         } else {
-          setAppliedSkinUrl(skinUrl || null)
+          // Ưu tiên: web skin > local prefs skin
+          const webSkin = selected.webSkinUrl || null
+          setAppliedSkinUrl(webSkin || skinUrl || null)
         }
       } catch { setAppliedSkinUrl(null) }
     }

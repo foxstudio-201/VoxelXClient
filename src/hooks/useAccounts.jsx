@@ -34,6 +34,61 @@ import { offlineUUID } from '../utils/offlineUUID'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
+const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
+
+// ── Đồng bộ tài khoản với web API ────────────────────────────────────────────
+// Trả về { uuid, skinUrl, skinType, capeUrl, conflict }
+async function syncWithWebApi(username, localUuid) {
+  try {
+    // 1. Kiểm tra username đã tồn tại trên web chưa
+    const lookupRes = await fetch(`${WEB_API}?action=lookup&username=${encodeURIComponent(username)}`)
+    if (lookupRes.ok) {
+      const data = await lookupRes.json()
+      // Username đã có trên web → dùng UUID từ web
+      return {
+        uuid: data.uuid,
+        skinUrl: data.skinUrl || null,
+        skinType: data.skinType || 'wide',
+        capeUrl: data.capeUrl || null,
+        conflict: false,
+        fromWeb: true,
+      }
+    }
+
+    // 2. Chưa có → đăng ký lên web với UUID từ app
+    const regRes = await fetch(`${WEB_API}?action=register-app`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, uuid: localUuid }),
+    })
+    const regData = await regRes.json()
+
+    if (regRes.status === 409 && regData.conflict) {
+      // Race condition — username vừa được tạo bởi người khác
+      return {
+        uuid: regData.uuid,
+        skinUrl: regData.skinUrl || null,
+        skinType: regData.skinType || 'wide',
+        capeUrl: regData.capeUrl || null,
+        conflict: true,
+        fromWeb: true,
+      }
+    }
+
+    if (!regRes.ok) {
+      // Lỗi khác — dùng UUID local
+      console.warn('[useAccounts] Web sync failed:', regData.error)
+      return { uuid: localUuid, skinUrl: null, skinType: 'wide', capeUrl: null, fromWeb: false }
+    }
+
+    return { uuid: regData.uuid || localUuid, skinUrl: null, skinType: 'wide', capeUrl: null, fromWeb: true }
+  } catch (err) {
+    // Offline hoặc lỗi mạng — dùng UUID local
+    console.warn('[useAccounts] Web sync error (offline?):', err.message)
+    return { uuid: localUuid, skinUrl: null, skinType: 'wide', capeUrl: null, fromWeb: false }
+  }
+}
+
 const localFallback = {
   get: () => {
     try { return JSON.parse(localStorage.getItem('vxc_accounts') || '{"accounts":[],"selectedId":null}') }
@@ -72,19 +127,50 @@ export function AccountsProvider({ children }) {
       return { ok: true, data }
     }
 
-    const uuid = ['offline', 'discord'].includes(account.type)
+    // Tính UUID local trước (offline UUID chuẩn Minecraft)
+    const localUuid = ['offline', 'discord'].includes(account.type)
       ? offlineUUID(account.username)
       : crypto.randomUUID()
-    const newAccount = {
-      id: uuid, uuid, createdAt: new Date().toISOString(), ...account,
+
+    let finalUuid = localUuid
+    let webSkinUrl = null
+    let webSkinType = 'wide'
+    let webCapeUrl = null
+
+    // Đồng bộ với web API cho offline/discord accounts
+    if (['offline', 'discord'].includes(account.type)) {
+      const sync = await syncWithWebApi(account.username, localUuid)
+
+      if (sync.conflict) {
+        // Username đã tồn tại trên web với UUID khác → báo lỗi
+        return { error: `Tên "${account.username}" đã được sử dụng trên hệ thống VoxelXClient` }
+      }
+
+      finalUuid = sync.uuid
+      // Ưu tiên skin/cape từ web nếu có
+      webSkinUrl  = sync.skinUrl  || null
+      webSkinType = sync.skinType || 'wide'
+      webCapeUrl  = sync.capeUrl  || null
     }
+
+    const newAccount = {
+      id: finalUuid,
+      uuid: finalUuid,
+      createdAt: new Date().toISOString(),
+      ...account,
+      // Ghi đè skin/cape từ web nếu có
+      ...(webSkinUrl  ? { webSkinUrl }  : {}),
+      ...(webCapeUrl  ? { webCapeUrl }  : {}),
+      webSkinType,
+    }
+
     let result
     if (isElectron) {
       result = await window.electronAPI.addAccount(newAccount)
     } else {
       const data = localFallback.get()
       const exists = data.accounts.find(a => a.username === newAccount.username && a.type === newAccount.type)
-      if (exists) return { error: 'Tai khoan da ton tai' }
+      if (exists) return { error: 'Tài khoản đã tồn tại' }
       data.accounts.push(newAccount)
       if (!data.selectedId) data.selectedId = newAccount.id
       localFallback.set(data)
