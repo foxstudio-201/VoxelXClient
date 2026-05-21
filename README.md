@@ -3,7 +3,7 @@
 <br/>
 
 <!-- Logo -->
-<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXLauncher/main/public/icon.png" width="80" height="80" alt="VoxelXLauncher Logo" />
+<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/icon.png" width="80" height="80" alt="VoxelXLauncher Logo" />
 
 <h1>VoxelXLauncher</h1>
 
