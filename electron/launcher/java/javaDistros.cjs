@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -44,7 +44,7 @@ function httpsGet(url, timeout = 8000) {
     const client = url.startsWith('https') ? https : http
     const req = client.get(url, {
       headers: {
-        'User-Agent': 'VoxelXClient/1.0',
+        'User-Agent': 'VoxelXLauncher/1.0',
         'Accept': 'application/json',
 
         'X-GitHub-Api-Version': '2022-11-28',
@@ -220,7 +220,7 @@ async function installDistro(pkg, installBaseDir, onProgress) {
     let lastBytes = 0
 
     function doGet(url) {
-      client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
+      client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           return doGet(res.headers.location)
         }

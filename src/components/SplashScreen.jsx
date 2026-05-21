@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -232,7 +232,7 @@ export default function SplashScreen({ onDone }) {
         {}
         <div className="text-center">
           <h1 className="text-3xl font-black text-white tracking-tight">
-            VoxelX<span className="text-green-400">Client</span>
+            VoxelX<span className="text-green-400">Launcher</span>
           </h1>
           <p className="text-xs text-white/25 mt-1 font-mono tracking-widest">{version ? `v${version}` : ''}</p>
         </div>

@@ -21,17 +21,17 @@ if (!fs.existsSync(iconFile)) {
   process.exit(1)
 }
 
-console.log('🔧  Patching electron.exe with VoxelXClient icon...')
+console.log('🔧  Patching electron.exe with VoxelXLauncher icon...')
 
 rcedit(electronExe, {
   icon: iconFile,
   'version-string': {
-    ProductName:     'VoxelXClient',
-    FileDescription: 'VoxelXClient',
-    CompanyName:     'VoxelXClient',
-    LegalCopyright:  '© 2026 VoxelXClient',
-    InternalName:    'VoxelXClient',
-    OriginalFilename: 'VoxelXClient.exe',
+    ProductName:     'VoxelXLauncher',
+    FileDescription: 'VoxelXLauncher',
+    CompanyName:     'VoxelXLauncher',
+    LegalCopyright:  '© 2026 VoxelXLauncher',
+    InternalName:    'VoxelXLauncher',
+    OriginalFilename: 'VoxelXLauncher.exe',
   },
   'file-version':    '1.0.0.0',
   'product-version': '1.0.0.0',

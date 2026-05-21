@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -120,7 +120,7 @@ export default function AboutTab() {
           </div>
 
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">VoxelXClient</h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">VoxelXLauncher</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-mono text-green-400 bg-green-500/15 px-2 py-0.5 rounded-md border border-green-500/20">
                 v{version || '...'}
@@ -166,7 +166,7 @@ export default function AboutTab() {
             }
           />
           <LinkButton
-            href="https://voxelxclient.vercel.app"
+            href="https://VoxelXLauncher.vercel.app"
             label="Website"
             icon={
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">

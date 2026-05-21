@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -183,7 +183,7 @@ function launchGame(opts) {
     assets_index_name: assetIndex,
     version_type:     versionJson.type || 'release',
     natives_directory: nativesDir,
-    launcher_name:    'VoxelXClient',
+    launcher_name:    'VoxelXLauncher',
     launcher_version: '1.0.0',
     classpath,
 
@@ -209,7 +209,7 @@ function launchGame(opts) {
     `-Xmx${xmx}m`,
     `-Xms${xms}m`,
     `-Djava.library.path=${nativesDir}`,
-    `-Dminecraft.launcher.brand=VoxelXClient`,
+    `-Dminecraft.launcher.brand=VoxelXLauncher`,
     `-Dminecraft.launcher.version=1.0.0`,
 
     '-Dfile.encoding=UTF-8',

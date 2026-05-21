@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -43,7 +43,7 @@ const FABRIC_MAVEN = 'https://maven.fabricmc.net'
 function httpsGetJson(url) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http
-    client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
+    client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return httpsGetJson(res.headers.location).then(resolve).catch(reject)
       }
@@ -65,7 +65,7 @@ function downloadFile(url, destPath) {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     const tmpPath = destPath + '.tmp'
 
-    client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
+    client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return downloadFile(res.headers.location, destPath).then(resolve).catch(reject)
       }

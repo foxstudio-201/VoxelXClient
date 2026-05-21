@@ -1,5 +1,5 @@
 /**
- * Generate a valid .ico file with the VoxelXClient logo (4 green squares)
+ * Generate a valid .ico file with the VoxelXLauncher logo (4 green squares)
  * Sizes: 256x256, 48x48, 32x32, 16x16
  * No external dependencies — pure Node.js Buffer manipulation
  */

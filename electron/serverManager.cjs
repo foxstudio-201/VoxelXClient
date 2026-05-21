@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -82,7 +82,7 @@ function generateId() {
 function httpsGet(url) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http
-    const req = client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' }, timeout: 10000 }, (res) => {
+    const req = client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' }, timeout: 10000 }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return httpsGet(res.headers.location).then(resolve).catch(reject)
       }
@@ -102,7 +102,7 @@ function downloadFile(url, destPath, onProgress) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http
     function doGet(u) {
-      client.get(u, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
+      client.get(u, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           return doGet(res.headers.location)
         }
@@ -875,7 +875,7 @@ function registerServerHandlers(getTrustedWindow) {
 
         const releaseInfo = await new Promise((resolve, reject) => {
           https.get('https://api.github.com/repos/ekzhang/bore/releases/latest',
-            { headers: { 'User-Agent': 'VoxelXClient/1.0', 'Accept': 'application/vnd.github.v3+json' }, timeout: 10000 },
+            { headers: { 'User-Agent': 'VoxelXLauncher/1.0', 'Accept': 'application/vnd.github.v3+json' }, timeout: 10000 },
             res => {
               let body = ''
               res.on('data', c => { body += c })
@@ -908,7 +908,7 @@ function registerServerHandlers(getTrustedWindow) {
         await new Promise((resolve, reject) => {
           function doGet(url) {
             const client = url.startsWith('https') ? https : require('http')
-            client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, res => {
+            client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, res => {
               if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) return doGet(res.headers.location)
               if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
               const out = fs.createWriteStream(archivePath)

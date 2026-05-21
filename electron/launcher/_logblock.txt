@@ -1,4 +1,4 @@
-﻿// --- Shared log window (single window, multi-instance sidebar) ---
+// --- Shared log window (single window, multi-instance sidebar) ---
 let sharedLogWin = null
 
 function getOrCreateLogWindow() {

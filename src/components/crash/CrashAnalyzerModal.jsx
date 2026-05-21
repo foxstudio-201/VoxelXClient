@@ -1,5 +1,5 @@
 /**
- * VoxelXClient — Crash Analyzer Modal
+ * VoxelXLauncher — Crash Analyzer Modal
  * Tự động phân tích log crash, tìm mod bị thiếu trên Modrinth và cài đặt.
  */
 

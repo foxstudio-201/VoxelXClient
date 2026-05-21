@@ -3,9 +3,9 @@
 <br/>
 
 <!-- Logo -->
-<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/icon.png" width="80" height="80" alt="VoxelXClient Logo" />
+<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXLauncher/main/public/icon.png" width="80" height="80" alt="VoxelXLauncher Logo" />
 
-<h1>VoxelXClient</h1>
+<h1>VoxelXLauncher</h1>
 
 <p><strong>The Ultimate Minecraft Launcher</strong><br/>
 Manage profiles, install mods, and launch any Minecraft version — all in one place.</p>
@@ -20,7 +20,7 @@ Manage profiles, install mods, and launch any Minecraft version — all in one p
 </p>
 
 <p>
-  <a href="https://voxelxclient.vercel.app">🌐 Website</a> &nbsp;·&nbsp;
+  <a href="https://VoxelXLauncher.vercel.app">🌐 Website</a> &nbsp;·&nbsp;
   <a href="https://join.foxstudio.site">💬 Discord</a> &nbsp;·&nbsp;
   <a href="#-download">⬇️ Download</a>
 </p>
@@ -86,8 +86,8 @@ Manage profiles, install mods, and launch any Minecraft version — all in one p
 
 ```bash
 # Clone the repo
-git clone https://github.com/foxstudio-201/VoxelXClient.git
-cd VoxelXClient
+git clone https://github.com/foxstudio-201/VoxelXLauncher.git
+cd VoxelXLauncher
 
 # Install dependencies
 npm install
@@ -119,7 +119,7 @@ npm run patch:icon   # Regenerate app icon
 
 > **Windows 10/11 (64-bit)** — Java is managed automatically, no manual setup needed.
 
-Head to the [Releases](https://github.com/foxstudio-201/VoxelXClient/releases) page to download the latest `.exe` installer.
+Head to the [Releases](https://github.com/foxstudio-201/VoxelXLauncher/releases) page to download the latest `.exe` installer.
 
 ---
 
@@ -143,6 +143,6 @@ Released under the [MIT License](LICENSE).
 
 Made with ❤️ by **FoxStudio**
 
-<a href="https://voxelxclient.vercel.app">website: VoxelXClient</a> &nbsp;·&nbsp; <a href="https://join.foxstudio.site">Discord</a>
+<a href="https://VoxelXLauncher.vercel.app">website: VoxelXLauncher</a> &nbsp;·&nbsp; <a href="https://join.foxstudio.site">Discord</a>
 
 </div>

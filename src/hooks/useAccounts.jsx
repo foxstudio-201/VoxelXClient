@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -34,7 +34,7 @@ import { offlineUUID } from '../utils/offlineUUID'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
+const WEB_API = 'https://VoxelXLauncher.vercel.app/api/auth'
 
 // ── Đồng bộ tài khoản với web API ────────────────────────────────────────────
 // Trả về { uuid, skinUrl, skinType, capeUrl, conflict }
@@ -143,7 +143,7 @@ export function AccountsProvider({ children }) {
 
       if (sync.conflict) {
         // Username đã tồn tại trên web với UUID khác → báo lỗi
-        return { error: `Tên "${account.username}" đã được sử dụng trên hệ thống VoxelXClient` }
+        return { error: `Tên "${account.username}" đã được sử dụng trên hệ thống VoxelXLauncher` }
       }
 
       finalUuid = sync.uuid

@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -120,7 +120,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
   const [otpPendingName, setOtpPendingName] = useState('')
   const [otpError, setOtpError] = useState('')
 
-  const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
+  const WEB_API = 'https://VoxelXLauncher.vercel.app/api/auth'
 
   const [discordState, setDiscordState] = useState('idle')
   const [discordProfile, setDiscordProfile] = useState(null)

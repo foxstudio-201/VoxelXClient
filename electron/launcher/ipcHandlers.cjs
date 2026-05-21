@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -163,7 +163,7 @@ function registerLauncherHandlers(getTrustedWindow) {
       fs.writeFileSync(launcherProfilesPath, JSON.stringify({
         profiles: {},
         selectedProfile: null,
-        clientToken: 'VoxelXClient',
+        clientToken: 'VoxelXLauncher',
         authenticationDatabase: {},
         launcherVersion: { name: '2.0.0', format: 21 },
       }, null, 2))
@@ -874,7 +874,7 @@ function registerLauncherHandlers(getTrustedWindow) {
         const url = query
           ? `https://api.spiget.org/v2/search/resources/${encoded}?size=${size}&page=${page}&sort=-downloads&fields=id,name,tag,icon,downloads,rating,testedVersions,premium,file`
           : `https://api.spiget.org/v2/resources/free?size=${size}&page=${page}&sort=-downloads&fields=id,name,tag,icon,downloads,rating,testedVersions,premium,file`
-        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' }, timeout: 8000 }, res => {
+        https.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' }, timeout: 8000 }, res => {
           let body = ''
           res.on('data', c => { body += c })
           res.on('end', () => {

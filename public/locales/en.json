@@ -4,7 +4,7 @@
   "flag": "🇬🇧",
   "settings": {
     "title": "Settings",
-    "subtitle": "Customize VoxelXClient to your liking",
+    "subtitle": "Customize VoxelXLauncher to your liking",
     "tabs": {
       "launcher": "Launcher Config",
       "privacy": "Privacy & Security",
@@ -122,7 +122,7 @@
     "ready": "Ready!"
   },
   "update": {
-    "title": "Update VoxelXClient",
+    "title": "Update VoxelXLauncher",
     "currentVersion": "Current version:",
     "checking": "Checking for updates...",
     "upToDate": "You are on the latest version",

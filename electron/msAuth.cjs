@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -55,7 +55,7 @@ function httpsPost(url, body, extraHeaders = {}) {
       headers:  {
         'Content-Type':   ctype,
         'Content-Length': Buffer.byteLength(bodyStr),
-        'User-Agent':     'VoxelXClient/1.0',
+        'User-Agent':     'VoxelXLauncher/1.0',
         'Accept':         'application/json',
         ...extraHeaders,
       },
@@ -234,7 +234,7 @@ async function getMinecraftProfile(mcToken) {
       hostname: 'api.minecraftservices.com',
       path:     '/minecraft/profile',
       method:   'GET',
-      headers:  { 'Authorization': `Bearer ${mcToken}`, 'User-Agent': 'VoxelXClient/1.0' },
+      headers:  { 'Authorization': `Bearer ${mcToken}`, 'User-Agent': 'VoxelXLauncher/1.0' },
     }, (res) => {
       let data = ''
       res.on('data', c => { data += c })

@@ -4,7 +4,7 @@
   "flag": "🇻🇳",
   "settings": {
     "title": "Cài đặt",
-    "subtitle": "Tùy chỉnh VoxelXClient theo ý bạn",
+    "subtitle": "Tùy chỉnh VoxelXLauncher theo ý bạn",
     "tabs": {
       "launcher": "Cấu hình Launcher",
       "privacy": "Quyền riêng tư & Bảo mật",
@@ -122,7 +122,7 @@
     "ready": "Sẵn sàng!"
   },
   "update": {
-    "title": "Cập nhật VoxelXClient",
+    "title": "Cập nhật VoxelXLauncher",
     "currentVersion": "Phiên bản hiện tại:",
     "checking": "Đang kiểm tra cập nhật...",
     "upToDate": "Bạn đang dùng phiên bản mới nhất",

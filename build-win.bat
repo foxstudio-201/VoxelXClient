@@ -1,6 +1,6 @@
 @echo off
 echo ============================================
-echo   VoxelXClient - Windows Build Script
+echo   VoxelXLauncher - Windows Build Script
 echo ============================================
 echo.
 
@@ -28,7 +28,7 @@ echo.
 :: Code signing with self-signed certificate
 set CSC_IDENTITY_AUTO_DISCOVERY=false
 set CSC_LINK=%~dp0certs\code-signing.pfx
-set CSC_KEY_PASSWORD=VoxelXClient2024
+set CSC_KEY_PASSWORD=VoxelXLauncher2024
 
 echo [1/2] Building Vite...
 call npm run build

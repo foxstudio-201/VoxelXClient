@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -42,7 +42,7 @@ const { loginWithWindow, refreshMinecraftToken } = require('./msAuth.cjs')
 
 const isDev = process.env.NODE_ENV === 'development'
 
-app.setAppUserModelId('com.voxelxclient.launcher')
+app.setAppUserModelId('com.VoxelXClient.launcher')
 
 function resolveIconPath() {
 
@@ -302,7 +302,7 @@ function createMainWindow() {
     minWidth: 1024, minHeight: 600,
     frame: false, transparent: false,
     backgroundColor: '#0f0f0f',
-    title: 'VoxelXClient',
+    title: 'VoxelXLauncher',
     icon,
     webPreferences: secureWebPrefs(),
   })
@@ -348,7 +348,7 @@ function createUpdateWindow() {
     width: 480, height: 620,
     resizable: false, frame: false,
     backgroundColor: '#0f0f0f',
-    title: 'VoxelXClient – Check for Updates',
+    title: 'VoxelXLauncher – Check for Updates',
     icon,
     modal:       false,
     skipTaskbar: false,
@@ -388,7 +388,7 @@ function createTray() {
     }
 
     tray = new Tray(trayIcon)
-    tray.setToolTip('VoxelXClient')
+    tray.setToolTip('VoxelXLauncher')
 
     const openMainWindow = () => {
       if (!mainWindow || mainWindow.isDestroyed()) {
@@ -406,12 +406,12 @@ function createTray() {
 
     const trayMenu = Menu.buildFromTemplate([
       {
-        label: 'VoxelXClient', enabled: false,
+        label: 'VoxelXLauncher', enabled: false,
         ...(menuIcon ? { icon: menuIcon } : {}),
       },
       { type: 'separator' },
       {
-        label: 'Mở VoxelXClient',
+        label: 'Mở VoxelXLauncher',
         click: () => openMainWindow(),
       },
       {
@@ -445,7 +445,7 @@ app.whenReady().then(() => {
 
   try {
     const os = require('os')
-    const updateDir = path.join(os.tmpdir(), 'VoxelXClient-update')
+    const updateDir = path.join(os.tmpdir(), 'VoxelXLauncher-update')
     if (fs.existsSync(updateDir)) {
       const files = fs.readdirSync(updateDir)
       for (const f of files) {
@@ -481,7 +481,7 @@ app.whenReady().then(() => {
           "font-src 'self' data:;" +
           "img-src 'self' data: blob: https:;" +
           "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://youtube-nocookie.com https://youtube.com;" +
-          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://voxelxclient.vercel.app https://foxstudio.site;"
+          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://VoxelXLauncher.vercel.app https://foxstudio.site;"
         ],
       },
     })
@@ -521,7 +521,7 @@ ipcMain.on('window-close', (e) => {
   else win.hide()
 })
 
-const GITHUB_REPO = 'foxstudio-201/VoxelXClient'
+const GITHUB_REPO = 'foxstudio-201/VoxelXLauncher'
 
 ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
@@ -565,7 +565,7 @@ ipcMain.handle('updater:check', async (e) => {
         `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
         {
           headers: {
-            'User-Agent': 'VoxelXClient/' + currentVersion,
+            'User-Agent': 'VoxelXLauncher/' + currentVersion,
             'Accept': 'application/vnd.github+json',
           },
           timeout: 8000,
@@ -662,8 +662,8 @@ ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
   const win = getTrustedWindow(e)
   const https = require('https')
   const os    = require('os')
-  const tmpDir  = path.join(os.tmpdir(), 'VoxelXClient-update')
-  const tmpFile = path.join(tmpDir, fileName || 'VoxelXClient-update.exe')
+  const tmpDir  = path.join(os.tmpdir(), 'VoxelXLauncher-update')
+  const tmpFile = path.join(tmpDir, fileName || 'VoxelXLauncher-update.exe')
 
   if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
@@ -682,7 +682,7 @@ ipcMain.handle('updater:download', async (e, { downloadUrl, fileName }) => {
   try {
     await new Promise((resolve, reject) => {
       function doGet(url) {
-        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/' + app.getVersion() } }, (res) => {
+        https.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/' + app.getVersion() } }, (res) => {
 
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             return doGet(res.headers.location)
@@ -726,7 +726,7 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
   if (!fs.existsSync(filePath)) return { error: 'Installer file not found' }
 
   const os = require('os')
-  const tmpDir = path.join(os.tmpdir(), 'VoxelXClient-update')
+  const tmpDir = path.join(os.tmpdir(), 'VoxelXLauncher-update')
   if (!filePath.startsWith(tmpDir)) return { error: 'Invalid installer path' }
 
   try {
@@ -796,7 +796,7 @@ ipcMain.handle('updater:reinstall', async (e) => {
       return { error: 'Không tìm thấy file installer cho hệ điều hành này.' }
     }
 
-    const tmpDir  = path.join(os.tmpdir(), 'VoxelXClient-update')
+    const tmpDir  = path.join(os.tmpdir(), 'VoxelXLauncher-update')
     const tmpFile = path.join(tmpDir, installerAsset.name)
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
 
@@ -804,7 +804,7 @@ ipcMain.handle('updater:reinstall', async (e) => {
 
     await new Promise((resolve, reject) => {
       function doGet(url) {
-        https.get(url, { headers: { 'User-Agent': 'VoxelXClient/' + currentVersion } }, (res) => {
+        https.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/' + currentVersion } }, (res) => {
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             return doGet(res.headers.location)
           }
@@ -876,7 +876,7 @@ function fetchGitHubReleaseByTag(repo, tag, currentVersion) {
       `https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`,
       {
         headers: {
-          'User-Agent': 'VoxelXClient/' + currentVersion,
+          'User-Agent': 'VoxelXLauncher/' + currentVersion,
           'Accept': 'application/vnd.github+json',
         },
         timeout: 8000,
@@ -925,7 +925,7 @@ ipcMain.handle('patchnotes:getCurrentVersion', async (e) => {
       ok: true,
       currentVersion,
       version: (release.tag_name || currentVersion).replace(/^v/, ''),
-      title: release.name || `VoxelXClient ${currentVersion}`,
+      title: release.name || `VoxelXLauncher ${currentVersion}`,
       body: release.body || '',
       htmlUrl: release.html_url || `https://github.com/${GITHUB_REPO}/releases`,
       publishedAt: release.published_at || null,
@@ -1130,7 +1130,7 @@ ipcMain.handle('fabric:getLoaderVersions', async (e, gameVersion) => {
     const https = require('https')
     const url = `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}`
     const data = await new Promise((resolve, reject) => {
-      https.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
+      https.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
         let body = ''
         res.on('data', chunk => { body += chunk })
         res.on('end', () => {
@@ -1365,7 +1365,7 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
       const client = downloadUrl.startsWith('https') ? https : http
       const tmpFile = fs.createWriteStream(tmpPath)
       const doGet = (url) => {
-        client.get(url, { headers: { 'User-Agent': 'VoxelXClient/1.0' } }, (res) => {
+        client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             tmpFile.close()
             return doGet(res.headers.location)

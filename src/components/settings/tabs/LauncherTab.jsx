@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -174,7 +174,7 @@ function FontTab({ settings, onChange }) {
           style={{ fontFamily: activeFont.stack }}
           className="text-white text-base"
         >
-          VoxelXClient Launcher
+          VoxelXLauncher Launcher
           <div className="text-white/50 text-sm mt-1">The quick brown fox jumps over the lazy dog</div>
           <div className="text-white/30 text-xs mt-1 font-mono">0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ</div>
         </div>

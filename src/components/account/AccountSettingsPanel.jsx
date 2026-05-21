@@ -1,5 +1,5 @@
 /**
- * VoxelXClient — Account Settings Panel
+ * VoxelXLauncher — Account Settings Panel
  * Hiển thị cài đặt tài khoản cho offline/discord accounts
  * Kết nối với web API để đồng bộ dữ liệu
  */
@@ -9,7 +9,7 @@ import { useLang } from '../../i18n/LangProvider'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
 import PlayerHead from '../ui/PlayerHead'
-const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
+const WEB_API = 'https://VoxelXLauncher.vercel.app/api/auth'
 const TOKEN_KEY = 'vxc_auth_token'
 
 function getWebToken() {
@@ -145,7 +145,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
         .finally(() => setWebLoading(false))
     }
 
-    // Kiểm tra token có thuộc về account này không (để hiện section đổi mật khẩu + 2FA)
+    // Kiểm tra token có thuộc về account này không (để hiện section đổi mật khẩu)
     if (token) {
       fetch(`${WEB_API}?action=me`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -412,7 +412,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
           ) : (
             <div className="flex flex-col gap-2.5">
               <p className="text-[11px] text-white/30 leading-relaxed">
-                Liên kết tài khoản Discord để nhận role và thông báo trong server VoxelXClient.
+                Liên kết tài khoản Discord để nhận role và thông báo trong server VoxelXLauncher.
               </p>
               <button onClick={handleLinkDiscord} disabled={discordLoading || !isElectron}
                 className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
@@ -429,17 +429,6 @@ export default function AccountSettingsPanel({ account, onBack }) {
               </button>
             </div>
           )}
-        </Section>
-
-        {/* ── 2FA Google Authenticator ── */}
-        <Section title="Bảo mật 2 lớp (2FA)" icon={
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
-          </svg>
-        }>
-          <p className="text-[11px] text-white/35 leading-relaxed">
-            Tính năng 2FA đang được phát triển.
-          </p>
         </Section>
 
         </div>{/* end inner flex col */}

@@ -1,7 +1,7 @@
 /**
- * Generate VoxelXClient logo PNG (512x512) cho Discord RPC asset.
+ * Generate VoxelXLauncher logo PNG (512x512) cho Discord RPC asset.
  * Logo: 4 ô vuông xanh trên nền tối, giống icon app.
- * Output: src/assets/voxelxclient-logo.png
+ * Output: src/assets/VoxelXLauncher-logo.png
  */
 
 const fs   = require('fs')
@@ -139,7 +139,7 @@ for (let qi = 0; qi < 4; qi++) {
 const outDir = path.join(__dirname, '../src/assets')
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
 
-const outPath = path.join(outDir, 'voxelxclient-logo.png')
+const outPath = path.join(outDir, 'VoxelXLauncher-logo.png')
 const png     = writePNG(SIZE, SIZE, rgba)
 fs.writeFileSync(outPath, png)
-console.log(`✅  voxelxclient-logo.png → ${outPath}  (${SIZE}x${SIZE}, ${png.length} bytes)`)
+console.log(`✅  VoxelXLauncher-logo.png → ${outPath}  (${SIZE}x${SIZE}, ${png.length} bytes)`)

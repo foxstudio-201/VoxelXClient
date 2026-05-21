@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -212,7 +212,7 @@ export default function UpdateWindow() {
         </div>
 
         <div className="text-center flex-shrink-0">
-          <h1 className="text-lg font-bold text-white">VoxelXClient</h1>
+          <h1 className="text-lg font-bold text-white">VoxelXLauncher</h1>
           <p className="text-xs text-white/30 mt-1">
             {t('update.currentVersion')} <span className="text-white/50 font-mono">{version || '...'}</span>
           </p>
@@ -358,9 +358,9 @@ export default function UpdateWindow() {
         )}
 
         {}
-        <button onClick={() => openUrl('https://github.com/foxstudio-201/VoxelXClient')}
+        <button onClick={() => openUrl('https://github.com/foxstudio-201/VoxelXLauncher')}
           className="text-[10px] text-white/15 hover:text-white/35 transition-colors flex-shrink-0">
-          foxstudio-201/VoxelXClient
+          foxstudio-201/VoxelXLauncher
         </button>
       </div>
     </div>

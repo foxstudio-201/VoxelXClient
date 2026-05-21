@@ -1,8 +1,8 @@
 {
-  "name": "voxelxclient",
+  "name": "voxelxlauncher",
   "private": true,
   "version": "1.2.102",
-  "description": "VoxelXClient - Minecraft Launcher by FoxStudio",
+  "description": "VoxelXLauncher - Minecraft Launcher by FoxStudio",
   "author": {
     "name": "FoxStudio",
     "email": "contact@foxstudio.dev"
@@ -55,9 +55,9 @@
     "wait-on": "^9.0.5"
   },
   "build": {
-    "appId": "com.voxelxclient.launcher",
-    "productName": "VoxelXClient",
-    "copyright": "Copyright Â© 2024 FoxStudio",
+    "appId": "com.VoxelXClient.launcher",
+    "productName": "VoxelXLauncher",
+    "copyright": "Copyright © 2024 FoxStudio",
     "asar": true,
     "directories": {
       "output": "dist-electron",
@@ -129,7 +129,7 @@
       "installerHeaderIcon": "public/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "VoxelXClient"
+      "shortcutName": "VoxelXLauncher"
     },
     "publish": null
   }

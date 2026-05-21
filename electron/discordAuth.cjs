@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -31,7 +31,7 @@
 
 const { shell } = require('electron')
 
-const DEFAULT_WEB_BASE_URL = process.env.VXC_WEB_BASE_URL || 'https://voxelxclient.vercel.app'
+const DEFAULT_WEB_BASE_URL = process.env.VXC_WEB_BASE_URL || 'https://VoxelXLauncher.vercel.app'
 const DEFAULT_TIMEOUT_MS = 3 * 60 * 1000
 const POLL_INTERVAL_MS = 2000
 

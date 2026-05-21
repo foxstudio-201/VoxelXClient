@@ -1,4 +1,4 @@
-﻿name: Build & Release
+name: Build & Release
 
 on:
   push:
@@ -76,7 +76,7 @@ jobs:
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: VoxelXClient-Windows-${{ steps.version.outputs.VERSION }}
+          name: VoxelXLauncher-Windows-${{ steps.version.outputs.VERSION }}
           path: |
             dist-electron/*.exe
             dist-electron/*.zip
@@ -136,7 +136,7 @@ jobs:
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: VoxelXClient-Linux-${{ steps.version.outputs.VERSION }}
+          name: VoxelXLauncher-Linux-${{ steps.version.outputs.VERSION }}
           path: |
             dist-electron/*.AppImage
             dist-electron/*.deb
@@ -164,13 +164,13 @@ jobs:
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
-          name: VoxelXClient-Windows-${{ steps.version.outputs.VERSION }}
+          name: VoxelXLauncher-Windows-${{ steps.version.outputs.VERSION }}
           path: release-files/windows
 
       - name: Download Linux artifacts
         uses: actions/download-artifact@v4
         with:
-          name: VoxelXClient-Linux-${{ steps.version.outputs.VERSION }}
+          name: VoxelXLauncher-Linux-${{ steps.version.outputs.VERSION }}
           path: release-files/linux
 
       - name: List release files
@@ -179,14 +179,14 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: VoxelXClient
+          name: VoxelXLauncher
           body: |
-            ## VoxelXClient v${{ steps.version.outputs.VERSION }}
+            ## VoxelXLauncher v${{ steps.version.outputs.VERSION }}
 
             <div align="center">
             <br/>
-            <img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/icon.png" width="80" height="80" alt="VoxelXClient Logo" />
-            <h1>VoxelXClient</h1>
+            <img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXLauncher/main/public/icon.png" width="80" height="80" alt="VoxelXLauncher Logo" />
+            <h1>VoxelXLauncher</h1>
             <p><strong>The Ultimate Minecraft Launcher</strong><br/>Manage profiles, install mods, and launch any Minecraft version — all in one place.</p>
             <p>
             <img src="https://img.shields.io/badge/version-${{ steps.version.outputs.VERSION }}-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
@@ -197,7 +197,7 @@ jobs:
             <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=0a0a0a" alt="License" />
             </p>
             <p>
-            <a href="https://voxelxclient.vercel.app">🌐 Website</a> &nbsp;·&nbsp;
+            <a href="https://VoxelXLauncher.vercel.app">🌐 Website</a> &nbsp;·&nbsp;
             <a href="https://join.foxstudio.site">💬 Discord</a>
             </p>
             </div>
@@ -240,14 +240,14 @@ jobs:
 
             | Nền tảng | File | Ghi chú |
             |----------|------|---------|
-            | 🪟 Windows | `VoxelXClient Setup ${{ steps.version.outputs.VERSION }}.exe` | Installer (khuyến nghị) |
-            | 🪟 Windows | `VoxelXClient ${{ steps.version.outputs.VERSION }}.exe` | Portable, không cần cài |
-            | 🐧 Linux | `VoxelXClient-${{ steps.version.outputs.VERSION }}.AppImage` | Chạy trực tiếp |
-            | 🐧 Linux | `voxelxclient_${{ steps.version.outputs.VERSION }}_amd64.deb` | Debian / Ubuntu |
+            | 🪟 Windows | `VoxelXLauncher Setup ${{ steps.version.outputs.VERSION }}.exe` | Installer (khuyến nghị) |
+            | 🪟 Windows | `VoxelXLauncher ${{ steps.version.outputs.VERSION }}.exe` | Portable, không cần cài |
+            | 🐧 Linux | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}.AppImage` | Chạy trực tiếp |
+            | 🐧 Linux | `voxelxlauncher_${{ steps.version.outputs.VERSION }}_amd64.deb` | Debian / Ubuntu |
 
             > **Yêu cầu:** Windows 10/11 (64-bit) hoặc Linux x64
             > ⚠️ Windows: SmartScreen có thể cảnh báo lần đầu — nhấn **More info** → **Run anyway**
-            > 🐧 Linux AppImage: `chmod +x VoxelXClient*.AppImage && ./VoxelXClient*.AppImage`
+            > 🐧 Linux AppImage: `chmod +x VoxelXLauncher*.AppImage && ./VoxelXLauncher*.AppImage`
           files: |
             release-files/windows/*.exe
             release-files/windows/*.zip

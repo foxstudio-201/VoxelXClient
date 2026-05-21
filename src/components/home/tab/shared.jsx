@@ -1,5 +1,5 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Shared utilities, icons, and small UI components for ProfileSettingsPanel tabs.
  */
 

@@ -1,8 +1,8 @@
 /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -13,10 +13,10 @@
  */
 
  /**
- * VoxelXClient — Minecraft Launcher
+ * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
- * Source code : https://github.com/foxstudio-201/VoxelXClient
+ * Source code : https://github.com/foxstudio-201/VoxelXLauncher
  * Website     : https://voxxelxclient.vercel.app
  *
  * NOTICE:
@@ -39,12 +39,12 @@ let retryTimer = null
 let intentionalDisconnect = false
 
 const DEFAULT_ACTIVITY = {
-  details:      'VoxelXClient Launcher',
+  details:      'VoxelXLauncher',
   state:        'Đang ở menu chính',
   largeImageKey:  'logo',
-  largeImageText: 'VoxelXClient',
+  largeImageText: 'VoxelXLauncher',
   smallImageKey:  'logo',
-  smallImageText: 'VoxelXClient Launcher',
+  smallImageText: 'VoxelXLauncher',
   instance: false,
 }
 
@@ -113,11 +113,11 @@ function disconnect() {
 
 const PRESETS = {
   menu: () => setActivity({
-    details: 'VoxelXClient Launcher',
+    details: 'VoxelXLauncher',
     state:   'Đang ở menu chính',
   }),
   browsing: (page) => setActivity({
-    details: 'VoxelXClient Launcher',
+    details: 'VoxelXLauncher',
     state:   `Đang xem: ${page}`,
   }),
   launching: (version) => setActivity({

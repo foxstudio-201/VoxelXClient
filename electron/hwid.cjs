@@ -12,7 +12,7 @@ try {
   APP_ID     = s.appId
 } catch {
   APP_SECRET = crypto.randomBytes(32).toString('hex')
-  APP_ID     = 'com.voxelxclient.launcher'
+  APP_ID     = 'com.VoxelXClient.launcher'
 }
 
 function run(cmd) {
