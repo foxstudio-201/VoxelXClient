@@ -43,13 +43,16 @@ export default function ModsTab({ profile, accountId }) {
     try {
       const r = await window.electronAPI.profileToggleMod(profile.id, mod.fileName, accountId)
       if (r?.ok) {
+        const newFileName = r.newFileName || mod.fileName
         setMods(prev => prev.map(m =>
-          m.fileName === mod.fileName ? { ...m, fileName: r.newFileName, enabled: r.enabled } : m
+          m.fileName === mod.fileName
+            ? { ...m, fileName: newFileName, enabled: r.enabled }
+            : m
         ))
-        if (r.newFileName !== mod.fileName) {
+        if (newFileName !== mod.fileName) {
           setMetaCache(prev => {
             const next = { ...prev }
-            next[r.newFileName] = next[mod.fileName]
+            next[newFileName] = next[mod.fileName]
             delete next[mod.fileName]
             return next
           })

@@ -370,11 +370,13 @@ function registerProfileContentHandlers(getTrustedWindow) {
 
   ipcMain.handle('profile:toggleMod', async (e, profileId, fileName, accountId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (typeof profileId !== 'string') return { ok: false, error: `Invalid profileId: ${profileId}` }
+    if (typeof fileName !== 'string') return { ok: false, error: `Invalid fileName: ${fileName}` }
     const data = readProfiles()
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { ok: false, error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
-    if (!gameDir) return { ok: false, error: 'Profile instancePath not set' }
+    if (!gameDir) return { ok: false, error: `Profile instancePath not set (instancePath=${profile.instancePath})` }
     const modDir = path.join(gameDir, 'mods')
     const oldPath = path.join(modDir, fileName)
     if (!fs.existsSync(oldPath)) return { ok: false, error: 'File not found' }
@@ -382,7 +384,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
       ? fileName.replace(/\.(off|disabled)$/, '')
       : fileName + '.off'
     fs.renameSync(oldPath, path.join(modDir, newName))
-    return { ok: true, enabled: !newName.endsWith('.off') }
+    return { ok: true, newFileName: newName, enabled: !newName.endsWith('.off') }
   })
 
   ipcMain.handle('profile:deleteMod', (e, profileId, fileName, accountId) => {

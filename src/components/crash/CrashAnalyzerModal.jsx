@@ -12,78 +12,147 @@ const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 /**
  * Parse Fabric crash log để tìm các mod bị thiếu / không tương thích.
- * Hỗ trợ các pattern:
- *   - "Mod 'X' (modid) A.B.C requires version D.E.F+ of Y, which is missing!"
- *   - "Install fabric-language-kotlin, version X.Y.Z or later."
- *   - "net.fabricmc.loader.impl.FormattedException: Incompatible mod set!"
+ *
+ * Fabric FormattedException format:
+ *   net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+ *   A potential solution has been determined:
+ *    - Install fabric-language-kotlin, version 1.10.0+kotlin.1.9.22 or later.
+ *    - Replace mod 'Sodium' (sodium) 0.5.8+mc1.20.6 with any version that is compatible with:
+ *        - fabric-api 0.100.0+1.20.6 or later (provided by 'Fabric API' (fabric-api) 0.99.0+1.20.6)
+ *   Incompatible mods:
+ *    - Mod 'Sodium' (sodium) 0.5.8+mc1.20.6 requires version 0.100.0+1.20.6 or later of fabric-api, which is missing!
  */
 export function parseFabricCrashLogs(logs) {
-  const missing = new Map() // modId → { modId, displayName, requiredVersion, requiredBy[] }
+  const missing = new Map() // modId → { modId, displayName, requiredVersion, requiredBy[], action }
 
   for (const line of logs) {
-    // Pattern: "- Mod 'DisplayName' (modid) X.Y.Z requires version A.B.C or later of target-mod, which is missing!"
-    const reqMissing = line.match(
-      /Mod ['"]?([^'"(]+)['"]?\s*\(([^)]+)\)[^r]*requires\s+version\s+([\w.+\-]+(?:\s*or\s+later)?)\s+of\s+([\w\-]+),\s+which\s+is\s+missing/i
+    const trimmed = line.trim()
+
+    // Pattern 1: "- Install <modId>, version X.Y.Z or later."
+    const installMatch = trimmed.match(
+      /^[-*]\s+Install\s+([\w\-]+),\s+version\s+([\w.+\-]+(?:\s+or\s+later)?)/i
     )
-    if (reqMissing) {
-      const [, requiredByDisplay, , requiredVersion, targetModId] = reqMissing
-      const key = targetModId.trim()
+    if (installMatch) {
+      const [, modId, version] = installMatch
+      const key = modId.trim().toLowerCase()
       if (!missing.has(key)) {
-        missing.set(key, {
-          modId: key,
-          displayName: key,
-          requiredVersion: requiredVersion.trim(),
-          requiredBy: [],
-        })
+        missing.set(key, { modId: key, displayName: modId.trim(), requiredVersion: version.trim(), requiredBy: [], action: 'install' })
+      }
+      continue
+    }
+
+    // Pattern 2: "- Replace mod 'DisplayName' (modId) X.Y.Z with any version that is compatible with:"
+    const replaceMatch = trimmed.match(
+      /^[-*]\s+Replace\s+mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)\s+([\w.+\-]+)\s+with/i
+    )
+    if (replaceMatch) {
+      const [, displayName, modId, currentVersion] = replaceMatch
+      const key = modId.trim().toLowerCase()
+      if (!missing.has(key)) {
+        missing.set(key, { modId: key, displayName: displayName.trim(), currentVersion: currentVersion.trim(), requiredVersion: null, requiredBy: [], action: 'update' })
+      }
+      continue
+    }
+
+    // Pattern 3: "- Mod 'DisplayName' (modId) X.Y.Z requires version A.B.C or later of target-mod, which is missing!"
+    const reqMissingMatch = trimmed.match(
+      /^[-*]?\s*Mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)[^r]*requires\s+version\s+([\w.+\-]+(?:\s+or\s+later)?)\s+of\s+([\w\-]+),\s+which\s+is\s+missing/i
+    )
+    if (reqMissingMatch) {
+      const [, requiredByDisplay, , requiredVersion, targetModId] = reqMissingMatch
+      const key = targetModId.trim().toLowerCase()
+      if (!missing.has(key)) {
+        missing.set(key, { modId: key, displayName: key, requiredVersion: requiredVersion.trim(), requiredBy: [], action: 'install' })
       }
       missing.get(key).requiredBy.push(requiredByDisplay.trim())
       continue
     }
 
-    // Pattern: "Install fabric-language-kotlin, version X.Y.Z or later."
-    const installSuggestion = line.match(
-      /Install\s+([\w\-]+),\s+version\s+([\w.+\-]+(?:\s*or\s+later)?)/i
+    // Pattern 4: "requires version X.Y.Z or later of <modId>"
+    const reqOfMatch = trimmed.match(
+      /requires\s+version\s+([\w.+\-]+)\s+or\s+later\s+of\s+([\w\-]+)/i
     )
-    if (installSuggestion) {
-      const [, modId, version] = installSuggestion
-      const key = modId.trim()
+    if (reqOfMatch) {
+      const [, version, modId] = reqOfMatch
+      const key = modId.trim().toLowerCase()
       if (!missing.has(key)) {
-        missing.set(key, {
-          modId: key,
-          displayName: key,
-          requiredVersion: version.trim(),
-          requiredBy: [],
-        })
+        missing.set(key, { modId: key, displayName: modId.trim(), requiredVersion: version.trim(), requiredBy: [], action: 'install' })
       }
       continue
     }
 
-    // Pattern: "requires version X.Y.Z+kotlinY.Z.W or later of fabric-language-kotlin"
-    const reqOf = line.match(
-      /requires\s+version\s+([\w.+\-]+)\s+or\s+later\s+of\s+([\w\-]+)/i
+    // Pattern 5: "- Mod 'X' (modId) requires version A.B.C+ of Y (currently Y Z.W.V)"
+    const reqCurrentMatch = trimmed.match(
+      /Mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)\s+requires\s+version\s+([\w.+\-]+)\+?\s+of\s+([\w\-]+)\s+\(currently/i
     )
-    if (reqOf) {
-      const [, version, modId] = reqOf
-      const key = modId.trim()
+    if (reqCurrentMatch) {
+      const [, requiredByDisplay, , requiredVersion, targetModId] = reqCurrentMatch
+      const key = targetModId.trim().toLowerCase()
       if (!missing.has(key)) {
-        missing.set(key, {
-          modId: key,
-          displayName: key,
-          requiredVersion: version.trim(),
-          requiredBy: [],
-        })
+        missing.set(key, { modId: key, displayName: key, requiredVersion: requiredVersion.trim(), requiredBy: [], action: 'update' })
       }
+      missing.get(key).requiredBy.push(requiredByDisplay.trim())
     }
   }
 
   return Array.from(missing.values())
 }
 
+/**
+ * Parse toàn bộ block FormattedException để lấy message gốc và danh sách solutions.
+ */
+export function parseFabricFormattedException(logs) {
+  const result = {
+    mainMessage: null,
+    solutions: [],
+    incompatibleMods: [],
+  }
+
+  let inSolutions = false
+  let inIncompatible = false
+
+  for (const line of logs) {
+    const trimmed = line.trim()
+
+    // Tìm main message
+    if (/FormattedException.*Some of your mods/i.test(trimmed) ||
+        /Some of your mods are incompatible/i.test(trimmed)) {
+      result.mainMessage = 'Một số mod của bạn không tương thích với game hoặc với nhau!'
+      inSolutions = false
+      inIncompatible = false
+      continue
+    }
+
+    if (/A potential solution has been determined/i.test(trimmed)) {
+      inSolutions = true
+      inIncompatible = false
+      continue
+    }
+
+    if (/Incompatible mods/i.test(trimmed) || /Mod incompatibilities/i.test(trimmed)) {
+      inSolutions = false
+      inIncompatible = true
+      continue
+    }
+
+    if (inSolutions && /^[-*]\s+/.test(trimmed)) {
+      result.solutions.push(trimmed.replace(/^[-*]\s+/, ''))
+    }
+
+    if (inIncompatible && /^[-*]\s+/.test(trimmed)) {
+      result.incompatibleMods.push(trimmed.replace(/^[-*]\s+/, ''))
+    }
+  }
+
+  return result
+}
+
 export function isFabricIncompatibleCrash(logs) {
   return logs.some(l =>
     /Incompatible mod(s)? found/i.test(l) ||
     /FormattedException.*Incompatible/i.test(l) ||
-    /net\.fabricmc\.loader.*FormattedException/i.test(l)
+    /net\.fabricmc\.loader.*FormattedException/i.test(l) ||
+    /Some of your mods are incompatible/i.test(l)
   )
 }
 
@@ -335,14 +404,15 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
 
   if (!crashData) return null
 
-  const { logs, profileId, accountId, instancePath, gameVersion, loader, profileName } = crashData
+  const { logs, profileId, accountId, instancePath, gameVersion, loader, profileName, exitCode } = crashData
   const missingMods = parseFabricCrashLogs(logs)
   const isFabricCrash = isFabricIncompatibleCrash(logs)
+  const fabricInfo = isFabricCrash ? parseFabricFormattedException(logs) : null
 
   // Lấy các dòng lỗi chính để hiển thị
   const errorLines = logs.filter(l =>
-    /ERROR|FATAL|FormattedException|Incompatible|missing/i.test(l)
-  ).slice(0, 8)
+    /ERROR|FATAL|FormattedException|Incompatible|missing|Exception|crash/i.test(l)
+  ).slice(0, 12)
 
   const allFixed = missingMods.length > 0 && fixedMods.size >= missingMods.length
 
@@ -352,7 +422,7 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
 
         {/* Header */}
         <div className="flex-shrink-0 flex items-start gap-4 px-6 py-5 border-b border-white/5">
@@ -363,12 +433,11 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold text-white">Game bị crash</h2>
-            <p className="text-xs text-white/40 mt-0.5">
+            <p className="text-xs text-white/40 mt-0.5 flex items-center gap-1.5 flex-wrap">
               {profileName && <span className="text-white/60">{profileName}</span>}
-              {gameVersion && <span className="text-white/30"> · MC {gameVersion}</span>}
-              {loader && loader !== 'vanilla' && (
-                <span className="text-white/30"> · {loader.charAt(0).toUpperCase() + loader.slice(1)}</span>
-              )}
+              {gameVersion && <><span className="text-white/20">·</span><span>MC {gameVersion}</span></>}
+              {loader && loader !== 'vanilla' && <><span className="text-white/20">·</span><span>{loader.charAt(0).toUpperCase() + loader.slice(1)}</span></>}
+              {exitCode !== undefined && exitCode !== 0 && <><span className="text-white/20">·</span><span className="font-mono text-red-400/60">exit {exitCode}</span></>}
             </p>
           </div>
           <button
@@ -382,34 +451,66 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
 
-          {/* Crash summary */}
-          {isFabricCrash && missingMods.length > 0 ? (
-            <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3">
-              <div className="flex items-center gap-2 mb-1">
+          {/* Fabric incompatible crash */}
+          {isFabricCrash ? (
+            <div className="rounded-xl border border-yellow-500/25 bg-yellow-500/6 px-4 py-3.5">
+              <div className="flex items-center gap-2 mb-2">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-yellow-400 flex-shrink-0">
                   <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
                 </svg>
-                <p className="text-sm font-bold text-yellow-400">Mod không tương thích</p>
+                <p className="text-sm font-bold text-yellow-400">Mod không tương thích (Fabric)</p>
               </div>
-              <p className="text-xs text-white/50">
-                Fabric phát hiện <span className="text-yellow-400 font-semibold">{missingMods.length} mod bị thiếu</span> hoặc không đúng phiên bản.
-                Tải xuống và cài đặt bên dưới để sửa lỗi.
+              <p className="text-xs text-white/55 leading-relaxed">
+                {fabricInfo?.mainMessage || 'Fabric phát hiện mod không tương thích với game hoặc với nhau.'}
               </p>
+
+              {/* Solutions từ Fabric */}
+              {fabricInfo?.solutions?.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-yellow-500/15">
+                  <p className="text-[10px] font-bold text-yellow-400/60 uppercase tracking-widest mb-2">Giải pháp được đề xuất</p>
+                  <div className="flex flex-col gap-1">
+                    {fabricInfo.solutions.map((s, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-white/50">
+                        <span className="text-yellow-400/50 flex-shrink-0 mt-0.5">→</span>
+                        <span className="font-mono leading-relaxed">{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Incompatible mods list từ Fabric */}
+              {fabricInfo?.incompatibleMods?.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-yellow-500/15">
+                  <p className="text-[10px] font-bold text-red-400/60 uppercase tracking-widest mb-2">Mod xung đột</p>
+                  <div className="flex flex-col gap-1">
+                    {fabricInfo.incompatibleMods.map((m, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-red-400/60">
+                        <span className="flex-shrink-0 mt-0.5">✗</span>
+                        <span className="font-mono leading-relaxed">{m}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
               <p className="text-sm font-bold text-red-400 mb-1">Crash không xác định</p>
-              <p className="text-xs text-white/40">Không phát hiện được nguyên nhân cụ thể. Xem log bên dưới để biết thêm chi tiết.</p>
+              <p className="text-xs text-white/40">Không phát hiện được nguyên nhân cụ thể từ Fabric. Xem log bên dưới để biết thêm chi tiết.</p>
             </div>
           )}
 
-          {/* Missing mods list */}
+          {/* Missing mods — auto fix */}
           {missingMods.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">
-                Mod cần cài đặt ({missingMods.length})
+              <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400">
+                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                </svg>
+                Mod cần cài đặt / cập nhật ({missingMods.length})
               </h3>
               <div className="flex flex-col gap-2">
                 {missingMods.map(mod => (
@@ -431,15 +532,20 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
           {/* Error log preview */}
           {errorLines.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">
-                Chi tiết lỗi
+              <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                  <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/>
+                </svg>
+                Log lỗi
               </h3>
-              <div className="rounded-xl bg-black/40 border border-white/5 p-3 font-mono text-[11px] leading-relaxed max-h-40 overflow-y-auto">
+              <div className="rounded-xl bg-black/50 border border-white/5 p-3 font-mono text-[11px] leading-relaxed max-h-48 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.06) transparent' }}>
                 {errorLines.map((line, i) => (
-                  <div key={i} className={`${
-                    /ERROR|FATAL/.test(line) ? 'text-red-400/80' :
+                  <div key={i} className={`py-0.5 ${
+                    /FATAL|FormattedException/.test(line) ? 'text-red-400' :
+                    /ERROR/.test(line) ? 'text-red-400/75' :
                     /WARN/.test(line) ? 'text-yellow-400/70' :
-                    'text-white/40'
+                    /Incompatible|missing/i.test(line) ? 'text-orange-400/70' :
+                    'text-white/35'
                   }`}>
                     {line}
                   </div>
@@ -458,12 +564,14 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
               </svg>
               Đã cài xong — khởi động lại game để áp dụng
             </p>
-          ) : (
+          ) : missingMods.length > 0 ? (
             <p className="text-xs text-white/25">
               {fixedMods.size > 0
                 ? `Đã cài ${fixedMods.size}/${missingMods.length} mod`
-                : 'Cài đặt mod để sửa lỗi crash'}
+                : 'Cài đặt mod bên trên để sửa lỗi crash'}
             </p>
+          ) : (
+            <p className="text-xs text-white/25">Xem log để tìm nguyên nhân</p>
           )}
           <button
             onClick={onClose}
