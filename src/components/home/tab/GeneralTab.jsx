@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import JavaManagerModal from '../JavaManagerModal'
 import { isElectron, Icons } from './shared'
+import { useLang } from '../../../i18n/LangProvider'
 
 export default function GeneralTab({ profile, onProfileUpdated }) {
+  const { t } = useLang()
   const [name, setName] = useState(profile?.name || '')
   const [ram, setRam] = useState(profile?.ramGb || 2)
   const [winWidth, setWinWidth] = useState(profile?.windowWidth || 854)
@@ -63,7 +65,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
     <div className="p-4 flex flex-col gap-4">
       {/* Tên profile */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-white/50">Tên profile</label>
+        <label className="text-xs font-medium text-white/50">{t('profileSettings.general.nameLabel')}</label>
         <input
           type="text"
           value={name}
@@ -76,7 +78,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
       {/* RAM */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-white/50">RAM tối đa</label>
+          <label className="text-xs font-medium text-white/50">{t('profileSettings.general.ramLabel')}</label>
           <span className="text-xs font-bold text-green-400">{ram} GB</span>
         </div>
         <div className="relative flex items-center gap-0 h-6">
@@ -118,7 +120,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
 
       {/* Kích thước cửa sổ */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-white/50">Kích thước cửa sổ</label>
+        <label className="text-xs font-medium text-white/50">{t('profileSettings.general.windowSize')}</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -151,7 +153,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
 
       {/* JVM Args */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-white/50">JVM Arguments</label>
+        <label className="text-xs font-medium text-white/50">{t('profileSettings.general.jvmArgs')}</label>
         <textarea
           value={jvmArgs}
           onChange={e => setJvmArgs(e.target.value)}
@@ -163,17 +165,17 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
 
       {/* Java Runtime */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-white/50">Java Runtime</label>
+        <label className="text-xs font-medium text-white/50">{t('profileSettings.general.javaRuntime')}</label>
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-white/60 font-mono truncate min-w-0">
-            {javaRuntime || <span className="text-white/20">Tự động (mặc định)</span>}
+            {javaRuntime || <span className="text-white/20">{t('profileSettings.general.javaAuto')}</span>}
           </div>
           <button
             onClick={() => setShowJavaModal(true)}
             className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/5 border border-white/8 text-white/50 hover:text-white/80 hover:border-white/15 transition-all text-xs"
           >
             {Icons.java}
-            <span>Chọn</span>
+            <span>{t('profileSettings.general.javaSelect')}</span>
           </button>
           {javaRuntime && (
             <button
@@ -209,7 +211,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
         className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${saved ? 'bg-green-500/20 border border-green-500/30 text-green-400' : 'bg-white/8 border border-white/10 text-white/70 hover:bg-white/12 hover:text-white/90'} disabled:opacity-50`}
       >
         {saving ? Icons.spin : saved ? Icons.check : null}
-        {saving ? 'Đang lưu...' : saved ? 'Đã lưu!' : 'Lưu thay đổi'}
+        {saving ? t('profileSettings.general.saving') : saved ? t('profileSettings.general.saved') : t('profileSettings.general.save')}
       </button>
 
       {showJavaModal && (

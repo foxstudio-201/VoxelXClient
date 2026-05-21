@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { isElectron, Icons, formatBytes, LoadingState, EmptyState, ViewToggle, DropZoneWrapper } from './shared'
+import { useLang } from '../../../i18n/LangProvider'
 
 export default function ShadersTab({ profile, accountId }) {
+  const { t } = useLang()
   const [shaders, setShaders] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('list')
@@ -70,14 +72,14 @@ export default function ShadersTab({ profile, accountId }) {
     setInstalling([])
   }
 
-  if (loading) return <LoadingState text="Đang tải shaders..." />
+  if (loading) return <LoadingState text={t('profileSettings.shaders.loading')} />
 
   if (shaders.length === 0) return (
     <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip', '.rar']} color="yellow">
       <EmptyState
         icon={Icons.shader}
-        title="Chưa có shader nào"
-        desc="Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục shaderpacks"
+        title={t('profileSettings.shaders.emptyTitle')}
+        desc={t('profileSettings.shaders.emptyDesc')}
       />
     </DropZoneWrapper>
   )
@@ -117,11 +119,11 @@ export default function ShadersTab({ profile, accountId }) {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {confirmDelete === shader.fileName ? (
                         <>
-                          <span className="text-[10px] text-red-400/70">Xóa?</span>
+                          <span className="text-[10px] text-red-400/70">{t('profileSettings.shaders.deleteConfirm')}</span>
                           <button onClick={() => handleDelete(shader)} disabled={deleting === shader.fileName} className="px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 text-[10px] font-bold hover:bg-red-500/25 transition-all disabled:opacity-50">
-                            {deleting === shader.fileName ? '...' : 'Xóa'}
+                            {deleting === shader.fileName ? '...' : t('profileSettings.shaders.delete')}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="px-2 py-1 rounded-lg bg-white/5 border border-white/8 text-white/40 text-[10px] hover:bg-white/10 transition-all">Hủy</button>
+                          <button onClick={() => setConfirmDelete(null)} className="px-2 py-1 rounded-lg bg-white/5 border border-white/8 text-white/40 text-[10px] hover:bg-white/10 transition-all">{t('profileSettings.shaders.cancel')}</button>
                         </>
                       ) : (
                         <button onClick={() => setConfirmDelete(shader.fileName)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Xóa shader">
@@ -155,9 +157,9 @@ export default function ShadersTab({ profile, accountId }) {
                         {confirmDelete === shader.fileName ? (
                           <div className="flex gap-1">
                             <button onClick={() => handleDelete(shader)} disabled={deleting === shader.fileName} className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all disabled:opacity-50">
-                              {deleting === shader.fileName ? '...' : 'Xóa'}
+                              {deleting === shader.fileName ? '...' : t('profileSettings.shaders.delete')}
                             </button>
-                            <button onClick={() => setConfirmDelete(null)} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/40 hover:bg-white/12 transition-all">Hủy</button>
+                            <button onClick={() => setConfirmDelete(null)} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/40 hover:bg-white/12 transition-all">{t('profileSettings.shaders.cancel')}</button>
                           </div>
                         ) : (
                           <button onClick={() => setConfirmDelete(shader.fileName)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all">

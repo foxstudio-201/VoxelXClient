@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { isElectron, Icons, formatBytes, LoadingState, EmptyState, ViewToggle, DropZoneWrapper } from './shared'
+import { useLang } from '../../../i18n/LangProvider'
 
 export default function ResourcePacksTab({ profile, accountId }) {
+  const { t } = useLang()
   const [packs, setPacks] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('list')
@@ -70,14 +72,14 @@ export default function ResourcePacksTab({ profile, accountId }) {
     setInstalling([])
   }
 
-  if (loading) return <LoadingState text="Đang tải resource packs..." />
+  if (loading) return <LoadingState text={t('profileSettings.resourcepacks.loading')} />
 
   if (packs.length === 0) return (
     <DropZoneWrapper onDrop={handleDropFiles} accept={['.zip', '.rar']} color="purple">
       <EmptyState
         icon={Icons.resourcepack}
-        title="Chưa có resource pack nào"
-        desc="Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục resourcepacks"
+        title={t('profileSettings.resourcepacks.emptyTitle')}
+        desc={t('profileSettings.resourcepacks.emptyDesc')}
       />
     </DropZoneWrapper>
   )
@@ -88,7 +90,7 @@ export default function ResourcePacksTab({ profile, accountId }) {
         {installing.length > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 border-b border-purple-500/20 text-xs text-purple-400">
             {Icons.spin}
-            <span>Đang cài {installing.length} file...</span>
+            <span>{t('profileSettings.resourcepacks.installing', { count: installing.length })}</span>
           </div>
         )}
         <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
@@ -116,14 +118,14 @@ export default function ResourcePacksTab({ profile, accountId }) {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {confirmDelete === pack.fileName ? (
                         <>
-                          <span className="text-[10px] text-red-400/70">Xóa?</span>
+                          <span className="text-[10px] text-red-400/70">{t('profileSettings.resourcepacks.deleteConfirm')}</span>
                           <button onClick={() => handleDelete(pack.fileName)} disabled={deleting === pack.fileName} className="px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 text-[10px] font-bold hover:bg-red-500/25 transition-all disabled:opacity-50">
-                            {deleting === pack.fileName ? '...' : 'Xóa'}
+                            {deleting === pack.fileName ? '...' : t('profileSettings.resourcepacks.delete')}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="px-2 py-1 rounded-lg bg-white/5 border border-white/8 text-white/40 text-[10px] hover:bg-white/10 transition-all">Hủy</button>
+                          <button onClick={() => setConfirmDelete(null)} className="px-2 py-1 rounded-lg bg-white/5 border border-white/8 text-white/40 text-[10px] hover:bg-white/10 transition-all">{t('profileSettings.resourcepacks.cancel')}</button>
                         </>
                       ) : (
-                        <button onClick={() => setConfirmDelete(pack.fileName)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Xóa resource pack">
+                        <button onClick={() => setConfirmDelete(pack.fileName)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all" title={t('profileSettings.resourcepacks.deletePack')}>
                           {Icons.trash}
                         </button>
                       )}
@@ -154,9 +156,9 @@ export default function ResourcePacksTab({ profile, accountId }) {
                         {confirmDelete === pack.fileName ? (
                           <div className="flex gap-1">
                             <button onClick={() => handleDelete(pack.fileName)} disabled={deleting === pack.fileName} className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all disabled:opacity-50">
-                              {deleting === pack.fileName ? '...' : 'Xóa'}
+                              {deleting === pack.fileName ? '...' : t('profileSettings.resourcepacks.delete')}
                             </button>
-                            <button onClick={() => setConfirmDelete(null)} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/40 hover:bg-white/12 transition-all">Hủy</button>
+                            <button onClick={() => setConfirmDelete(null)} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/40 hover:bg-white/12 transition-all">{t('profileSettings.resourcepacks.cancel')}</button>
                           </div>
                         ) : (
                           <button onClick={() => setConfirmDelete(pack.fileName)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all">

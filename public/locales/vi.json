@@ -822,5 +822,104 @@
       "never": "Chưa chơi",
       "hours": "Giờ"
     }
+  },
+  "profileSettings": {
+    "tabs": {
+      "general": "Cài đặt",
+      "worlds": "Thế giới",
+      "files": "Files",
+      "mods": "Mods",
+      "shaders": "Shaders",
+      "resourcepacks": "Resource Packs"
+    },
+    "back": "Quay lại",
+    "general": {
+      "nameLabel": "Tên profile",
+      "ramLabel": "RAM tối đa",
+      "windowSize": "Kích thước cửa sổ",
+      "jvmArgs": "JVM Arguments",
+      "javaRuntime": "Java Runtime",
+      "javaAuto": "Tự động (mặc định)",
+      "javaSelect": "Chọn",
+      "saving": "Đang lưu...",
+      "saved": "Đã lưu!",
+      "save": "Lưu thay đổi"
+    },
+    "mods": {
+      "loading": "Đang tải mods...",
+      "emptyTitle": "Chưa có mod nào",
+      "emptyDesc": "Kéo thả file .jar vào đây hoặc cài từ Modrinth / CurseForge",
+      "installing": "Đang cài {{count}} file...",
+      "disabled": "Đã tắt",
+      "deleteConfirm": "Xóa?",
+      "delete": "Xóa",
+      "cancel": "Hủy",
+      "enableMod": "Bật mod",
+      "disableMod": "Tắt mod",
+      "deleteMod": "Xóa mod",
+      "enable": "Bật",
+      "disable": "Tắt"
+    },
+    "shaders": {
+      "loading": "Đang tải shaders...",
+      "emptyTitle": "Chưa có shader nào",
+      "emptyDesc": "Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục shaderpacks",
+      "installing": "Đang cài {{count}} file...",
+      "deleteConfirm": "Xóa?",
+      "delete": "Xóa",
+      "cancel": "Hủy",
+      "deleteShader": "Xóa shader"
+    },
+    "resourcepacks": {
+      "loading": "Đang tải resource packs...",
+      "emptyTitle": "Chưa có resource pack nào",
+      "emptyDesc": "Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục resourcepacks",
+      "installing": "Đang cài {{count}} file...",
+      "deleteConfirm": "Xóa?",
+      "delete": "Xóa",
+      "cancel": "Hủy",
+      "deletePack": "Xóa resource pack"
+    },
+    "worlds": {
+      "loading": "Đang tải thế giới...",
+      "emptyTitle": "Chưa có thế giới nào",
+      "emptyDesc": "Tạo thế giới mới trong game để xem ở đây",
+      "deleteConfirm": "Xóa?",
+      "delete": "Xóa",
+      "cancel": "Hủy",
+      "deleteWorld": "Xóa thế giới"
+    },
+    "files": {
+      "loading": "Đang tải thư mục...",
+      "emptyTitle": "Thư mục trống",
+      "emptyDesc": "Không có file hoặc thư mục nào trong vị trí này.",
+      "refresh": "Tải lại",
+      "folder": "Thư mục",
+      "file": "Tệp"
+    }
+  },
+  "crash": {
+    "title": "Game bị crash",
+    "fabricIncompatible": "Mod không tương thích (Fabric)",
+    "fabricDefaultMsg": "Fabric phát hiện mod không tương thích với game hoặc với nhau.",
+    "suggestedSolutions": "Giải pháp được đề xuất",
+    "conflictingMods": "Mod xung đột",
+    "unknownCrash": "Crash không xác định",
+    "unknownCrashDesc": "Không phát hiện được nguyên nhân cụ thể từ Fabric. Xem log bên dưới để biết thêm chi tiết.",
+    "modsToInstall": "Mod cần cài đặt / cập nhật ({{count}})",
+    "errorLog": "Log lỗi",
+    "allFixed": "Đã cài xong — khởi động lại game để áp dụng",
+    "installedCount": "Đã cài {{done}}/{{total}} mod",
+    "installHint": "Cài đặt mod bên trên để sửa lỗi crash",
+    "viewLog": "Xem log để tìm nguyên nhân",
+    "close": "Đóng",
+    "requires": "Yêu cầu:",
+    "neededBy": "Cần bởi:",
+    "searching": "Đang tìm...",
+    "download": "Tải xuống",
+    "installed": "Đã cài",
+    "notFound": "Không tìm thấy",
+    "retry": "Thử lại",
+    "downloading": "Đang tải..."
   }
 }

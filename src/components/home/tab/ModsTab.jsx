@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { isElectron, Icons, formatBytes, LoadingState, EmptyState, ViewToggle, DropZoneWrapper } from './shared'
+import { useLang } from '../../../i18n/LangProvider'
 
 export default function ModsTab({ profile, accountId }) {
+  const { t } = useLang()
   const [mods, setMods] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('list')
@@ -94,14 +96,14 @@ export default function ModsTab({ profile, accountId }) {
     setInstalling([])
   }
 
-  if (loading) return <LoadingState text="Đang tải mods..." />
+  if (loading) return <LoadingState text={t('profileSettings.mods.loading')} />
 
   if (mods.length === 0) return (
     <DropZoneWrapper onDrop={handleDropFiles} accept={['.jar']} color="green">
       <EmptyState
         icon={Icons.mod}
-        title="Chưa có mod nào"
-        desc="Kéo thả file .jar vào đây hoặc cài từ Modrinth / CurseForge"
+        title={t('profileSettings.mods.emptyTitle')}
+        desc={t('profileSettings.mods.emptyDesc')}
       />
     </DropZoneWrapper>
   )
@@ -112,7 +114,7 @@ export default function ModsTab({ profile, accountId }) {
         {installing.length > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border-b border-green-500/20 text-xs text-green-400">
             {Icons.spin}
-            <span>Đang cài {installing.length} file...</span>
+            <span>{t('profileSettings.mods.installing', { count: installing.length })}</span>
           </div>
         )}
         <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
@@ -138,17 +140,17 @@ export default function ModsTab({ profile, accountId }) {
                       <p className="text-sm font-medium text-white/80 truncate">{meta?.name || mod.displayName}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] text-white/25">{formatBytes(mod.size)}</span>
-                        {!mod.enabled && <span className="text-[10px] text-orange-400/60">Đã tắt</span>}
+                        {!mod.enabled && <span className="text-[10px] text-orange-400/60">{t('profileSettings.mods.disabled')}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {confirmDelete === mod.fileName ? (
                         <>
-                          <span className="text-[10px] text-red-400/70">Xóa?</span>
+                          <span className="text-[10px] text-red-400/70">{t('profileSettings.mods.deleteConfirm')}</span>
                           <button onClick={() => handleDelete(mod.fileName)} disabled={deleting === mod.fileName} className="px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 text-[10px] font-bold hover:bg-red-500/25 transition-all disabled:opacity-50">
-                            {deleting === mod.fileName ? '...' : 'Xóa'}
+                            {deleting === mod.fileName ? '...' : t('profileSettings.mods.delete')}
                           </button>
-                          <button onClick={() => setConfirmDelete(null)} className="px-2 py-1 rounded-lg bg-white/5 border border-white/8 text-white/40 text-[10px] hover:bg-white/10 transition-all">Hủy</button>
+                          <button onClick={() => setConfirmDelete(null)} className="px-2 py-1 rounded-lg bg-white/5 border border-white/8 text-white/40 text-[10px] hover:bg-white/10 transition-all">{t('profileSettings.mods.cancel')}</button>
                         </>
                       ) : (
                         <>
@@ -156,11 +158,11 @@ export default function ModsTab({ profile, accountId }) {
                             onClick={() => handleToggle(mod)}
                             disabled={toggling === mod.fileName}
                             className={`relative w-9 h-5 rounded-full transition-all flex-shrink-0 ${mod.enabled ? 'bg-green-500' : 'bg-white/10'} disabled:opacity-50`}
-                            title={mod.enabled ? 'Tắt mod' : 'Bật mod'}
+                            title={mod.enabled ? t('profileSettings.mods.disableMod') : t('profileSettings.mods.enableMod')}
                           >
                             <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${mod.enabled ? 'left-[18px]' : 'left-0.5'}`} />
                           </button>
-                          <button onClick={() => setConfirmDelete(mod.fileName)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Xóa mod">
+                          <button onClick={() => setConfirmDelete(mod.fileName)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all" title={t('profileSettings.mods.deleteMod')}>
                             {Icons.trash}
                           </button>
                         </>
@@ -188,7 +190,7 @@ export default function ModsTab({ profile, accountId }) {
                         onClick={() => handleToggle(mod)}
                         disabled={toggling === mod.fileName}
                         className={`absolute top-1.5 right-1.5 w-6 h-3.5 rounded-full transition-all ${mod.enabled ? 'bg-green-500' : 'bg-white/15'} disabled:opacity-50`}
-                        title={mod.enabled ? 'Tắt' : 'Bật'}
+                        title={mod.enabled ? t('profileSettings.mods.disable') : t('profileSettings.mods.enable')}
                       >
                         <span className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white shadow transition-all ${mod.enabled ? 'left-[10px]' : 'left-0.5'}`} />
                       </button>
@@ -200,9 +202,9 @@ export default function ModsTab({ profile, accountId }) {
                         {confirmDelete === mod.fileName ? (
                           <div className="flex gap-1">
                             <button onClick={() => handleDelete(mod.fileName)} disabled={deleting === mod.fileName} className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all disabled:opacity-50">
-                              {deleting === mod.fileName ? '...' : 'Xóa'}
+                              {deleting === mod.fileName ? '...' : t('profileSettings.mods.delete')}
                             </button>
-                            <button onClick={() => setConfirmDelete(null)} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/40 hover:bg-white/12 transition-all">Hủy</button>
+                            <button onClick={() => setConfirmDelete(null)} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/40 hover:bg-white/12 transition-all">{t('profileSettings.mods.cancel')}</button>
                           </div>
                         ) : (
                           <button onClick={() => setConfirmDelete(mod.fileName)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all">

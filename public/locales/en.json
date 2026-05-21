@@ -822,5 +822,104 @@
       "never": "Never",
       "hours": "Hours"
     }
+  },
+  "profileSettings": {
+    "tabs": {
+      "general": "Settings",
+      "worlds": "Worlds",
+      "files": "Files",
+      "mods": "Mods",
+      "shaders": "Shaders",
+      "resourcepacks": "Resource Packs"
+    },
+    "back": "Back",
+    "general": {
+      "nameLabel": "Profile name",
+      "ramLabel": "Max RAM",
+      "windowSize": "Window size",
+      "jvmArgs": "JVM Arguments",
+      "javaRuntime": "Java Runtime",
+      "javaAuto": "Auto (default)",
+      "javaSelect": "Select",
+      "saving": "Saving...",
+      "saved": "Saved!",
+      "save": "Save changes"
+    },
+    "mods": {
+      "loading": "Loading mods...",
+      "emptyTitle": "No mods yet",
+      "emptyDesc": "Drop .jar files here or install from Modrinth / CurseForge",
+      "installing": "Installing {{count}} file(s)...",
+      "disabled": "Disabled",
+      "deleteConfirm": "Delete?",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "enableMod": "Enable mod",
+      "disableMod": "Disable mod",
+      "deleteMod": "Delete mod",
+      "enable": "Enable",
+      "disable": "Disable"
+    },
+    "shaders": {
+      "loading": "Loading shaders...",
+      "emptyTitle": "No shaders yet",
+      "emptyDesc": "Drop .zip / .rar files here or install into shaderpacks folder",
+      "installing": "Installing {{count}} file(s)...",
+      "deleteConfirm": "Delete?",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "deleteShader": "Delete shader"
+    },
+    "resourcepacks": {
+      "loading": "Loading resource packs...",
+      "emptyTitle": "No resource packs yet",
+      "emptyDesc": "Drop .zip / .rar files here or install into resourcepacks folder",
+      "installing": "Installing {{count}} file(s)...",
+      "deleteConfirm": "Delete?",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "deletePack": "Delete resource pack"
+    },
+    "worlds": {
+      "loading": "Loading worlds...",
+      "emptyTitle": "No worlds yet",
+      "emptyDesc": "Create a world in-game to see it here",
+      "deleteConfirm": "Delete?",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "deleteWorld": "Delete world"
+    },
+    "files": {
+      "loading": "Loading folder...",
+      "emptyTitle": "Empty folder",
+      "emptyDesc": "No files or folders in this location.",
+      "refresh": "Refresh",
+      "folder": "Folder",
+      "file": "File"
+    }
+  },
+  "crash": {
+    "title": "Game crashed",
+    "fabricIncompatible": "Incompatible mods (Fabric)",
+    "fabricDefaultMsg": "Fabric detected mods incompatible with the game or each other.",
+    "suggestedSolutions": "Suggested solutions",
+    "conflictingMods": "Conflicting mods",
+    "unknownCrash": "Unknown crash",
+    "unknownCrashDesc": "No specific cause detected from Fabric. Check the log below for details.",
+    "modsToInstall": "Mods to install / update ({{count}})",
+    "errorLog": "Error log",
+    "allFixed": "All installed — restart the game to apply",
+    "installedCount": "Installed {{done}}/{{total}} mods",
+    "installHint": "Install mods above to fix the crash",
+    "viewLog": "Check the log to find the cause",
+    "close": "Close",
+    "requires": "Requires:",
+    "neededBy": "Needed by:",
+    "searching": "Searching...",
+    "download": "Download",
+    "installed": "Installed",
+    "notFound": "Not found",
+    "retry": "Retry",
+    "downloading": "Downloading..."
   }
 }

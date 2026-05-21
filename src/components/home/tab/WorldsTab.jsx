@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import { isElectron, Icons, formatBytes, formatDate, LoadingState, EmptyState } from './shared'
+import { useLang } from '../../../i18n/LangProvider'
 
 export default function WorldsTab({ profile, accountId }) {
+  const { t } = useLang()
   const [worlds, setWorlds] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
@@ -30,13 +32,13 @@ export default function WorldsTab({ profile, accountId }) {
     setConfirmDelete(null)
   }
 
-  if (loading) return <LoadingState text="Đang tải thế giới..." />
+  if (loading) return <LoadingState text={t('profileSettings.worlds.loading')} />
 
   if (worlds.length === 0) return (
     <EmptyState
       icon={Icons.world}
-      title="Chưa có thế giới nào"
-      desc="Tạo thế giới mới trong game để xem ở đây"
+      title={t('profileSettings.worlds.emptyTitle')}
+      desc={t('profileSettings.worlds.emptyDesc')}
     />
   )
 
@@ -66,26 +68,26 @@ export default function WorldsTab({ profile, accountId }) {
 
           {confirmDelete === (w.folderName || w.folder) ? (
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className="text-[10px] text-red-400/70">Xóa?</span>
+              <span className="text-[10px] text-red-400/70">{t('profileSettings.worlds.deleteConfirm')}</span>
               <button
                 onClick={() => handleDelete(w.folderName || w.folder)}
                 disabled={deleting === (w.folderName || w.folder)}
                 className="px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 text-[10px] font-bold hover:bg-red-500/25 transition-all disabled:opacity-50"
               >
-                {deleting === (w.folderName || w.folder) ? '...' : 'Xóa'}
+                {deleting === (w.folderName || w.folder) ? '...' : t('profileSettings.worlds.delete')}
               </button>
               <button
                 onClick={() => setConfirmDelete(null)}
                 className="px-2 py-1 rounded-lg bg-white/5 border border-white/8 text-white/40 text-[10px] hover:bg-white/10 transition-all"
               >
-                Hủy
+                {t('profileSettings.worlds.cancel')}
               </button>
             </div>
           ) : (
             <button
               onClick={() => setConfirmDelete(w.folderName || w.folder)}
               className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0"
-              title="Xóa thế giới"
+              title={t('profileSettings.worlds.deleteWorld')}
             >
               {Icons.trash}
             </button>

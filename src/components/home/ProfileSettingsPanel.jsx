@@ -37,21 +37,23 @@ import ModsTab         from './tab/ModsTab'
 import ShadersTab      from './tab/ShadersTab'
 import ResourcePacksTab from './tab/ResourcePacksTab'
 import FilesTab        from './tab/FilesTab'
-
-const ALL_TABS = [
-  { id: 'general',       label: 'Cài đặt',       icon: Icons.settings,     component: GeneralTab       },
-  { id: 'worlds',        label: 'Thế giới',       icon: Icons.world,        component: WorldsTab        },
-  { id: 'files',         label: 'Files',          icon: Icons.files,        component: FilesTab         },
-  { id: 'mods',          label: 'Mods',           icon: Icons.mod,          component: ModsTab          },
-  { id: 'shaders',       label: 'Shaders',        icon: Icons.shader,       component: ShadersTab       },
-  { id: 'resourcepacks', label: 'Resource Packs', icon: Icons.resourcepack, component: ResourcePacksTab },
-]
+import { useLang } from '../../i18n/LangProvider'
 
 export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdated, accountId }) {
+  const { t } = useLang()
   const isVanilla = !profile?.loader || profile.loader === 'vanilla'
 
-  const tabs = ALL_TABS.filter(t => {
-    if (t.id === 'shaders' && isVanilla) return false
+  const ALL_TABS = [
+    { id: 'general',       labelKey: 'profileSettings.tabs.general',       icon: Icons.settings,     component: GeneralTab       },
+    { id: 'worlds',        labelKey: 'profileSettings.tabs.worlds',        icon: Icons.world,        component: WorldsTab        },
+    { id: 'files',         labelKey: 'profileSettings.tabs.files',         icon: Icons.files,        component: FilesTab         },
+    { id: 'mods',          labelKey: 'profileSettings.tabs.mods',          icon: Icons.mod,          component: ModsTab          },
+    { id: 'shaders',       labelKey: 'profileSettings.tabs.shaders',       icon: Icons.shader,       component: ShadersTab       },
+    { id: 'resourcepacks', labelKey: 'profileSettings.tabs.resourcepacks', icon: Icons.resourcepack, component: ResourcePacksTab },
+  ]
+
+  const tabs = ALL_TABS.filter(tab => {
+    if (tab.id === 'shaders' && isVanilla) return false
     return true
   })
 
@@ -65,7 +67,7 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
-  const currentTab = tabs.find(t => t.id === activeTab) || tabs[0]
+  const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0]
   const TabComponent = currentTab?.component
 
   if (!profile) return null
@@ -77,7 +79,7 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
         <button
           onClick={onClose}
           className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/8 transition-all flex-shrink-0"
-          title="Quay lại"
+          title={t('profileSettings.back')}
         >
           {Icons.back}
         </button>
@@ -110,7 +112,7 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
             <span className={activeTab === tab.id ? 'text-green-400' : 'text-white/30'}>
               {tab.icon}
             </span>
-            {tab.label}
+            {t(tab.labelKey)}
           </button>
         ))}
       </div>

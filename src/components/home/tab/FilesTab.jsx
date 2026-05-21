@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { getFileExt } from '../../server/ServerCodeEditor'
 import { isElectron, Icons, formatBytes, formatDate, LoadingState, EmptyState } from './shared'
+import { useLang } from '../../../i18n/LangProvider'
 
 function ProfileFileIcon({ name, isDir }) {
   if (isDir) {
@@ -33,6 +34,7 @@ function ProfileFileIcon({ name, isDir }) {
 }
 
 export default function FilesTab({ profile, accountId }) {
+  const { t } = useLang()
   const [currentPath, setCurrentPath] = useState('')
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(false)
@@ -78,7 +80,7 @@ export default function FilesTab({ profile, accountId }) {
           onClick={() => loadDir(currentPath)}
           disabled={loading}
           className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-all disabled:opacity-30"
-          title="Tải lại"
+          title={t('profileSettings.files.refresh')}
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}>
             <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
@@ -89,9 +91,9 @@ export default function FilesTab({ profile, accountId }) {
       {/* File list */}
       <div className="flex-1 min-h-0 rounded-2xl bg-black/20 border border-white/6 overflow-hidden">
         {loading ? (
-          <LoadingState text="Đang tải thư mục..." />
+          <LoadingState text={t('profileSettings.files.loading')} />
         ) : !entries.length ? (
-          <EmptyState icon={Icons.files} title="Thư mục trống" desc="Không có file hoặc thư mục nào trong vị trí này." />
+          <EmptyState icon={Icons.files} title={t('profileSettings.files.emptyTitle')} desc={t('profileSettings.files.emptyDesc')} />
         ) : (
           <div className="h-full overflow-y-auto px-2 py-2">
             <div className="divide-y divide-white/5">
@@ -105,7 +107,7 @@ export default function FilesTab({ profile, accountId }) {
                   <div className="min-w-0 flex-1">
                     <div className="text-sm text-white/85 truncate">{entry.name}</div>
                     <div className="text-[11px] text-white/30 flex items-center gap-2">
-                      <span>{entry.isDir ? 'Thư mục' : 'Tệp'}</span>
+                      <span>{entry.isDir ? t('profileSettings.files.folder') : t('profileSettings.files.file')}</span>
                       {!entry.isDir && <span>{formatBytes(entry.size || 0)}</span>}
                       {entry.mtime ? <span>{formatDate(entry.mtime)}</span> : null}
                     </div>
