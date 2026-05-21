@@ -108,6 +108,7 @@ function getDirSizeBytes(dirPath) {
 }
 
 function getGameDir(profile, accountId) {
+  if (!profile?.instancePath) return null
   if (accountId) {
     const accDir = path.join(profile.instancePath, 'accounts', accountId)
     ensureDir(accDir)
@@ -348,6 +349,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { ok: false, error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { ok: false, error: 'Profile instancePath not set' }
     const modDir = path.join(gameDir, 'mods')
     ensureDir(modDir)
     const files = fs.readdirSync(modDir).filter(f => /\.(jar|jar\.off|jar\.disabled)$/i.test(f))
@@ -372,6 +374,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { ok: false, error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { ok: false, error: 'Profile instancePath not set' }
     const modDir = path.join(gameDir, 'mods')
     const oldPath = path.join(modDir, fileName)
     if (!fs.existsSync(oldPath)) return { ok: false, error: 'File not found' }
@@ -388,6 +391,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { error: 'Profile instancePath not set' }
     const filePath = path.join(gameDir, 'mods', fileName)
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
     return { ok: true }
@@ -408,6 +412,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { error: 'Profile instancePath not set' }
     const shadersDir = path.join(gameDir, 'shaderpacks')
     ensureDir(shadersDir)
     const files = fs.readdirSync(shadersDir)
@@ -433,6 +438,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { error: 'Profile instancePath not set' }
     const targetPath = path.join(gameDir, 'shaderpacks', fileName)
     if (fs.existsSync(targetPath)) {
       if (fs.statSync(targetPath).isDirectory()) fs.rmSync(targetPath, { recursive: true })
@@ -447,6 +453,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { error: 'Profile instancePath not set' }
     const rpDir = path.join(gameDir, 'resourcepacks')
     ensureDir(rpDir)
     const files = fs.readdirSync(rpDir)
@@ -472,6 +479,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const profile = data.profiles.find(p => p.id === profileId)
     if (!profile) return { error: 'Profile not found' }
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { error: 'Profile instancePath not set' }
     const targetPath = path.join(gameDir, 'resourcepacks', fileName)
     if (fs.existsSync(targetPath)) {
       if (fs.statSync(targetPath).isDirectory()) fs.rmSync(targetPath, { recursive: true })
@@ -493,6 +501,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     if (!subDir) return { error: 'Invalid type' }
 
     const gameDir = getGameDir(profile, accountId)
+    if (!gameDir) return { error: 'Profile instancePath not set' }
     const destDir = path.join(gameDir, subDir)
     ensureDir(destDir)
 

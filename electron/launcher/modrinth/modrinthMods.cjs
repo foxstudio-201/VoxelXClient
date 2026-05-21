@@ -40,34 +40,43 @@ const MODRINTH_API = 'https://api.modrinth.com/v2'
 
 const FABRIC_AUTO_MODS = [
   // ── Core / API ──────────────────────────────────────────────────────────
-  { id: 'P7dR8mSH', name: 'Fabric API'            },
-  { id: 'mOgUt4GM', name: 'Mod Menu'               },
+  { id: 'P7dR8mSH', name: 'Fabric API' },
+  { id: 'mOgUt4GM', name: 'Mod Menu' },
+  { id: '9s6osm5g', name: 'Cloth Config API' },
   { id: 'Ha28R6CL', name: 'Fabric Language Kotlin' },
 
   // ── Render / GPU ────────────────────────────────────────────────────────
-  { id: 'AANobbMI', name: 'Sodium'                 }, // modern OpenGL renderer
-  { id: 'PtjYWJkn', name: 'Sodium Extra'           }, // extra Sodium settings
-  { id: '5ZwThgaR', name: 'ImmediatelyFast'        }, // immediate mode render opt
-  { id: 'NNAgCjsB', name: 'Entity Culling'         }, // skip hidden entity render
-  { id: '51shyZVL', name: 'More Culling'           }, // skip hidden block render
+  { id: 'AANobbMI', name: 'Sodium' }, // modern OpenGL renderer
+  { id: 'PtjYWJkn', name: 'Sodium Extra' }, // extra Sodium settings
+  { id: 'YL57xq9U', name: 'Iris Shaders' }, // shader support for Sodium
+  { id: 'Bh37bMuy', name: 'Reese\'s Sodium Options' }, // better Sodium settings UI
+  { id: 'EsAfCjCV', name: 'Continuity' }, // connected textures support
+  { id: '1eAoo2KR', name: 'Indium' }, // Sodium + Fabric Rendering API bridge
+  { id: '5ZwThgaR', name: 'ImmediatelyFast' }, // immediate mode render opt
+  { id: 'NNAgCjsB', name: 'Entity Culling' }, // skip hidden entity render
+  { id: '51shyZVL', name: 'More Culling' }, // skip hidden block render
+  { id: 'OVuFYfre', name: 'Enhanced Block Entities' }, // faster block entity render
 
   // ── Memory / CPU ────────────────────────────────────────────────────────
-  { id: 'uXXizFIs', name: 'FerriteCore'            }, // -30~40% RAM usage
-  { id: 'gvQqBUqZ', name: 'Lithium'                }, // game logic / AI / physics
-  { id: 'nmDcB62a', name: 'ModernFix'              }, // misc vanilla perf fixes
-  { id: 'hEOCdOgW', name: 'BadOptimizations'       }, // misc optimizations
+  { id: 'uXXizFIs', name: 'FerriteCore' }, // -30~40% RAM usage
+  { id: 'gvQqBUqZ', name: 'Lithium' }, // game logic / AI / physics
+  { id: 'nmDcB62a', name: 'ModernFix' }, // misc vanilla perf fixes
+  { id: 'hEOCdOgW', name: 'BadOptimizations' }, // misc optimizations
+  { id: 'hvFnDODi', name: 'LazyDFU' }, // faster startup
+  { id: 'NRjRiSSD', name: 'Memory Leak Fix' }, // reduce memory leak cases
 
   // ── Chunk / World ────────────────────────────────────────────────────────
-  { id: 'VSNURh3q', name: 'C2ME'                   }, // multithreaded chunk loading
-  { id: 'KuNKN7d2', name: 'Noisium'                }, // faster world gen noise
-  { id: 'H8CaAYZC', name: 'Starlight'              }, // rewritten lighting engine
+  { id: 'VSNURh3q', name: 'C2ME' }, // multithreaded chunk loading
+  { id: 'KuNKN7d2', name: 'Noisium' }, // faster world gen noise
+  { id: 'H8CaAYZC', name: 'Starlight' }, // rewritten lighting engine
 
   // ── Network ─────────────────────────────────────────────────────────────
-  { id: 'fQEb0iXm', name: 'Krypton'                }, // networking stack opt
+  { id: 'fQEb0iXm', name: 'Krypton' }, // networking stack opt
 
   // ── Misc FPS ────────────────────────────────────────────────────────────
-  { id: 'LQ3K71Q1', name: 'Dynamic FPS'            }, // reduce FPS when unfocused
-  { id: 'Wnxd13zP', name: 'Clumps'                 }, // merge XP orbs → less entities
+  { id: 'LQ3K71Q1', name: 'Dynamic FPS' }, // reduce FPS when unfocused
+  { id: 'Wnxd13zP', name: 'Clumps' }, // merge XP orbs → less entities
+  { id: 'QwxR6Gcd', name: 'Debugify' }, // vanilla bugfixes + small perf wins
 ]
 
 function httpsGetJson(url) {
@@ -130,6 +139,21 @@ async function findModVersion(projectId, mcVersion) {
 
 async function ensureFabricMods(mcVersion, modsDir, onProgress) {
   if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir, { recursive: true })
+
+  // Chỉ cài auto-mod đúng 1 lần cho mỗi phiên bản Minecraft trong profile.
+  // Những lần sau sẽ bỏ qua hoàn toàn, kể cả khi user xoá bớt mod thủ công.
+  const onceMarkerPath = path.join(modsDir, `.voxelx-auto-mods.fabric.${mcVersion}.done`)
+  if (fs.existsSync(onceMarkerPath)) {
+    onProgress?.({ log: `Auto-optimization mods already processed once for ${mcVersion}; skipping re-download.`, done: 1, total: 1 })
+    return
+  }
+
+  // Ghi marker ngay từ đầu để đảm bảo "run once only".
+  try {
+    fs.writeFileSync(onceMarkerPath, `${new Date().toISOString()} | ${mcVersion}\n`, 'utf8')
+  } catch (err) {
+    onProgress?.({ log: `Warning: cannot create run-once marker: ${err.message}`, done: 0, total: 1 })
+  }
 
   let done = 0
   const total = FABRIC_AUTO_MODS.length

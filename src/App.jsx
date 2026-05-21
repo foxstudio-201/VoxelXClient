@@ -71,6 +71,8 @@ function AppInner() {
   const { selectedAccount, accounts, loading } = useAccounts()
 
   const [instances, setInstances] = useState(new Map())
+  // Ref để track logs realtime, tránh race condition khi onGameStopped đến trước React re-render
+  const instancesRef = useRef(new Map())
 
   const [launchState, setLaunchState] = useState('idle')
   const [progress, setProgress]       = useState(null)
@@ -85,7 +87,9 @@ function AppInner() {
     setInstances(prev => {
       const next = new Map(prev)
       const cur  = next.get(key) || {}
-      next.set(key, { ...cur, ...patch })
+      const updated = { ...cur, ...patch }
+      next.set(key, updated)
+      instancesRef.current = next
       return next
     })
   }, [])
@@ -127,6 +131,7 @@ function AppInner() {
                   : cur.logs,
               })
             }
+            instancesRef.current = next
             return next
           })
         }
@@ -143,6 +148,7 @@ function AppInner() {
             if (cur) {
               next.set(currentKey, { ...cur, logs: [...(cur.logs || []).slice(-1999), data.line] })
             }
+            instancesRef.current = next
             return next
           })
         }
@@ -158,12 +164,12 @@ function AppInner() {
             const cur  = next.get(currentKey)
             if (cur) {
               const logs = cur.logs || []
-
               const updated = logs.length > 0
                 ? [...logs.slice(0, -1), data.line]
                 : [data.line]
               next.set(currentKey, { ...cur, logs: updated })
             }
+            instancesRef.current = next
             return next
           })
         }
@@ -172,58 +178,53 @@ function AppInner() {
     })
 
     const unsubStop = window.electronAPI.onGameStopped((data) => {
-
       const realKey = data?.profileId && data?.accountId
         ? `${data.profileId}::${data.accountId}`
         : null
 
       // Crash detection: exit code !== 0 → phân tích log
+      // Đọc từ ref để tránh race condition (state có thể chưa update kịp)
       const exitCode = data?.code ?? 0
       if (exitCode !== 0 && isElectron) {
-        setInstances(prev => {
-          // Lấy logs của instance bị crash
-          const inst = realKey
-            ? prev.get(realKey)
-            : data?.profileId
-              ? [...prev.values()].find(i => i.profileId === data.profileId)
-              : null
+        const currentInstances = instancesRef.current
 
-          if (inst?.logs?.length) {
-            const logs = inst.logs
-            // Chỉ hiện crash modal nếu là Fabric incompatible crash hoặc exit code lạ
-            const shouldShow = isFabricIncompatibleCrash(logs) || exitCode !== 0
+        // Tìm instance: thử realKey trước, rồi pending key, rồi theo profileId
+        let inst = realKey ? currentInstances.get(realKey) : null
+        if (!inst && data?.profileId) {
+          // Thử key pending
+          inst = currentInstances.get(`${data.profileId}::pending`)
+        }
+        if (!inst && data?.profileId) {
+          // Tìm theo profileId bất kỳ key nào
+          inst = [...currentInstances.values()].find(i => i.profileId === data.profileId)
+        }
 
-            if (shouldShow) {
-              // Lấy profile info để có instancePath, gameVersion, loader
-              window.electronAPI.getProfiles().then(profilesData => {
-                const profile = profilesData?.profiles?.find(p => p.id === data.profileId)
-                if (!profile) return
-                setCrashData({
-                  logs,
-                  profileId: data.profileId,
-                  accountId: data.accountId || null,
-                  instancePath: profile.instancePath,
-                  gameVersion: profile.gameVersion,
-                  loader: profile.loader,
-                  profileName: inst.profileName || profile.name,
-                  exitCode,
-                })
-              }).catch(() => {
-                // Fallback: hiện modal không có profile info
-                setCrashData({
-                  logs,
-                  profileId: data.profileId,
-                  accountId: data.accountId || null,
-                  instancePath: null,
-                  gameVersion: null,
-                  loader: null,
-                  profileName: inst.profileName || '',
-                  exitCode,
-                })
-              })
-            }
-          }
-          return prev
+        const logs = inst?.logs || []
+
+        // Luôn hiện modal khi crash (exitCode !== 0), kể cả khi logs rỗng
+        window.electronAPI.getProfiles().then(profilesData => {
+          const profile = profilesData?.profiles?.find(p => p.id === data.profileId)
+          setCrashData({
+            logs,
+            profileId: data.profileId,
+            accountId: data.accountId || null,
+            instancePath: profile?.instancePath || null,
+            gameVersion: profile?.gameVersion || null,
+            loader: profile?.loader || null,
+            profileName: inst?.profileName || profile?.name || '',
+            exitCode,
+          })
+        }).catch(() => {
+          setCrashData({
+            logs,
+            profileId: data.profileId,
+            accountId: data.accountId || null,
+            instancePath: null,
+            gameVersion: null,
+            loader: null,
+            profileName: inst?.profileName || '',
+            exitCode,
+          })
         })
       }
 
@@ -232,7 +233,8 @@ function AppInner() {
 
         if (realKey && next.has(realKey)) {
           next.set(realKey, { ...next.get(realKey), state: 'stopped' })
-          setTimeout(() => setInstances(p => { const n = new Map(p); n.delete(realKey); return n }), 3000)
+          setTimeout(() => setInstances(p => { const n = new Map(p); n.delete(realKey); instancesRef.current = n; return n }), 3000)
+          instancesRef.current = next
           return next
         }
 
@@ -240,11 +242,12 @@ function AppInner() {
           for (const [k, inst] of next) {
             if (inst.profileId === data.profileId) {
               next.set(k, { ...inst, state: 'stopped' })
-              setTimeout(() => setInstances(p => { const n = new Map(p); n.delete(k); return n }), 3000)
+              setTimeout(() => setInstances(p => { const n = new Map(p); n.delete(k); instancesRef.current = n; return n }), 3000)
               break
             }
           }
         }
+        instancesRef.current = next
         return next
       })
 
@@ -274,6 +277,7 @@ function AppInner() {
         accountName: accountName || '',
         state: 'downloading', progress: null, logs: [],
       })
+      instancesRef.current = next
       return next
     })
 

@@ -127,8 +127,7 @@ function renderInlineMarkdown(text) {
   return parts
 }
 
-function renderPatchNotesBody(body) {
-  const {t} = useLang()
+function renderPatchNotesBody(body, t) {
   const html = markdownToHtml(body)
   if (!html.trim()) return <p className="text-white/40">{t('homepage.patchnote.nopatchnote')}</p>
 
@@ -188,7 +187,7 @@ function PatchNotesModal({ patchNotes, onClose }) {
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="max-w-none text-sm break-words font-sans">
-            {renderPatchNotesBody(patchNotes.body)}
+            {renderPatchNotesBody(patchNotes.body, t)}
           </div>
         </div>
 
