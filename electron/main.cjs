@@ -481,7 +481,7 @@ app.whenReady().then(() => {
           "font-src 'self' data:;" +
           "img-src 'self' data: blob: https:;" +
           "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://youtube-nocookie.com https://youtube.com;" +
-          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://VoxelXLauncher.vercel.app https://foxstudio.site;"
+          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://voxelxclient.vercel.app https://foxstudio.site;"
         ],
       },
     })
@@ -521,7 +521,7 @@ ipcMain.on('window-close', (e) => {
   else win.hide()
 })
 
-const GITHUB_REPO = 'foxstudio-201/VoxelXLauncher'
+const GITHUB_REPO = 'foxstudio-201/VoxelXClient'
 
 ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
