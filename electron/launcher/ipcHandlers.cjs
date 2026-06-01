@@ -377,7 +377,7 @@ function registerLauncherHandlers(getTrustedWindow) {
         const modsDir = path.join(gameDataDir, 'mods')
         await ensureFabricMods(profile.gameVersion, modsDir, (p) => {
           sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97, doneFiles: p.done, totalFiles: p.total })
-        })
+        }, profile.autoPerformanceMods === true)
 
         try {
           const gameVer = profile.gameVersion

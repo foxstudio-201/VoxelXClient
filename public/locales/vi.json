@@ -843,7 +843,11 @@
       "javaSelect": "Chọn",
       "saving": "Đang lưu...",
       "saved": "Đã lưu!",
-      "save": "Lưu thay đổi"
+      "save": "Lưu thay đổi",
+      "autoPerformanceMods": "Tự động tải mod tối ưu (Fabric)",
+      "autoPerformanceModsDesc": "Tự động tải Sodium, Lithium, FerriteCore và các mod tối ưu hiệu năng khi khởi động lần đầu. Fabric API và Mod Menu luôn được cài.",
+      "autoPerformanceModsOn": "Đang bật",
+      "autoPerformanceModsOff": "Đang tắt"
     },
     "mods": {
       "loading": "Đang tải mods...",

@@ -137,8 +137,14 @@ async function findModVersion(projectId, mcVersion) {
   return versions[0]
 }
 
-async function ensureFabricMods(mcVersion, modsDir, onProgress) {
+async function ensureFabricMods(mcVersion, modsDir, onProgress, includePerformanceMods = false) {
   if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir, { recursive: true })
+
+  // Xác định danh sách mod cần cài: luôn cài Fabric API + Mod Menu, còn lại tùy toggle
+  const ALWAYS_INSTALL_IDS = new Set(['P7dR8mSH', 'mOgUt4GM']) // fabric-api, mod-menu
+  const modsToInstall = includePerformanceMods
+    ? FABRIC_AUTO_MODS
+    : FABRIC_AUTO_MODS.filter(m => ALWAYS_INSTALL_IDS.has(m.id))
 
   // Chỉ cài auto-mod đúng 1 lần cho mỗi phiên bản Minecraft trong profile.
   // Những lần sau sẽ bỏ qua hoàn toàn, kể cả khi user xoá bớt mod thủ công.
@@ -156,9 +162,9 @@ async function ensureFabricMods(mcVersion, modsDir, onProgress) {
   }
 
   let done = 0
-  const total = FABRIC_AUTO_MODS.length
+  const total = modsToInstall.length
 
-  for (const mod of FABRIC_AUTO_MODS) {
+  for (const mod of modsToInstall) {
     done++
     onProgress?.({ log: `Checking ${mod.name} for ${mcVersion}...`, done, total })
 

@@ -11,6 +11,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
   const [winHeight, setWinHeight] = useState(profile?.windowHeight || 480)
   const [jvmArgs, setJvmArgs] = useState(profile?.jvmArgs || '')
   const [javaRuntime, setJavaRuntime] = useState(profile?.javaRuntime || '')
+  const [autoPerformanceMods, setAutoPerformanceMods] = useState(profile?.autoPerformanceMods === true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showJavaModal, setShowJavaModal] = useState(false)
@@ -24,6 +25,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
     setWinHeight(profile?.windowHeight || 480)
     setJvmArgs(profile?.jvmArgs || '')
     setJavaRuntime(profile?.javaRuntime || '')
+    setAutoPerformanceMods(profile?.autoPerformanceMods === true)
   }, [profile?.id])
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
         windowHeight: Number(winHeight) || 480,
         jvmArgs: jvmArgs.trim(),
         javaRuntime: javaRuntime.trim(),
+        autoPerformanceMods,
       }
       await window.electronAPI.profileUpdate(profile.id, patch)
       setSaved(true)
@@ -203,6 +206,23 @@ export default function GeneralTab({ profile, onProfileUpdated }) {
           </div>
         )}
       </div>
+
+      {/* Auto Performance Mods — chỉ hiện với Fabric */}
+      {profile?.loader === 'fabric' && (
+        <div className="flex items-start justify-between gap-3 px-4 py-3 rounded-xl bg-white/3 border border-white/6">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-white/70">{t('profileSettings.general.autoPerformanceMods')}</p>
+            <p className="text-[10px] text-white/35 mt-0.5 leading-relaxed">{t('profileSettings.general.autoPerformanceModsDesc')}</p>
+          </div>
+          <button
+            onClick={() => setAutoPerformanceMods(v => !v)}
+            className={`relative flex-shrink-0 w-9 h-5 rounded-full transition-all mt-0.5 ${autoPerformanceMods ? 'bg-green-500' : 'bg-white/10'}`}
+            title={autoPerformanceMods ? t('profileSettings.general.autoPerformanceModsOn') : t('profileSettings.general.autoPerformanceModsOff')}
+          >
+            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${autoPerformanceMods ? 'left-[18px]' : 'left-0.5'}`} />
+          </button>
+        </div>
+      )}
 
       {/* Lưu */}
       <button
