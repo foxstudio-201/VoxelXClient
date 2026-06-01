@@ -8,22 +8,25 @@ const cache = {}
 
 async function fetchLang(code) {
   if (cache[code]) return cache[code]
+  // Thử local trước (luôn mới nhất khi build)
   try {
-    const res = await fetch(`${GITHUB_BASE}/${code}.json`, { cache: 'no-store' })
+    const res = await fetch(`/locales/${code}.json`)
+    if (res.ok) {
+      const data = await res.json()
+      cache[code] = data
+      return data
+    }
+  } catch {}
+  // Fallback về GitHub nếu local không có
+  try {
+    const bust = Date.now()
+    const res = await fetch(`${GITHUB_BASE}/${code}.json?v=${bust}`, { cache: 'no-store' })
     if (!res.ok) throw new Error('fetch failed')
     const data = await res.json()
     cache[code] = data
     return data
   } catch {
-    try {
-      const res2 = await fetch(`/locales/${code}.json`)
-      if (!res2.ok) throw new Error()
-      const data = await res2.json()
-      cache[code] = data
-      return data
-    } catch {
-      return null
-    }
+    return null
   }
 }
 

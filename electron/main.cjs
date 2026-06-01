@@ -969,6 +969,16 @@ ipcMain.handle('accounts:add', (e, account) => {
   })
   if (exists) return { error: 'Tài khoản đã tồn tại' }
 
+  // Kiểm tra discordId đã được liên kết với account khác chưa (kể cả non-discord type)
+  if (account.type === 'discord' && account.discordId) {
+    const discordLinked = data.accounts.find(a => a.discordId === account.discordId)
+    if (discordLinked) {
+      return {
+        error: `Tài khoản Discord này đã được liên kết với tài khoản "${discordLinked.username}". Vui lòng dùng tài khoản Discord khác.`,
+      }
+    }
+  }
+
   const safe = sanitizeAccount(account)
   data.accounts.push(safe)
   if (!data.selectedId) data.selectedId = safe.id
@@ -1017,6 +1027,18 @@ ipcMain.handle('accounts:update', (e, { id, patch }) => {
   const safePatch = {}
   for (const key of ALLOWED_PATCH_KEYS) {
     if (key in patch) safePatch[key] = patch[key]
+  }
+
+  // Kiểm tra discordId đã được liên kết với account khác chưa
+  if (safePatch.discordId) {
+    const alreadyLinked = data.accounts.find(
+      a => a.id !== id && a.discordId === safePatch.discordId
+    )
+    if (alreadyLinked) {
+      return {
+        error: `Tài khoản Discord này đã được liên kết với tài khoản "${alreadyLinked.username}". Vui lòng dùng tài khoản Discord khác.`,
+      }
+    }
   }
 
   data.accounts[idx] = { ...data.accounts[idx], ...safePatch }
