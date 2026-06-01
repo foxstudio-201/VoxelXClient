@@ -166,7 +166,7 @@ export default function AboutTab() {
             }
           />
           <LinkButton
-            href="https://VoxelXLauncher.vercel.app"
+            href="https://voxelxclient.vercel.app"
             label="Website"
             icon={
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">

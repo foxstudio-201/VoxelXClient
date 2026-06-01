@@ -17,7 +17,7 @@
  * Created by FoxStudio. AI-assisted development.
  *
  * Source code : https://github.com/foxstudio-201/VoxelXLauncher
- * Website     : https://voxxelxclient.vercel.app
+ * Website     : https://voxelxclient.vercel.app
  *
  * NOTICE:
  *   - Dành cho mấy cháu cứ thích phỉ báng.
@@ -34,7 +34,7 @@ import { offlineUUID } from '../utils/offlineUUID'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-const WEB_API = 'https://VoxelXLauncher.vercel.app/api/auth'
+const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
 
 // ── Đồng bộ tài khoản với web API ────────────────────────────────────────────
 // Trả về { uuid, skinUrl, skinType, capeUrl, conflict }

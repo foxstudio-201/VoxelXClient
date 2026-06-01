@@ -120,7 +120,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
   const [otpPendingName, setOtpPendingName] = useState('')
   const [otpError, setOtpError] = useState('')
 
-  const WEB_API = 'https://VoxelXLauncher.vercel.app/api/auth'
+  const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
 
   const [discordState, setDiscordState] = useState('idle')
   const [discordProfile, setDiscordProfile] = useState(null)

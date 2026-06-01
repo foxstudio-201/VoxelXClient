@@ -30,6 +30,20 @@ jobs:
       - name: Generate app secret
         run: node scripts/gen-app-secret.cjs
 
+      - name: Fix BOM in package.json
+        shell: pwsh
+        run: |
+          $file = "package.json"
+          $bytes = [System.IO.File]::ReadAllBytes($file)
+          if ($bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+            $content = [System.Text.Encoding]::UTF8.GetString($bytes, 3, $bytes.Length - 3)
+            $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+            [System.IO.File]::WriteAllText($file, $content, $utf8NoBom)
+            Write-Host "Removed BOM from package.json"
+          } else {
+            Write-Host "No BOM in package.json"
+          }
+
       - name: Download Electron binary
         run: npx electron --version
 
@@ -117,6 +131,20 @@ jobs:
 
       - name: Generate app secret
         run: node scripts/gen-app-secret.cjs
+
+      - name: Fix BOM in package.json
+        run: |
+          python3 -c "
+          import sys
+          with open('package.json', 'rb') as f:
+              data = f.read()
+          if data[:3] == b'\\xef\\xbb\\xbf':
+              with open('package.json', 'wb') as f:
+                  f.write(data[3:])
+              print('Removed BOM from package.json')
+          else:
+              print('No BOM in package.json')
+          "
 
       - name: Build Vite
         run: npm run build

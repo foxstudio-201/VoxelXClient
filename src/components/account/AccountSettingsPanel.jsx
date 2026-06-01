@@ -9,7 +9,7 @@ import { useLang } from '../../i18n/LangProvider'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
 import PlayerHead from '../ui/PlayerHead'
-const WEB_API = 'https://VoxelXLauncher.vercel.app/api/auth'
+const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
 const TOKEN_KEY = 'vxc_auth_token'
 
 function getWebToken() {

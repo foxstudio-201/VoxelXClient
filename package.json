@@ -55,7 +55,7 @@
     "wait-on": "^9.0.5"
   },
   "build": {
-    "appId": "com.VoxelXClient.launcher",
+    "appId": "com.voxelxclient.launcher",
     "productName": "VoxelXLauncher",
     "copyright": "Copyright © 2024 FoxStudio",
     "asar": true,

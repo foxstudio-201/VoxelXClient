@@ -42,7 +42,7 @@ const { loginWithWindow, refreshMinecraftToken } = require('./msAuth.cjs')
 
 const isDev = process.env.NODE_ENV === 'development'
 
-app.setAppUserModelId('com.VoxelXClient.launcher')
+app.setAppUserModelId('com.voxelxclient.launcher')
 
 function resolveIconPath() {
 
