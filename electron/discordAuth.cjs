@@ -31,7 +31,7 @@
 
 const { shell } = require('electron')
 
-const DEFAULT_WEB_BASE_URL = process.env.VXC_WEB_BASE_URL || 'https://VoxelXLauncher.vercel.app'
+const DEFAULT_WEB_BASE_URL = process.env.VXC_WEB_BASE_URL || 'https://voxelx.io.vn'
 const DEFAULT_TIMEOUT_MS = 3 * 60 * 1000
 const POLL_INTERVAL_MS = 2000
 

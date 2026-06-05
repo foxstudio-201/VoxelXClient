@@ -39,6 +39,10 @@ const { registerProfileHandlers, registerGroupHandlers, registerProfileContentHa
 const { registerServerHandlers } = require('./serverManager.cjs')
 const { registerLauncherHandlers } = require('./launcher.cjs')
 const { loginWithWindow, refreshMinecraftToken } = require('./msAuth.cjs')
+const { registerLanHandlers, setLanWindowRef } = require('./lanScanner.cjs')
+const { openLanWindow, registerLanWindowHandlers, injectSetLanWindowRef } = require('./lanWindow.cjs')
+
+injectSetLanWindowRef(setLanWindowRef)
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -530,8 +534,6 @@ ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
 
   createUpdateWindow()
 
-  // Đánh dấu autoDownload = true khi mở từ splash (có checkResult sẵn)
-  // UpdateWindow sẽ tự động tải ngay thay vì hiện nút
   const payload = checkResult ? { ...checkResult, autoDownload: true } : checkResult
 
   if (updateWindow && !updateWindow.isDestroyed()) {
@@ -969,7 +971,6 @@ ipcMain.handle('accounts:add', (e, account) => {
   })
   if (exists) return { error: 'Tài khoản đã tồn tại' }
 
-  // Kiểm tra discordId đã được liên kết với account khác chưa (kể cả non-discord type)
   if (account.type === 'discord' && account.discordId) {
     const discordLinked = data.accounts.find(a => a.discordId === account.discordId)
     if (discordLinked) {
@@ -1008,13 +1009,11 @@ ipcMain.handle('accounts:select', (e, id) => {
   return { ok: true, data }
 })
 
-// Cập nhật thông tin một account (dùng để liên kết Discord vào account đã có)
 ipcMain.handle('accounts:update', (e, { id, patch }) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (!validateId(id)) return { error: 'ID không hợp lệ' }
   if (!patch || typeof patch !== 'object') return { error: 'Dữ liệu không hợp lệ' }
 
-  // Chỉ cho phép cập nhật các field Discord
   const ALLOWED_PATCH_KEYS = [
     'discordId', 'discordUsername', 'discordGlobalName',
     'discordDiscriminator', 'discordAvatarUrl', 'linkedAt',
@@ -1029,7 +1028,6 @@ ipcMain.handle('accounts:update', (e, { id, patch }) => {
     if (key in patch) safePatch[key] = patch[key]
   }
 
-  // Kiểm tra discordId đã được liên kết với account khác chưa
   if (safePatch.discordId) {
     const alreadyLinked = data.accounts.find(
       a => a.id !== id && a.discordId === safePatch.discordId
@@ -1140,8 +1138,9 @@ registerGroupHandlers(getTrustedWindow)
 registerProfileContentHandlers(getTrustedWindow)
 registerJavaDistroHandlers(getTrustedWindow)
 registerServerHandlers(getTrustedWindow)
-
 registerLauncherHandlers(getTrustedWindow)
+registerLanHandlers(getTrustedWindow, openLanWindow)
+registerLanWindowHandlers(getTrustedWindow)
 
 ipcMain.handle('fabric:getLoaderVersions', async (e, gameVersion) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
@@ -1162,6 +1161,69 @@ ipcMain.handle('fabric:getLoaderVersions', async (e, gameVersion) => {
       }).on('error', reject)
     })
     return { ok: true, data: data.map(item => ({ version: item.loader.version, stable: item.loader.stable })) }
+  } catch (err) {
+    return { error: err.message }
+  }
+})
+
+ipcMain.handle('forge:getVersions', async (e, gameVersion) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  if (typeof gameVersion !== 'string') return { error: 'Invalid game version' }
+  try {
+    const https = require('https')
+    const url = `https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json`
+    const data = await new Promise((resolve, reject) => {
+      https.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
+        let body = ''
+        res.on('data', c => { body += c })
+        res.on('end', () => {
+          if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
+          try { resolve(JSON.parse(body)) } catch { reject(new Error('Invalid JSON')) }
+        })
+      }).on('error', reject)
+    })
+    const promos = data.promos || {}
+    const recommended = promos[`${gameVersion}-recommended`] || null
+    const latest      = promos[`${gameVersion}-latest`]      || null
+    // Collect all forge versions for this MC version
+    const versions = Object.entries(promos)
+      .filter(([k]) => k.startsWith(gameVersion + '-'))
+      .map(([, v]) => `${gameVersion}-${v}`)
+      .filter((v, i, a) => a.indexOf(v) === i) // dedupe
+    return { ok: true, data: { versions, recommended: recommended ? `${gameVersion}-${recommended}` : null, latest: latest ? `${gameVersion}-${latest}` : null } }
+  } catch (err) {
+    return { error: err.message }
+  }
+})
+
+ipcMain.handle('neoforge:getVersions', async (e, gameVersion) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  if (typeof gameVersion !== 'string') return { error: 'Invalid game version' }
+  try {
+    const https = require('https')
+    const url = `https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml`
+    const xml = await new Promise((resolve, reject) => {
+      https.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
+        let body = ''
+        res.on('data', c => { body += c })
+        res.on('end', () => {
+          if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`))
+          resolve(body)
+        })
+      }).on('error', reject)
+    })
+    const matches = xml.match(/<version>([^<]+)<\/version>/g) || []
+    // NeoForge version format: "21.1.x" → MC "1.21.1", "26.0.x" → MC "26"
+    const mcKey = gameVersion.startsWith('1.')
+      ? gameVersion.replace(/^1\./, '')   // "1.21.1" → "21.1"
+      : gameVersion                        // "26" → "26"
+    const allVersions = matches
+      .map(m => m.replace(/<\/?version>/g, '').trim())
+      .filter(v => v.startsWith(mcKey + '.'))
+      .reverse()
+      .slice(0, 30)
+    const latest = allVersions[0] || null
+    return { ok: true, data: { versions: allVersions, latest, recommended: null } }
   } catch (err) {
     return { error: err.message }
   }
@@ -1615,7 +1677,6 @@ ipcMain.handle('settings:save', (e, patch) => {
   const updated = { ...current, ...safe }
   writeSettings(updated)
 
-  // Chỉ toggle Discord RPC khi giá trị discordRPC thực sự thay đổi
   if ('discordRPC' in safe && safe.discordRPC !== current.discordRPC) {
     if (safe.discordRPC) rpc.connect()
     else rpc.disconnect()
@@ -1624,15 +1685,12 @@ ipcMain.handle('settings:save', (e, patch) => {
   return { ok: true, data: updated }
 })
 
-// Boost Mode: tắt tiến trình nền không cần thiết để dồn tài nguyên cho game
 ipcMain.handle('system:boostMode', async (e, enable) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (process.platform !== 'win32') return { ok: true, skipped: true, reason: 'Windows only' }
 
   const { exec } = require('child_process')
 
-  // Danh sách tiến trình không cần thiết khi chơi game
-  // Chỉ tắt những tiến trình an toàn, không ảnh hưởng hệ thống
   const BOOST_KILL_LIST = [
     'OneDrive.exe',
     'Teams.exe',
@@ -1688,7 +1746,6 @@ ipcMain.handle('system:boostMode', async (e, enable) => {
       })
     }
 
-    // Set độ ưu tiên cao cho tiến trình launcher (sẽ truyền xuống game)
     try {
       exec(`wmic process where ProcessId=${process.pid} CALL setpriority "above normal"`, { windowsHide: true })
     } catch {}

@@ -47,6 +47,7 @@ import v118 from '../../assets/minecraft-versions/1.18.png'
 import v119 from '../../assets/minecraft-versions/1.19.png'
 import v120 from '../../assets/minecraft-versions/1.20.png'
 import v121 from '../../assets/minecraft-versions/1.21.png'
+import v26  from '../../assets/minecraft-versions/26.png'
 
 const VERSION_IMAGES = {
   '1.12': v112,
@@ -57,9 +58,11 @@ const VERSION_IMAGES = {
   '1.19': v119,
   '1.20': v120,
   '1.21': v121,
+  '26':   v26,
 }
 
 const RELEASE_GROUPS_FALLBACK = [
+  { major: '26',   versions: ['26', '26.0.1'] },
   { major: '1.21', versions: ['1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] },
   { major: '1.20', versions: ['1.20', '1.20.1', '1.20.2', '1.20.3', '1.20.4', '1.20.6'] },
   { major: '1.19', versions: ['1.19', '1.19.1', '1.19.2', '1.19.4'] },
@@ -99,21 +102,30 @@ async function fetchVersionGroups() {
     const type = v.type
 
     if (type === 'release') {
-
-      if (!/^1\.\d+(\.\d+)?$/.test(id)) continue
-      const m = id.match(/^(1\.\d+)/)
-      if (m) {
-        currentMajor = m[1]
+      // Support cả format cũ "1.x.x" và format mới "26.x.x"
+      if (!/^(\d+\.\d+(\.\d+)?|[2-9]\d(\.\d+)?)$/.test(id)) continue
+      // Tách major: "1.21.1" → "1.21", "26.0.1" → "26"
+      let major
+      if (id.startsWith('1.')) {
+        const m = id.match(/^(1\.\d+)/)
+        major = m ? m[1] : null
+      } else {
+        const m = id.match(/^(\d+)/)
+        major = m ? m[1] : null
+      }
+      if (major) {
+        currentMajor = major
         ensureMajor(currentMajor).release.push(id)
       }
     } else if (type === 'snapshot') {
-
       if (/-(pre|rc)\d*$/i.test(id)) {
-        const m = id.match(/^(1\.\d+)/)
-        const major = m ? m[1] : currentMajor
+        // Pre-release / RC — cả format cũ "1.21-pre1" và mới "26-pre1"
+        let major
+        const m1 = id.match(/^(1\.\d+)/)
+        const m2 = id.match(/^(\d+)/)
+        major = m1 ? m1[1] : (m2 ? m2[1] : currentMajor)
         if (major) ensureMajor(major).pre.push(id)
       } else {
-
         if (currentMajor) ensureMajor(currentMajor).snapshot.push(id)
       }
     } else if (type === 'old_beta') {

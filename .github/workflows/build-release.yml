@@ -230,48 +230,20 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **đồng bộ tài khoản**, **hỗ trợ đăng nhập Gmail**, **thêm ngôn ngữ mới**, **fix bảo mật** và **cải thiện cửa sổ crash log**.
+            > Bản cập nhật tập trung vào **sử lý lỗi cơ bản**, **fix bảo mật** và **cập nhật và đồng bộ skin khi thay đổi**.
 
             ---
 
-            ### 👤 Tài khoản & Xác thực
+            ### Skin
 
-            - **Đồng bộ tài khoản khi tạo**: Tài khoản mới được đồng bộ ngay lập tức với hệ thống khi tạo
-            - **Đăng nhập Gmail / Google**: Hỗ trợ đăng nhập bằng tài khoản Gmail — dùng được cả trên web lẫn trong launcher
-            - **Đăng nhập bằng mật khẩu**: Hỗ trợ đăng nhập bằng email + mật khẩu trên web và launcher
-            - **Cập nhật thông tin tài khoản**: Có thể cập nhật email, mật khẩu trực tiếp trong launcher
-
-            ---
-
-            ### 🌐 Ngôn ngữ
-
-            - **Thêm ngôn ngữ mới**: Hỗ trợ thêm ngôn ngữ trong phần cài đặt
-            - **i18n cho Profile Settings**: Toàn bộ phần cài đặt profile (Mods, Shaders, Resource Packs, Worlds, Files) đã hỗ trợ đa ngôn ngữ
-            - **i18n cho Crash Modal**: Cửa sổ phân tích crash đã hỗ trợ đa ngôn ngữ
+            - **Skin sync**: thay đổi skin trên web hoặc trên app đồng bộ
+            - ** Tính năng thay skin ra mắt **
 
             ---
 
             ### 🔒 Bảo mật
 
-            - **Fix bảo mật IPC**: Cải thiện validation đầu vào cho các IPC handler
-            - **Guard instancePath**: Xử lý an toàn khi profile thiếu đường dẫn thư mục
-            - **Fix race condition crash modal**: Đọc logs từ ref thay vì state để tránh mất dữ liệu khi game crash nhanh
-
-            ---
-
-            ### 💥 Crash Log
-
-            - **Cửa sổ crash log chi tiết**: Khi game crash, launcher tự động hiện modal phân tích lỗi
-            - **Phân tích Fabric FormattedException**: Đọc và hiển thị rõ ràng `net.fabricmc.loader.impl.FormattedException` — liệt kê mod xung đột, giải pháp đề xuất
-            - **Tự động tìm và cài mod thiếu**: Tìm kiếm Modrinth và đề xuất cài đặt mod bị thiếu ngay trong modal
-            - **Hiển thị exit code**: Hiện exit code của game khi crash
-
-            ---
-
-            ### 🔧 Sửa lỗi khác
-
-            - **Fix toggle mod**: Sửa lỗi bật/tắt mod bị mất tên file sau khi toggle
-            - **Fix profile settings crash**: Sửa lỗi `ERR_INVALID_ARG_TYPE` khi bật/tắt mod trong profile settings
+            - **Fix bảo mật IPC**: Cải thiện độ ổn định và tính bảo mật
 
             ---
 

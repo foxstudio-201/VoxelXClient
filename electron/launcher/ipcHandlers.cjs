@@ -43,6 +43,7 @@ const { setupFabric }         = require('./fabric/fabricLoader.cjs')
 const { setupForge }          = require('./forge/forgeLoader.cjs')
 const { setupNeoForge }       = require('./neoforge/neoforgeLoader.cjs')
 const { ensureFabricMods }    = require('./modrinth/modrinthMods.cjs')
+const { ensureVoxelXMods }    = require('./voxelxMods.cjs')
 const { searchProjects, getProject, getProjectVersions, installVersion, getGameVersions, getCategories } = require('./modrinth/modrinthSearch.cjs')
 const cfSearch = require('./curseforge/curseForgeSearch.cjs')
 const technicSearch = require('./technic/technicSearch.cjs')
@@ -380,87 +381,31 @@ function registerLauncherHandlers(getTrustedWindow) {
         }, profile.autoPerformanceMods === true)
 
         try {
-          const gameVer = profile.gameVersion
-          const mcMajor = gameVer?.split('.').slice(0, 2).join('.')
-          const modSkinDir = path.join(__dirname, '../../mod-skin')
-
-          let skinJarSrc = null
-          const exactJar = path.join(modSkinDir, `VoxelXSkin-${gameVer}.jar`)
-          const majorJar = path.join(modSkinDir, `VoxelXSkin-${mcMajor}.jar`)
-
-          if (fs.existsSync(exactJar))      skinJarSrc = exactJar
-          else if (fs.existsSync(majorJar)) skinJarSrc = majorJar
-
-          if (skinJarSrc) {
-
-            const hiddenDir = path.join(instancePath, '.vxc')
-            if (!fs.existsSync(hiddenDir)) {
-              fs.mkdirSync(hiddenDir, { recursive: true })
-              if (process.platform === 'win32') {
-                try { require('child_process').execSync(`attrib +h "${hiddenDir}"`, { windowsHide: true }) } catch {}
-              }
-            }
-            const jarName    = path.basename(skinJarSrc)
-            const skinJarDest = path.join(hiddenDir, jarName)
-
-            const srcStat  = fs.statSync(skinJarSrc)
-            const destStat = fs.existsSync(skinJarDest) ? fs.statSync(skinJarDest) : null
-            if (!destStat || destStat.size !== srcStat.size) {
-              fs.copyFileSync(skinJarSrc, skinJarDest)
-            }
-
+          const vxcJars = await ensureVoxelXMods(
+            profile.gameVersion,
+            sharedPath,
+            (p) => sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97 })
+          )
+          if (vxcJars.length > 0) {
             const sep = process.platform === 'win32' ? ';' : ':'
-            const existingAddMods = extraJvmArgs.find(a => typeof a === 'string' && a.startsWith('-Dfabric.addMods='))
-            if (existingAddMods) {
-
-              const idx = extraJvmArgs.indexOf(existingAddMods)
-              extraJvmArgs[idx] = existingAddMods + sep + skinJarDest
-            } else {
-              extraJvmArgs.push(`-Dfabric.addMods=${skinJarDest}`)
-            }
-
-            sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXSkin ${gameVer} injected via fabric.addMods.`, percent: 97 })
-
-            try {
-              const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
-              if (!fs.existsSync(vxcConfigDir)) fs.mkdirSync(vxcConfigDir, { recursive: true })
-              fs.writeFileSync(
-                path.join(vxcConfigDir, 'launcher_profile.json'),
-                JSON.stringify({ launcherUuid: account.uuid }, null, 2)
-              )
-            } catch (cfgErr) {
-              writeLog(`[WARN] VoxelXSkin config write failed: ${cfgErr.message}`)
-            }
-
-            try {
-              const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
-              const skinsPath = path.join(vxcConfigDir, 'skins.json')
-              let skinsMap = {}
-              if (fs.existsSync(skinsPath)) {
-                try { skinsMap = JSON.parse(fs.readFileSync(skinsPath, 'utf-8')) } catch {}
-              }
-              const skinPrefsPath = path.join(DATA_DIR, 'skin_prefs.json')
-              if (fs.existsSync(skinPrefsPath)) {
-                const prefs = JSON.parse(fs.readFileSync(skinPrefsPath, 'utf-8'))
-                const accountPrefs = prefs[account.uuid] || {}
-                if (accountPrefs.skinUrl || accountPrefs.capeUrl || accountPrefs.elytraUrl) {
-                  skinsMap[account.uuid] = {
-                    skinPath:   accountPrefs.skinUrl   || null,
-                    capePath:   accountPrefs.capeUrl   || null,
-                    elytraPath: accountPrefs.elytraUrl || null,
-                    playerName: account.username,
-                  }
-                  fs.writeFileSync(skinsPath, JSON.stringify(skinsMap, null, 2))
-                }
-              }
-            } catch (skinPrefErr) {
-              writeLog(`[WARN] VoxelXSkin skin prefs write failed: ${skinPrefErr.message}`)
-            }
-          } else {
-            writeLog(`[INFO] VoxelXSkin: no matching JAR for MC ${gameVer}, skipping.`)
+            const addModsArg = `-Dfabric.addMods=${vxcJars.join(sep)}`
+            extraJvmArgs = [...extraJvmArgs, addModsArg]
+            sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXMods: loaded ${vxcJars.length} mod(s) via -Dfabric.addMods`, percent: 97 })
           }
-        } catch (skinErr) {
-          writeLog(`[WARN] VoxelXSkin injection failed: ${skinErr.message}`)
+        } catch (vxcErr) {
+          sendProgressAndLog({ phase: 'fabric_mods', log: `[WARN] VoxelXMods: ${vxcErr.message}`, percent: 97 })
+        }
+
+        try {
+          const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
+          if (!fs.existsSync(vxcConfigDir)) fs.mkdirSync(vxcConfigDir, { recursive: true })
+          fs.writeFileSync(
+            path.join(vxcConfigDir, 'launcher_profile.json'),
+            JSON.stringify({ launcherUuid: account.uuid }, null, 2)
+          )
+          sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXSkin: launcher_profile.json → ${account.uuid}`, percent: 97 })
+        } catch (cfgErr) {
+          writeLog(`[WARN] VoxelXSkin launcher_profile write failed: ${cfgErr.message}`)
         }
       }
 
@@ -980,6 +925,106 @@ function registerLauncherHandlers(getTrustedWindow) {
       return prefs[uuid] || null
     } catch {
       return null
+    }
+  })
+
+  ipcMain.handle('skin:uploadToWeb', async (e, { dataUrl, type, skinType, webToken, uuid }) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    if (!dataUrl || !type || !webToken) return { error: 'Thiếu thông tin' }
+
+    const https = require('https')
+
+    try {
+      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '')
+      const fileBuffer = Buffer.from(base64, 'base64')
+      const fileName = `${type}.png`
+
+      const boundary = 'vxc_skin_' + Date.now()
+      const CRLF = '\r\n'
+
+      const parts = []
+
+      parts.push(
+        `--${boundary}${CRLF}` +
+        `Content-Disposition: form-data; name="file"; filename="${fileName}"${CRLF}` +
+        `Content-Type: image/png${CRLF}${CRLF}`
+      )
+
+      const typePart =
+        `--${boundary}${CRLF}` +
+        `Content-Disposition: form-data; name="type"${CRLF}${CRLF}` +
+        type + CRLF
+
+      const skinTypePart = type === 'skin'
+        ? `--${boundary}${CRLF}` +
+          `Content-Disposition: form-data; name="skinType"${CRLF}${CRLF}` +
+          (skinType || 'wide') + CRLF
+        : ''
+
+      const header = Buffer.from(parts[0], 'utf8')
+      const typePartBuf = Buffer.from(typePart, 'utf8')
+      const skinTypePartBuf = Buffer.from(skinTypePart, 'utf8')
+      const footer = Buffer.from(`${CRLF}--${boundary}--${CRLF}`, 'utf8')
+
+      const body = Buffer.concat([
+        header, fileBuffer, Buffer.from(CRLF, 'utf8'),
+        typePartBuf,
+        ...(skinTypePart ? [skinTypePartBuf] : []),
+        footer,
+      ])
+
+      const result = await new Promise((resolve, reject) => {
+        const req = https.request({
+          hostname: 'voxelxclient.vercel.app',
+          path: '/api/upload-skin',
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${webToken}`,
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            'Content-Length': body.length,
+            'User-Agent': 'VoxelXLauncher/1.0',
+          },
+        }, (res) => {
+          let data = ''
+          res.on('data', c => { data += c })
+          res.on('end', () => {
+            try { resolve({ status: res.statusCode, body: JSON.parse(data) }) }
+            catch { resolve({ status: res.statusCode, body: { error: data } }) }
+          })
+        })
+        req.on('error', reject)
+        req.write(body)
+        req.end()
+      })
+
+      if (result.status !== 200) {
+        return { error: result.body?.error || `HTTP ${result.status}` }
+      }
+
+      const uploadedUrl = result.body?.url
+      if (!uploadedUrl) return { error: 'Không nhận được URL từ server' }
+
+      if (uuid) {
+        try {
+          const skinPrefsPath = path.join(DATA_DIR, 'skin_prefs.json')
+          let prefs = {}
+          if (fs.existsSync(skinPrefsPath)) {
+            try { prefs = JSON.parse(fs.readFileSync(skinPrefsPath, 'utf-8')) } catch {}
+          }
+          prefs[uuid] = {
+            ...prefs[uuid],
+            [type === 'skin' ? 'skinUrl' : type === 'cape' ? 'capeUrl' : 'elytraUrl']: uploadedUrl,
+            updatedAt: new Date().toISOString(),
+          }
+          const tmp = skinPrefsPath + '.tmp'
+          fs.writeFileSync(tmp, JSON.stringify(prefs, null, 2), { mode: 0o600 })
+          fs.renameSync(tmp, skinPrefsPath)
+        } catch {}
+      }
+
+      return { ok: true, url: uploadedUrl, type, skinType }
+    } catch (err) {
+      return { error: err.message }
     }
   })
 }

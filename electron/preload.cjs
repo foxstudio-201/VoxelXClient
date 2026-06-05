@@ -207,6 +207,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   saveSkinPrefs: (opts) => ipcRenderer.invoke('skin:savePrefs', opts),
   getSkinPrefs:  (opts) => ipcRenderer.invoke('skin:getPrefs', opts),
+  uploadSkinToWeb: (opts) => ipcRenderer.invoke('skin:uploadToWeb', opts),
 
   profileListMods:          (profileId, accountId)            => ipcRenderer.invoke('profile:listMods', profileId, accountId),
   profileToggleMod:         (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:toggleMod', profileId, fileName, accountId),
@@ -273,6 +274,47 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_, data) => cb(data)
     require('electron').ipcRenderer.on('server:tunnelLog', handler)
     return () => require('electron').ipcRenderer.removeListener('server:tunnelLog', handler)
+  },
+
+  // ── LAN World Auto-Tunnel ──────────────────────────────────────────────────
+  lanStartScan:  ()  => ipcRenderer.invoke('lan:startScan'),
+  lanStopScan:   ()  => ipcRenderer.invoke('lan:stopScan'),
+  lanStopTunnel: ()  => ipcRenderer.invoke('lan:stopTunnel'),
+  lanGetStatus:  ()  => ipcRenderer.invoke('lan:getStatus'),
+  closeLanWindow: () => ipcRenderer.send('lan:closeWindow'),
+
+  onLanDetected: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('lan:detected', handler)
+    return () => ipcRenderer.removeListener('lan:detected', handler)
+  },
+  onLanScanning: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('lan:scanning', handler)
+    return () => ipcRenderer.removeListener('lan:scanning', handler)
+  },
+  onLanTunnelStatus: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('lan:tunnelStatus', handler)
+    return () => ipcRenderer.removeListener('lan:tunnelStatus', handler)
+  },
+  offLanTunnelStatus: (cb) => ipcRenderer.removeListener('lan:tunnelStatus', cb),
+  onLanTunnelLog: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('lan:tunnelLog', handler)
+    return () => ipcRenderer.removeListener('lan:tunnelLog', handler)
+  },
+  offLanTunnelLog: (cb) => ipcRenderer.removeListener('lan:tunnelLog', cb),
+  onLanWindowData: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('lan:windowData', handler)
+    return () => ipcRenderer.removeListener('lan:windowData', handler)
+  },
+  offLanWindowData: (cb) => ipcRenderer.removeListener('lan:windowData', cb),
+  onLanError: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('lan:error', handler)
+    return () => ipcRenderer.removeListener('lan:error', handler)
   },
   serverInstallMod:    (opts)                 => ipcRenderer.invoke('server:installMod', opts),
   serverOpenFolder:    (id, sub)             => ipcRenderer.invoke('server:openFolder', id, sub),

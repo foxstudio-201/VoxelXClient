@@ -178,8 +178,6 @@ export default function AccountPage() {
   const [showUuid, setShowUuid]               = useState(false)
   const [copied, setCopied]                   = useState(false)
   const [skinSubTab, setSkinSubTab]           = useState('skin')
-  const [cosmeticData, setCosmeticData]       = useState([])
-  const [cosmeticLoading, setCosmeticLoading] = useState(false)
   const [appliedSkinUrl, setAppliedSkinUrl]   = useState(null)
   const [settingsAccount, setSettingsAccount] = useState(null) // account đang mở settings
   const isElectronCtx = typeof window !== 'undefined' && window.electronAPI
@@ -191,37 +189,37 @@ export default function AccountPage() {
     if (!selected?.uuid) { setAppliedSkinUrl(null); return }
     const load = async () => {
       try {
+        // Ưu tiên 1: web skin URL (từ voxelxclient.vercel.app)
+        const webSkin = selected.webSkinUrl || null
+
+        // Ưu tiên 2: local prefs
         const prefs = isElectron
           ? await window.electronAPI.getSkinPrefs({ uuid: selected.uuid })
           : JSON.parse(localStorage.getItem(`vxc_skin_prefs_${selected.uuid}`) || 'null')
 
-        const skinUrl = prefs?.skinUrl
-        if (skinUrl && skinUrl.startsWith('blob:')) {
-          console.warn('Invalid blob URL found in prefs, clearing:', skinUrl)
-          setAppliedSkinUrl(null)
-        } else {
-          // Ưu tiên: web skin > local prefs skin
-          const webSkin = selected.webSkinUrl || null
-          setAppliedSkinUrl(webSkin || skinUrl || null)
+        const localSkin = prefs?.skinUrl
+
+        // Nếu chưa có webSkinUrl, thử fetch từ web API theo UUID
+        let fetchedWebSkin = webSkin
+        if (!fetchedWebSkin && selected.uuid) {
+          try {
+            const res = await fetch(
+              `https://voxelxclient.vercel.app/api/auth?action=lookup-by-uuid&uuid=${encodeURIComponent(selected.uuid)}`,
+              { signal: AbortSignal.timeout(5000) }
+            )
+            if (res.ok) {
+              const data = await res.json()
+              if (data.ok && data.skinUrl) fetchedWebSkin = data.skinUrl
+            }
+          } catch {}
         }
+
+        const finalSkin = fetchedWebSkin || (localSkin && !localSkin.startsWith('blob:') ? localSkin : null)
+        setAppliedSkinUrl(finalSkin || null)
       } catch { setAppliedSkinUrl(null) }
     }
     load()
   }, [selected?.uuid])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    setCosmeticLoading(true)
-    fetch('https://api.foxstudio.site/api/player/api_player_cosmetics.php', { signal: controller.signal })
-      .then(r => r.json())
-      .then(data => {
-        const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : [])
-        setCosmeticData(list)
-      })
-      .catch(err => { if (err.name !== 'AbortError') setCosmeticData([]) })
-      .finally(() => setCosmeticLoading(false))
-    return () => controller.abort()
-  }, [])
 
   const prevSelectedId = useState(selectedId)
   if (prevSelectedId[0] !== selectedId) {
@@ -633,13 +631,11 @@ export default function AccountPage() {
       {showSkinModal && (
         <SkinCustomizeModal
           account={selected}
-          cosmeticData={cosmeticData}
           onClose={() => setShowSkinModal(false)}
           onApply={({ type, url, skinType }) => {
             if (type === 'skin') {
               setAppliedSkinUrl(url)
-              if (skinType === 'slim') setSlim(true)
-              else setSlim(false)
+              setSlim(skinType === 'slim')
             }
             toast({ type: 'success', title: t('account.page.toastApplied'), message: t('account.page.toastAppliedNew', { type }) })
           }}

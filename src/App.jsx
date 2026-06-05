@@ -50,6 +50,7 @@ import CrashAnalyzerModal, { isFabricIncompatibleCrash } from './components/cras
 
 import ModsPage from './components/mods/ModsPage'
 import ServerPage from './components/server/ServerPage'
+import LanShareWindow from './components/LanShareWindow'
 import { useBgMusic } from './hooks/useBgMusic'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -104,6 +105,8 @@ function AppInner() {
       setProgress(data)
       if (data.phase === 'running') {
         setLaunchState('running')
+        // Bắt đầu scan LAN khi game đã chạy
+        window.electronAPI.lanStartScan?.().catch?.(() => {})
       }
       if (data.phase === 'error') {
         setLaunchState('error')
@@ -181,6 +184,9 @@ function AppInner() {
       const realKey = data?.profileId && data?.accountId
         ? `${data.profileId}::${data.accountId}`
         : null
+
+      // Dừng LAN scan khi game thoát
+      window.electronAPI.lanStopScan?.().catch?.(() => {})
 
       // Crash detection: exit code !== 0 → phân tích log
       // Đọc từ ref để tránh race condition (state có thể chưa update kịp)
@@ -404,6 +410,11 @@ export default function App() {
         <UpdateWindow />
       </LangProvider>
     )
+  }
+
+  const isLanWindow = params.get('window') === 'lan'
+  if (isLanWindow) {
+    return <LanShareWindow />
   }
 
   return (

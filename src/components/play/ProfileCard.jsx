@@ -45,12 +45,14 @@ import v118 from '../../assets/minecraft-versions/1.18.png'
 import v119 from '../../assets/minecraft-versions/1.19.png'
 import v120 from '../../assets/minecraft-versions/1.20.png'
 import v121 from '../../assets/minecraft-versions/1.21.png'
+import v26  from '../../assets/minecraft-versions/26.png'
 
 import { useLang } from '../../i18n/LangProvider'
 
 const VERSION_IMAGES = {
   '1.12': v112, '1.15': v115, '1.16': v116, '1.17': v117,
   '1.18': v118, '1.19': v119, '1.20': v120, '1.21': v121,
+  '26': v26,
 }
 
 const LOADER_ICONS = {
@@ -75,6 +77,11 @@ const IMPORT_SOURCE_CONFIG = {
 function getMajorVersion(gameVersion) {
   if (!gameVersion) return null
   const parts = gameVersion.split('.')
+  // Format mới: 26, 26.1, 26.0.1 → major = "26"
+  if (parseInt(parts[0], 10) >= 20 && parts[0].length <= 2) {
+    return parts[0]
+  }
+  // Format cũ: 1.20, 1.21.x → major = "1.20"
   if (parts.length >= 2) return `${parts[0]}.${parts[1]}`
   return gameVersion
 }

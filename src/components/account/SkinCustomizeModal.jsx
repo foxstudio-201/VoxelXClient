@@ -45,13 +45,12 @@ const SKIN_TYPES = [
   { id: 'slim', labelKey: 'account.skinModal.skinTypeSlim' },
 ]
 
-export default function SkinCustomizeModal({ account, cosmeticData = [], onClose, onApply }) {
+export default function SkinCustomizeModal({ account, onClose, onApply }) {
   const { t } = useLang()
   const [activeTab, setActiveTab]         = useState('skin')
   const [selectedFile, setSelectedFile]   = useState(null)
   const [previewUrl, setPreviewUrl]       = useState(null)
   const [skinType, setSkinType]           = useState('wide')
-  const [selectedApiItem, setApiItem]     = useState(null)
   const [isDragging, setIsDragging]       = useState(false)
   const [applying, setApplying]           = useState(false)
   const [done, setDone]                   = useState(false)
@@ -61,7 +60,6 @@ export default function SkinCustomizeModal({ account, cosmeticData = [], onClose
   useEffect(() => {
     setSelectedFile(null)
     setPreviewUrl(null)
-    setApiItem(null)
     setDone(false)
   }, [activeTab])
 
@@ -84,7 +82,6 @@ export default function SkinCustomizeModal({ account, cosmeticData = [], onClose
     const url = URL.createObjectURL(file)
     setSelectedFile(file)
     setPreviewUrl(url)
-    setApiItem(null)
   }
 
   const onDragEnter = useCallback(e => {
@@ -114,26 +111,20 @@ export default function SkinCustomizeModal({ account, cosmeticData = [], onClose
     e.target.value = ''
   }
 
-  function handleSelectApiItem(item) {
-    setApiItem(item)
-    setSelectedFile(null)
-    const url = activeTab === 'skin' ? item.skinUrl : activeTab === 'cape' ? item.capeUrl : item.elytraUrl
-    if (url) setPreviewUrl(url)
-  }
-
 async function handleApply() {
     const url = previewUrl
     if (!url) return
     setApplying(true)
     try {
-
       const existing = isElectron
         ? (await window.electronAPI.getSkinPrefs({ uuid: account?.uuid })) || {}
         : {}
 
-      const persistUrl = url.startsWith('blob:')
+      // Convert blob URL hoặc remote URL → base64 data URL để lưu và upload
+      const persistUrl = url.startsWith('blob:') || url.startsWith('http')
         ? await new Promise((resolve, reject) => {
             const img = new Image()
+            img.crossOrigin = 'anonymous'
             img.onload = () => {
               const canvas = document.createElement('canvas')
               canvas.width = img.width
@@ -147,34 +138,52 @@ async function handleApply() {
           }).catch(() => url)
         : url
 
+      // ── Upload lên web API nếu có token ──────────────────────────────────
+      let finalUrl = persistUrl
+      const webToken = localStorage.getItem('vxc_auth_token')
+
+      if (webToken && isElectron && persistUrl.startsWith('data:')) {
+        try {
+          const uploadResult = await window.electronAPI.uploadSkinToWeb({
+            dataUrl: persistUrl,
+            type: activeTab,
+            skinType: activeTab === 'skin' ? skinType : undefined,
+            webToken,
+            uuid: account?.uuid,
+          })
+          if (uploadResult?.ok && uploadResult?.url) {
+            // Dùng URL từ web server (CDN URL ổn định hơn data URL)
+            finalUrl = uploadResult.url
+          } else if (uploadResult?.error) {
+            console.warn('[SkinModal] Web upload failed:', uploadResult.error)
+            // Vẫn tiếp tục với local prefs nếu web upload thất bại
+          }
+        } catch (webErr) {
+          console.warn('[SkinModal] Web upload error:', webErr.message)
+        }
+      }
+
+      // ── Lưu local prefs ───────────────────────────────────────────────────
       const newPrefs = {
         uuid:      account?.uuid,
-        skinUrl:   activeTab === 'skin'   ? persistUrl : (existing.skinUrl   || null),
-        capeUrl:   activeTab === 'cape'   ? persistUrl : (existing.capeUrl   || null),
-        elytraUrl: activeTab === 'elytra' ? persistUrl : (existing.elytraUrl || null),
+        skinUrl:   activeTab === 'skin'   ? finalUrl : (existing.skinUrl   || null),
+        capeUrl:   activeTab === 'cape'   ? finalUrl : (existing.capeUrl   || null),
+        elytraUrl: activeTab === 'elytra' ? finalUrl : (existing.elytraUrl || null),
       }
 
       if (isElectron) {
         await window.electronAPI.saveSkinPrefs(newPrefs)
       } else {
-
         localStorage.setItem(`vxc_skin_prefs_${account?.uuid}`, JSON.stringify(newPrefs))
       }
 
-      onApply?.({ type: activeTab, url, skinType: activeTab === 'skin' ? skinType : undefined })
+      onApply?.({ type: activeTab, url: finalUrl, skinType: activeTab === 'skin' ? skinType : undefined })
       setDone(true)
       setTimeout(() => onClose(), 800)
     } finally {
       setApplying(false)
     }
   }
-
-  const apiItems = cosmeticData.filter(item => {
-    if (activeTab === 'skin')   return !!item.skinUrl
-    if (activeTab === 'cape')   return !!item.capeUrl
-    if (activeTab === 'elytra') return !!item.elytraUrl
-    return false
-  })
 
   const canApply = !!previewUrl && !applying && !done
 
@@ -295,47 +304,11 @@ async function handleApply() {
               </div>
               <input ref={fileInputRef} type="file" accept="image/png,image/*" className="hidden" onChange={handleFileChange} />
             </div>
-
-            {}
-            {apiItems.length > 0 && (
-              <div className="flex items-center justify-between">
-                <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                  {t('account.skinModal.libraryLabel', { count: apiItems.length })}
-                </label>
-              </div>
-            )}
           </div>
 
           {}
           <div className="flex-1 overflow-y-auto px-5 pb-4 mt-2"
             style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
-            {apiItems.length > 0 ? (
-              <div className="grid grid-cols-4 gap-2">
-                {apiItems.map((item, i) => {
-                  const url = activeTab === 'skin' ? item.skinUrl : activeTab === 'cape' ? item.capeUrl : item.elytraUrl
-                  if (!url) return null
-                  const isSelected = selectedApiItem === item
-                  return (
-                    <button key={i} onClick={() => handleSelectApiItem(item)}
-                      className="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all"
-                      style={{
-                        background: isSelected ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${isSelected ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.07)'}`,
-                      }}>
-                      <img src={url} alt={item.playerName}
-                        className="w-10 h-10 rounded-lg object-contain"
-                        style={{ imageRendering: 'pixelated', background: 'rgba(255,255,255,0.05)' }}
-                        onError={e => { e.currentTarget.style.display = 'none' }} />
-                      <span className="text-[9px] text-white/40 truncate w-full text-center">{item.playerName}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 gap-2">
-                <p className="text-xs text-white/25">{t('account.skinModal.libraryEmpty', { type: activeTab })}</p>
-              </div>
-            )}
           </div>
         </div>
 
