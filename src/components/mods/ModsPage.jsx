@@ -41,10 +41,10 @@ import technicIcon    from '../../assets/loader/technic.png'
 import ftbIcon        from '../../assets/loader/ftb.png'
 
 const PLATFORM_TABS = [
-  { id: 'modrinth',   label: 'Modrinth',   icon: modrinthIcon },
+  { id: 'modrinth',   label: 'Modrinth',   icon: modrinthIcon   },
   { id: 'curseforge', label: 'CurseForge', icon: curseforgeIcon },
-  { id: 'technic',    label: 'Technic',    icon: technicIcon },
-  { id: 'ftb',        label: 'FTB',        icon: ftbIcon },
+  { id: 'technic',    label: 'Technic',    icon: technicIcon    },
+  { id: 'ftb',        label: 'FTB',        icon: ftbIcon        },
 ]
 
 export default function ModsPage() {
@@ -52,7 +52,6 @@ export default function ModsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {}
       <div className="flex-shrink-0 px-4 pt-3 pb-0">
         <div className="flex gap-1 border-b border-white/5">
           {PLATFORM_TABS.map(tab => (
@@ -79,7 +78,6 @@ export default function ModsPage() {
         </div>
       </div>
 
-      {}
       <div className="flex-1 overflow-hidden">
         {platform === 'modrinth'   && <ModrinthTab />}
         {platform === 'curseforge' && <CurseForgeTab />}

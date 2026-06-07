@@ -29,9 +29,13 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useAccounts } from '../hooks/useAccounts'
+import PlayerHead from './ui/PlayerHead'
+import coinIcon from '../assets/item/coin.png'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
+const FRIENDS_API = 'https://www.voxelx.io.vn/api/friends'
 
 function InstanceModal({ instances, onKill, onClose }) {
   const runningInstances = instances.filter(i => i.state === 'running' || i.state === 'downloading')
@@ -134,6 +138,55 @@ function InstanceModal({ instances, onKill, onClose }) {
 
 export default function TitleBar({ instances = [], onKillInstance }) {
   const [showModal, setShowModal] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [pending, setPending]     = useState([])
+  const [coins, setCoins]         = useState(0)
+  const notifRef = useRef(null)
+  const { selectedAccount } = useAccounts()
+  const myUuid = selectedAccount?.uuid
+
+  // Load pending friend requests
+  const loadPending = useCallback(async () => {
+    if (!myUuid) return
+    try {
+      const r = await fetch(`${FRIENDS_API}?action=pending&uuid=${myUuid}`).then(r => r.json())
+      if (r.ok) setPending(r.pending || [])
+    } catch {}
+  }, [myUuid])
+
+  // Load coins
+  const loadCoins = useCallback(async () => {
+    if (!myUuid) return
+    try {
+      const r = await fetch(`${FRIENDS_API}?action=get-coins&uuid=${myUuid}`).then(r => r.json())
+      if (r.ok) setCoins(r.coins ?? 0)
+    } catch {}
+  }, [myUuid])
+
+  useEffect(() => { loadPending(); loadCoins() }, [loadPending, loadCoins])
+  useEffect(() => {
+    if (!myUuid) return
+    const iv = setInterval(() => { loadPending(); loadCoins() }, 15000)
+    return () => clearInterval(iv)
+  }, [myUuid, loadPending, loadCoins])
+
+  // Close notif on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false)
+    }
+    if (notifOpen) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [notifOpen])
+
+  async function handleAccept(fromUuid) {
+    await fetch(`${FRIENDS_API}?action=accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uuid: myUuid, fromUuid }) })
+    setPending(p => p.filter(r => r.fromUuid !== fromUuid))
+  }
+  async function handleReject(fromUuid) {
+    await fetch(`${FRIENDS_API}?action=reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uuid: myUuid, fromUuid }) })
+    setPending(p => p.filter(r => r.fromUuid !== fromUuid))
+  }
 
   const handleMinimize = () => isElectron && window.electronAPI.minimizeWindow()
   const handleMaximize = () => isElectron && window.electronAPI.maximizeWindow()
@@ -185,6 +238,73 @@ export default function TitleBar({ instances = [], onKillInstance }) {
 
         {}
         <div className="no-drag flex items-center gap-1">
+          {/* Coin display */}
+          {myUuid && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/15 mr-1">
+              <img src={coinIcon} alt="coin" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
+              <span className="text-xs font-bold text-yellow-400">{coins.toLocaleString()}</span>
+            </div>
+          )}
+
+          {/* Notification bell */}
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={() => setNotifOpen(v => !v)}
+              className={`w-8 h-7 flex items-center justify-center rounded transition-colors relative ${notifOpen ? 'bg-white/10 text-white/90' : 'hover:bg-white/10 text-white/50 hover:text-white/90'}`}
+              title="Thông báo"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+              </svg>
+              {/* Badge dot */}
+              {pending.length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 border border-black/50" />
+              )}
+            </button>
+
+            {/* Dropdown notifications */}
+            {notifOpen && (
+              <div className="absolute right-0 top-full mt-1 w-72 bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-[999] overflow-hidden">
+                <div className="px-3 py-2.5 border-b border-white/5 flex items-center justify-between">
+                  <p className="text-xs font-bold text-white/60">Thông báo</p>
+                  {pending.length > 0 && (
+                    <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold">{pending.length}</span>
+                  )}
+                </div>
+                <div className="max-h-72 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
+                  {pending.length === 0 ? (
+                    <div className="px-4 py-6 text-center">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white/10 mx-auto mb-2">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                      </svg>
+                      <p className="text-[11px] text-white/25">Không có thông báo mới</p>
+                    </div>
+                  ) : (
+                    pending.map(req => (
+                      <div key={req.fromUuid} className="flex items-center gap-2.5 px-3 py-2.5 border-b border-white/5 last:border-b-0 hover:bg-white/3 transition-all">
+                        <PlayerHead uuid={req.fromUuid} username={req.username} size={28} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-white/70 truncate">{req.username}</p>
+                          <p className="text-[10px] text-white/30">Muốn kết bạn với bạn</p>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button onClick={() => handleAccept(req.fromUuid)}
+                            className="w-6 h-6 flex items-center justify-center rounded-lg bg-green-500/15 text-green-400 hover:bg-green-500/30 transition-all" title="Chấp nhận">
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                          </button>
+                          <button onClick={() => handleReject(req.fromUuid)}
+                            className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/5 text-white/30 hover:bg-red-500/15 hover:text-red-400 transition-all" title="Từ chối">
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <button onClick={handleMinimize}
             className="w-8 h-7 flex items-center justify-center rounded hover:bg-white/10 transition-colors text-white/50 hover:text-white/90"
             title="Minimize">

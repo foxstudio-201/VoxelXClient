@@ -36,8 +36,9 @@ const fs     = require('fs')
 const path   = require('path')
 const { spawnSync } = require('child_process')
 
-const FORGE_MAVEN = 'https://maven.minecraftforge.net'
-const BMCLAPI    = 'https://bmclapi2.bangbang93.com'
+const FORGE_MAVEN  = 'https://maven.minecraftforge.net'
+const BMCLAPI      = 'https://bmclapi2.bangbang93.com'
+const FORGE_MAVEN2 = 'https://files.minecraftforge.net/maven'
 
 function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
@@ -114,19 +115,27 @@ function resolveJvmArgs(rawArgs, librariesDir, versionName) {
 }
 
 async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, javaPath, instanceRoot, onProgress) {
-  const fullVersion   = `${mcVersion}-${forgeVersion}`
+  // forgeVersion có thể là "40.3.0" hoặc "1.18.2-40.3.0" (đã có mcVersion prefix)
+  const fullVersion = forgeVersion.startsWith(`${mcVersion}-`)
+    ? forgeVersion
+    : `${mcVersion}-${forgeVersion}`
+  // buildOnlyVersion = phần sau mcVersion prefix, ví dụ "40.3.0"
+  const buildOnlyVersion = fullVersion.startsWith(`${mcVersion}-`)
+    ? fullVersion.slice(mcVersion.length + 1)
+    : forgeVersion
   const installerName = `forge-${fullVersion}-installer.jar`
   const installerDir  = path.join(librariesDir, 'net', 'minecraftforge', 'forge', fullVersion)
   const installerPath = path.join(installerDir, installerName)
-  const installerUrl  = `${FORGE_MAVEN}/net/minecraftforge/forge/${fullVersion}/${installerName}`
-  const bmclapiUrl    = `${BMCLAPI}/forge/download?mcversion=${mcVersion}&version=${forgeVersion}&category=installer&format=jar`
+  const installerUrl   = `${FORGE_MAVEN}/net/minecraftforge/forge/${fullVersion}/${installerName}`
+  const installerUrl2  = `${FORGE_MAVEN2}/net/minecraftforge/forge/${fullVersion}/${installerName}`
+  const bmclapiUrl     = `${BMCLAPI}/maven/net/minecraftforge/forge/${fullVersion}/${installerName}`
 
   if (!fs.existsSync(installerDir)) fs.mkdirSync(installerDir, { recursive: true })
 
   if (!fs.existsSync(installerPath) || fs.statSync(installerPath).size === 0) {
     onProgress?.({ phase: 'forge_download', log: `Downloading Forge ${fullVersion} installer...`, done: 0, total: 1 })
     let downloaded = false
-    for (const url of [installerUrl, bmclapiUrl]) {
+    for (const url of [installerUrl, installerUrl2, bmclapiUrl]) {
       try {
         onProgress?.({ phase: 'forge_download', log: `Trying ${url.split('?')[0]}...` })
         await downloadFile(url, installerPath)
@@ -150,7 +159,7 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     onProgress?.({ phase: 'forge_install', log: 'Placed vanilla client.jar for installer.' })
   }
 
-  const versionId       = `${mcVersion}-forge-${forgeVersion}`
+  const versionId       = `${mcVersion}-forge-${buildOnlyVersion}`
   const versionDir      = path.join(instanceRoot, 'versions', versionId)
   const versionJsonPath = path.join(versionDir, `${versionId}.json`)
 

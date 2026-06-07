@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VoxelXLauncher — Account Settings Panel
  * Hiển thị cài đặt tài khoản cho offline/discord accounts
  * Kết nối với web API để đồng bộ dữ liệu
@@ -9,7 +9,7 @@ import { useLang } from '../../i18n/LangProvider'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useToast } from '../../hooks/useToast'
 import PlayerHead from '../ui/PlayerHead'
-const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
+const WEB_API = 'https://www.voxelx.io.vn/api/auth'
 const TOKEN_KEY = 'vxc_auth_token'
 
 function getWebToken() {
@@ -436,3 +436,4 @@ export default function AccountSettingsPanel({ account, onBack }) {
     </div>
   )
 }
+

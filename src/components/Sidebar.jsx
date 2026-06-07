@@ -132,7 +132,20 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
       </div>
 
       {}
-      <nav className="flex flex-col gap-1 flex-1 w-full px-2">
+      <nav className="flex flex-col gap-1 flex-1 w-full px-2 relative">
+        {/* Sliding active indicator */}
+        <div
+          className="absolute left-0 w-[3px] h-6 bg-green-400 rounded-r-full transition-all duration-300 ease-out z-20"
+          style={{
+            top: (() => {
+              const idx = navItems.findIndex(n => n.id === activePage)
+              if (idx < 0) return '-100px'
+              // Mỗi button h-12 (48px) + gap-1 (4px) = 52px mỗi item, centered là 48/2 - 24/2 = 12px offset
+              return `${idx * 52 + 12}px`
+            })(),
+            opacity: navItems.some(n => n.id === activePage) ? 1 : 0,
+          }}
+        />
         {navItems.map(({ id, label, Outline, Solid }) => {
           const isActive = activePage === id
           const Icon = isActive ? Solid : Outline
@@ -142,16 +155,13 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
               onClick={() => onNavigate(id)}
               className={`
                 relative w-full h-12 rounded-xl flex items-center justify-center
-                transition-all duration-150 group
+                transition-all duration-200 group
                 ${isActive
                   ? 'bg-green-500/15 text-green-400'
                   : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
                 }
               `}
             >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-green-400 rounded-r-full" />
-              )}
               <Icon className="w-6 h-6" />
               <span className="
                 pointer-events-none absolute left-[calc(100%+10px)] px-2.5 py-1.5
@@ -183,9 +193,6 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
             }
           `}
         >
-          {isAccountPage && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-green-400 rounded-r-full" />
-          )}
           {selectedAccount ? (
             <div className={`rounded-lg overflow-hidden ${isAccountPage ? 'ring-2 ring-green-400/50 ring-offset-1 ring-offset-black/50' : ''}`}>
               <PlayerHead uuid={selectedAccount.uuid} username={selectedAccount.username} size={34} />

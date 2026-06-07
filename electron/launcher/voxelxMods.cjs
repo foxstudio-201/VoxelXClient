@@ -11,7 +11,7 @@ const http  = require('http')
 const fs    = require('fs')
 const path  = require('path')
 
-const API_BASE = 'https://voxelxclient.vercel.app/api/mods'
+const API_BASE = 'https://voxelx.io.vn/api/mods'
 
 function httpsGetJson(url) {
   return new Promise((resolve, reject) => {

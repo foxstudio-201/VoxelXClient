@@ -281,6 +281,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   lanStopScan:   ()  => ipcRenderer.invoke('lan:stopScan'),
   lanStopTunnel: ()  => ipcRenderer.invoke('lan:stopTunnel'),
   lanGetStatus:  ()  => ipcRenderer.invoke('lan:getStatus'),
+  lanOpenWindow: ()  => ipcRenderer.invoke('lan:openWindow'),
   closeLanWindow: () => ipcRenderer.send('lan:closeWindow'),
 
   onLanDetected: (cb) => {
@@ -348,6 +349,40 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_e, data) => cb(data)
     ipcRenderer.on('server:javaProgress', handler)
     return () => ipcRenderer.removeListener('server:javaProgress', handler)
+  },
+
+  // ── VoxelX P2P LAN (WireGuard) ────────────────────────────────────────────
+  vxlanCheck:  ()                    => ipcRenderer.invoke('vxlan:check'),
+  vxlanCreate: (opts)                => ipcRenderer.invoke('vxlan:create', opts),
+  vxlanJoin:   (opts)                => ipcRenderer.invoke('vxlan:join', opts),
+  vxlanLeave:  ()                    => ipcRenderer.invoke('vxlan:leave'),
+  vxlanState:  ()                    => ipcRenderer.invoke('vxlan:state'),
+  vxlanRelaunchAsAdmin: ()           => ipcRenderer.invoke('vxlan:relaunchAsAdmin'),
+
+  onVxlanLog: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('vxlan:log', handler)
+    return () => ipcRenderer.removeListener('vxlan:log', handler)
+  },
+  onVxlanCreated: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('vxlan:created', handler)
+    return () => ipcRenderer.removeListener('vxlan:created', handler)
+  },
+  onVxlanJoined: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('vxlan:joined', handler)
+    return () => ipcRenderer.removeListener('vxlan:joined', handler)
+  },
+  onVxlanPeers: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('vxlan:peers', handler)
+    return () => ipcRenderer.removeListener('vxlan:peers', handler)
+  },
+  onVxlanLeft: (cb) => {
+    const handler = (_, data) => cb(data)
+    ipcRenderer.on('vxlan:left', handler)
+    return () => ipcRenderer.removeListener('vxlan:left', handler)
   },
 })
 

@@ -41,6 +41,8 @@ const { registerLauncherHandlers } = require('./launcher.cjs')
 const { loginWithWindow, refreshMinecraftToken } = require('./msAuth.cjs')
 const { registerLanHandlers, setLanWindowRef } = require('./lanScanner.cjs')
 const { openLanWindow, registerLanWindowHandlers, injectSetLanWindowRef } = require('./lanWindow.cjs')
+const { registerVxLanHandlers } = require('./wireguard.cjs')
+const { startHeartbeat, setPlayingState } = require('./heartbeat.cjs')
 
 injectSetLanWindowRef(setLanWindowRef)
 
@@ -422,6 +424,10 @@ function createTray() {
         label: 'Kiểm tra cập nhật...',
         click: () => { createUpdateWindow() },
       },
+      {
+        label: 'P2P LAN (F10)',
+        click: () => { openLanWindow({ motd: null, port: null, tunnelAddr: null }) },
+      },
       { type: 'separator' },
       {
         label: 'Thoát',
@@ -485,7 +491,7 @@ app.whenReady().then(() => {
           "font-src 'self' data:;" +
           "img-src 'self' data: blob: https:;" +
           "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://youtube-nocookie.com https://youtube.com;" +
-          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://voxelxclient.vercel.app https://foxstudio.site;"
+          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://voxelx.io.vn https://www.voxelx.io.vn https://foxstudio.site;"
         ],
       },
     })
@@ -493,8 +499,42 @@ app.whenReady().then(() => {
 
   createMainWindow()
   createTray()
+
+  // ── F10: toggle cửa sổ VoxelX P2P LAN ────────────────────────────────────
+  const { globalShortcut } = require('electron')
+
+  function registerLanShortcut() {
+    const success = globalShortcut.register('F10', () => {
+      openLanWindow({ motd: null, port: null, tunnelAddr: null })
+    })
+    if (!success) {
+      console.warn('[Shortcut] F10 đăng ký thất bại, thử lại sau 2s...')
+      setTimeout(() => {
+        try { globalShortcut.unregister('F10') } catch {}
+        const retry = globalShortcut.register('F10', () => {
+          openLanWindow({ motd: null, port: null, tunnelAddr: null })
+        })
+        if (!retry) console.warn('[Shortcut] F10 vẫn không đăng ký được')
+      }, 2000)
+    }
+  }
+  registerLanShortcut()
+
+  // Mở LAN window qua IPC (backup khi F10 không hoạt động)
+  ipcMain.handle('lan:openWindow', (e) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    openLanWindow({ motd: null, port: null, tunnelAddr: null })
+    return { ok: true }
+  })
+
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll()
+  })
   const initSettings = readSettings()
   if (initSettings.discordRPC) rpc.connect()
+
+  // Bắt đầu gửi online status
+  startHeartbeat()
 
   app.on('activate', () => {
     if (!mainWindow) createMainWindow(); else mainWindow.show()
@@ -737,7 +777,7 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
     await new Promise(r => setTimeout(r, 1500))
 
     if (process.platform === 'win32') {
-      spawn(filePath, [], {
+      spawn(filePath, ['/SILENT'], {
         detached: true,
         stdio:    'ignore',
       }).unref()
@@ -745,7 +785,7 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
       spawn('open', [filePath], { detached: true, stdio: 'ignore' }).unref()
     } else {
       fs.chmodSync(filePath, 0o755)
-      spawn(filePath, [], { detached: true, stdio: 'ignore' }).unref()
+      spawn(filePath, ['--silent'], { detached: true, stdio: 'ignore' }).unref()
     }
 
     setTimeout(() => {
@@ -839,12 +879,12 @@ ipcMain.handle('updater:reinstall', async (e) => {
     await new Promise(r => setTimeout(r, 800))
 
     if (process.platform === 'win32') {
-      spawn(tmpFile, [], { detached: true, stdio: 'ignore' }).unref()
+      spawn(tmpFile, ['/SILENT'], { detached: true, stdio: 'ignore' }).unref()
     } else if (process.platform === 'darwin') {
       spawn('open', [tmpFile], { detached: true, stdio: 'ignore' }).unref()
     } else {
       fs.chmodSync(tmpFile, 0o755)
-      spawn(tmpFile, [], { detached: true, stdio: 'ignore' }).unref()
+      spawn(tmpFile, ['--silent'], { detached: true, stdio: 'ignore' }).unref()
     }
 
     setTimeout(() => {
@@ -1141,6 +1181,7 @@ registerServerHandlers(getTrustedWindow)
 registerLauncherHandlers(getTrustedWindow)
 registerLanHandlers(getTrustedWindow, openLanWindow)
 registerLanWindowHandlers(getTrustedWindow)
+registerVxLanHandlers(getTrustedWindow)
 
 ipcMain.handle('fabric:getLoaderVersions', async (e, gameVersion) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }

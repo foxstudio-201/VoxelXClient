@@ -925,5 +925,34 @@
     "notFound": "Not found",
     "retry": "Retry",
     "downloading": "Downloading..."
+  },
+  "friends": {
+    "title": "Friends",
+    "tabs": {
+      "friends": "Friends",
+      "requests": "Requests",
+      "blocked": "Blocked"
+    },
+    "search": "Search players...",
+    "searchResults": "Results",
+    "notFound": "Not found",
+    "you": "You",
+    "alreadyFriend": "Friends",
+    "sent": "Sent",
+    "addFriend": "Add friend",
+    "online": "Online",
+    "offline": "Offline",
+    "playing": "Playing",
+    "noFriends": "No friends yet",
+    "noFriendsHint": "Search for players to add friends",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "pending": "Pending",
+    "wantsToBeFriend": "Wants to be friends",
+    "noRequests": "No requests",
+    "noRequestsHint": "Friend requests will appear here",
+    "blocked": "No one blocked",
+    "blockedHint": "Blocked users cannot send friend requests",
+    "loginRequired": "Log in to see friends"
   }
 }

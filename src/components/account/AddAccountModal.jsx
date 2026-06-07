@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
@@ -120,7 +120,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
   const [otpPendingName, setOtpPendingName] = useState('')
   const [otpError, setOtpError] = useState('')
 
-  const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
+  const WEB_API = 'https://www.voxelx.io.vn/api/auth'
 
   const [discordState, setDiscordState] = useState('idle')
   const [discordProfile, setDiscordProfile] = useState(null)
@@ -881,4 +881,5 @@ function ErrorBanner({ message }) {
     </div>
   )
 }
+
 

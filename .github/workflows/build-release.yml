@@ -230,17 +230,23 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **sử lý lỗi cơ bản**, **fix bảo mật** và **cập nhật và đồng bộ skin khi thay đổi**.
+            > Bản cập nhật tập trung vào **sử lý lỗi cơ bản**, **fix bảo mật** và **thêm tính năng p2p test, friend online **.
 
             ---
 
-            ### Skin
+            ### p2p
 
-            - **Skin sync**: thay đổi skin trên web hoặc trên app đồng bộ
-            - ** Tính năng thay skin ra mắt **
+            - **p2p lan**: Cho phép người chơi có thể tham giá thế giới của nhau 
+            - Cần chạy lại app vói quyền admin để bật chức năng này 
 
             ---
 
+            ### friend
+
+            - Thêm , tìm kiếm bạn bè online trên app, chặn và kết bạn đầy đủ
+
+            ---
+            
             ### 🔒 Bảo mật
 
             - **Fix bảo mật IPC**: Cải thiện độ ổn định và tính bảo mật

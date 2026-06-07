@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
@@ -49,6 +49,7 @@ import v119 from '../assets/minecraft-versions/1.19.png'
 import v120 from '../assets/minecraft-versions/1.20.png'
 import v121 from '../assets/minecraft-versions/1.21.png'
 import { useLang } from '../i18n/LangProvider'
+import FriendsPanel from './friends/FriendsPanel'
 
 function markdownToHtml(text) {
   if (!text) return ''
@@ -61,7 +62,7 @@ function markdownToHtml(text) {
     '<img src="$2" alt="$1" style="max-width:72px;max-height:72px;border-radius:12px;margin:6px auto;display:block;" />')
 
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-    '<span class="md-link" data-href="$2">$1 ↗</span>')
+    '<span class="md-link" data-href="$2">$1 â†—</span>')
 
   html = html.replace(/^#{4,6}\s+(.+)$/gm, '<h4 class="md-h4">$1</h4>')
   html = html.replace(/^###\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>')
@@ -141,7 +142,7 @@ function renderPatchNotesBody(body, t) {
         .md-p  { color:rgba(255,255,255,0.65); margin:4px 0; line-height:1.6; font-size:0.875rem; }
         .md-ul { list-style:none; padding:0; margin:4px 0 8px; }
         .md-li { color:rgba(255,255,255,0.65); font-size:0.875rem; line-height:1.6; padding:2px 0 2px 16px; position:relative; }
-        .md-li::before { content:"•"; color:#4ade80; position:absolute; left:0; }
+        .md-li::before { content:"â€¢"; color:#4ade80; position:absolute; left:0; }
         .md-code { background:rgba(255,255,255,0.08); color:#86efac; padding:1px 5px; border-radius:4px; font-family:monospace; font-size:0.8rem; }
         .md-blockquote { border-left:3px solid rgba(74,222,128,0.4); padding:4px 12px; margin:8px 0; color:rgba(255,255,255,0.5); font-style:italic; font-size:0.875rem; }
         .md-hr { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:12px 0; }
@@ -178,7 +179,7 @@ function PatchNotesModal({ patchNotes, onClose }) {
               {t('homepage.patchnote.version')} {patchNotes.version}
               {patchNotes.publishedAt && (
                 <>
-                  {' '} · {new Date(patchNotes.publishedAt).toLocaleDateString('vi-VN')}
+                  {' '} Â· {new Date(patchNotes.publishedAt).toLocaleDateString('vi-VN')}
                 </>
               )}
             </p>
@@ -270,7 +271,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
       </button>
 
       {dropdownOpen && (
-        <div className="absolute left-0 right-0 bottom-full mb-1 max-h-64 overflow-y-auto bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50">
+        <div className="absolute left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50">
           <div className="px-3 py-2 border-b border-white/5">
             <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t("homepage.acccount.selectedaccount")}</p>
           </div>
@@ -364,7 +365,7 @@ const NEWS = [
     id: 1,
     tag: 'UPDATE',
     tagColor: 'bg-green-500/20 text-green-400',
-    title: 'Minecraft 1.21.5 – Spring to Life',
+    title: 'Minecraft 1.21.5 â€“ Spring to Life',
     desc: 'Leaf litter, fireflies, and new biome updates arrive in the latest snapshot.',
     date: 'May 7, 2026',
     img: null,
@@ -385,7 +386,7 @@ const NEWS = [
     tag: 'MODS',
     tagColor: 'bg-purple-500/20 text-purple-400',
     title: 'Top 10 Mods This Month',
-    desc: 'From performance boosts to new dimensions — the best mods of April 2026.',
+    desc: 'From performance boosts to new dimensions â€” the best mods of April 2026.',
     date: 'Apr 30, 2026',
     img: null,
     gradient: 'from-purple-900/60 to-violet-800/30',
@@ -577,7 +578,7 @@ function InstanceLogPanel({ instance, onKill }) {
           onClick={() => setAutoScroll(v => !v)}
           className={`ml-1 text-[10px] px-2 py-0.5 rounded transition-all
             ${autoScroll ? 'bg-green-500/15 text-green-400' : 'text-white/25 hover:text-white/50'}`}
-        >↓</button>
+        >â†“</button>
       </div>
 
       {}
@@ -623,7 +624,7 @@ function InstanceLogPanel({ instance, onKill }) {
                 {}
                 <span className={`flex-shrink-0 text-[9px] transition-all duration-150
                   ${copiedLine === i ? 'text-green-400 opacity-100' : 'text-white/20 opacity-0 group-hover:opacity-100'}`}>
-                  {copiedLine === i ? '✓' : '♿'}
+                  {copiedLine === i ? 'âœ“' : 'â™¿'}
                 </span>
               </div>
             )
@@ -750,6 +751,33 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
 
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [profileStats, setProfileStats] = useState(null)
+  const [profiles, setProfiles] = useState([])
+  const [profileDropOpen, setProfileDropOpen] = useState(false)
+  const profileDropRef = useRef(null)
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (profileDropRef.current && !profileDropRef.current.contains(e.target)) setProfileDropOpen(false)
+    }
+    if (profileDropOpen) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [profileDropOpen])
+
+  async function handleSelectProfile(id) {
+    if (!isElectron) return
+    await window.electronAPI.selectProfile(id)
+    const data = await window.electronAPI.getProfiles()
+    setProfiles(data.profiles || [])
+    const profile = data.profiles?.find(p => p.id === data.selectedProfileId) ?? null
+    setSelectedProfile(profile)
+    setProfileDropOpen(false)
+    if (profile) {
+      setRam(profile.ramGb ?? 4)
+      const stats = await window.electronAPI.getProfileStats({ profileId: profile.id })
+      setProfileStats(stats)
+    }
+  }
 
   useEffect(() => {
     if (instances.length > 0 && !activeLogTab) {
@@ -768,6 +796,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         const data = isElectron
           ? await window.electronAPI.getProfiles()
           : JSON.parse(localStorage.getItem('vxc_profiles') || '{"profiles":[],"selectedProfileId":null}')
+        setProfiles(data.profiles || [])
         const profile = data.profiles?.find(p => p.id === data.selectedProfileId) ?? null
         setSelectedProfile(profile)
 
@@ -821,182 +850,116 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     <div className="flex flex-col h-full overflow-hidden relative">
       <PatchNotesModal patchNotes={patchNotesModal} onClose={() => setPatchNotesModal(null)} />
 
-      {}
-      <div className="relative flex-shrink-0 h-56 overflow-hidden">
-        {}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07]">
-          {}
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(74,222,128,0.3) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(74,222,128,0.3) 1px, transparent 1px)
-              `,
-              backgroundSize: '40px 40px',
-            }}
-          />
-          {}
-          <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-green-500/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 right-1/4 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-emerald-400/8 rounded-full blur-3xl" />
-        </div>
-
-        {}
-        <div className="absolute right-12 top-8 opacity-20">
-          <div className="grid grid-cols-3 gap-1">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-8 h-8 rounded-sm"
-                style={{
-                  background: i % 3 === 0
-                    ? '#4ade80'
-                    : i % 3 === 1
-                      ? '#22c55e'
-                      : '#16a34a',
-                  opacity: 0.6 + (i % 3) * 0.2,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          {particles.map((p, i) => (
-            <div
-              key={`particle-${i}`}
-              className="absolute -bottom-4"
-              style={{
-                left: `${p.left}%`,
-                animation: `float-up ${p.durationY}s linear ${p.delay}s infinite`,
-                opacity: 0,
-              }}
-            >
-              <div
-                className="rounded-full bg-white/70 shadow-[0_0_10px_rgba(74,222,128,0.9)]"
-                style={{
-                  width: p.size,
-                  height: p.size,
-                  animation: `${p.swayClass} ${p.durationX}s ease-in-out infinite alternate`,
-                }}
-              />
-            </div>
-          ))}
-          <style>{`
-            @keyframes float-up {
-              0% { transform: translateY(0) scale(0.5); opacity: 0; }
-              10% { opacity: 0.9; transform: translateY(-20px) scale(1); }
-              85% { opacity: 0.9; transform: translateY(-200px) scale(1); }
-              100% { transform: translateY(-250px) scale(0.5); opacity: 0; }
-            }
-            @keyframes sway-0 {
-              0% { transform: translateX(-15px); }
-              100% { transform: translateX(15px); }
-            }
-            @keyframes sway-1 {
-              0% { transform: translateX(20px); }
-              100% { transform: translateX(-20px); }
-            }
-            @keyframes sway-2 {
-              0% { transform: translateX(-25px); }
-              100% { transform: translateX(25px); }
-            }
-          `}</style>
-        </div>
-
-        {}
-        <div className="relative flex flex-col justify-center h-full px-8 z-10">
-          {}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold tracking-widest text-green-400/70 uppercase">
-              {t('homepage.header.welcomeback')}
-            </span>
-          </div>
-          <h1 className="text-4xl font-black text-white text-shadow mb-1">
-            {username ?? (
-              <span className="text-white/30 text-2xl font-semibold">{t('homepage.acccount.noacccount')}</span>
-            )}
-          </h1>
-
-          {}
-          <p className="text-white/40 text-sm">
-            {(isDownloading || isRunning || isError) ? (
-              isRunning ? (
-                <span className="flex items-center gap-2 text-green-400/80">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  {t('homepage.play.playing')} <span className="text-green-300 font-semibold">{selectedProfile?.name}</span>
-                </span>
-              ) : isError ? (
-                <span className="text-red-400/80">{launchError}</span>
-              ) : (
-                <span className="flex items-center gap-2 text-white/40">
-                  <svg className="animate-spin w-3 h-3 text-green-400/70 flex-shrink-0" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  {progress?.log ?? t('homepage.logconsole.prepating')}
-                </span>
-              )
-            ) : username ? (
-              profileStats?.lastPlayed
-                ? <>{t('homepage.play.lastplayed')} <span className="text-white/60">{selectedProfile?.name}</span> · {formatRelativeTime(profileStats.lastPlayed, t)}</>
-                : <span className="text-white/30">{t('homepage.play.neverplayedbefore')}</span>
+      {/* ── Launch Panel ── */}
+      <div className="flex-shrink-0 border-b border-white/5 bg-black/20 p-4">
+        <div className="flex gap-4 items-stretch">
+          {/* Bên trái: Profile card + Play overlay */}
+          <div className="flex-1 min-w-0">
+            {selectedProfile ? (
+              <div className="relative rounded-xl overflow-hidden border border-white/8 cursor-pointer group" onClick={isError ? () => onLaunchReset?.() : handleLaunch}>
+                <div className="relative h-48 overflow-hidden">
+                  <img src={selectedProfile.importBgUrl || getVersionImage(selectedProfile.gameVersion)} alt={selectedProfile.gameVersion} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" draggable={false} onError={e => { e.currentTarget.src = getVersionImage(selectedProfile.gameVersion) }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+                  {/* Play button overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                    <div className={`px-5 py-2.5 rounded-xl flex items-center gap-2.5 transition-all shadow-lg group-hover:scale-105 ${isDownloading ? 'bg-black/60 border border-white/10' : isRunning ? 'bg-green-500/30 border border-green-500/40' : isError ? 'bg-red-500/30 border border-red-500/40' : `${launchColor} shadow-green-500/30`}`}>
+                      {isDownloading ? (
+                        <svg className="animate-spin w-4 h-4 text-white/60" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                      ) : isRunning ? (
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"/>
+                      ) : isError ? (
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-red-400"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white"><path d="M8 5v14l11-7z"/></svg>
+                      )}
+                      <span className="text-sm font-bold text-white">{isDownloading ? `${progress?.percent ?? 0}%` : isRunning ? t('homepage.launch.playing') : isError ? t('homepage.launch.retry') : selectedProfile?.name}</span>
+                    </div>
+                    {/* Progress bar dưới nút play */}
+                    {(isDownloading || isError) && (
+                      <div className="w-48 flex flex-col gap-1">
+                        <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden backdrop-blur-sm">
+                          <div className={`h-full rounded-full transition-all duration-500 ${isError ? 'bg-red-500' : 'bg-green-400'}`} style={{ width: `${isError ? 100 : (progress?.percent ?? 0)}%` }} />
+                        </div>
+                        <div className="flex items-center justify-between px-0.5">
+                          <span className="text-[9px] text-white/40 font-medium">
+                            {progress?.phase === 'java' ? t('homepage.progress.java') : progress?.phase === 'assets' ? t('homepage.progress.assets') : progress?.phase === 'launching' ? t('homepage.progress.launching') : progress?.phase === 'resolve' ? t('homepage.progress.resolve') : t('homepage.progress.preparing')}
+                          </span>
+                          <div className="flex items-center gap-2 text-[9px] text-white/30">
+                            {progress?.speed > 0 && <span>{(progress.speed / 1024 / 1024).toFixed(1)} MB/s</span>}
+                            {progress?.totalFiles > 0 && <span>{progress.doneFiles ?? 0}/{progress.totalFiles}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Info bottom */}
+                  <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-white truncate">{selectedProfile.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] font-mono text-white/70 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded border border-white/10">{selectedProfile.gameVersion}</span>
+                        <span className={`text-[10px] font-bold capitalize ${LOADER_COLORS[selectedProfile.loader] || 'text-green-400'}`}>{selectedProfile.loader}</span>
+                      </div>
+                    </div>
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border backdrop-blur-sm ${LOADER_BG[selectedProfile.loader] || LOADER_BG.vanilla}`}>
+                      <img src={selectedProfile.importIconUrl || LOADER_ICONS[selectedProfile.loader] || vanillaIcon} className="w-3 h-3 object-contain" draggable={false} onError={e => { e.currentTarget.src = vanillaIcon }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <button onClick={() => onNavigate?.('account')} className="text-green-400/70 hover:text-green-400 transition-colors underline underline-offset-2">
-                {t('homepage.play.createaccounttostart')}
+              <button onClick={() => onNavigate?.('play')} className="w-full h-48 flex items-center bg-white/3 border border-dashed border-white/10 rounded-xl px-3 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs justify-center flex-col gap-1.5">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 opacity-40"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span>{t('homepage.profile.createprofile')}</span>
               </button>
             )}
-          </p>
+          </div>
 
-          {}
-          <div className="mt-4">
-            {(isDownloading || isError) ? (
-
-              <div className="flex flex-col gap-2 w-full max-w-lg">
-                {}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white/50 uppercase tracking-widest">
-                    {progress?.phase === 'java' ? t('homepage.progress.java') :
-                      progress?.phase === 'assets' ? t('homepage.progress.assets') :
-                        progress?.phase === 'launching' ? t('homepage.progress.launching') :
-                          progress?.phase === 'resolve' ? t('homepage.progress.resolve') : t('homepage.progress.preparing')}
-                  </span>
-                  <div className="flex items-center gap-3 text-xs text-white/30">
-                    {progress?.speed > 0 && (
-                      <span>{(progress.speed / 1024 / 1024).toFixed(1)} MB/s</span>
-                    )}
-                    {progress?.totalFiles > 0 && (
-                      <span>{progress.doneFiles ?? 0}/{progress.totalFiles} {t('homepage.play.files')}</span>
-                    )}
-                    {progress?.percent > 0 && (
-                      <span className="text-white/50 font-mono font-bold">{progress.percent}%</span>
-                    )}
-                  </div>
-                </div>
-                {}
-                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ease-out ${isError ? 'bg-red-500' : 'bg-green-400'}`}
-                    style={{ width: `${isError ? 100 : (progress?.percent ?? 0)}%` }}
-                  />
-                </div>
-              </div>
-            ) : (
-
-              <div className="flex gap-6">
-                {[
-                  { label: t('homepage.play.hoursplayed'), value: hoursPlayed > 0 ? hoursPlayed.toLocaleString() : '0' },
-                  { label: t('homepage.play.worlds'), value: worldCount.toString() },
-                  { label: t('homepage.play.modactive'), value: modCount.toString() },
-                ].map((stat) => (
-                  <div key={stat.label}>
-                    <div className="text-lg font-bold text-green-400">{stat.value}</div>
-                    <div className="text-xs text-white/30">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
+          {/* Bên phải: Account + Settings */}
+          <div className="w-56 flex-shrink-0 flex flex-col gap-2.5">
+            <AccountDropdown accounts={accounts} selectedAccount={selectedAccount} selectAccount={selectAccount} onNavigate={onNavigate} />
+            {selectedProfile && (
+              <button onClick={() => { setProfileSettingsOpen(v => !v); if (logPanelOpen) setLogPanelOpen(false) }}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${profileSettingsOpen ? 'bg-green-500/15 border-green-500/25 text-green-400' : 'bg-white/3 border-white/8 text-white/40 hover:text-white/70 hover:bg-white/6 hover:border-white/15'}`}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 flex-shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                {profileSettingsOpen ? t('homepage.profile.closesettings') : t('homepage.profile.settings')}
+                <span className="ml-auto text-[10px] text-white/20">{selectedProfile.ramGb ?? 4} GB</span>
+              </button>
             )}
+            {/* Profile selector dropdown */}
+            <div className="relative" ref={profileDropRef}>
+              <button onClick={() => setProfileDropOpen(v => !v)} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-white/30 hover:text-white/60 bg-white/3 border border-white/6 hover:border-white/12 transition-all">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 opacity-50"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                <span className="flex-1 text-left truncate">{t('homepage.profile.label')}</span>
+                <svg viewBox="0 0 24 24" fill="currentColor" className={`w-3 h-3 transition-transform duration-200 ${profileDropOpen ? 'rotate-180' : ''}`}><path d="M7 10l5 5 5-5z"/></svg>
+              </button>
+              {profileDropOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1 max-h-52 overflow-y-auto bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
+                  {profiles.length === 0 ? (
+                    <div className="px-3 py-3 text-[11px] text-white/25 text-center">Chưa có profile</div>
+                  ) : profiles.map(p => (
+                    <button key={p.id} onClick={() => handleSelectProfile(p.id)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-white/5 transition-all ${p.id === selectedProfile?.id ? 'bg-white/5' : ''}`}>
+                      <img src={p.importIconUrl || LOADER_ICONS[p.loader] || vanillaIcon} className="w-5 h-5 object-contain rounded flex-shrink-0" onError={e => { e.currentTarget.src = vanillaIcon }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-white/80 font-semibold truncate">{p.name}</p>
+                        <p className="text-[10px] text-white/30 truncate">{p.gameVersion} · {p.loader}</p>
+                      </div>
+                      {p.id === selectedProfile?.id && (
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400 flex-shrink-0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                      )}
+                    </button>
+                  ))}
+                  <div className="border-t border-white/5">
+                    <button onClick={() => { setProfileDropOpen(false); onNavigate?.('play') }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-white/5 transition-all text-white/30 hover:text-white/60">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                      <span className="text-[11px]">Quản lý profile</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1117,7 +1080,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 <button
                   onClick={() => { setLogPanelOpen(false); setSavedLog(null) }}
                   className="flex-shrink-0 w-7 h-8 flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/5 transition-all mr-1"
-                  title="Đóng log"
+                  title="ÄÃ³ng log"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -1196,304 +1159,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         </div>
 
         {}
-        <div className="w-80 flex-shrink-0 border-l border-white/5 bg-black/20 p-5 pb-8 flex flex-col gap-4">
-
-          {}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-                {t('homepage.profile.label')}
-              </label>
-              {}
-              <div className="relative" ref={logDropdownRef}>
-                <button
-                  onClick={() => setLogDropdownOpen(v => !v)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all
-                    ${logPanelOpen
-                      ? 'bg-green-500/15 border border-green-500/25 text-green-400'
-                      : 'bg-white/5 border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/8'
-                    }`}
-                  title="Xem logs"
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                  </svg>
-                  {t('homepage.instance.logs')}
-                  {instances.length > 0 && (
-                    <span className="w-3.5 h-3.5 rounded-full bg-green-500/30 text-green-400 text-[8px] flex items-center justify-center font-bold">
-                      {instances.length}
-                    </span>
-                  )}
-                </button>
-
-                {}
-                {logDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-52 bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
-                    <div className="px-3 py-2 border-b border-white/5">
-                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t('homepage.instance.instancelogs')}</p>
-                    </div>
-                    {instances.length === 0 && !selectedProfile ? (
-                      <div className="px-3 py-3 text-[11px] text-white/25 text-center">{t('homepage.instance.noinstancedropdown')}</div>
-                    ) : (
-                      <>
-                        {}
-                        {instances.map(inst => (
-                          <button
-                            key={inst.key}
-                            onClick={() => {
-                              setActiveLogTab(inst.key)
-                              setSavedLog(null)
-                              setLogPanelOpen(true)
-                              setLogDropdownOpen(false)
-                              setProfileSettingsOpen(false)
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all
-                              ${activeLogTab === inst.key && logPanelOpen && !savedLog ? 'bg-white/5' : ''}`}
-                          >
-                            {inst.state === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />}
-                            {inst.state === 'downloading' && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse flex-shrink-0" />}
-                            {inst.state === 'stopped' && <span className="w-1.5 h-1.5 rounded-full bg-white/20 flex-shrink-0" />}
-                            {inst.state === 'error' && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs text-white/80 font-semibold truncate">{inst.profileName || 'Profile'}</p>
-                              <p className="text-[10px] text-white/30 truncate">{t('homepage.instance.live')} · @{inst.accountName}</p>
-                            </div>
-                            {activeLogTab === inst.key && logPanelOpen && !savedLog && (
-                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                              </svg>
-                            )}
-                          </button>
-                        ))}
-
-                        {}
-                        {selectedProfile && (
-                          <>
-                            {instances.length > 0 && <div className="border-t border-white/5 my-1" />}
-                            <button
-                              onClick={async () => {
-                                setLogDropdownOpen(false)
-                                setLogPanelOpen(true)
-                                setActiveLogTab(null)
-                                setSavedLog(null)
-                                setSavedLogLoading(true)
-                                setProfileSettingsOpen(false)
-                                try {
-                                  const result = isElectron
-                                    ? await window.electronAPI.getLatestLog({ profileId: selectedProfile.id })
-                                    : null
-                                  setSavedLog(result)
-                                } catch {
-                                  setSavedLog(null)
-                                } finally {
-                                  setSavedLogLoading(false)
-                                }
-                              }}
-                              className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all
-                                ${logPanelOpen && savedLog ? 'bg-white/5' : ''}`}
-                            >
-                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-white/30 flex-shrink-0">
-                                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                              </svg>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs text-white/80 font-semibold truncate">{selectedProfile.name}</p>
-                                <p className="text-[10px] text-white/30">{t('homepage.instance.lastlog')}</p>
-                              </div>
-                              {logPanelOpen && savedLog && (
-                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
-                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                                </svg>
-                              )}
-                            </button>
-                          </>
-                        )}
-                      </>
-                    )}
-                    {}
-                    {logPanelOpen && (
-                      <>
-                        <div className="border-t border-white/5" />
-                        <button
-                          onClick={() => { setLogPanelOpen(false); setSavedLog(null); setLogDropdownOpen(false) }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all text-white/30 hover:text-white/60"
-                        >
-                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-                          </svg>
-                          <span className="text-[11px]">{t('homepage.instance.closelogpanel')}</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-            {selectedProfile ? (
-              <div
-                className="relative rounded-xl overflow-hidden border border-white/8 cursor-pointer group"
-                onClick={() => onNavigate?.('play')}
-              >
-                {}
-                <div className="relative h-20 overflow-hidden">
-                  <img
-                    src={selectedProfile.importBgUrl || getVersionImage(selectedProfile.gameVersion)}
-                    alt={selectedProfile.gameVersion}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    draggable={false}
-                    onError={e => { e.currentTarget.src = getVersionImage(selectedProfile.gameVersion) }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                  {}
-                  <div className="absolute bottom-2 left-2.5 flex items-center gap-1 flex-wrap">
-                    <span className="text-[10px] font-mono text-white/80 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded border border-white/10">
-                      {selectedProfile.gameVersion}
-                    </span>
-                    {}
-                    {selectedProfile.importSource && IMPORT_SOURCE[selectedProfile.importSource] && (() => {
-                      const src = IMPORT_SOURCE[selectedProfile.importSource]
-                      return (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm"
-                          style={{ background: 'rgba(0,0,0,0.50)', border: `1px solid ${src.color}55`, color: src.color }}>
-                          <img src={src.icon} alt={src.label} className="w-2.5 h-2.5 object-contain" />
-                          {src.label}
-                        </span>
-                      )
-                    })()}
-                    {}
-                    {selectedProfile.importSource && (
-                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold backdrop-blur-sm bg-black/50 border border-white/20 text-white/70">
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
-                          <path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.06 15.94 0 13.36 0c-1.46 0-2.75.67-3.6 1.72L9 3 8.24 1.72C7.39.67 6.1 0 4.64 0 2.06 0 0 2.06 0 4.64c0 .48.11.92.18 1.36H0v2h20V6zm-9.5-3.5c.55-.67 1.38-1.1 2.36-1.1 1.58 0 2.64 1.06 2.64 2.64 0 .48-.13.92-.32 1.36H11V3.5l-.5-1zm-5.86 0C5.19 2.5 6.06 2 7 2c.98 0 1.81.43 2.36 1.1L10 4.5H6.68c-.19-.44-.32-.88-.32-1.36 0-.24.04-.47.1-.68l-.82.04zM0 8v14h20V8H0zm9 11H2v-2h7v2zm0-4H2v-2h7v2zm0-4H2v-2h7v2zm9 8h-7v-2h7v2zm0-4h-7v-2h7v2zm0-4h-7v-2h7v2z" />
-                        </svg>
-                        {t('homepage.profile.modpack')}
-                      </span>
-                    )}
-                  </div>
-
-                  {}
-                  <div className={`absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md border backdrop-blur-sm ${LOADER_BG[selectedProfile.loader] || LOADER_BG.vanilla}`}>
-                    <img
-                      src={selectedProfile.importIconUrl || LOADER_ICONS[selectedProfile.loader] || vanillaIcon}
-                      className="w-3 h-3 object-contain"
-                      draggable={false}
-                      onError={e => { e.currentTarget.src = LOADER_ICONS[selectedProfile.loader] || vanillaIcon }}
-                    />
-                    <span className={`text-[9px] font-bold capitalize ${LOADER_COLORS[selectedProfile.loader] || 'text-green-400'}`}>
-                      {selectedProfile.loader}
-                    </span>
-                  </div>
-                </div>
-
-                {}
-                <div className="px-3 py-2.5 bg-white/3">
-                  <p className="text-sm font-bold text-white truncate">{selectedProfile.name}</p>
-                  <p className={`text-[10px] mt-0.5 ${LOADER_COLORS[selectedProfile.loader] || 'text-green-400'}`}>
-                    {selectedProfile.loader.charAt(0).toUpperCase() + selectedProfile.loader.slice(1)}
-                    {selectedProfile.loaderVersion ? ` ${selectedProfile.loaderVersion}` : ''}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => onNavigate?.('play')}
-                className="w-full flex items-center gap-2 bg-white/3 border border-dashed border-white/10 rounded-xl px-3 py-4 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs justify-center flex-col gap-1.5"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 opacity-40">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                </svg>
-                <span>{t('homepage.profile.createprofile')}</span>
-              </button>
-            )}
-          </div>
-
-          {}
-          <div>
-            <label className="text-xs font-semibold text-white/40 uppercase tracking-widest block mb-2">
-              {t('homepage.account.label')}
-            </label>
-            <AccountDropdown
-              accounts={accounts}
-              selectedAccount={selectedAccount}
-              selectAccount={selectAccount}
-              onNavigate={onNavigate}
-            />
-          </div>
-
-          {}
-          {selectedProfile && (
-            <button
-              onClick={() => {
-                setProfileSettingsOpen(v => !v)
-                if (logPanelOpen) setLogPanelOpen(false)
-              }}
-              className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${profileSettingsOpen
-                ? 'bg-green-500/15 border-green-500/25 text-green-400'
-                : 'bg-white/3 border-white/8 text-white/40 hover:text-white/70 hover:bg-white/6 hover:border-white/15'
-                }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 flex-shrink-0">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              {profileSettingsOpen ? t('homepage.profile.closesettings') : t('homepage.profile.settings')}
-              <span className="ml-auto text-[10px] text-white/20">{selectedProfile.ramGb ?? 4} GB RAM</span>
-            </button>
-          )}
-
-          <div className="flex-1" />
-
-          {}
-          <button
-            onClick={isError ? () => onLaunchReset?.() : handleLaunch}
-            disabled={isDownloading || isRunning || !selectedProfile}
-            className={`
-              w-full py-3.5 rounded-xl font-bold text-sm tracking-wide
-              transition-all duration-200 relative overflow-hidden shadow-lg
-              ${isDownloading
-                ? 'bg-white/8 text-white/30 cursor-not-allowed'
-                : isRunning
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30 cursor-not-allowed'
-                  : isError
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 cursor-pointer'
-                    : !selectedProfile
-                      ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/8'
-                      : `${launchColor} text-white active:scale-95`
-              }
-            `}
-          >
-            {isDownloading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                {t('homepage.launch.loading')}
-              </span>
-            ) : isRunning ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                {t('homepage.launch.playing')}
-              </span>
-            ) : isError ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-                </svg>
-                {t('homepage.launch.retry')}
-              </span>
-            ) : !selectedProfile ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z" /></svg>
-                {t('homepage.launch.selectprofile')}
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M8 5v14l11-7z" /></svg>
-                {t('homepage.launch.play')}
-              </span>
-            )}
-          </button>
+        <div className="w-80 flex-shrink-0 border-l border-white/5 bg-black/20 flex flex-col overflow-hidden">
+          <FriendsPanel />
         </div>
       </div>
     </div>

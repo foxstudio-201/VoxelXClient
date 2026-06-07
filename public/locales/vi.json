@@ -925,5 +925,34 @@
     "notFound": "Không tìm thấy",
     "retry": "Thử lại",
     "downloading": "Đang tải..."
+  },
+  "friends": {
+    "title": "Bạn bè",
+    "tabs": {
+      "friends": "Bạn bè",
+      "requests": "Yêu cầu",
+      "blocked": "Chặn"
+    },
+    "search": "Tìm kiếm người chơi...",
+    "searchResults": "Kết quả",
+    "notFound": "Không tìm thấy",
+    "you": "Bạn",
+    "alreadyFriend": "Bạn bè",
+    "sent": "Đã gửi",
+    "addFriend": "Kết bạn",
+    "online": "Online",
+    "offline": "Offline",
+    "playing": "Đang chơi",
+    "noFriends": "Chưa có bạn bè",
+    "noFriendsHint": "Tìm kiếm người chơi để kết bạn",
+    "remove": "Xóa",
+    "cancel": "Hủy",
+    "pending": "Đang chờ",
+    "wantsToBeFriend": "Muốn kết bạn",
+    "noRequests": "Không có yêu cầu nào",
+    "noRequestsHint": "Khi ai đó gửi lời mời kết bạn sẽ hiện ở đây",
+    "blocked": "Chưa chặn ai",
+    "blockedHint": "Người bị chặn sẽ không thể gửi lời mời kết bạn",
+    "loginRequired": "Đăng nhập để xem bạn bè"
   }
 }

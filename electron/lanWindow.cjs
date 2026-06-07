@@ -63,7 +63,7 @@ function openLanWindow(info) {
     title:           'VoxelXLauncher – LAN World Share',
     icon,
     skipTaskbar:     false,
-    alwaysOnTop:     true,  
+    alwaysOnTop:     false,  
     webPreferences: {
       preload:                    path.join(__dirname, 'preload.cjs'),
       contextIsolation:           true,
@@ -88,6 +88,16 @@ function openLanWindow(info) {
     })
   }
 
+  if (_setLanWindowRef) {
+    _setLanWindowRef({
+      send: (event, data) => {
+        if (lanWindow && !lanWindow.isDestroyed()) {
+          lanWindow.webContents.send(event, data)
+        }
+      }
+    })
+  }
+
   if (isDev) {
     lanWindow.loadURL('http://localhost:5173/?window=lan')
   } else {
@@ -98,32 +108,28 @@ function openLanWindow(info) {
     if (!lanWindow.isDestroyed()) {
       lanWindow.webContents.send('lan:windowData', info)
     }
-  })
 
-  setTimeout(() => {
-    if (!lanWindow || lanWindow.isDestroyed()) return
-    lanWindow.webContents.send('lan:windowData', info)
-
+    // Gửi lại trạng thái tunnel hiện tại, retry nhiều lần để đảm bảo React đã mount
     const { getTunnelState } = require('./lanScanner.cjs')
-    const state = getTunnelState()
-    if (state.tunnelStatus && state.tunnelStatus !== 'idle') {
-      lanWindow.webContents.send('lan:tunnelStatus', {
-        status: state.tunnelStatus,
-        addr:   state.tunnelAddr,
-        log:    null,
+    let retries = 0
+    const iv = setInterval(() => {
+      retries++
+      if (!lanWindow || lanWindow.isDestroyed()) { clearInterval(iv); return }
+      const state = getTunnelState()
+      lanWindow.webContents.send('lan:windowData', {
+        ...info,
+        tunnelAddr: state.tunnelAddr || info.tunnelAddr || null,
       })
-    }
-  }, 600)
-
-  if (_setLanWindowRef) {
-    _setLanWindowRef({
-      send: (event, data) => {
-        if (lanWindow && !lanWindow.isDestroyed()) {
-          lanWindow.webContents.send(event, data)
-        }
+      if (state.tunnelStatus && state.tunnelStatus !== 'idle') {
+        lanWindow.webContents.send('lan:tunnelStatus', {
+          status: state.tunnelStatus,
+          addr:   state.tunnelAddr,
+          log:    null,
+        })
       }
-    })
-  }
+      if (retries >= 5) clearInterval(iv)
+    }, 300)
+  })
 
   lanWindow.on('closed', () => {
     if (_setLanWindowRef) _setLanWindowRef(null)

@@ -25,10 +25,21 @@ cd /d "%~dp0"
 echo [OK] Thu muc: %CD%
 echo.
 
-:: Code signing with self-signed certificate
+:: Set Python path for node-gyp
+set PYTHON=%LOCALAPPDATA%\Programs\Python\Python311\python.exe
+if not exist "%PYTHON%" (
+    set PYTHON=%LOCALAPPDATA%\Programs\Python\Python312\python.exe
+)
+if not exist "%PYTHON%" (
+    set PYTHON=%LOCALAPPDATA%\Programs\Python\Python313\python.exe
+)
+echo [OK] Python: %PYTHON%
+echo.
+
+:: Skip code signing for local builds
 set CSC_IDENTITY_AUTO_DISCOVERY=false
-set CSC_LINK=%~dp0certs\code-signing.pfx
-set CSC_KEY_PASSWORD=VoxelXLauncher2024
+set CSC_LINK=
+set CSC_KEY_PASSWORD=
 
 echo [1/2] Building Vite...
 call npm run build

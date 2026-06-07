@@ -975,7 +975,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       const result = await new Promise((resolve, reject) => {
         const req = https.request({
-          hostname: 'voxelxclient.vercel.app',
+          hostname: 'voxelx.io.vn',
           path: '/api/upload-skin',
           method: 'POST',
           headers: {

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
@@ -201,10 +201,10 @@ export default function AccountPage() {
 
         // Nếu chưa có webSkinUrl, thử fetch từ web API theo UUID
         let fetchedWebSkin = webSkin
-        if (!fetchedWebSkin && selected.uuid) {
+        if (!fetchedWebSkin && selected.uuid && isElectron) {
           try {
             const res = await fetch(
-              `https://voxelxclient.vercel.app/api/auth?action=lookup-by-uuid&uuid=${encodeURIComponent(selected.uuid)}`,
+              `https://www.voxelx.io.vn/api/auth?action=lookup-by-uuid&uuid=${encodeURIComponent(selected.uuid)}`,
               { signal: AbortSignal.timeout(5000) }
             )
             if (res.ok) {
@@ -644,4 +644,5 @@ export default function AccountPage() {
     </div>
   )
 }
+
 

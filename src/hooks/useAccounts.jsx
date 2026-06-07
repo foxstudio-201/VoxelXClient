@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VoxelXLauncher — Minecraft Launcher
  * Created by FoxStudio. AI-assisted development.
  *
@@ -34,7 +34,7 @@ import { offlineUUID } from '../utils/offlineUUID'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-const WEB_API = 'https://voxelxclient.vercel.app/api/auth'
+const WEB_API = 'https://www.voxelx.io.vn/api/auth'
 
 // ── Đồng bộ tài khoản với web API ────────────────────────────────────────────
 // Trả về { uuid, skinUrl, skinType, capeUrl, conflict }
@@ -244,4 +244,5 @@ export function useAccounts() {
   if (!ctx) throw new Error('useAccounts must be used inside AccountsProvider')
   return ctx
 }
+
 
