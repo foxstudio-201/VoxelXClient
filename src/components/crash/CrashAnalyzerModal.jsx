@@ -25,17 +25,26 @@ export function parseFabricCrashLogs(logs) {
   for (const line of logs) {
     const trimmed = line.trim()
 
+    // ── Pattern 1: "- Install <modId>, version X or later."
+    // ── Pattern 1b: "- Install <modId>, any version between X and Y."
     const installMatch = trimmed.match(
-      /^[-*]\s+Install\s+([\w\-]+),\s+version\s+([\w.+\-]+(?:\s+or\s+later)?)/i
+      /^[-*]\s+Install\s+([\w\-]+),\s+(.+?)\.?\s*$/i
     )
     if (installMatch) {
-      const [, modId, version] = installMatch
+      const [, modId, versionDesc] = installMatch
       const key = modId.trim().toLowerCase()
       if (!missing.has(key))
-        missing.set(key, { modId: key, displayName: modId.trim(), requiredVersion: version.trim(), requiredBy: [], action: 'install' })
+        missing.set(key, {
+          modId: key,
+          displayName: modId.trim(),
+          requiredVersion: versionDesc.trim(),
+          requiredBy: [],
+          action: 'install',
+        })
       continue
     }
 
+    // ── Pattern 2: "- Replace mod 'Name' (modId) X.Y.Z with any version..."
     const replaceMatch = trimmed.match(
       /^[-*]\s+Replace\s+mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)\s+([\w.+\-]+)\s+with/i
     )
@@ -43,42 +52,110 @@ export function parseFabricCrashLogs(logs) {
       const [, displayName, modId, currentVersion] = replaceMatch
       const key = modId.trim().toLowerCase()
       if (!missing.has(key))
-        missing.set(key, { modId: key, displayName: displayName.trim(), currentVersion: currentVersion.trim(), requiredVersion: null, requiredBy: [], action: 'update' })
+        missing.set(key, {
+          modId: key,
+          displayName: displayName.trim(),
+          currentVersion: currentVersion.trim(),
+          requiredVersion: null,
+          requiredBy: [],
+          action: 'update',
+        })
       continue
     }
 
+    // ── Pattern 3: "- Mod 'Name' (modId) X requires ... of targetMod, which is missing!"
+    // Bắt cả "any version between X and Y" và "version X or later"
     const reqMissingMatch = trimmed.match(
-      /^[-*]?\s*Mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)[^r]*requires\s+version\s+([\w.+\-]+(?:\s+or\s+later)?)\s+of\s+([\w\-]+),\s+which\s+is\s+missing/i
+      /^[-*]?\s*Mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)[^r]*requires\s+(?:version\s+)?([\w.+\-\[\],\s()]+?)\s+of\s+['"]?([\w\-\s]+?)['"]?,?\s+which\s+is\s+missing/i
     )
     if (reqMissingMatch) {
       const [, requiredByDisplay, , requiredVersion, targetModId] = reqMissingMatch
-      const key = targetModId.trim().toLowerCase()
+      const key = targetModId.trim().toLowerCase().replace(/\s+/g, '-')
+
+      // Bỏ qua java — không phải mod cài được từ Modrinth
+      if (key === 'java' || key === 'openjdk' || /java/i.test(key)) {
+        // Vẫn ghi nhận nhưng mark là java issue
+        if (!missing.has('__java_version__'))
+          missing.set('__java_version__', {
+            modId: '__java_version__',
+            displayName: 'Java Runtime',
+            requiredVersion: requiredVersion.trim(),
+            requiredBy: [requiredByDisplay.trim()],
+            action: 'java',
+            isJava: true,
+          })
+        else
+          missing.get('__java_version__').requiredBy.push(requiredByDisplay.trim())
+        continue
+      }
+
       if (!missing.has(key))
-        missing.set(key, { modId: key, displayName: key, requiredVersion: requiredVersion.trim(), requiredBy: [], action: 'install' })
+        missing.set(key, {
+          modId: key,
+          displayName: targetModId.trim(),
+          requiredVersion: requiredVersion.trim(),
+          requiredBy: [],
+          action: 'install',
+        })
       missing.get(key).requiredBy.push(requiredByDisplay.trim())
       continue
     }
 
+    // ── Pattern 4: "requires version X or later of modId" (inline)
     const reqOfMatch = trimmed.match(
-      /requires\s+version\s+([\w.+\-]+)\s+or\s+later\s+of\s+([\w\-]+)/i
+      /requires\s+version\s+([\w.+\-]+)\s+or\s+later\s+of\s+['"]?([\w\-]+)['"]?/i
     )
     if (reqOfMatch) {
       const [, version, modId] = reqOfMatch
       const key = modId.trim().toLowerCase()
+      if (key === 'java' || /openjdk|jdk/i.test(key)) continue // skip java
       if (!missing.has(key))
-        missing.set(key, { modId: key, displayName: modId.trim(), requiredVersion: version.trim(), requiredBy: [], action: 'install' })
+        missing.set(key, {
+          modId: key,
+          displayName: modId.trim(),
+          requiredVersion: version.trim() + ' or later',
+          requiredBy: [],
+          action: 'install',
+        })
       continue
     }
 
+    // ── Pattern 5: "Mod 'Name' (modId) requires version X+ of targetMod (currently ...)"
     const reqCurrentMatch = trimmed.match(
-      /Mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)\s+requires\s+version\s+([\w.+\-]+)\+?\s+of\s+([\w\-]+)\s+\(currently/i
+      /Mod\s+['"]?([^'"(]+)['"]?\s*\(([^)]+)\)\s+requires\s+version\s+([\w.+\-]+)\+?\s+of\s+['"]?([\w\-]+)['"]?\s+\(currently/i
     )
     if (reqCurrentMatch) {
       const [, requiredByDisplay, , requiredVersion, targetModId] = reqCurrentMatch
       const key = targetModId.trim().toLowerCase()
+      if (key === 'java' || /openjdk|jdk/i.test(key)) continue
       if (!missing.has(key))
-        missing.set(key, { modId: key, displayName: key, requiredVersion: requiredVersion.trim(), requiredBy: [], action: 'update' })
+        missing.set(key, {
+          modId: key,
+          displayName: targetModId.trim(),
+          requiredVersion: requiredVersion.trim(),
+          requiredBy: [],
+          action: 'update',
+        })
       missing.get(key).requiredBy.push(requiredByDisplay.trim())
+    }
+
+    // ── Pattern 6: Fabric reason line "HARD_DEP_NO_CANDIDATE modId X.Y.Z {depends targetMod @ [>=A <B]}"
+    const hardDepMatch = trimmed.match(
+      /HARD_DEP(?:_NO_CANDIDATE)?\s+([\w\-]+)\s+[\w.+\-]+\s+\{depends\s+([\w\-]+)\s+@\s+\[([^\]]+)\]/i
+    )
+    if (hardDepMatch) {
+      const [, requiredBy, targetModId, versionRange] = hardDepMatch
+      const key = targetModId.trim().toLowerCase()
+      if (key === 'java' || /openjdk|jdk/i.test(key)) continue
+      if (!missing.has(key))
+        missing.set(key, {
+          modId: key,
+          displayName: targetModId.trim(),
+          requiredVersion: versionRange.trim(),
+          requiredBy: [],
+          action: 'install',
+        })
+      missing.get(key).requiredBy.push(requiredBy.trim())
     }
   }
 
@@ -257,6 +334,40 @@ function versionOptionLabel(v, gameVersion, loader) {
 
 function ModFixItem({ missingMod, gameVersion, loader, instancePath, accountId, onFixed }) {
   const { t } = useLang()
+
+  // Java version issue — không tải được từ Modrinth, chỉ hiện thông báo
+  if (missingMod.isJava) {
+    return (
+      <div className="rounded-xl border border-orange-500/25 bg-orange-500/6 p-3.5">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-orange-500/15 border border-orange-500/20 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-orange-400">
+              <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-bold text-orange-300">Java Runtime cần nâng cấp</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/20">java</span>
+            </div>
+            <p className="text-xs text-yellow-400/70 mt-0.5">
+              Yêu cầu: <span className="font-mono">{missingMod.requiredVersion}</span>
+            </p>
+            {missingMod.requiredBy?.length > 0 && (
+              <p className="text-[10px] text-white/30 mt-0.5">
+                Cần bởi: {missingMod.requiredBy.join(', ')}
+              </p>
+            )}
+            <p className="text-xs text-white/45 mt-1.5 leading-relaxed">
+              Vào <span className="text-white/70">Profile Settings → General → Java Runtime</span> để chọn Java phiên bản cao hơn, hoặc xóa mod yêu cầu Java version quá cao.
+            </p>
+          </div>
+          <span className="flex-shrink-0 text-xs text-orange-400/50 font-semibold">Thủ công</span>
+        </div>
+      </div>
+    )
+  }
+
   const [state, setState]             = useState('idle')
   const [project, setProject]         = useState(null)
   const [versions, setVersions]       = useState([])
@@ -695,24 +806,25 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
   const [activeTab, setActiveTab] = useState('summary')
   const [fixedMods, setFixedMods] = useState(new Set())
 
+  // Tất cả hooks phải đặt TRƯỚC mọi early return
+  const logs = crashData?.logs || []
+  const relevantLines = useMemo(() => getRelevantLogLines(logs), [logs])
+
   useEffect(() => {
     if (crashData) setActiveTab('summary')
   }, [crashData])
 
   if (!crashData) return null
 
-  const { logs, profileId, accountId, instancePath, gameVersion, loader, profileName, exitCode } = crashData
+  const { profileId, accountId, instancePath, gameVersion, loader, profileName, exitCode } = crashData
 
   const crashType  = analyzeCrash(logs, loader, exitCode)
   const isFabric   = crashType === 'fabric_incompatible'
   const fabricInfo = isFabric ? parseFabricFormattedException(logs) : null
   const missingMods = isFabric ? parseFabricCrashLogs(logs) : []
   const rootCause   = extractRootCause(logs)
-  const relevantLines = useMemo(() => getRelevantLogLines(logs), [logs])
 
   const allFixed = missingMods.length > 0 && fixedMods.size >= missingMods.length
-
-  const hasFix = missingMods.length > 0 || crashType === 'out_of_memory'
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
