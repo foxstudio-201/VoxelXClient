@@ -176,7 +176,47 @@ async function ensureWgBinaries(logFn) {
     throw new Error('wg.exe không tồn tại. Có thể bị Windows Defender xóa. Thêm exclusion cho: ' + WG_DIR)
 }
 
-// ── Key generation ────────────────────────────────────────────────────────────
+// ── Public IP detection ───────────────────────────────────────────────────────
+// Dùng nhiều STUN-like endpoint để detect public IP, không cần STUN library
+async function detectPublicIp() {
+  const https = require('https')
+  const endpoints = [
+    'https://api.ipify.org',
+    'https://api4.my-ip.io/ip',
+    'https://ipv4.icanhazip.com',
+  ]
+  for (const url of endpoints) {
+    try {
+      const ip = await new Promise((resolve, reject) => {
+        const u = new URL(url)
+        const req = https.get({ hostname: u.hostname, path: u.pathname, timeout: 4000,
+          headers: { 'User-Agent': 'VoxelXLauncher/1.0' }
+        }, res => {
+          let d = ''; res.on('data', c => { d += c })
+          res.on('end', () => resolve(d.trim()))
+        })
+        req.on('error', reject)
+        req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+      })
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return ip
+    } catch {}
+  }
+  return null
+}
+
+function buildEndpoint(publicIp, virtualIp) {
+  if (!publicIp) return null
+  // Dùng port tương ứng với virtualIp
+  const listenPort = WG_PORT + (Math.abs(hashStr(virtualIp || '10.77.0.1')) % 100)
+  return `${publicIp}:${listenPort}`
+}
+
+// IP ảo theo index (mirror server)
+function peerIp(index) {
+  return `10.77.0.${index + 1}`
+}
+
+
 function generatePrivateKey() {
   const key = crypto.randomBytes(32)
   key[0]  &= 248; key[31] &= 127; key[31] |= 64
@@ -197,13 +237,21 @@ function derivePublicKey(privB64) {
 
 // ── WireGuard config ──────────────────────────────────────────────────────────
 function buildWgConf(virtualIp, privateKey, peers) {
-  let conf = `[Interface]\nPrivateKey = ${privateKey}\nAddress = ${virtualIp}/24\nListenPort = ${WG_PORT}\n\n`
+  // Dùng port ngẫu nhiên trong range 51820-51920 để tránh conflict
+  const listenPort = WG_PORT + (Math.abs(hashStr(virtualIp)) % 100)
+  let conf = `[Interface]\nPrivateKey = ${privateKey}\nAddress = ${virtualIp}/24\nListenPort = ${listenPort}\n\n`
   for (const p of peers) {
-    conf += `[Peer]\nPublicKey = ${p.publicKey}\nAllowedIPs = ${p.virtualIp}/32\nPersistentKeepalive = 25\n`
+    conf += `[Peer]\nPublicKey = ${p.publicKey}\nAllowedIPs = ${p.virtualIp}/32\nPersistentKeepalive = 15\n`
     if (p.endpoint) conf += `Endpoint = ${p.endpoint}\n`
     conf += '\n'
   }
   return conf
+}
+
+function hashStr(s) {
+  let h = 0
+  for (let i = 0; i < s.length; i++) { h = (Math.imul(31, h) + s.charCodeAt(i)) | 0 }
+  return h
 }
 
 async function applyWgConfig(virtualIp, privateKey, peers) {
@@ -211,27 +259,75 @@ async function applyWgConfig(virtualIp, privateKey, peers) {
   fs.writeFileSync(WG_CONF, buildWgConf(virtualIp, privateKey, peers), { mode: 0o600 })
 
   if (process.platform === 'win32') {
-    // Gỡ tunnel cũ nếu có
+    // wintun.dll PHẢI nằm cùng thư mục với wireguard.exe để được load tự động
+    // Không dùng WINTUN_DLL env var vì wireguard.exe không đọc nó
+    if (fs.existsSync(WINTUN) && !fs.existsSync(path.join(WG_DIR, 'wintun.dll'))) {
+      try { fs.copyFileSync(WINTUN, path.join(WG_DIR, 'wintun.dll')) } catch {}
+    }
+
+    // Gỡ tunnel cũ nếu có, bỏ qua lỗi
     try {
       spawnSync(WG_EXE, ['/uninstalltunnelservice', 'voxelx-lan'], {
-        windowsHide: true, timeout: 5000,
+        windowsHide: true, timeout: 8000,
         env: { ...process.env, PATH: WG_DIR + ';' + (process.env.PATH || '') },
       })
-      await new Promise(r => setTimeout(r, 800))
+      await new Promise(r => setTimeout(r, 1200))
     } catch {}
 
     const r = spawnSync(WG_EXE, ['/installtunnelservice', WG_CONF], {
-      windowsHide: true, timeout: 15000,
-      env: { ...process.env, PATH: WG_DIR + ';' + (process.env.PATH || ''), WINTUN_DLL: WINTUN },
+      windowsHide: true, timeout: 20000,
+      stdio: 'pipe',
+      env: { ...process.env, PATH: WG_DIR + ';' + (process.env.PATH || '') },
     })
-    if (r.status !== 0)
-      throw new Error('WireGuard tunnel lỗi: ' + (r.stderr?.toString() || r.status))
+
+    if (r.status !== 0) {
+      // Lấy thông tin lỗi đầy đủ: stderr + stdout + event log
+      const stderr = r.stderr?.toString()?.trim() || ''
+      const stdout = r.stdout?.toString()?.trim() || ''
+      const combined = [stderr, stdout].filter(Boolean).join(' | ')
+
+      // Thử đọc lỗi từ Windows Event Log
+      let eventMsg = ''
+      try {
+        const evtResult = spawnSync('powershell', [
+          '-NoProfile', '-Command',
+          `Get-EventLog -LogName System -Source WireGuard -Newest 3 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Message`
+        ], { windowsHide: true, timeout: 5000, encoding: 'utf8' })
+        eventMsg = evtResult.stdout?.trim() || ''
+      } catch {}
+
+      let errMsg = `WireGuard tunnel lỗi (exit ${r.status})`
+      if (combined) errMsg += `: ${combined}`
+      if (eventMsg) errMsg += `\nEvent Log: ${eventMsg.slice(0, 300)}`
+
+      // Gợi ý cụ thể theo từng loại lỗi
+      if (/GetTokenInformation|token/i.test(combined + eventMsg)) {
+        errMsg += '\n\n→ Lỗi quyền token. Thử: chạy app với quyền Admin đầy đủ, tắt Hyper-V hoặc WSL2 nếu đang bật.'
+      } else if (/wintun|driver/i.test(combined + eventMsg)) {
+        errMsg += '\n\n→ Lỗi Wintun driver. Windows Defender có thể đã chặn wintun.dll. Thêm exclusion cho: ' + WG_DIR
+      } else if (/access.*denied|0x5\b/i.test(combined + eventMsg)) {
+        errMsg += '\n\n→ Access denied. Cần chạy với quyền Administrator.'
+      }
+
+      throw new Error(errMsg)
+    }
   } else {
-    try { spawnSync('wg-quick', ['down', WG_CONF], { timeout: 5000 }) } catch {}
+    try { spawnSync('wg-quick', ['down', WG_CONF], { timeout: 5000, stdio: 'pipe' }) } catch {}
     const r = spawnSync('wg-quick', ['up', WG_CONF], { timeout: 15000, stdio: 'pipe' })
-    if (r.status !== 0) throw new Error('wg-quick lỗi: ' + (r.stderr?.toString() || ''))
+    if (r.status !== 0) {
+      const msg = (r.stderr?.toString() || r.stdout?.toString() || '').trim()
+      throw new Error('wg-quick lỗi: ' + (msg || r.status))
+    }
   }
   log('WireGuard tunnel đã khởi động')
+
+  // Sau khi tunnel up, report endpoint thực tế lên server
+  if (_state.peerToken && _state.endpoint) {
+    try {
+      await apiPost('update-endpoint', { token: _state.peerToken, endpoint: _state.endpoint })
+      log(`Đã report endpoint: ${_state.endpoint}`)
+    } catch {}
+  }
 }
 
 async function stopWg() {
@@ -325,15 +421,23 @@ function startPingLoop() {
   stopPingLoop()
   _state.pingTimer = setInterval(async () => {
     if (!_state.peerToken) return
-    try { await apiPost('ping', { token: _state.peerToken }) } catch {}
+    try {
+      // Gửi ping kèm endpoint để server biết IP mới nhất (NAT có thể đổi)
+      await apiPost('ping', { token: _state.peerToken, endpoint: _state.endpoint || null })
+    } catch {}
     try {
       const r = await apiGet('peers', { roomCode: _state.roomCode, token: _state.peerToken })
-      if (r.ok && JSON.stringify(r.peers) !== JSON.stringify(_state.peers)) {
+      if (!r.ok) return
+
+      const peersChanged = JSON.stringify(r.peers) !== JSON.stringify(_state.peers)
+      if (peersChanged) {
         _state.peers = r.peers
         emit('vxlan:peers', { peers: r.peers })
+        // Cập nhật WireGuard config với endpoint mới nhất của từng peer
         await applyWgConfig(_state.virtualIp, _state.privateKey, r.peers).catch(e =>
           log(`Cập nhật WireGuard lỗi: ${e.message}`)
         )
+        log(`Cập nhật peers: ${r.peers.length} người`)
       }
     } catch {}
   }, PING_INTERVAL_MS)
@@ -352,14 +456,26 @@ async function createRoom({ nickname }) {
   log('Đang tạo keypair...')
   const publicKey = derivePublicKey(privateKey)
 
+  log('Đang lấy public IP...')
+  const publicIp = await detectPublicIp().catch(() => null)
+  if (publicIp) log(`Public IP: ${publicIp}`)
+  else log('Không lấy được public IP, peer sẽ dùng direct connect')
+
   log('Đang tạo phòng...')
-  const r = await apiPost('create', { publicKey, nickname: nickname || 'Host' })
+  const r = await apiPost('create', {
+    publicKey, nickname: nickname || 'Host',
+    endpoint: publicIp ? `${publicIp}:${WG_PORT}` : null,
+  })
   if (!r.ok) throw new Error(r.error || 'Không thể tạo phòng')
+
+  // Tính endpoint chính xác với virtualIp đã biết
+  const endpoint = buildEndpoint(publicIp, r.virtualIp)
+  if (endpoint) log(`Endpoint: ${endpoint}`)
 
   Object.assign(_state, {
     active: true, role: 'host',
     roomCode: r.roomCode, hostToken: r.hostToken, peerToken: r.peerToken,
-    virtualIp: r.virtualIp, privateKey, publicKey, peers: [],
+    virtualIp: r.virtualIp, privateKey, publicKey, endpoint, peers: [],
   })
 
   log('Đang khởi động WireGuard tunnel...')
@@ -379,24 +495,54 @@ async function joinRoom({ roomCode, nickname }) {
   log('Đang tạo keypair...')
   const publicKey = derivePublicKey(privateKey)
 
+  log('Đang lấy public IP...')
+  const publicIp = await detectPublicIp().catch(() => null)
+  // endpoint sẽ được tính sau khi biết virtualIp từ server
+  const tempEndpoint = publicIp ? `${publicIp}:${WG_PORT}` : null
+  if (tempEndpoint) log(`Public IP: ${publicIp}`)
+  else log('Không lấy được public IP')
+
   log(`Đang kết nối phòng ${roomCode}...`)
   const r = await apiPost('join', {
     roomCode: roomCode.toUpperCase(), publicKey, nickname: nickname || 'Player',
+    endpoint: tempEndpoint,
   })
   if (!r.ok) throw new Error(r.error || 'Không thể join phòng')
+
+  // Tính endpoint chính xác với virtualIp đã được cấp
+  const endpoint = buildEndpoint(publicIp, r.virtualIp)
 
   Object.assign(_state, {
     active: true, role: 'peer',
     roomCode: roomCode.toUpperCase(), peerToken: r.peerToken,
-    virtualIp: r.virtualIp, privateKey, publicKey, peers: r.peers || [],
+    virtualIp: r.virtualIp, privateKey, publicKey, endpoint, peers: r.peers || [],
   })
 
   log('Đang khởi động WireGuard tunnel...')
   await applyWgConfig(r.virtualIp, privateKey, r.peers || [])
-  startPingLoop()
 
+  // Poll nhanh 3 lần sau khi join để bắt endpoint mới nhất của host
+  // (host có thể chưa report endpoint kịp trong lần join đầu)
+  for (let i = 0; i < 3; i++) {
+    await new Promise(res => setTimeout(res, 2000))
+    try {
+      const poll = await apiGet('peers', { roomCode: roomCode.toUpperCase(), token: r.peerToken })
+      if (poll.ok && poll.peers?.length > 0) {
+        const hasEndpoints = poll.peers.some(p => p.endpoint)
+        if (hasEndpoints) {
+          log('Đã nhận endpoint từ host, cập nhật tunnel...')
+          _state.peers = poll.peers
+          await applyWgConfig(r.virtualIp, privateKey, poll.peers).catch(() => {})
+          emit('vxlan:peers', { peers: poll.peers })
+          break
+        }
+      }
+    } catch {}
+  }
+
+  startPingLoop()
   log(`Đã vào phòng | IP: ${r.virtualIp}`)
-  emit('vxlan:joined', { roomCode: roomCode.toUpperCase(), virtualIp: r.virtualIp, peers: r.peers })
+  emit('vxlan:joined', { roomCode: roomCode.toUpperCase(), virtualIp: r.virtualIp, peers: _state.peers })
   return r
 }
 
