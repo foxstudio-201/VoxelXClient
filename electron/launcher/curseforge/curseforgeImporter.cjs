@@ -112,8 +112,9 @@ function iterZipEntries(buf, cb) {
 function httpsGetJson(url, headers = {}) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http
-    client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0', ...headers } }, (res) => {
+    const req = client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0', ...headers }, timeout: 15000 }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        res.resume()
         return httpsGetJson(res.headers.location, headers).then(resolve).catch(reject)
       }
       let data = ''
@@ -122,38 +123,54 @@ function httpsGetJson(url, headers = {}) {
         if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}: ${url}`))
         try { resolve(JSON.parse(data)) } catch { reject(new Error('Invalid JSON')) }
       })
-    }).on('error', reject)
+      res.on('error', reject)
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error(`Request timed out: ${url}`)) })
   })
 }
 
 function downloadFile(url, destPath, headers = {}) {
   return new Promise((resolve, reject) => {
-    const client  = url.startsWith('https') ? https : http
     const dir     = path.dirname(destPath)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     const tmpPath = destPath + '.tmp'
 
-    const req = client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0', ...headers } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return downloadFile(res.headers.location, destPath, headers).then(resolve).catch(reject)
-      }
-      if (res.statusCode !== 200) {
-        res.resume()
-        return reject(new Error(`HTTP ${res.statusCode}: ${url}`))
-      }
-      const out = fs.createWriteStream(tmpPath)
-      res.pipe(out)
-      out.on('finish', () => {
-        try { fs.renameSync(tmpPath, destPath) } catch {
-          fs.copyFileSync(tmpPath, destPath)
-          try { fs.unlinkSync(tmpPath) } catch {}
+    let settled = false
+    function done(err) {
+      if (settled) return
+      settled = true
+      if (err) reject(err); else resolve()
+    }
+
+    const MAX_REDIRECTS = 10
+    function doGet(reqUrl, redirectCount) {
+      if (redirectCount > MAX_REDIRECTS) return done(new Error('Too many redirects'))
+      const client = reqUrl.startsWith('https') ? https : http
+      client.get(reqUrl, { headers: { 'User-Agent': 'VoxelXLauncher/1.0', ...headers } }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume()
+          return doGet(res.headers.location, redirectCount + 1)
         }
-        resolve()
-      })
-      out.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {}; reject(err) })
-      res.on('error',  err => { try { fs.unlinkSync(tmpPath) } catch {}; reject(err) })
-    })
-    req.on('error', reject)
+        if (res.statusCode !== 200) {
+          res.resume()
+          return done(new Error(`HTTP ${res.statusCode}: ${reqUrl}`))
+        }
+        // Chỉ tạo file sau khi đã resolve hết redirect
+        const out = fs.createWriteStream(tmpPath)
+        res.pipe(out)
+        out.on('finish', () => {
+          try { fs.renameSync(tmpPath, destPath) } catch {
+            try { fs.copyFileSync(tmpPath, destPath) } catch {}
+            try { fs.unlinkSync(tmpPath) } catch {}
+          }
+          done()
+        })
+        out.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {}; done(err) })
+        res.on('error',  err => { try { fs.unlinkSync(tmpPath) } catch {}; done(err) })
+      }).on('error', err => done(err))
+    }
+    doGet(url, 0)
   })
 }
 

@@ -325,33 +325,35 @@ function getProfileJreInfo(instancePath) {
   return { javaExe, jreDir, ...meta }
 }
 
-function getAllInstalledJavas(instancePath) {
-  const jreBaseDir = path.join(instancePath, 'jre')
-  if (!fs.existsSync(jreBaseDir)) return []
+function getAllInstalledJavas(baseDir) {
+  // baseDir có thể là global runtimes dir hoặc per-profile jre dir
+  if (!fs.existsSync(baseDir)) return []
 
   const results = []
 
-  const metaPath = path.join(jreBaseDir, '.vxc-java-meta.json')
-  const javaExe  = getJavaExe(jreBaseDir)
-  if (fs.existsSync(javaExe)) {
-    let meta = {}
-    try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) } catch {}
-    results.push({ javaExe, jreDir: jreBaseDir, ...meta })
-  }
-
+  // Quét tất cả subfolder — mỗi subfolder là 1 java installation (vd: adoptium-21, graalvm-25)
   try {
-    const entries = fs.readdirSync(jreBaseDir, { withFileTypes: true })
+    const entries = fs.readdirSync(baseDir, { withFileTypes: true })
     for (const entry of entries) {
       if (!entry.isDirectory()) continue
-      const subDir  = path.join(jreBaseDir, entry.name)
-      const subExe  = getJavaExe(subDir)
+      const subDir = path.join(baseDir, entry.name)
+      const subExe = getJavaExe(subDir)
       if (!fs.existsSync(subExe)) continue
-      const subMeta = path.join(subDir, '.vxc-java-meta.json')
+      const metaPath = path.join(subDir, '.vxc-java-meta.json')
       let meta = {}
-      try { meta = JSON.parse(fs.readFileSync(subMeta, 'utf-8')) } catch {}
-      results.push({ javaExe: subExe, jreDir: subDir, ...meta })
+      try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) } catch {}
+      results.push({ javaExe: subExe, jreDir: subDir, folderName: entry.name, ...meta })
     }
   } catch {}
+
+  // Cũng check chính baseDir (trường hợp java được extract thẳng vào baseDir)
+  const baseExe = getJavaExe(baseDir)
+  if (fs.existsSync(baseExe)) {
+    const metaPath = path.join(baseDir, '.vxc-java-meta.json')
+    let meta = {}
+    try { meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) } catch {}
+    results.push({ javaExe: baseExe, jreDir: baseDir, folderName: path.basename(baseDir), ...meta })
+  }
 
   return results
 }

@@ -844,8 +844,8 @@
       "saving": "Saving...",
       "saved": "Saved!",
       "save": "Save changes",
-      "autoPerformanceMods": "Auto-download performance mods (Fabric)",
-      "autoPerformanceModsDesc": "Automatically download Sodium, Lithium, FerriteCore and other performance mods on first launch. Fabric API and Mod Menu are always installed.",
+      "autoPerformanceMods": "Auto-install mods (Fabric API, VoxelXSkins...)",
+      "autoPerformanceModsDesc": "When enabled: auto-downloads Fabric API, Mod Menu, VoxelXSkins and performance mods on launch. When disabled: runs pure Fabric with no mods installed.",
       "autoPerformanceModsOn": "Enabled",
       "autoPerformanceModsOff": "Disabled"
     },

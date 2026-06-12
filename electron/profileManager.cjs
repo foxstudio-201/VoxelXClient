@@ -591,7 +591,10 @@ function registerProfileContentHandlers(getTrustedWindow) {
 
 function registerJavaDistroHandlers(getTrustedWindow) {
   const { fetchAllDistros, installDistro, deleteDistro, getProfileJreInfo, getAllInstalledJavas, isDistroInstalled, getJavaExe } = require('./launcher/java/javaDistros.cjs')
-  
+
+  // Global shared runtimes dir — tất cả profiles dùng chung
+  const GLOBAL_RUNTIMES_DIR = path.join(DATA_DIR, 'runtimes')
+
   ipcMain.handle('java:fetchDistros', async (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     const distros = await fetchAllDistros()
@@ -600,21 +603,14 @@ function registerJavaDistroHandlers(getTrustedWindow) {
 
   ipcMain.handle('java:getInstalled', (e, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    const data = readProfiles()
-    const profile = data.profiles.find(p => p.id === profileId)
-    if (!profile) return { error: 'Profile not found' }
-    const list = getAllInstalledJavas(profile.instancePath)
+    const list = getAllInstalledJavas(GLOBAL_RUNTIMES_DIR)
     return { ok: true, installed: list }
   })
 
   ipcMain.handle('java:install', async (e, pkg, profileId) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    const data = readProfiles()
-    const profile = data.profiles.find(p => p.id === profileId)
-    if (!profile) return { error: 'Profile not found' }
-    const jreBaseDir = path.join(profile.instancePath, 'jre')
     const win = getTrustedWindow(e)
-    const javaExe = await installDistro(pkg, jreBaseDir, (progress) => {
+    const javaExe = await installDistro(pkg, GLOBAL_RUNTIMES_DIR, (progress) => {
       if (win && !win.isDestroyed()) win.webContents.send('java:installProgress', progress)
     })
     return { ok: true, javaExe }
@@ -622,9 +618,10 @@ function registerJavaDistroHandlers(getTrustedWindow) {
 
   ipcMain.handle('java:installToDir', async (e, pkg, dir) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    if (typeof dir !== 'string' || !dir) return { error: 'Invalid directory' }
+    // Nếu không chỉ định dir cụ thể, dùng global runtimes dir
+    const targetDir = (typeof dir === 'string' && dir) ? dir : GLOBAL_RUNTIMES_DIR
     const win = getTrustedWindow(e)
-    const javaExe = await installDistro(pkg, dir, (progress) => {
+    const javaExe = await installDistro(pkg, targetDir, (progress) => {
       if (win && !win.isDestroyed()) win.webContents.send('java:installProgress', progress)
     })
     return { ok: true, javaExe }
@@ -643,16 +640,23 @@ function registerJavaDistroHandlers(getTrustedWindow) {
 
   ipcMain.handle('java:delete', (e, profileId, distro, javaVersion) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    const data = readProfiles()
-    const profile = data.profiles.find(p => p.id === profileId)
-    if (!profile) return { error: 'Profile not found' }
+    // Xóa từ global runtimes dir
     const jreDir = distro && javaVersion
-      ? path.join(profile.instancePath, 'jre', `${distro}-${javaVersion}`)
-      : path.join(profile.instancePath, 'jre')
+      ? path.join(GLOBAL_RUNTIMES_DIR, `${distro}-${javaVersion}`)
+      : null
+    if (!jreDir) return { error: 'Must specify distro and javaVersion' }
     const deleted = deleteDistro(jreDir)
-    if (deleted && profile.javaPath?.startsWith(jreDir)) {
-      profile.javaPath = null
-      writeProfiles(data)
+    // Nếu profile nào đang dùng java này thì clear javaPath
+    if (deleted) {
+      const data = readProfiles()
+      let changed = false
+      for (const p of data.profiles) {
+        if (p.javaPath?.startsWith(jreDir)) {
+          p.javaPath = null
+          changed = true
+        }
+      }
+      if (changed) writeProfiles(data)
     }
     return { ok: true, deleted }
   })

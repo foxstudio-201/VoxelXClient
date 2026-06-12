@@ -258,7 +258,7 @@ async function findJavaInstallations() {
   const promises = []
 
   const { app } = require('electron')
-  const runtimesDir = require('path').join(app.getPath('appData'), '.VoxelXClient', 'runtimes')
+  const runtimesDir = path.join(app.getPath('appData'), '.VoxelXClient', 'runtimes')
   if (fs.existsSync(runtimesDir)) {
     for (const comp of fs.readdirSync(runtimesDir)) {
       const exe = getJavaExecutable(path.join(runtimesDir, comp))

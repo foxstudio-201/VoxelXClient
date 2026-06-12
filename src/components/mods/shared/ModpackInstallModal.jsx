@@ -102,10 +102,24 @@ export default function ModpackInstallModal({ project, version, source, onClose,
   }, []) // chỉ chạy 1 lần khi mount, không phụ thuộc groups prop
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape' && phase !== 'running') onClose() }
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        if (phase === 'running') handleCancel()
+        else onClose()
+      }
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [phase, onClose])
+
+  async function handleCancel() {
+    if (!isElectron) return
+    await window.electronAPI.cancelModpackDownload?.()
+    setPhase('idle')
+    setProgress(null)
+    setErrorMsg(null)
+    maxPctRef.current = 0
+  }
 
   async function handleInstall() {
     if (phase === 'running') return
@@ -139,6 +153,10 @@ export default function ModpackInstallModal({ project, version, source, onClose,
       },
     })
 
+    if (result?.cancelled) {
+      // Đã hủy qua signal — state đã được reset bởi handleCancel
+      return
+    }
     if (result?.error && phase !== 'done') {
       setPhase('error')
       setErrorMsg(result.error)
@@ -232,9 +250,9 @@ export default function ModpackInstallModal({ project, version, source, onClose,
   return (
     <div
       className="fixed inset-0 z-[300] flex items-center justify-center px-4"
-      onClick={e => { if (e.target === e.currentTarget && !isRunning) onClose() }}
+      onClick={e => { if (e.target === e.currentTarget) { if (isRunning) handleCancel(); else onClose() } }}
     >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { if (!isRunning) onClose() }} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { if (isRunning) handleCancel(); else onClose() }} />
 
       <div
         className="relative z-10 w-full max-w-sm rounded-2xl overflow-hidden"
@@ -264,10 +282,9 @@ export default function ModpackInstallModal({ project, version, source, onClose,
             </button>
             {}
             <button
-              onClick={() => { if (!isRunning) onClose() }}
-              disabled={isRunning}
-              className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white hover:bg-white/8 transition-all disabled:opacity-30"
-              title="Đóng"
+              onClick={() => { if (isRunning) handleCancel(); else onClose() }}
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-white/30 hover:text-white hover:bg-white/8 transition-all"
+              title={isRunning ? 'Hủy tải' : 'Đóng'}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -367,11 +384,10 @@ export default function ModpackInstallModal({ project, version, source, onClose,
           {}
           <div className="flex gap-2 pt-1">
             <button
-              onClick={() => { if (!isRunning) onClose() }}
-              disabled={isRunning}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/50 hover:text-white transition-all border border-white/8 hover:bg-white/5 disabled:opacity-30"
+              onClick={() => { if (isRunning) handleCancel(); else onClose() }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/50 hover:text-white transition-all border border-white/8 hover:bg-white/5"
             >
-              {isDone ? 'Đóng' : 'Hủy'}
+              {isDone ? 'Đóng' : isRunning ? 'Hủy tải' : 'Hủy'}
             </button>
             {!isDone && (
               <button

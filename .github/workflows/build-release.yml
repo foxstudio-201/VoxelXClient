@@ -213,7 +213,7 @@ jobs:
 
             <div align="center">
             <br/>
-            <img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXLauncher/main/public/icon.png" width="80" height="80" alt="VoxelXLauncher Logo" />
+            <img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/icon.png" width="80" height="80" alt="VoxelXLauncher Logo" />
             <h1>VoxelXLauncher</h1>
             <p><strong>The Ultimate Minecraft Launcher</strong><br/>Manage profiles, install mods, and launch any Minecraft version — all in one place.</p>
             <p>
@@ -230,26 +230,27 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **sử lý lỗi cơ bản**, **fix bảo mật** và **thêm tính năng p2p test, friend online **.
+            > Bản cập nhật tập trung vào **sử lý lỗi tải modpack từ curseforge bị treo, fix lỗi duplication app khi mở lại app không qua tray icon** thêm tính năng ** Chọn phiên bản loader*, tối ưu fps ** Hiệu năng mạnh hơn**.
 
             ---
 
-            ### p2p
+            ### Chọn loader tuỳ chỉnh
 
-            - **p2p lan**: Cho phép người chơi có thể tham giá thế giới của nhau 
-            - Cần chạy lại app vói quyền admin để bật chức năng này 
+            - Ở chức năng này, khi bạn tạo profile từ việc tải modpack sẽ không chạy cứng phiên bản mới nhất của loader nữa, mà sẽ có tuỳ chọn loader tương thích, và chạy đúng loader đó thay vì cứng phiên bản mới nhất
 
             ---
 
-            ### friend
+            ### Tối ưu FPS
 
-            - Thêm , tìm kiếm bạn bè online trên app, chặn và kết bạn đầy đủ
+            - Ở phiên bản này fps sẽ được đẩy lên cao hơn so với phiên bản cũ ( tuỳ máy và cấu hình máy mà fps sẽ có cải thiện rõ ràng)
 
             ---
             
-            ### 🔒 Bảo mật
+            ### Phúc phíc
 
-            - **Fix bảo mật IPC**: Cải thiện độ ổn định và tính bảo mật
+            - **Fix bảo mật**: Cải thiện độ ổn định và tính bảo mật
+            - **Sử lý lỗi treo khi tải modpack từ curseforge**.
+            - **Fix lỗi duplication application khi mở lại launcher**
 
             ---
 

@@ -48,6 +48,21 @@ injectSetLanWindowRef(setLanWindowRef)
 
 const isDev = process.env.NODE_ENV === 'development'
 
+// ── Single instance lock: ngăn mở nhiều instance cùng lúc ─────────────────
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    // Khi user mở app lần 2 (double-click, shortcut...), focus lại instance cũ
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      if (!mainWindow.isVisible()) mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
+
 app.setAppUserModelId('com.voxelxclient.launcher')
 
 function resolveIconPath() {
@@ -1468,6 +1483,21 @@ ipcMain.handle('profiles:saveTempFile', async (e, { name, buffer }) => {
   }
 })
 
+// Map lưu AbortController cho từng download đang chạy (key = webContents id)
+const activeModpackDownloads = new Map()
+
+ipcMain.handle('modpack:cancel', (e) => {
+  const win = getTrustedWindow(e)
+  if (!win) return { error: 'Unauthorized' }
+  const controller = activeModpackDownloads.get(win.webContents.id)
+  if (controller) {
+    controller.abort()
+    activeModpackDownloads.delete(win.webContents.id)
+    return { ok: true }
+  }
+  return { ok: true, noop: true }
+})
+
 ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, source, profileMeta, groupId }) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
@@ -1478,8 +1508,19 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
   const https = require('https')
   const http  = require('http')
 
+  // Tạo AbortController cho lần download này
+  const controller = new AbortController()
+  const { signal } = controller
+  activeModpackDownloads.set(win.webContents.id, controller)
+
   function sendProgress(data) {
     if (!win.isDestroyed()) win.webContents.send('import:progress', data)
+  }
+
+  // Dọn dẹp khi xong (dù thành công hay lỗi)
+  function cleanup(tmpPath) {
+    activeModpackDownloads.delete(win.webContents.id)
+    if (tmpPath) try { fs.unlinkSync(tmpPath) } catch {}
   }
 
   const tmpPath = path.join(os.tmpdir(), `vxc-modpack-${Date.now()}-${filename}`)
@@ -1487,20 +1528,46 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
 
   try {
     await new Promise((resolve, reject) => {
-      const client = downloadUrl.startsWith('https') ? https : http
-      const tmpFile = fs.createWriteStream(tmpPath)
-      const doGet = (url) => {
-        client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
+      // Nếu đã bị hủy trước khi bắt đầu
+      if (signal.aborted) return reject(new Error('Cancelled'))
+      signal.addEventListener('abort', () => reject(new Error('Cancelled')), { once: true })
+
+      let settled = false
+      let activeReq = null
+      function done(err) {
+        if (settled) return
+        settled = true
+        if (err) reject(err); else resolve()
+      }
+
+      // Theo dõi redirect và chỉ tạo WriteStream một lần duy nhất sau khi có URL thực
+      const MAX_REDIRECTS = 10
+      function doGet(url, redirectCount) {
+        if (signal.aborted) return done(new Error('Cancelled'))
+        if (redirectCount > MAX_REDIRECTS) return done(new Error('Too many redirects'))
+        const client = url.startsWith('https') ? https : http
+        const req = client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            tmpFile.close()
-            return doGet(res.headers.location)
+            res.resume()
+            return doGet(res.headers.location, redirectCount + 1)
           }
           if (res.statusCode !== 200) {
             res.resume()
-            return reject(new Error(`HTTP ${res.statusCode}: ${url}`))
+            return done(new Error(`HTTP ${res.statusCode}: ${url}`))
           }
+          // Chỉ tạo WriteStream sau khi đã resolve hết redirect
+          const tmpFile = fs.createWriteStream(tmpPath)
           const total = parseInt(res.headers['content-length'] || '0', 10)
           let received = 0
+
+          // Hủy stream khi signal abort
+          signal.addEventListener('abort', () => {
+            res.destroy()
+            tmpFile.destroy()
+            try { fs.unlinkSync(tmpPath) } catch {}
+            done(new Error('Cancelled'))
+          }, { once: true })
+
           res.on('data', chunk => {
             received += chunk.length
             if (total > 0) {
@@ -1509,14 +1576,23 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
             }
           })
           res.pipe(tmpFile)
-          tmpFile.on('finish', () => { tmpFile.close(); resolve() })
-          tmpFile.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {} reject(err) })
-          res.on('error',     err => { try { fs.unlinkSync(tmpPath) } catch {} reject(err) })
-        }).on('error', reject)
+          tmpFile.on('finish', () => done())
+          tmpFile.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {} done(err) })
+          res.on('error',     err => { try { fs.unlinkSync(tmpPath) } catch {} done(err) })
+        })
+        activeReq = req
+        req.on('error', err => done(err))
       }
-      doGet(downloadUrl)
+      doGet(downloadUrl, 0)
     })
   } catch (err) {
+    const isCancelled = err.message === 'Cancelled'
+    if (isCancelled) {
+      cleanup(tmpPath)
+      sendProgress({ phase: 'cancelled', log: 'Đã hủy tải xuống.', percent: 0 })
+      return { cancelled: true }
+    }
+    cleanup(null)
     sendProgress({ phase: 'error', log: `Lỗi tải file: ${err.message}`, percent: 0 })
     return { error: err.message }
   }
@@ -1692,9 +1768,16 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
     }
 
     sendProgress({ phase: 'done', log: `Đã tạo profile "${meta.name}" thành công!`, percent: 100 })
+    activeModpackDownloads.delete(win.webContents.id)
     return { ok: true, profileId, profileName: meta.name }
   } catch (err) {
     try { fs.unlinkSync(tmpPath) } catch {}
+    activeModpackDownloads.delete(win.webContents.id)
+    const isCancelled = err.message === 'Cancelled'
+    if (isCancelled) {
+      sendProgress({ phase: 'cancelled', log: 'Đã hủy tải xuống.', percent: 0 })
+      return { cancelled: true }
+    }
     sendProgress({ phase: 'error', log: `Lỗi import: ${err.message}`, percent: 0 })
     return { error: err.message }
   }

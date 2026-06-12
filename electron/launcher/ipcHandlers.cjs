@@ -171,7 +171,9 @@ function registerLauncherHandlers(getTrustedWindow) {
     }
 
     const sharedPath  = instancePath
-    const runtimesDir = path.join(instancePath, 'runtimes')
+    // Java runtime dùng chung cho tất cả profiles — lưu ở DATA_DIR/runtimes/
+    // tránh mỗi profile tải Java riêng gây tốn disk và RAM
+    const runtimesDir = path.join(DATA_DIR, 'runtimes')
     const gameDataDir = path.join(instancePath, 'accounts', account.id)
     if (!fs.existsSync(gameDataDir)) fs.mkdirSync(gameDataDir, { recursive: true })
 
@@ -376,36 +378,41 @@ function registerLauncherHandlers(getTrustedWindow) {
 
         sendProgressAndLog({ phase: 'fabric_mods', log: 'Checking Fabric mods (Fabric API, Mod Menu)...', percent: 97 })
         const modsDir = path.join(gameDataDir, 'mods')
-        await ensureFabricMods(profile.gameVersion, modsDir, (p) => {
-          sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97, doneFiles: p.done, totalFiles: p.total })
-        }, profile.autoPerformanceMods === true)
 
-        try {
-          const vxcJars = await ensureVoxelXMods(
-            profile.gameVersion,
-            sharedPath,
-            (p) => sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97 })
-          )
-          if (vxcJars.length > 0) {
-            const sep = process.platform === 'win32' ? ';' : ':'
-            const addModsArg = `-Dfabric.addMods=${vxcJars.join(sep)}`
-            extraJvmArgs = [...extraJvmArgs, addModsArg]
-            sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXMods: loaded ${vxcJars.length} mod(s) via -Dfabric.addMods`, percent: 97 })
+        if (profile.autoPerformanceMods === true) {
+          await ensureFabricMods(profile.gameVersion, modsDir, (p) => {
+            sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97, doneFiles: p.done, totalFiles: p.total })
+          }, false)
+
+          try {
+            const vxcJars = await ensureVoxelXMods(
+              profile.gameVersion,
+              sharedPath,
+              (p) => sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97 })
+            )
+            if (vxcJars.length > 0) {
+              const sep = process.platform === 'win32' ? ';' : ':'
+              const addModsArg = `-Dfabric.addMods=${vxcJars.join(sep)}`
+              extraJvmArgs = [...extraJvmArgs, addModsArg]
+              sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXMods: loaded ${vxcJars.length} mod(s) via -Dfabric.addMods`, percent: 97 })
+            }
+          } catch (vxcErr) {
+            sendProgressAndLog({ phase: 'fabric_mods', log: `[WARN] VoxelXMods: ${vxcErr.message}`, percent: 97 })
           }
-        } catch (vxcErr) {
-          sendProgressAndLog({ phase: 'fabric_mods', log: `[WARN] VoxelXMods: ${vxcErr.message}`, percent: 97 })
-        }
 
-        try {
-          const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
-          if (!fs.existsSync(vxcConfigDir)) fs.mkdirSync(vxcConfigDir, { recursive: true })
-          fs.writeFileSync(
-            path.join(vxcConfigDir, 'launcher_profile.json'),
-            JSON.stringify({ launcherUuid: account.uuid }, null, 2)
-          )
-          sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXSkin: launcher_profile.json → ${account.uuid}`, percent: 97 })
-        } catch (cfgErr) {
-          writeLog(`[WARN] VoxelXSkin launcher_profile write failed: ${cfgErr.message}`)
+          try {
+            const vxcConfigDir = path.join(gameDataDir, 'config', 'voxelxskin')
+            if (!fs.existsSync(vxcConfigDir)) fs.mkdirSync(vxcConfigDir, { recursive: true })
+            fs.writeFileSync(
+              path.join(vxcConfigDir, 'launcher_profile.json'),
+              JSON.stringify({ launcherUuid: account.uuid }, null, 2)
+            )
+            sendProgressAndLog({ phase: 'fabric_mods', log: `VoxelXSkin: launcher_profile.json → ${account.uuid}`, percent: 97 })
+          } catch (cfgErr) {
+            writeLog(`[WARN] VoxelXSkin launcher_profile write failed: ${cfgErr.message}`)
+          }
+        } else {
+          sendProgressAndLog({ phase: 'fabric_mods', log: 'Auto-install mods: tắt.', percent: 97 })
         }
       }
 
@@ -513,7 +520,6 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       // Boost Mode: tắt tiến trình nền trước khi khởi động game
       if (boostMode && process.platform === 'win32') {
-        sendProgressAndLog({ phase: 'launching', log: 'Boost Mode: đang tắt tiến trình nền...', percent: 98 })
         try {
           const { exec } = require('child_process')
           const BOOST_KILL_LIST = [
@@ -533,7 +539,6 @@ function registerLauncherHandlers(getTrustedWindow) {
             })
           )
           await Promise.all(killPromises)
-          sendProgressAndLog({ phase: 'launching', log: 'Boost Mode: đã dọn tiến trình nền ✓', percent: 98 })
         } catch (boostErr) {
           writeLog(`[WARN] Boost Mode error: ${boostErr.message}`)
         }
@@ -543,8 +548,6 @@ function registerLauncherHandlers(getTrustedWindow) {
       if (process.platform === 'win32') {
         try {
           const { exec } = require('child_process')
-          // GpuPreference=2 = High Performance (discrete GPU)
-          // Áp dụng cho cả java.exe và javaw.exe
           const javaExeNorm = javaPath.replace(/\//g, '\\')
           const javawExe    = javaExeNorm.replace(/java\.exe$/i, 'javaw.exe')
           const regEntries  = [javaExeNorm, javawExe].filter(Boolean)
@@ -557,7 +560,6 @@ function registerLauncherHandlers(getTrustedWindow) {
               )
             })
           }
-          sendProgressAndLog({ phase: 'launching', log: 'GPU: đã set High Performance GPU cho Java ✓', percent: 98 })
         } catch (gpuErr) {
           writeLog(`[WARN] GPU preference error: ${gpuErr.message}`)
         }
@@ -616,13 +618,13 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       if (proc.pid) {
         try {
-          // Boost Mode: game được priority cao, launcher thấp để nhường tài nguyên
-          // Bình thường: game below normal (launcher ưu tiên hơn)
           if (boostMode) {
-            process.setProcessPriority(proc.pid, 'high')
+            // Boost Mode: game priority cao, launcher nhường tài nguyên
+            process.setProcessPriority(proc.pid, 'above normal')
             process.setProcessPriority(process.pid, 'below normal')
           } else {
-            process.setProcessPriority(proc.pid, 'below normal')
+            // Normal mode: game chạy normal priority — không kéo xuống below normal
+            process.setProcessPriority(proc.pid, 'normal')
             process.setProcessPriority(process.pid, 'below normal')
           }
         } catch {}

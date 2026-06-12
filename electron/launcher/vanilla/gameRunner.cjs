@@ -66,42 +66,7 @@ function detectJavaMajorVersion(javaPath) {
 }
 
 function buildGcArgs(javaMajor, ramMb) {
-  if (javaMajor >= 21) {
-    // ZGC Generational — Java 21+
-    return [
-      '-XX:+UseZGC',
-      '-XX:+ZGenerational',
-      '-XX:+UnlockExperimentalVMOptions',
-      '-XX:+DisableExplicitGC',
-      '-XX:+AlwaysPreTouch',
-      '-XX:+UseStringDeduplication',
-      '-XX:+PerfDisableSharedMem',
-      '-XX:ZUncommitDelay=300',
-    ]
-  }
-
-  // G1GC — Java 8/11/17
-  return [
-    '-XX:+UseG1GC',
-    '-XX:+ParallelRefProcEnabled',
-    '-XX:MaxGCPauseMillis=200',
-    '-XX:+UnlockExperimentalVMOptions',
-    '-XX:+DisableExplicitGC',
-    '-XX:+AlwaysPreTouch',
-    '-XX:+UseStringDeduplication',
-    '-XX:G1NewSizePercent=30',
-    '-XX:G1MaxNewSizePercent=40',
-    '-XX:G1HeapRegionSize=8M',
-    '-XX:G1ReservePercent=20',
-    '-XX:G1HeapWastePercent=5',
-    '-XX:G1MixedGCCountTarget=4',
-    '-XX:InitiatingHeapOccupancyPercent=15',
-    '-XX:G1MixedGCLiveThresholdPercent=90',
-    '-XX:G1RSetUpdatingPauseTimePercent=5',
-    '-XX:SurvivorRatio=32',
-    '-XX:+PerfDisableSharedMem',
-    '-XX:MaxTenuringThreshold=1',
-  ]
+  return []
 }
 
 function substituteArgs(args, vars) {
@@ -167,8 +132,6 @@ function launchGame(opts) {
 
   if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
 
-  // Không ép resolution — để Minecraft tự quản lý cửa sổ
-  // has_custom_resolution=false để game dùng kích thước mặc định, người dùng tự F11
   const vars = {
     _os:              os,
     _features:        { is_demo_user: false, has_custom_resolution: false },
@@ -192,17 +155,14 @@ function launchGame(opts) {
   }
 
   const xmx = ramMb
-  const xms = Math.max(512, Math.floor(ramMb * 0.5))
+  const xms = 512
 
   const javaMajor = detectJavaMajorVersion(javaPath) ?? (versionJson?.javaVersion?.majorVersion ?? 17)
   const gcArgs    = buildGcArgs(javaMajor, ramMb)
 
-  // Boost Mode: thêm JVM flags ưu tiên thread và tối ưu thêm
   const boostJvmArgs = boostMode ? [
     '-XX:+UseThreadPriorities',
     '-XX:ThreadPriorityPolicy=1',
-    '-XX:+OptimizeStringConcat',
-    '-XX:+UseCompressedOops',
   ] : []
 
   const jvmArgs = [
@@ -223,12 +183,8 @@ function launchGame(opts) {
 
     '-Dorg.lwjgl.util.NoChecks=true',
     '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=false',
-    // Force hardware GPU — tắt software fallback, bật hardware acceleration
     '-Dorg.lwjgl.opengl.Display.enableHighDPI=true',
     '-Dorg.lwjgl.system.allocator=system',
-    '-Dsun.java2d.opengl=true',
-    '-Dsun.java2d.d3d=false',
-    '-Dsun.java2d.noddraw=true',
   ]
 
   const needsVanillaCP = extraJvmArgs.includes('__needsVanillaClasspath__')
@@ -302,14 +258,20 @@ function launchGame(opts) {
   const spawnCwd = shimWorkDir || instancePath
 
   onLog?.(`[Launcher] Java: ${javaPath}`)
-  onLog?.(`[Launcher] Java version: ${javaMajor} → GC: ${javaMajor >= 21 ? 'ZGC Generational' : 'G1GC'}${boostMode ? ' | Boost Mode ON' : ''}`)
+  onLog?.(`[Launcher] Java version: ${javaMajor}`)
   onLog?.(`[Launcher] Main: ${mainClass}`)
   onLog?.(`[Launcher] Args: ${spawnArgs.slice(0, 5).join(' ')}...`)
+
+  const spawnEnv = { ...process.env }
+  delete spawnEnv.JAVA_TOOL_OPTIONS
+  delete spawnEnv._JAVA_OPTIONS
+  delete spawnEnv.JDK_JAVA_OPTIONS
 
   const proc = spawn(javaPath, spawnArgs, {
     cwd:      spawnCwd,
     stdio:    ['ignore', 'pipe', 'pipe'],
     detached: false,
+    env: spawnEnv,
   })
 
   const { StringDecoder } = require('string_decoder')

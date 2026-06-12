@@ -844,8 +844,8 @@
       "saving": "Đang lưu...",
       "saved": "Đã lưu!",
       "save": "Lưu thay đổi",
-      "autoPerformanceMods": "Tự động tải mod tối ưu (Fabric)",
-      "autoPerformanceModsDesc": "Tự động tải Sodium, Lithium, FerriteCore và các mod tối ưu hiệu năng khi khởi động lần đầu. Fabric API và Mod Menu luôn được cài.",
+      "autoPerformanceMods": "Tự động tải mod (Fabric API, VoxelXSkins...)",
+      "autoPerformanceModsDesc": "Khi bật: tự động tải Fabric API, Mod Menu, VoxelXSkins và các mod tối ưu khi khởi động. Khi tắt: chạy Fabric thuần, không cài bất kỳ mod nào.",
       "autoPerformanceModsOn": "Đang bật",
       "autoPerformanceModsOff": "Đang tắt"
     },

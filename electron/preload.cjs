@@ -96,6 +96,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveTempFile: (opts) => ipcRenderer.invoke('profiles:saveTempFile', opts),
 
   downloadAndImportModpack: (opts) => ipcRenderer.invoke('modpack:downloadAndImport', opts),
+  cancelModpackDownload: () => ipcRenderer.invoke('modpack:cancel'),
 
   browseModpack: ()         => ipcRenderer.invoke('modpack:browse'),
   readModpackMeta: (path)   => ipcRenderer.invoke('modpack:readMeta', path),
