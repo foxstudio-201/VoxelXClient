@@ -29,17 +29,53 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
+const https = require('https')
+const http  = require('http')
+const fs    = require('fs')
+const path  = require('path')
+
 const BASE = 'https://api.curse.tools/v1/cf'
 
-async function fetchCf(endpoint) {
+// Dùng Node https thay vì fetch() — ổn định hơn trong Electron main process
+function fetchCf(endpoint) {
+  return new Promise((resolve, reject) => {
+    const url = `${BASE}${endpoint}`
+    function doGet(u) {
+      const client = u.startsWith('https') ? https : http
+      const req = client.get(u, {
+        headers: { 'Accept': 'application/json', 'User-Agent': 'VoxelXLauncher/1.0' },
+        timeout: 15000,
+      }, (res) => {
+        // Follow redirects
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume()
+          return doGet(res.headers.location)
+        }
+        if (res.statusCode !== 200) {
+          res.resume()
+          return reject(new Error(`CF API Error: ${res.statusCode} ${u}`))
+        }
+        let data = ''
+        res.on('data', c => { data += c })
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)) }
+          catch { reject(new Error(`Invalid JSON from ${u}`)) }
+        })
+        res.on('error', reject)
+      })
+      req.on('error', reject)
+      req.on('timeout', () => { req.destroy(); reject(new Error(`Timeout: ${u}`)) })
+    }
+    doGet(url)
+  })
+}
+
+// Wrapper với retry và error logging
+async function fetchCfSafe(endpoint) {
   try {
-    const res = await fetch(`${BASE}${endpoint}`, {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
-    })
-    if (!res.ok) throw new Error(`CF API Error: ${res.status} ${res.statusText}`)
-    return await res.json()
+    return await fetchCf(endpoint)
   } catch (error) {
-    console.error(`[CurseForge API] Error fetching ${endpoint}:`, error)
+    console.error(`[CurseForge API] Error fetching ${endpoint}:`, error.message)
     return null
   }
 }
@@ -75,7 +111,7 @@ async function searchProjects(opts) {
   params.append('index', offset)
   params.append('pageSize', limit)
 
-  const data = await fetchCf(`/mods/search?${params.toString()}`)
+  const data = await fetchCfSafe(`/mods/search?${params.toString()}`)
   if (!data || !data.data) return { hits: [], total_hits: 0 }
 
   return {
@@ -111,13 +147,13 @@ function formatProject(p) {
 }
 
 async function getProject(id) {
-  const data = await fetchCf(`/mods/${id}`)
+  const data = await fetchCfSafe(`/mods/${id}`)
   if (!data || !data.data) return null
   const p = data.data
   const proj = formatProject(p)
   proj.body = p.summary
 
-  const descData = await fetchCf(`/mods/${id}/description`)
+  const descData = await fetchCfSafe(`/mods/${id}/description`)
   if (descData && descData.data) {
     proj.body = descData.data
   }
@@ -125,8 +161,7 @@ async function getProject(id) {
 }
 
 async function getProjectVersions(id, filters = {}) {
-
-  const data = await fetchCf(`/mods/${id}/files`)
+  const data = await fetchCfSafe(`/mods/${id}/files`)
   if (!data || !data.data) return []
 
   let files = data.data
@@ -165,7 +200,7 @@ async function getCategories(projectType = 'mod') {
     'datapack': 12
   }
   const classId = classMap[projectType] || 6
-  const data = await fetchCf(`/categories?gameId=432&classId=${classId}&classesOnly=false`)
+  const data = await fetchCfSafe(`/categories?gameId=432&classId=${classId}&classesOnly=false`)
   if (!data || !data.data) return []
   return data.data.filter(c => c.classId === classId).map(c => ({
     id: c.id,
@@ -175,13 +210,10 @@ async function getCategories(projectType = 'mod') {
   }))
 }
 
-const fs = require('fs')
-const path = require('path')
-
 async function installVersion(opts, onProgress) {
   const { versionId, projectType, instancePath } = opts
 
-  const fileData = await fetchCf(`/files/${versionId}`)
+  const fileData = await fetchCfSafe(`/files/${versionId}`)
   if (!fileData || !fileData.data) throw new Error('File not found')
 
   const file = fileData.data
@@ -200,20 +232,55 @@ async function installVersion(opts, onProgress) {
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
   const destPath = path.join(destDir, filename)
+  const tmpPath  = destPath + '.tmp'
 
-  return new Promise((resolve, reject) => {
-    if (onProgress) onProgress({ log: `Bắt đầu tải ${filename}...`, percent: 0, total: file.fileLength })
+  if (onProgress) onProgress({ log: `Bắt đầu tải ${filename}...`, percent: 0, total: file.fileLength })
 
-    fetch(downloadUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } })
-      .then(async res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const arrayBuffer = await res.arrayBuffer()
-        fs.writeFileSync(destPath, Buffer.from(arrayBuffer))
-        if (onProgress) onProgress({ log: `Đã cài đặt ${filename}`, percent: 100, total: file.fileLength })
-        resolve({ success: true, file: filename })
+  // Dùng stream pipe thay vì arrayBuffer() để không load cả file vào RAM
+  await new Promise((resolve, reject) => {
+    function doGet(url) {
+      const client = url.startsWith('https') ? https : http
+      const req = client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' }, timeout: 60000 }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume()
+          return doGet(res.headers.location)
+        }
+        if (res.statusCode !== 200) {
+          res.resume()
+          return reject(new Error(`HTTP ${res.statusCode}`))
+        }
+        const total = parseInt(res.headers['content-length'] || String(file.fileLength || 0), 10)
+        let received = 0
+        const startTime = Date.now()
+        const out = fs.createWriteStream(tmpPath)
+
+        res.on('data', chunk => {
+          received += chunk.length
+          if (total > 0 && onProgress) {
+            const pct = Math.round(received / total * 100)
+            const elapsed = (Date.now() - startTime) / 1000
+            const speed = elapsed > 0 ? Math.round(received / elapsed / 1024) : 0
+            onProgress({ log: `Đang tải ${filename}: ${pct}%`, percent: pct, total, received, speed })
+          }
+        })
+        res.pipe(out)
+        out.on('finish', () => {
+          try { fs.renameSync(tmpPath, destPath) } catch {
+            try { fs.copyFileSync(tmpPath, destPath); fs.unlinkSync(tmpPath) } catch {}
+          }
+          resolve()
+        })
+        out.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {}; reject(err) })
+        res.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {}; reject(err) })
       })
-      .catch(reject)
+      req.on('error', reject)
+      req.on('timeout', () => { req.destroy(); reject(new Error('Download timeout')) })
+    }
+    doGet(downloadUrl)
   })
+
+  if (onProgress) onProgress({ log: `Đã cài đặt ${filename}`, percent: 100, total: file.fileLength })
+  return { success: true, file: filename }
 }
 
 module.exports = {
