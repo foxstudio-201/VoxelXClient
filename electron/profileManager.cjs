@@ -88,15 +88,52 @@ function validateProfile(profile) {
   return null
 }
 
+// ── Dir size cache ────────────────────────────────────────────────────────────
+// Cache size theo mtime của thư mục top-level để tránh tính lại mỗi lần load
+const _sizeCache = new Map() // instancePath → { size, mtime, ts }
+const SIZE_CACHE_TTL = 60_000 // 1 phút
+
 function getDirSizeBytes(dirPath) {
   try {
     if (!fs.existsSync(dirPath)) return 0
+
+    // Kiểm tra cache còn hợp lệ không
+    const cached = _sizeCache.get(dirPath)
+    if (cached) {
+      const age = Date.now() - cached.ts
+      if (age < SIZE_CACHE_TTL) return cached.size
+      // Kiểm tra mtime thư mục — nếu chưa đổi thì dùng cache cũ (không expire)
+      try {
+        const mtime = fs.statSync(dirPath).mtimeMs
+        if (mtime === cached.mtime) {
+          cached.ts = Date.now() // reset TTL
+          return cached.size
+        }
+      } catch {}
+    }
+
+    // Tính size — giới hạn độ sâu để tránh quá chậm với thư mục lớn
+    const size = calcDirSize(dirPath, 0)
+    const mtime = fs.statSync(dirPath).mtimeMs
+    _sizeCache.set(dirPath, { size, mtime, ts: Date.now() })
+    return size
+  } catch {
+    return 0
+  }
+}
+
+function calcDirSize(dirPath, depth) {
+  // Giới hạn depth = 6 — đủ để bao gồm mods/config/saves nhưng không quét quá sâu
+  if (depth > 6) return 0
+  try {
     let total = 0
     const entries = fs.readdirSync(dirPath, { withFileTypes: true })
     for (const entry of entries) {
+      // Bỏ qua các thư mục nặng không cần thiết cho size display
+      if (entry.isDirectory() && (entry.name === 'natives' || entry.name === 'logs' || entry.name === '.git')) continue
       const full = path.join(dirPath, entry.name)
       if (entry.isDirectory()) {
-        total += getDirSizeBytes(full)
+        total += calcDirSize(full, depth + 1)
       } else {
         try { total += fs.statSync(full).size } catch {}
       }
@@ -106,6 +143,34 @@ function getDirSizeBytes(dirPath) {
     return 0
   }
 }
+
+/**
+ * Trả về size từ cache ngay (0 nếu chưa có), đồng thời kick off background calc
+ * → UI render ngay, size cập nhật sau khi tính xong qua event
+ */
+function getDirSizeLazy(dirPath) {
+  const cached = _sizeCache.get(dirPath)
+  if (cached) {
+    const age = Date.now() - cached.ts
+    if (age < SIZE_CACHE_TTL) return cached.size
+    try {
+      const mtime = fs.statSync(dirPath).mtimeMs
+      if (mtime === cached.mtime) { cached.ts = Date.now(); return cached.size }
+    } catch {}
+  }
+  // Background: tính không block main thread
+  setImmediate(() => {
+    try {
+      if (!fs.existsSync(dirPath)) return
+      const size = calcDirSize(dirPath, 0)
+      const mtime = fs.statSync(dirPath).mtimeMs
+      _sizeCache.set(dirPath, { size, mtime, ts: Date.now() })
+    } catch {}
+  })
+  return cached?.size ?? 0
+}
+
+
 
 function getGameDir(profile, accountId) {
   if (!profile?.instancePath) return null
@@ -123,7 +188,7 @@ function registerProfileHandlers(getTrustedWindow) {
     const data = readProfiles()
     data.profiles = data.profiles.map(p => ({
       ...p,
-      sizeBytes: getDirSizeBytes(p.instancePath),
+      sizeBytes: getDirSizeLazy(p.instancePath),
     }))
     return data
   })
@@ -700,7 +765,7 @@ function buildGroupView(group, profilesById) {
     .filter(Boolean)
     .map(p => ({
       ...p,
-      sizeBytes: getDirSizeBytes(p.instancePath),
+      sizeBytes: getDirSizeLazy(p.instancePath),
     }))
 
   const totalSize = profiles.reduce((sum, p) => sum + (Number(p.sizeBytes) || 0), 0)
