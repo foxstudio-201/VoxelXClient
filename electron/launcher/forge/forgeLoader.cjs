@@ -123,15 +123,17 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
   const buildOnlyVersion = fullVersion.startsWith(`${mcVersion}-`)
     ? fullVersion.slice(mcVersion.length + 1)
     : forgeVersion
+
   const installerName = `forge-${fullVersion}-installer.jar`
   const installerDir  = path.join(librariesDir, 'net', 'minecraftforge', 'forge', fullVersion)
   const installerPath = path.join(installerDir, installerName)
-  const installerUrl   = `${FORGE_MAVEN}/net/minecraftforge/forge/${fullVersion}/${installerName}`
-  const installerUrl2  = `${FORGE_MAVEN2}/net/minecraftforge/forge/${fullVersion}/${installerName}`
-  const bmclapiUrl     = `${BMCLAPI}/maven/net/minecraftforge/forge/${fullVersion}/${installerName}`
+  const installerUrl  = `${FORGE_MAVEN}/net/minecraftforge/forge/${fullVersion}/${installerName}`
+  const installerUrl2 = `${FORGE_MAVEN2}/net/minecraftforge/forge/${fullVersion}/${installerName}`
+  const bmclapiUrl    = `${BMCLAPI}/maven/net/minecraftforge/forge/${fullVersion}/${installerName}`
 
   if (!fs.existsSync(installerDir)) fs.mkdirSync(installerDir, { recursive: true })
 
+  // ── Download installer ─────────────────────────────────────────────────────
   if (!fs.existsSync(installerPath) || fs.statSync(installerPath).size === 0) {
     onProgress?.({ phase: 'forge_download', log: `Downloading Forge ${fullVersion} installer...`, done: 0, total: 1 })
     let downloaded = false
@@ -151,6 +153,7 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     onProgress?.({ phase: 'forge_download', log: 'Forge installer already cached.', done: 1, total: 1 })
   }
 
+  // ── Place vanilla jar for installer ───────────────────────────────────────
   const vanillaVersionDir = path.join(instanceRoot, 'versions', mcVersion)
   const vanillaJarDest    = path.join(vanillaVersionDir, `${mcVersion}.jar`)
   if (!fs.existsSync(vanillaJarDest) && clientJar && fs.existsSync(clientJar)) {
@@ -163,6 +166,21 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
   const versionDir      = path.join(instanceRoot, 'versions', versionId)
   const versionJsonPath = path.join(versionDir, `${versionId}.json`)
 
+  // instLibDir is where the installer places processed libraries
+  const instLibDir = path.join(instanceRoot, 'libraries')
+
+  // ── Check if Forge post-processed JARs exist ───────────────────────────────
+  // On Linux the installer validates SHA1 of its output and deletes files if they
+  // don't match its hardcoded expected hashes (which were computed on Windows with
+  // deterministic ZIP ordering). We detect this and run each processor tool directly.
+  const forgeClientJar = path.join(instLibDir, 'net', 'minecraftforge', 'forge', fullVersion, `forge-${fullVersion}-client.jar`)
+  const srgJar         = path.join(instLibDir, 'net', 'minecraft', 'client', `${mcVersion}-20230612.114412`, `client-${mcVersion}-20230612.114412-srg.jar`)
+  const extraJar       = path.join(instLibDir, 'net', 'minecraft', 'client', `${mcVersion}-20230612.114412`, `client-${mcVersion}-20230612.114412-extra.jar`)
+
+  const jarOk = p => fs.existsSync(p) && fs.statSync(p).size > 0
+  const forgeOutputsExist = () => jarOk(forgeClientJar) && jarOk(srgJar) && jarOk(extraJar)
+
+  // ── Run installer (only if versionJson is missing) ────────────────────────
   if (!fs.existsSync(versionJsonPath)) {
     onProgress?.({ phase: 'forge_install', log: 'Running Forge installer (this may take a minute)...', done: 0, total: 1 })
     const result = spawnSync(javaPath, [
@@ -179,12 +197,93 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     onProgress?.({ phase: 'forge_install', log: 'Forge already installed, skipping installer.', done: 1, total: 1 })
   }
 
+  // ── Linux fix: run processor tools directly if output JARs are missing ────
+  // The installer's SHA1 validation deletes output files when hashes don't match
+  // (common on Linux due to non-deterministic ZIP entry ordering). We bypass this
+  // by running jarsplitter, ForgeAutoRenamingTool, and binarypatcher directly.
+  if (!forgeOutputsExist() && process.platform !== 'win32') {
+    onProgress?.({ phase: 'forge_install', log: '[Linux] Output JARs missing after installer. Running processors directly...', done: 0, total: 1 })
+
+    const sep = ':'
+    const mcClientDir  = path.join(instLibDir, 'net', 'minecraft', 'client', `${mcVersion}-20230612.114412`)
+    const slimJar      = path.join(mcClientDir, `client-${mcVersion}-20230612.114412-slim.jar`)
+    const mergedMappings = path.join(instLibDir, 'de', 'oceanlabs', 'mcp', 'mcp_config',
+      `${mcVersion}-20230612.114412`, `mcp_config-${mcVersion}-20230612.114412-mappings-merged.txt`)
+
+    function runTool(label, args) {
+      onProgress?.({ phase: 'forge_install', log: `[Linux] Running ${label}...` })
+      const r = spawnSync(javaPath, args, {
+        stdio: ['ignore', 'pipe', 'pipe'], timeout: 300_000, maxBuffer: 64 * 1024 * 1024,
+      })
+      if (r.error) throw new Error(`${label} failed: ${r.error.message}`)
+      return r.status === 0
+    }
+
+    // Step 1: jarsplitter → slim + extra
+    if (!jarOk(slimJar) || !jarOk(extraJar)) {
+      const cp1 = [
+        path.join(instLibDir, 'net', 'minecraftforge', 'jarsplitter', '1.1.4', 'jarsplitter-1.1.4.jar'),
+        path.join(instLibDir, 'net', 'sf', 'jopt-simple', 'jopt-simple', '5.0.4', 'jopt-simple-5.0.4.jar'),
+        path.join(instLibDir, 'net', 'minecraftforge', 'srgutils', '0.4.3', 'srgutils-0.4.3.jar'),
+      ].filter(jarOk).join(sep)
+      runTool('jarsplitter', ['-cp', cp1, 'net.minecraftforge.jarsplitter.ConsoleTool',
+        '--input', vanillaJarDest, '--slim', slimJar, '--extra', extraJar, '--srg', mergedMappings])
+    }
+
+    // Step 2: ForgeAutoRenamingTool → srg
+    if (!jarOk(srgJar)) {
+      const fart = path.join(instLibDir, 'net', 'minecraftforge', 'ForgeAutoRenamingTool', '0.1.22', 'ForgeAutoRenamingTool-0.1.22-all.jar')
+      if (jarOk(fart) && jarOk(slimJar)) {
+        runTool('ForgeAutoRenamingTool', ['-jar', fart,
+          '--input', slimJar, '--output', srgJar, '--names', mergedMappings,
+          '--ann-fix', '--ids-fix', '--src-fix', '--record-fix'])
+      }
+    }
+
+    // Step 3: binarypatcher → forge client jar
+    if (!jarOk(forgeClientJar) && jarOk(srgJar)) {
+      // Extract client.lzma from installer JAR
+      const lzmaPath = path.join(installerDir, 'client.lzma')
+      if (!jarOk(lzmaPath)) {
+        const { execFileSync } = require('child_process')
+        try {
+          const fd = require('fs').openSync(lzmaPath, 'w')
+          execFileSync('unzip', ['-p', installerPath, 'data/client.lzma'],
+            { stdio: ['ignore', fd, 'pipe'] })
+          require('fs').closeSync(fd)
+        } catch (e) {
+          onProgress?.({ phase: 'forge_install', log: `[WARN] Failed to extract client.lzma: ${e.message}` })
+        }
+      }
+      if (jarOk(lzmaPath)) {
+        const bp = path.join(instLibDir, 'net', 'minecraftforge', 'binarypatcher', '1.1.1', 'binarypatcher-1.1.1.jar')
+        const bpCp = [
+          bp,
+          path.join(instLibDir, 'commons-io', 'commons-io', '2.4', 'commons-io-2.4.jar'),
+          path.join(instLibDir, 'com', 'google', 'guava', 'guava', '25.1-jre', 'guava-25.1-jre.jar'),
+          path.join(instLibDir, 'net', 'sf', 'jopt-simple', 'jopt-simple', '5.0.4', 'jopt-simple-5.0.4.jar'),
+          path.join(instLibDir, 'com', 'github', 'jponge', 'lzma-java', '1.3', 'lzma-java-1.3.jar'),
+          path.join(instLibDir, 'com', 'nothome', 'javaxdelta', '2.0.1', 'javaxdelta-2.0.1.jar'),
+        ].filter(jarOk).join(sep)
+        if (jarOk(bp)) {
+          runTool('binarypatcher', ['-cp', bpCp, 'net.minecraftforge.binarypatcher.ConsoleTool',
+            '--clean', srgJar, '--output', forgeClientJar, '--apply', lzmaPath])
+        }
+      }
+    }
+
+    if (forgeOutputsExist()) {
+      onProgress?.({ phase: 'forge_install', log: '[Linux] All Forge output JARs generated successfully.', done: 1, total: 1 })
+    } else {
+      onProgress?.({ phase: 'forge_install', log: '[WARN] Some Forge output JARs still missing after manual processing.', done: 1, total: 1 })
+    }
+  }
+
   if (!fs.existsSync(versionJsonPath)) throw new Error(`Forge version JSON not found: ${versionJsonPath}`)
   const profile   = JSON.parse(fs.readFileSync(versionJsonPath, 'utf-8'))
   const mainClass = profile.mainClass
   if (!mainClass) throw new Error('Forge version JSON missing mainClass')
 
-  const instLibDir     = path.join(instanceRoot, 'libraries')
   const extraLibraries = []
   for (const lib of (profile.libraries || [])) {
     const relPath = lib.downloads?.artifact?.path || mavenToPath(lib.name)
