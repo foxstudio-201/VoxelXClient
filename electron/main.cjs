@@ -799,8 +799,24 @@ ipcMain.handle('updater:install', async (e, { filePath }) => {
     } else if (process.platform === 'darwin') {
       spawn('open', [filePath], { detached: true, stdio: 'ignore' }).unref()
     } else {
-      fs.chmodSync(filePath, 0o755)
-      spawn(filePath, ['--silent'], { detached: true, stdio: 'ignore' }).unref()
+      // On Linux, AppImageLauncher intercepts AppImage execution and tries to
+      // move the file to ~/Applications/. This fails when the AppImage is in /tmp
+      // because /tmp is often on a different filesystem (tmpfs → ext4/btrfs),
+      // causing a cross-device rename error. Fix: copy to the user's home dir first.
+      let runPath = filePath
+      try {
+        const homeDir   = require('os').homedir()
+        const destPath  = path.join(homeDir, path.basename(filePath))
+        fs.copyFileSync(filePath, destPath)
+        fs.chmodSync(destPath, 0o755)
+        runPath = destPath
+      } catch {
+        // fallback: run from /tmp directly
+        fs.chmodSync(filePath, 0o755)
+      }
+      // Set env to skip AppImageLauncher integration for this run
+      const env = { ...process.env, APPIMAGELAUNCHER_DISABLE: '1', NO_CLEANUP: '1' }
+      spawn(runPath, [], { detached: true, stdio: 'ignore', env }).unref()
     }
 
     setTimeout(() => {
@@ -898,8 +914,18 @@ ipcMain.handle('updater:reinstall', async (e) => {
     } else if (process.platform === 'darwin') {
       spawn('open', [tmpFile], { detached: true, stdio: 'ignore' }).unref()
     } else {
-      fs.chmodSync(tmpFile, 0o755)
-      spawn(tmpFile, ['--silent'], { detached: true, stdio: 'ignore' }).unref()
+      let runPath = tmpFile
+      try {
+        const homeDir  = require('os').homedir()
+        const destPath = path.join(homeDir, path.basename(tmpFile))
+        fs.copyFileSync(tmpFile, destPath)
+        fs.chmodSync(destPath, 0o755)
+        runPath = destPath
+      } catch {
+        fs.chmodSync(tmpFile, 0o755)
+      }
+      const env = { ...process.env, APPIMAGELAUNCHER_DISABLE: '1', NO_CLEANUP: '1' }
+      spawn(runPath, [], { detached: true, stdio: 'ignore', env }).unref()
     }
 
     setTimeout(() => {
