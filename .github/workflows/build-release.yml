@@ -230,27 +230,15 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **sử lý lỗi tải modpack từ curseforge bị treo, fix lỗi duplication app khi mở lại app không qua tray icon** thêm tính năng ** Chọn phiên bản loader*, tối ưu fps ** Hiệu năng mạnh hơn**.
-
-            ---
-
-            ### Chọn loader tuỳ chỉnh
-
-            - Ở chức năng này, khi bạn tạo profile từ việc tải modpack sẽ không chạy cứng phiên bản mới nhất của loader nữa, mà sẽ có tuỳ chọn loader tương thích, và chạy đúng loader đó thay vì cứng phiên bản mới nhất
-
-            ---
-
-            ### Tối ưu FPS
-
-            - Ở phiên bản này fps sẽ được đẩy lên cao hơn so với phiên bản cũ ( tuỳ máy và cấu hình máy mà fps sẽ có cải thiện rõ ràng)
+            > Bản cập nhật tập trung vào **Cải thiện hiệu xuất tải giữ liệu khi load các profile không bị treo khi load**, **Sửa lỗi cài đặt forge trên linux**.
 
             ---
             
             ### Phúc phíc
 
             - **Fix bảo mật**: Cải thiện độ ổn định và tính bảo mật
-            - **Sử lý lỗi treo khi tải modpack từ curseforge**.
-            - **Fix lỗi duplication application khi mở lại launcher**
+            - **Sử lý lỗi treo khi load các profile đã tạo không bị treo khi load**.
+            - **Sửa lỗi cài đặt forge khi chạy trên linux**
 
             ---
 
