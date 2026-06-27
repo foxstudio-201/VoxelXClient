@@ -302,6 +302,16 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     ? profile.arguments.game.filter(a => typeof a === 'string')
     : []
 
+  if (gameArgs.length === 0 && typeof profile.minecraftArguments === 'string') {
+    const tokens = profile.minecraftArguments.trim().split(/\s+/)
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokens[i] === '--tweakClass' && tokens[i + 1]) {
+        gameArgs.push('--tweakClass', tokens[i + 1])
+        i++
+      }
+    }
+  }
+
   onProgress?.({ phase: 'forge_ready', log: `Forge ${versionName} ready. Main: ${mainClass}`, done: 1, total: 1 })
 
   return {

@@ -676,6 +676,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
   const [patchNotesModal, setPatchNotesModal] = useState(null)
   const logDropdownRef = useRef(null)
+  const prevInstanceKeysRef = useRef(new Set())
   const ramSaveTimer = useRef(null)
   const patchNotesShownRef = useRef(new Set())
 
@@ -780,8 +781,13 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   }
 
   useEffect(() => {
-    if (instances.length > 0 && !activeLogTab) {
-      setActiveLogTab(instances[0].key)
+    const curKeys = instances.map(i => i.key)
+    const newKey = curKeys.find(k => !prevInstanceKeysRef.current.has(k))
+    prevInstanceKeysRef.current = new Set(curKeys)
+
+    if (newKey) {
+      setActiveLogTab(newKey)
+      setSavedLog(null)
       setLogPanelOpen(true)
     }
 
@@ -925,6 +931,126 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                 {profileSettingsOpen ? t('homepage.profile.closesettings') : t('homepage.profile.settings')}
                 <span className="ml-auto text-[10px] text-white/20">{selectedProfile.ramGb ?? 4} GB</span>
               </button>
+            )}
+            {(selectedProfile || instances.length > 0) && (
+              <div className="relative" ref={logDropdownRef}>
+                <button
+                  onClick={() => setLogDropdownOpen(v => !v)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all
+                    ${logPanelOpen
+                      ? 'bg-green-500/15 border-green-500/25 text-green-400'
+                      : 'bg-white/3 border-white/8 text-white/40 hover:text-white/70 hover:bg-white/6 hover:border-white/15'
+                    }`}
+                  title="Xem logs"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0">
+                    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                  </svg>
+                  {t('homepage.instance.logs')}
+                  {instances.length > 0 && (
+                    <span className="ml-auto w-4 h-4 rounded-full bg-green-500/30 text-green-400 text-[9px] flex items-center justify-center font-bold">
+                      {instances.length}
+                    </span>
+                  )}
+                </button>
+
+                {logDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <div className="px-3 py-2 border-b border-white/5">
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t('homepage.instance.instancelogs')}</p>
+                    </div>
+                    {instances.length === 0 && !selectedProfile ? (
+                      <div className="px-3 py-3 text-[11px] text-white/25 text-center">{t('homepage.instance.noinstancedropdown')}</div>
+                    ) : (
+                      <>
+                        {instances.map(inst => (
+                          <button
+                            key={inst.key}
+                            onClick={() => {
+                              setActiveLogTab(inst.key)
+                              setSavedLog(null)
+                              setLogPanelOpen(true)
+                              setLogDropdownOpen(false)
+                              setProfileSettingsOpen(false)
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all
+                              ${activeLogTab === inst.key && logPanelOpen && !savedLog ? 'bg-white/5' : ''}`}
+                          >
+                            {inst.state === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />}
+                            {inst.state === 'downloading' && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse flex-shrink-0" />}
+                            {inst.state === 'stopped' && <span className="w-1.5 h-1.5 rounded-full bg-white/20 flex-shrink-0" />}
+                            {inst.state === 'error' && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-white/80 font-semibold truncate">{inst.profileName || 'Profile'}</p>
+                              <p className="text-[10px] text-white/30 truncate">{t('homepage.instance.live')} · @{inst.accountName}</p>
+                            </div>
+                            {activeLogTab === inst.key && logPanelOpen && !savedLog && (
+                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                              </svg>
+                            )}
+                          </button>
+                        ))}
+
+                        {selectedProfile && (
+                          <>
+                            {instances.length > 0 && <div className="border-t border-white/5 my-1" />}
+                            <button
+                              onClick={async () => {
+                                setLogDropdownOpen(false)
+                                setLogPanelOpen(true)
+                                setActiveLogTab(null)
+                                setSavedLog(null)
+                                setSavedLogLoading(true)
+                                setProfileSettingsOpen(false)
+                                try {
+                                  const result = isElectron
+                                    ? await window.electronAPI.getLatestLog({ profileId: selectedProfile.id })
+                                    : null
+                                  setSavedLog(result)
+                                } catch {
+                                  setSavedLog(null)
+                                } finally {
+                                  setSavedLogLoading(false)
+                                }
+                              }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all
+                                ${logPanelOpen && savedLog ? 'bg-white/5' : ''}`}
+                            >
+                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-white/30 flex-shrink-0">
+                                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                              </svg>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs text-white/80 font-semibold truncate">{selectedProfile.name}</p>
+                                <p className="text-[10px] text-white/30">{t('homepage.instance.lastlog')}</p>
+                              </div>
+                              {logPanelOpen && savedLog && (
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400 flex-shrink-0">
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                </svg>
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                    {logPanelOpen && (
+                      <>
+                        <div className="border-t border-white/5" />
+                        <button
+                          onClick={() => { setLogPanelOpen(false); setSavedLog(null); setLogDropdownOpen(false) }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all text-white/30 hover:text-white/60"
+                        >
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                          </svg>
+                          <span className="text-[11px]">{t('homepage.instance.closelogpanel')}</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
             {/* Profile selector dropdown */}
             <div className="relative" ref={profileDropRef}>

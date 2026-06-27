@@ -75,6 +75,20 @@ function makeKey(profileId, accountId) {
   return `${profileId}::${accountId}`
 }
 
+function forceKillGame(proc) {
+  if (!proc || !proc.pid) return
+  const pid = proc.pid
+  const { execFile } = require('child_process')
+  if (process.platform === 'win32') {
+    try { execFile('taskkill', ['/F', '/T', '/PID', String(pid)], { windowsHide: true }, () => {}) } catch {}
+    try { proc.kill('SIGKILL') } catch {}
+    return
+  }
+  try { execFile('pkill', ['-9', '-P', String(pid)], () => {}) } catch {}
+  try { proc.kill('SIGKILL') } catch {}
+  try { process.kill(pid, 'SIGKILL') } catch {}
+}
+
 function syncDirRecursive(srcDir, destDir) {
   if (!fs.existsSync(srcDir)) return
 
@@ -653,14 +667,14 @@ function registerLauncherHandlers(getTrustedWindow) {
     const key = accountId ? makeKey(profileId, accountId) : null
 
     if (key && runningGames.has(key)) {
-      try { runningGames.get(key).proc.kill() } catch {}
+      forceKillGame(runningGames.get(key).proc)
       return { ok: true }
     }
 
     let stopped = 0
     for (const [k, game] of runningGames) {
       if (k.startsWith(profileId + '::')) {
-        try { game.proc.kill() } catch {}
+        forceKillGame(game.proc)
         stopped++
       }
     }
