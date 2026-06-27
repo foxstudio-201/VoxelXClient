@@ -42,6 +42,13 @@ modpack_demo/
 # Build output
 dist-electron/
 
+# AUR/makepkg build artifacts (local testing only)
+packaging/aur/src/
+packaging/aur/pkg/
+packaging/aur/*.pkg.tar.zst
+packaging/aur/*.deb
+packaging/aur/*.AppImage
+
 # Code signing certificates (NEVER commit these)
 certs/
 *.pfx

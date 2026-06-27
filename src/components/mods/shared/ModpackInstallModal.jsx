@@ -339,7 +339,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
           {!isRunning && !isDone && !isError && (
             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-xs text-white/40"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <DownloadSimple size={14} className="flex-shrink-0 mt-0.5 text-green-400/60" />
+              <DownloadSimple size={14} weight="duotone" className="flex-shrink-0 mt-0.5 text-green-400/60" />
               <p>Modpack sẽ được tải xuống và tự động tạo profile mới. Bạn có thể chơi ngay sau khi hoàn tất.</p>
             </div>
           )}
@@ -410,9 +410,9 @@ export default function ModpackInstallModal({ project, version, source, onClose,
                     </span>
                   </>
                 ) : isError ? (
-                  <><DownloadSimple size={15} weight="bold" /> Thử lại</>
+                  <><DownloadSimple size={15} weight="duotone" /> Thử lại</>
                 ) : (
-                  <><DownloadSimple size={15} weight="bold" /> Cài đặt Modpack</>
+                  <><DownloadSimple size={15} weight="duotone" /> Cài đặt Modpack</>
                 )}
               </button>
             )}

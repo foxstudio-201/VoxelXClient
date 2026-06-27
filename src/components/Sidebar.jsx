@@ -30,56 +30,27 @@
  */
 
 import {
-  HomeIcon as HomeOutline,
-  PlayCircleIcon as PlayOutline,
-  PuzzlePieceIcon as PuzzleOutline,
-  Cog6ToothIcon as CogOutline,
-  UserCircleIcon as UserOutline,
-} from '@heroicons/react/24/outline'
-
-import {
-  HomeIcon as HomeSolid,
-  PlayCircleIcon as PlaySolid,
-  PuzzlePieceIcon as PuzzleSolid,
-  Cog6ToothIcon as CogSolid,
-  UserCircleIcon as UserSolid,
-} from '@heroicons/react/24/solid'
+  House,
+  PlayCircle,
+  PuzzlePiece,
+  HardDrives,
+  Gear,
+  UserCircle,
+} from '@phosphor-icons/react'
 
 import PlayerHead from './ui/PlayerHead'
 import { useLang } from '../i18n/LangProvider'
-
-function ServerOutline({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <rect x="2" y="3" width="20" height="6" rx="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <rect x="2" y="12" width="20" height="6" rx="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
-      <circle cx="6" cy="15" r="1" fill="currentColor" stroke="none"/>
-    </svg>
-  )
-}
-
-function ServerSolid({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <rect x="2" y="3" width="20" height="6" rx="1.5"/>
-      <rect x="2" y="12" width="20" height="6" rx="1.5"/>
-      <circle cx="6" cy="6" r="1.2" fill="rgba(0,0,0,0.4)"/>
-      <circle cx="6" cy="15" r="1.2" fill="rgba(0,0,0,0.4)"/>
-    </svg>
-  )
-}
 
 export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
   const isAccountPage = activePage === 'account'
   const { t } = useLang()
 
   const navItems = [
-    { id: 'home',     label: t('sidebar.home'),     Outline: HomeOutline,   Solid: HomeSolid   },
-    { id: 'play',     label: t('sidebar.play'),     Outline: PlayOutline,   Solid: PlaySolid   },
-    { id: 'mods',     label: t('sidebar.mods'),     Outline: PuzzleOutline, Solid: PuzzleSolid },
-    { id: 'worlds',   label: t('sidebar.worlds'),   Outline: ServerOutline, Solid: ServerSolid },
-    { id: 'settings', label: t('sidebar.settings'), Outline: CogOutline,    Solid: CogSolid    },
+    { id: 'home',     label: t('sidebar.home'),     Icon: House       },
+    { id: 'play',     label: t('sidebar.play'),     Icon: PlayCircle  },
+    { id: 'mods',     label: t('sidebar.mods'),     Icon: PuzzlePiece },
+    { id: 'worlds',   label: t('sidebar.worlds'),   Icon: HardDrives  },
+    { id: 'settings', label: t('sidebar.settings'), Icon: Gear        },
   ]
 
   return (
@@ -146,9 +117,8 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
             opacity: navItems.some(n => n.id === activePage) ? 1 : 0,
           }}
         />
-        {navItems.map(({ id, label, Outline, Solid }) => {
+        {navItems.map(({ id, label, Icon }) => {
           const isActive = activePage === id
-          const Icon = isActive ? Solid : Outline
           return (
             <button
               key={id}
@@ -162,7 +132,7 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
                 }
               `}
             >
-              <Icon className="w-6 h-6" />
+              <Icon size={24} weight="duotone" />
               <span className="
                 pointer-events-none absolute left-[calc(100%+10px)] px-2.5 py-1.5
                 bg-[#1a1a1a] border border-white/[0.08] rounded-lg
@@ -198,9 +168,7 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
               <PlayerHead uuid={selectedAccount.uuid} username={selectedAccount.username} size={34} />
             </div>
           ) : (
-            isAccountPage
-              ? <UserSolid className="w-6 h-6" />
-              : <UserOutline className="w-6 h-6" />
+            <UserCircle size={24} weight="duotone" />
           )}
           {selectedAccount && (
             <span className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-green-400 border-2 border-black/60" />

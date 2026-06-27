@@ -267,7 +267,7 @@ export default function ModrinthDetail({ projectId, projectType, activeLoaders =
         {}
         <button onClick={onBack}
           className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors mb-3">
-          <ArrowLeft size={14} weight="bold" />
+          <ArrowLeft size={14} weight="duotone" />
           Back to results
         </button>
 
@@ -289,7 +289,7 @@ export default function ModrinthDetail({ projectId, projectType, activeLoaders =
                 <button onClick={() => window.electronAPI.openExternal(project.source_url)}
                   className="flex-shrink-0 p-1.5 rounded-lg text-white/25 hover:text-white transition-all hover:bg-white/5"
                   title="Open on Modrinth">
-                  <ArrowSquareOut size={14} />
+                  <ArrowSquareOut size={14} weight="duotone" />
                 </button>
               )}
             </div>
@@ -300,17 +300,17 @@ export default function ModrinthDetail({ projectId, projectType, activeLoaders =
         {}
         <div className="flex items-center gap-4 mb-3 text-sm">
           <span className="flex items-center gap-1.5 text-green-400/80">
-            <DownloadSimple size={15} weight="bold" />
+            <DownloadSimple size={15} weight="duotone" />
             <span className="font-semibold">{formatNum(project.downloads)}</span>
             <span className="text-white/30 text-xs font-normal">downloads</span>
           </span>
           <span className="flex items-center gap-1.5 text-pink-400/70">
-            <Heart size={15} weight="bold" />
+            <Heart size={15} weight="duotone" />
             <span className="font-semibold">{formatNum(project.followers)}</span>
             <span className="text-white/30 text-xs font-normal">follows</span>
           </span>
           <span className="flex items-center gap-1.5 text-white/35 text-xs ml-auto">
-            <CalendarBlank size={13} />
+            <CalendarBlank size={13} weight="duotone" />
             {formatDate(project.updated)}
           </span>
         </div>
@@ -459,7 +459,7 @@ export default function ModrinthDetail({ projectId, projectType, activeLoaders =
                     <span>{formatDate(v.date_published)}</span>
                     <span>·</span>
                     <span className="flex items-center gap-0.5">
-                      <DownloadSimple size={10} weight="bold" className="text-green-400/50" />
+                      <DownloadSimple size={10} weight="duotone" className="text-green-400/50" />
                       {formatNum(v.downloads)}
                     </span>
                   </div>
@@ -474,7 +474,7 @@ export default function ModrinthDetail({ projectId, projectType, activeLoaders =
                   className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white transition-all hover:-translate-y-0.5"
                   style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: '0 2px 12px rgba(74,222,128,0.2)' }}
                 >
-                  <DownloadSimple size={13} weight="bold" />
+                  <DownloadSimple size={13} weight="duotone" />
                   Install
                 </button>
               </div>

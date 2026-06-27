@@ -80,7 +80,20 @@ function resolveIconPath() {
   return devPath
 }
 
+function resolveTrayIconPath() {
+  const candidates = []
+  if (isDev) candidates.push(path.join(__dirname, '../public/icon.png'))
+  candidates.push(path.join(process.resourcesPath, 'icon.png'))
+  candidates.push(path.join(path.dirname(process.execPath), 'resources', 'icon.png'))
+  if (isDev) candidates.push(path.join(__dirname, '../public/icon.png'))
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p
+  }
+  return resolveIconPath()
+}
+
 const ICON_PATH     = resolveIconPath()
+const TRAY_ICON_PATH = resolveTrayIconPath()
 const ACCOUNTS_DIR  = path.join(app.getPath('appData'), '.VoxelXClient')
 const ACCOUNTS_FILE = path.join(ACCOUNTS_DIR, 'accounts.json')
 
@@ -401,15 +414,20 @@ function createUpdateWindow() {
 function createTray() {
   try {
     let trayIcon
-    if (fs.existsSync(ICON_PATH)) {
-      trayIcon = nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 })
+    if (fs.existsSync(TRAY_ICON_PATH)) {
+      trayIcon = nativeImage.createFromPath(TRAY_ICON_PATH).resize({ width: 16, height: 16 })
     } else {
 
       trayIcon = nativeImage.createEmpty()
     }
 
+    if (trayIcon.isEmpty()) {
+      console.error('[Tray] Icon rỗng — bỏ qua tạo tray (kiểm tra icon.png trong resources)')
+    }
+
     tray = new Tray(trayIcon)
     tray.setToolTip('VoxelXLauncher')
+    tray.setTitle('VoxelXLauncher')
 
     const openMainWindow = () => {
       if (!mainWindow || mainWindow.isDestroyed()) {
@@ -421,8 +439,8 @@ function createTray() {
       mainWindow.focus()
     }
 
-    const menuIcon = fs.existsSync(ICON_PATH)
-      ? nativeImage.createFromPath(ICON_PATH).resize({ width: 16, height: 16 })
+    const menuIcon = fs.existsSync(TRAY_ICON_PATH)
+      ? nativeImage.createFromPath(TRAY_ICON_PATH).resize({ width: 16, height: 16 })
       : undefined
 
     const trayMenu = Menu.buildFromTemplate([
@@ -450,16 +468,17 @@ function createTray() {
       },
     ])
 
+    // BẮT BUỘC cho Linux: AppIndicator/StatusNotifier chỉ hiển thị qua
+    // context menu này; các sự kiện click/right-click không hoạt động trên Linux.
+    tray.setContextMenu(trayMenu)
+
+    // Windows/macOS: click trái mở app (Linux bỏ qua, dùng menu).
     tray.on('click', () => {
       openMainWindow()
     })
 
     tray.on('double-click', () => {
       openMainWindow()
-    })
-
-    tray.on('right-click', () => {
-      tray.popUpContextMenu(trayMenu)
     })
   } catch (err) {
     console.error('[Tray] Failed to create tray:', err.message)

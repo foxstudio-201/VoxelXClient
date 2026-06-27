@@ -285,7 +285,8 @@ jobs:
             <img src="https://img.shields.io/badge/version-${{ steps.version.outputs.VERSION }}-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
             <img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&labelColor=0a0a0a&logo=windows11&logoColor=0078D4" alt="Windows" />
             <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&labelColor=0a0a0a&logo=linux&logoColor=FCC624" alt="Linux" />
-            <img src="https://img.shields.io/badge/macOS-000000?style=flat-square&labelColor=0a0a0a&logo=apple&logoColor=white" alt="macOS" />
+            <img src="https://img.shields.io/badge/Arch_(AUR)-1793D1?style=flat-square&labelColor=0a0a0a&logo=archlinux&logoColor=1793D1" alt="Arch AUR" />
+            <img src="https://img.shields.io/badge/macOS-white?style=flat-square&labelColor=0a0a0a&logo=apple&logoColor=white" alt="macOS" />
             <img src="https://img.shields.io/badge/electron-42-47848F?style=flat-square&labelColor=0a0a0a&logo=electron" alt="Electron" />
             <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&labelColor=0a0a0a&logo=react" alt="React" />
             <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=0a0a0a" alt="License" />
@@ -296,15 +297,18 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào **Cải thiện hiệu xuất tải giữ liệu khi load các profile không bị treo khi load**, **Sửa lỗi cài đặt forge trên linux**.
+            > Bản cập nhật tập trung vào fix một số lỗi cơ bản, thêm OS MacOS có thể sử dụng launcher.
 
             ---
             
             ### Phúc phíc
 
-            - **Fix bảo mật**: Cải thiện độ ổn định và tính bảo mật
-            - **Sử lý lỗi treo khi load các profile đã tạo không bị treo khi load**.
-            - **Sửa lỗi cài đặt forge khi chạy trên linux**
+            - **Fix bảo mật**: Cải thiện độ ổn định và tính bảo mật.
+            - **+**: Cài đặt trên MacOS để hỗ trợ đa nền tàng OS.
+            - **+**: Thêm hỗ trợ cài đặt trên linux qua AUR bằng cách sử dụng lệnh yay và paru.
+            - **Thay đổi**: Thay đổi icon sang dạng DuoTone cho đẹp mắt hơn.
+            - **Tray**: Sửa lỗi tray icon trên linux không ổn định , không hoạt động được.
+
 
             ---
 
@@ -312,18 +316,18 @@ jobs:
 
             | Nền tảng | File | Ghi chú |
             |----------|------|---------|
-            | 🪟 Windows | `VoxelXLauncher Setup ${{ steps.version.outputs.VERSION }}.exe` | Installer (khuyến nghị) |
-            | 🪟 Windows | `VoxelXLauncher ${{ steps.version.outputs.VERSION }}.exe` | Portable, không cần cài |
-            | 🐧 Linux | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}.AppImage` | Chạy trực tiếp |
-            | 🐧 Linux | `voxelxlauncher_${{ steps.version.outputs.VERSION }}_amd64.deb` | Debian / Ubuntu |
-            | 🐧 Arch | `yay -S voxelxlauncher-bin` | Arch Linux / AUR |
-            | 🍎 macOS | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}-arm64.dmg` | Apple Silicon (M1/M2/M3) |
-            | 🍎 macOS | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}-x64.dmg` | Intel Mac |
+            | <img src="https://api.iconify.design/ph:windows-logo-duotone.svg?color=%234aa3df&width=18" width="18" align="absmiddle" /> Windows | `VoxelXLauncher Setup ${{ steps.version.outputs.VERSION }}.exe` | Installer (khuyến nghị) |
+            | <img src="https://api.iconify.design/ph:windows-logo-duotone.svg?color=%234aa3df&width=18" width="18" align="absmiddle" /> Windows | `VoxelXLauncher ${{ steps.version.outputs.VERSION }}.exe` | Portable, không cần cài |
+            | <img src="https://api.iconify.design/ph:linux-logo-duotone.svg?color=%23e0a23b&width=18" width="18" align="absmiddle" /> Linux | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}.AppImage` | Chạy trực tiếp |
+            | <img src="https://api.iconify.design/ph:linux-logo-duotone.svg?color=%23e0a23b&width=18" width="18" align="absmiddle" /> Linux | `voxelxlauncher_${{ steps.version.outputs.VERSION }}_amd64.deb` | Debian / Ubuntu |
+            | <img src="https://api.iconify.design/simple-icons:archlinux.svg?color=%231793D1&width=18" width="18" align="absmiddle" /> Arch | `yay -S voxelxlauncher-bin` | Arch Linux / AUR |
+            | <img src="https://api.iconify.design/ph:apple-logo-duotone.svg?color=%23b0b0b0&width=18" width="18" align="absmiddle" /> macOS | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}-arm64.dmg` | Apple Silicon (M1/M2/M3) |
+            | <img src="https://api.iconify.design/ph:apple-logo-duotone.svg?color=%23b0b0b0&width=18" width="18" align="absmiddle" /> macOS | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}-x64.dmg` | Intel Mac |
 
             > **Yêu cầu:** Windows 10/11 (64-bit), Linux x64, hoặc macOS 11+
-            > ⚠️ Windows: SmartScreen có thể cảnh báo lần đầu — nhấn **More info** → **Run anyway**
-            > 🐧 Linux AppImage: `chmod +x VoxelXLauncher*.AppImage && ./VoxelXLauncher*.AppImage`
-            > 🍎 macOS: App chưa ký — mở lần đầu hãy **chuột phải → Open**, rồi xác nhận **Open**
+            > <img src="https://api.iconify.design/ph:windows-logo-duotone.svg?color=%234aa3df&width=18" width="18" align="absmiddle" /> Windows: SmartScreen có thể cảnh báo lần đầu — nhấn **More info** → **Run anyway**
+            > <img src="https://api.iconify.design/ph:linux-logo-duotone.svg?color=%23e0a23b&width=18" width="18" align="absmiddle" /> Linux AppImage: `chmod +x VoxelXLauncher*.AppImage && ./VoxelXLauncher*.AppImage`
+            > <img src="https://api.iconify.design/ph:apple-logo-duotone.svg?color=%23b0b0b0&width=18" width="18" align="absmiddle" /> macOS: App chưa ký — mở lần đầu hãy **chuột phải → Open**, rồi xác nhận **Open**
           files: |
             release-files/windows/*.exe
             release-files/windows/*.zip

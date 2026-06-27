@@ -199,6 +199,10 @@ export default function InstallModal({ project, versions, projectType, source = 
     reset()
     await install({
       versionId:    selectedVersion.id,
+      projectId:    selectedVersion.project_id,
+      downloadUrl:  selectedVersion.files?.[0]?.url,
+      filename:     selectedVersion.files?.[0]?.filename,
+      fileLength:   selectedVersion.files?.[0]?.size,
       projectType,
       instancePath: selectedProfile.instancePath,
       accountId:    selectedId || null,

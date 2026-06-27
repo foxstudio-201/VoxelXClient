@@ -58,7 +58,7 @@ export default function CurseForgeSubTabs({ active, onChange }) {
               : 'text-white/35 hover:text-white/60 hover:bg-white/5 border border-transparent'
           }`}
         >
-          <Icon size={14} weight={active === id ? 'fill' : 'regular'} />
+          <Icon size={14} weight="duotone" />
           {label}
         </button>
       ))}

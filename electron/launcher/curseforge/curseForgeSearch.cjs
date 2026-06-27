@@ -211,12 +211,18 @@ async function getCategories(projectType = 'mod') {
 }
 
 async function installVersion(opts, onProgress) {
-  const { versionId, projectType, instancePath } = opts
+  const { versionId, projectId, projectType, instancePath } = opts
 
-  const fileData = await fetchCfSafe(`/files/${versionId}`)
-  if (!fileData || !fileData.data) throw new Error('File not found')
+  let file = null
+  if (projectId) {
+    const fileData = await fetchCfSafe(`/mods/${projectId}/files/${versionId}`)
+    if (fileData && fileData.data) file = fileData.data
+  }
+  if (!file && opts.downloadUrl && opts.filename) {
+    file = { downloadUrl: opts.downloadUrl, fileName: opts.filename, fileLength: opts.fileLength || 0 }
+  }
+  if (!file) throw new Error('File not found')
 
-  const file = fileData.data
   const downloadUrl = file.downloadUrl
   const filename = file.fileName
 

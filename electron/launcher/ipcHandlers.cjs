@@ -772,6 +772,18 @@ function registerLauncherHandlers(getTrustedWindow) {
     })
   })
 
+  ipcMain.handle('technic:search', async (e, opts) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    return await technicSearch.searchProjects(opts)
+  })
+  ipcMain.handle('technic:getProject', async (e, id) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    return await technicSearch.getProject(id)
+  })
+  ipcMain.handle('technic:getVersions', async (e, id) => {
+    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+    return await technicSearch.getProjectVersions(id)
+  })
   ipcMain.handle('technic:install', async (e, opts) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
     return await technicSearch.installVersion(opts, (p) => {

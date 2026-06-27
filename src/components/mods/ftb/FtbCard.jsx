@@ -109,13 +109,13 @@ function GridCard({ project, onClick }) {
             <div className="flex items-center gap-2 text-[10px] flex-shrink-0">
               {project.downloads > 0 && (
                 <span className="flex items-center gap-1 text-green-400/70">
-                  <DownloadSimple size={12} weight="bold" />
+                  <DownloadSimple size={12} weight="duotone" />
                   {formatNumber(project.downloads)}
                 </span>
               )}
               {project.follows > 0 && (
                 <span className="flex items-center gap-1 text-pink-400/70">
-                  <Heart size={12} weight="bold" />
+                  <Heart size={12} weight="duotone" />
                   {formatNumber(project.follows)}
                 </span>
               )}
@@ -173,13 +173,13 @@ function ListCard({ project, onClick }) {
         <div className="flex flex-col items-end gap-1.5 flex-shrink-0 w-16">
           {project.downloads > 0 && (
             <span className="flex items-center gap-1 text-xs text-green-400/80">
-              <DownloadSimple size={14} weight="bold" />
+              <DownloadSimple size={14} weight="duotone" />
               {formatNumber(project.downloads)}
             </span>
           )}
           {project.follows > 0 && (
             <span className="flex items-center gap-1 text-xs text-pink-400/70">
-              <Heart size={14} weight="bold" />
+              <Heart size={14} weight="duotone" />
               {formatNumber(project.follows)}
             </span>
           )}
