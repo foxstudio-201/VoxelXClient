@@ -2,7 +2,7 @@
 pkgname=voxelxlauncher-bin
 _appname=VoxelXLauncher
 _binname=voxelxlauncher
-pkgver=1.3.99
+pkgver=1.4.0
 pkgrel=1
 pkgdesc="VoxelXLauncher - Minecraft Launcher by FoxStudio"
 arch=('x86_64')
@@ -15,7 +15,7 @@ conflicts=("${_binname}")
 options=('!strip' '!debug')
 source=("${_binname}-${pkgver}.deb::${url}/releases/download/v${pkgver}/${_binname}_${pkgver}_amd64.deb")
 # CI (publish-aur job) replaces this with the real checksum via `updpkgsums`.
-sha256sums=('936e26256f07fa108c9d91befdca181afea9496493a262a8aa4cda9fdc057c79')
+sha256sums=('bc262e79c4918a56aa47a93c381dae959363c3540379892ed003e594dbe9d821')
 
 package() {
   # The release .deb already lays files out in FHS form (/opt + .desktop + icon
