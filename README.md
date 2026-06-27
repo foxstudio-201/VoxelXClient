@@ -23,17 +23,17 @@
   <img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&labelColor=0a0a0a&logo=windows11&logoColor=0078D4" alt="Windows" />
   <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&labelColor=0a0a0a&logo=linux&logoColor=FCC624" alt="Linux" />
   <img src="https://img.shields.io/badge/Arch_(AUR)-1793D1?style=flat-square&labelColor=0a0a0a&logo=archlinux&logoColor=1793D1" alt="Arch AUR" />
-  <img src="https://img.shields.io/badge/macOS-000000?style=flat-square&labelColor=0a0a0a&logo=apple&logoColor=white" alt="macOS" />
+  <img src="https://img.shields.io/badge/macOS-white?style=flat-square&labelColor=0a0a0a&logo=apple&logoColor=white" alt="macOS" />
   <img src="https://img.shields.io/badge/Electron_42-47848F?style=flat-square&labelColor=0a0a0a&logo=electron" alt="Electron" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&labelColor=0a0a0a&logo=react" alt="React" />
 </p>
 
 <p>
-  <a href="#-download"><b>⬇️ Download</b></a> &nbsp;·&nbsp;
-  <a href="#-features">✨ Features</a> &nbsp;·&nbsp;
-  <a href="#-getting-started">🚀 Build from Source</a> &nbsp;·&nbsp;
-  <a href="https://voxelxclient.vercel.app">🌐 Website</a> &nbsp;·&nbsp;
-  <a href="https://join.foxstudio.site">💬 Discord</a>
+  <a href="#download"><b>Download</b></a> &nbsp;·&nbsp;
+  <a href="#features">Features</a> &nbsp;·&nbsp;
+  <a href="#getting-started">Build from Source</a> &nbsp;·&nbsp;
+  <a href="https://voxelxclient.vercel.app">Website</a> &nbsp;·&nbsp;
+  <a href="https://join.foxstudio.site">Discord</a>
 </p>
 
 <br/>
@@ -42,37 +42,37 @@
 
 ---
 
-## ✨ Features
+## Features
 
 | | Feature | Description |
 |:--:|---|---|
-| 🗂️ | **Multi-Profile** | Unlimited profiles — each with its own loader, version, mods and settings |
-| 🔐 | **Microsoft Login** | Secure OAuth2 authentication, tokens auto-refreshed |
-| 📦 | **Mod Support** | Import modpacks from CurseForge & Modrinth via drag-and-drop |
-| ☕ | **Java Auto-Install** | Detects and downloads the correct Java runtime per Minecraft version |
-| 📋 | **Real-Time Logs** | Color-coded game logs (INFO / WARN / ERROR / DEBUG) with copy support |
-| 🎮 | **Discord RPC** | Rich Presence shows your current profile and playtime automatically |
-| 📊 | **Play Stats** | Tracks hours played, world count, and mod count per profile |
-| 🔔 | **Notifications** | Toast notifications with sound for launch events |
+| <img src="https://api.iconify.design/ph:folders-duotone.svg?color=%234ade80&width=24" width="24" /> | **Multi-Profile** | Unlimited profiles — each with its own loader, version, mods and settings |
+| <img src="https://api.iconify.design/ph:shield-check-duotone.svg?color=%234ade80&width=24" width="24" /> | **Microsoft Login** | Secure OAuth2 authentication, tokens auto-refreshed |
+| <img src="https://api.iconify.design/ph:package-duotone.svg?color=%234ade80&width=24" width="24" /> | **Mod Support** | Import modpacks from CurseForge & Modrinth via drag-and-drop |
+| <img src="https://api.iconify.design/ph:coffee-duotone.svg?color=%234ade80&width=24" width="24" /> | **Java Auto-Install** | Detects and downloads the correct Java runtime per Minecraft version |
+| <img src="https://api.iconify.design/ph:terminal-window-duotone.svg?color=%234ade80&width=24" width="24" /> | **Real-Time Logs** | Color-coded game logs (INFO / WARN / ERROR / DEBUG) with copy support |
+| <img src="https://api.iconify.design/ph:game-controller-duotone.svg?color=%234ade80&width=24" width="24" /> | **Discord RPC** | Rich Presence shows your current profile and playtime automatically |
+| <img src="https://api.iconify.design/ph:chart-bar-duotone.svg?color=%234ade80&width=24" width="24" /> | **Play Stats** | Tracks hours played, world count, and mod count per profile |
+| <img src="https://api.iconify.design/ph:bell-duotone.svg?color=%234ade80&width=24" width="24" /> | **Notifications** | Toast notifications with sound for launch events |
 
-### 🧩 Loader Support
+### Loader Support
 
 <table>
   <tr>
-    <td align="center">⛏️<br/><b>Vanilla</b><br/><sub>Official</sub></td>
-    <td align="center">🧵<br/><b>Fabric</b><br/><sub>Supported</sub></td>
-    <td align="center">🔨<br/><b>Forge</b><br/><sub>Supported</sub></td>
-    <td align="center">🌀<br/><b>NeoForge</b><br/><sub>Supported</sub></td>
-    <td align="center">🔥<br/><b>CurseForge</b><br/><sub>Import</sub></td>
-    <td align="center">🟢<br/><b>Modrinth</b><br/><sub>Import</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:cube-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Vanilla</b><br/><sub>Official</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:needle-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Fabric</b><br/><sub>Supported</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:hammer-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Forge</b><br/><sub>Supported</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:gear-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>NeoForge</b><br/><sub>Supported</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:fire-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>CurseForge</b><br/><sub>Import</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:leaf-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Modrinth</b><br/><sub>Import</sub></td>
   </tr>
 </table>
 
 ---
 
-## ⬇️ Download
+## Download
 
-> 💡 Java is bundled and managed automatically — **no manual setup** needed on any platform.
+> Java is bundled and managed automatically — **no manual setup** needed on any platform.
 
 Grab the latest build from the **[Releases](https://github.com/foxstudio-201/VoxelXClient/releases/latest)** page.
 
@@ -83,34 +83,34 @@ Grab the latest build from the **[Releases](https://github.com/foxstudio-201/Vox
     <th align="left">Notes</th>
   </tr>
   <tr>
-    <td>🪟 <b>Windows</b></td>
+    <td><img src="https://api.iconify.design/ph:windows-logo-duotone.svg?color=%234aa3df&width=18" width="18" align="absmiddle" /> <b>Windows</b></td>
     <td><code>VoxelXLauncher Setup x.y.z.exe</code></td>
-    <td>Installer · also available as portable <code>.exe</code></td>
+    <td>Installer · portable <code>.exe</code> also available</td>
   </tr>
   <tr>
-    <td>🐧 <b>Linux</b></td>
+    <td><img src="https://api.iconify.design/ph:linux-logo-duotone.svg?color=%23e0a23b&width=18" width="18" align="absmiddle" /> <b>Linux</b></td>
     <td><code>VoxelXLauncher-x.y.z.AppImage</code></td>
     <td>Run anywhere · <code>.deb</code> also provided</td>
   </tr>
   <tr>
-    <td>🐧 <b>Arch Linux</b></td>
+    <td><img src="https://api.iconify.design/simple-icons:archlinux.svg?color=%231793D1&width=18" width="18" align="absmiddle" /> <b>Arch Linux</b></td>
     <td><code>yay -S voxelxlauncher-bin</code></td>
     <td>Installed straight from the AUR</td>
   </tr>
   <tr>
-    <td>🍎 <b>macOS</b> (Apple Silicon)</td>
+    <td><img src="https://api.iconify.design/ph:apple-logo-duotone.svg?color=%23b0b0b0&width=18" width="18" align="absmiddle" /> <b>macOS</b> (Apple Silicon)</td>
     <td><code>VoxelXLauncher-x.y.z-arm64.dmg</code></td>
     <td>M1 / M2 / M3</td>
   </tr>
   <tr>
-    <td>🍎 <b>macOS</b> (Intel)</td>
+    <td><img src="https://api.iconify.design/ph:apple-logo-duotone.svg?color=%23b0b0b0&width=18" width="18" align="absmiddle" /> <b>macOS</b> (Intel)</td>
     <td><code>VoxelXLauncher-x.y.z-x64.dmg</code></td>
     <td>Intel-based Macs</td>
   </tr>
 </table>
 
 <details>
-<summary>🐧 <b>Arch Linux — install via AUR</b></summary>
+<summary><b>Arch Linux — install via AUR</b></summary>
 
 <br/>
 
@@ -126,7 +126,7 @@ See [`packaging/aur/`](packaging/aur/) for the PKGBUILD and publishing details.
 </details>
 
 <details>
-<summary>🐧 <b>Linux — run the AppImage</b></summary>
+<summary><b>Linux — run the AppImage</b></summary>
 
 <br/>
 
@@ -138,7 +138,7 @@ chmod +x VoxelXLauncher-*.AppImage
 </details>
 
 <details>
-<summary>🍎 <b>macOS — first launch (unsigned app)</b></summary>
+<summary><b>macOS — first launch (unsigned app)</b></summary>
 
 <br/>
 
@@ -152,7 +152,7 @@ You only need to do this once.
 </details>
 
 <details>
-<summary>🪟 <b>Windows — SmartScreen warning</b></summary>
+<summary><b>Windows — SmartScreen warning</b></summary>
 
 <br/>
 
@@ -162,7 +162,7 @@ On first run Windows SmartScreen may warn. Click **More info** → **Run anyway*
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 Build VoxelXLauncher from source for development or to package your own build.
 
@@ -207,7 +207,7 @@ Windows · Linux · macOS · AUR release.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -221,7 +221,7 @@ Windows · Linux · macOS · AUR release.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repo
 2. Create a branch — `git checkout -b feat/your-feature`
@@ -231,7 +231,7 @@ Windows · Linux · macOS · AUR release.
 
 ---
 
-## 📄 License
+## License
 
 Released under the [MIT License](LICENSE).
 
@@ -239,10 +239,10 @@ Released under the [MIT License](LICENSE).
 
 <div align="center">
 
-Made with ❤️ by **FoxStudio**
+Made with care by **FoxStudio**
 
-<a href="https://voxelxclient.vercel.app">🌐 Website</a> &nbsp;·&nbsp;
-<a href="https://join.foxstudio.site">💬 Discord</a> &nbsp;·&nbsp;
-<a href="https://github.com/foxstudio-201/VoxelXClient">⭐ Star on GitHub</a>
+<a href="https://voxelxclient.vercel.app">Website</a> &nbsp;·&nbsp;
+<a href="https://join.foxstudio.site">Discord</a> &nbsp;·&nbsp;
+<a href="https://github.com/foxstudio-201/VoxelXClient">Star on GitHub</a>
 
 </div>
