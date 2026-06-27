@@ -851,6 +851,8 @@
     },
     "mods": {
       "loading": "Đang tải mods...",
+      "search": "Tìm mod...",
+      "noResults": "Không tìm thấy mod nào",
       "emptyTitle": "Chưa có mod nào",
       "emptyDesc": "Kéo thả file .jar vào đây hoặc cài từ Modrinth / CurseForge",
       "installing": "Đang cài {{count}} file...",
@@ -866,6 +868,8 @@
     },
     "shaders": {
       "loading": "Đang tải shaders...",
+      "search": "Tìm shader...",
+      "noResults": "Không tìm thấy shader nào",
       "emptyTitle": "Chưa có shader nào",
       "emptyDesc": "Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục shaderpacks",
       "installing": "Đang cài {{count}} file...",
@@ -876,6 +880,8 @@
     },
     "resourcepacks": {
       "loading": "Đang tải resource packs...",
+      "search": "Tìm resource pack...",
+      "noResults": "Không tìm thấy resource pack nào",
       "emptyTitle": "Chưa có resource pack nào",
       "emptyDesc": "Kéo thả file .zip / .rar vào đây hoặc cài vào thư mục resourcepacks",
       "installing": "Đang cài {{count}} file...",
@@ -886,6 +892,8 @@
     },
     "worlds": {
       "loading": "Đang tải thế giới...",
+      "search": "Tìm thế giới...",
+      "noResults": "Không tìm thấy thế giới nào",
       "emptyTitle": "Chưa có thế giới nào",
       "emptyDesc": "Tạo thế giới mới trong game để xem ở đây",
       "deleteConfirm": "Xóa?",

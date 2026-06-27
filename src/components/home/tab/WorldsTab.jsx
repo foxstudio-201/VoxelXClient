@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { isElectron, Icons, formatBytes, formatDate, LoadingState, EmptyState } from './shared'
+import { isElectron, Icons, formatBytes, formatDate, LoadingState, EmptyState, SearchBar } from './shared'
 import { useLang } from '../../../i18n/LangProvider'
 
 export default function WorldsTab({ profile, accountId }) {
@@ -8,6 +8,12 @@ export default function WorldsTab({ profile, accountId }) {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [query, setQuery] = useState('')
+
+  const q = query.trim().toLowerCase()
+  const filteredWorlds = q
+    ? worlds.filter(w => (w.displayName || w.name || w.folderName || '').toLowerCase().includes(q))
+    : worlds
 
   const load = useCallback(async () => {
     if (!isElectron || !profile?.id) { setLoading(false); return }
@@ -43,8 +49,17 @@ export default function WorldsTab({ profile, accountId }) {
   )
 
   return (
-    <div className="flex flex-col gap-1 p-2.5">
-      {worlds.map(w => (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
+        <SearchBar value={query} onChange={setQuery} placeholder={t('profileSettings.worlds.search')} />
+        <span className="text-xs text-white/30 whitespace-nowrap">{q ? `${filteredWorlds.length}/${worlds.length}` : worlds.length} world</span>
+      </div>
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
+        {filteredWorlds.length === 0 ? (
+          <EmptyState icon={Icons.search} title={t('profileSettings.worlds.noResults')} />
+        ) : (
+        <div className="flex flex-col gap-1 p-2.5">
+      {filteredWorlds.map(w => (
         <div
           key={w.folderName || w.folder || w.name}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/3 border border-white/5 hover:bg-white/5 hover:border-white/8 transition-all group"
@@ -94,6 +109,9 @@ export default function WorldsTab({ profile, accountId }) {
           )}
         </div>
       ))}
+        </div>
+        )}
+      </div>
     </div>
   )
 }

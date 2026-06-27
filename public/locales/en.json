@@ -851,6 +851,8 @@
     },
     "mods": {
       "loading": "Loading mods...",
+      "search": "Search mods...",
+      "noResults": "No mods found",
       "emptyTitle": "No mods yet",
       "emptyDesc": "Drop .jar files here or install from Modrinth / CurseForge",
       "installing": "Installing {{count}} file(s)...",
@@ -866,6 +868,8 @@
     },
     "shaders": {
       "loading": "Loading shaders...",
+      "search": "Search shaders...",
+      "noResults": "No shaders found",
       "emptyTitle": "No shaders yet",
       "emptyDesc": "Drop .zip / .rar files here or install into shaderpacks folder",
       "installing": "Installing {{count}} file(s)...",
@@ -876,6 +880,8 @@
     },
     "resourcepacks": {
       "loading": "Loading resource packs...",
+      "search": "Search resource packs...",
+      "noResults": "No resource packs found",
       "emptyTitle": "No resource packs yet",
       "emptyDesc": "Drop .zip / .rar files here or install into resourcepacks folder",
       "installing": "Installing {{count}} file(s)...",
@@ -886,6 +892,8 @@
     },
     "worlds": {
       "loading": "Loading worlds...",
+      "search": "Search worlds...",
+      "noResults": "No worlds found",
       "emptyTitle": "No worlds yet",
       "emptyDesc": "Create a world in-game to see it here",
       "deleteConfirm": "Delete?",

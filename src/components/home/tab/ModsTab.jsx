@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { isElectron, Icons, formatBytes, LoadingState, EmptyState, ViewToggle, DropZoneWrapper } from './shared'
+import { isElectron, Icons, formatBytes, LoadingState, EmptyState, ViewToggle, DropZoneWrapper, SearchBar } from './shared'
 import { useLang } from '../../../i18n/LangProvider'
 
 export default function ModsTab({ profile, accountId }) {
@@ -12,7 +12,13 @@ export default function ModsTab({ profile, accountId }) {
   const [deleting, setDeleting] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [installing, setInstalling] = useState([])
+  const [query, setQuery] = useState('')
   const fetchingMeta = useRef(new Set())
+
+  const q = query.trim().toLowerCase()
+  const filteredMods = q
+    ? mods.filter(m => (metaCache[m.fileName]?.name || m.displayName || m.fileName || '').toLowerCase().includes(q))
+    : mods
 
   const load = useCallback(async () => {
     if (!isElectron || !profile?.id) { setLoading(false); return }
@@ -117,15 +123,18 @@ export default function ModsTab({ profile, accountId }) {
             <span>{t('profileSettings.mods.installing', { count: installing.length })}</span>
           </div>
         )}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-          <span className="text-xs text-white/30">{mods.length} mod</span>
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
+          <SearchBar value={query} onChange={setQuery} placeholder={t('profileSettings.mods.search')} />
+          <span className="text-xs text-white/30 whitespace-nowrap">{q ? `${filteredMods.length}/${mods.length}` : mods.length} mod</span>
           <ViewToggle view={view} onChange={setView} />
         </div>
 
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-          {view === 'list' ? (
+          {filteredMods.length === 0 ? (
+            <EmptyState icon={Icons.search} title={t('profileSettings.mods.noResults')} />
+          ) : view === 'list' ? (
             <div className="flex flex-col gap-1 p-2.5">
-              {mods.map(mod => {
+              {filteredMods.map(mod => {
                 const meta = metaCache[mod.fileName]
                 const iconUrl = meta?.iconUrl || null
                 return (
@@ -174,7 +183,7 @@ export default function ModsTab({ profile, accountId }) {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2 p-2.5">
-              {mods.map(mod => {
+              {filteredMods.map(mod => {
                 const meta = metaCache[mod.fileName]
                 const iconUrl = meta?.iconUrl || null
                 return (

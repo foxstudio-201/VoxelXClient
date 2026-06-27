@@ -108,6 +108,10 @@ function syncDirRecursive(srcDir, destDir) {
 
     if (shouldCopy) {
       fs.mkdirSync(path.dirname(destPath), { recursive: true })
+      // Một số mod (vd: euphoria_patcher) ghi file ở chế độ read-only (444).
+      // copyFileSync không ghi đè được file read-only -> EACCES trên Linux/macOS.
+      // Gỡ file đích trước (force xoá kể cả read-only) rồi mới copy.
+      try { fs.rmSync(destPath, { force: true }) } catch {}
       fs.copyFileSync(srcPath, destPath)
     }
   }

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { isElectron, Icons, formatBytes, LoadingState, EmptyState, ViewToggle, DropZoneWrapper } from './shared'
+import { isElectron, Icons, formatBytes, LoadingState, EmptyState, ViewToggle, DropZoneWrapper, SearchBar } from './shared'
 import { useLang } from '../../../i18n/LangProvider'
 
 export default function ResourcePacksTab({ profile, accountId }) {
@@ -11,7 +11,13 @@ export default function ResourcePacksTab({ profile, accountId }) {
   const [deleting, setDeleting] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [installing, setInstalling] = useState([])
+  const [query, setQuery] = useState('')
   const fetchingMeta = useRef(new Set())
+
+  const q = query.trim().toLowerCase()
+  const filteredPacks = q
+    ? packs.filter(p => (metaCache[p.fileName]?.name || p.displayName || p.fileName || '').toLowerCase().includes(q))
+    : packs
 
   const load = useCallback(async () => {
     if (!isElectron || !profile?.id) { setLoading(false); return }
@@ -93,15 +99,18 @@ export default function ResourcePacksTab({ profile, accountId }) {
             <span>{t('profileSettings.resourcepacks.installing', { count: installing.length })}</span>
           </div>
         )}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-          <span className="text-xs text-white/30">{packs.length} resource pack</span>
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
+          <SearchBar value={query} onChange={setQuery} placeholder={t('profileSettings.resourcepacks.search')} />
+          <span className="text-xs text-white/30 whitespace-nowrap">{q ? `${filteredPacks.length}/${packs.length}` : packs.length} pack</span>
           <ViewToggle view={view} onChange={setView} />
         </div>
 
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-          {view === 'list' ? (
+          {filteredPacks.length === 0 ? (
+            <EmptyState icon={Icons.search} title={t('profileSettings.resourcepacks.noResults')} />
+          ) : view === 'list' ? (
             <div className="flex flex-col gap-1 p-2.5">
-              {packs.map(pack => {
+              {filteredPacks.map(pack => {
                 const meta = metaCache[pack.fileName]
                 const iconUrl = meta?.iconUrl || null
                 return (
@@ -136,7 +145,7 @@ export default function ResourcePacksTab({ profile, accountId }) {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2 p-2.5">
-              {packs.map(pack => {
+              {filteredPacks.map(pack => {
                 const meta = metaCache[pack.fileName]
                 const iconUrl = meta?.iconUrl || null
                 return (

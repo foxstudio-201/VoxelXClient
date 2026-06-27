@@ -87,6 +87,17 @@ export const Icons = {
       <path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/>
     </svg>
   ),
+  search: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+      <circle cx="11" cy="11" r="7" />
+      <path strokeLinecap="round" d="M21 21l-4.3-4.3" />
+    </svg>
+  ),
+  close: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    </svg>
+  ),
 }
 
 export function LoadingState({ text = 'Đang tải...' }) {
@@ -132,6 +143,33 @@ export function ViewToggle({ view, onChange }) {
       >
         {Icons.grid}
       </button>
+    </div>
+  )
+}
+
+// Ô tìm kiếm dùng chung cho các tab (mods/shaders/resourcepacks/worlds).
+export function SearchBar({ value, onChange, placeholder }) {
+  return (
+    <div className="relative flex-1 min-w-0">
+      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none">
+        {Icons.search}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-white/5 border border-white/8 text-xs text-white/80 placeholder-white/25 outline-none focus:border-white/15 focus:bg-white/8 transition-all"
+      />
+      {value && (
+        <button
+          onClick={() => onChange('')}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-all"
+          tabIndex={-1}
+        >
+          {Icons.close}
+        </button>
+      )}
     </div>
   )
 }
