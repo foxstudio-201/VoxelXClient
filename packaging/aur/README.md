@@ -1,8 +1,10 @@
 # AUR package — `voxelxlauncher-bin`
 
 Gói AUR cài VoxelXLauncher trên Arch Linux (và các distro nền Arch như Manjaro,
-EndeavourOS) bằng cách tải **AppImage** từ GitHub Release, giải nén và cài vào
-`/opt`.
+EndeavourOS) bằng cách tải **gói `.deb`** từ GitHub Release rồi giải nén thẳng
+vào hệ thống. File `.deb` của electron-builder đã có sẵn layout chuẩn FHS
+(`/opt`, `.desktop`, icon, đúng quyền) nên không dính lỗi phân quyền như cách
+giải nén AppImage trước đây.
 
 ## Cài đặt
 
@@ -16,11 +18,11 @@ Sau khi cài, chạy bằng lệnh `voxelxlauncher` hoặc mở từ menu ứng 
 
 ## Cách hoạt động
 
-- `source` trỏ tới `…/releases/download/v$pkgver/VoxelXLauncher-$pkgver.AppImage`.
-- `prepare()` giải nén AppImage (`--appimage-extract`).
-- `package()` copy payload vào `/opt/voxelxlauncher-bin`, tạo wrapper
-  `/usr/bin/voxelxlauncher`, cài `.desktop` + icon, và set SUID cho
-  `chrome-sandbox` (cần cho Electron sandbox).
+- `source` trỏ tới `…/releases/download/v$pkgver/voxelxlauncher_${pkgver}_amd64.deb`.
+- `package()` giải nén `data.tar.xz` của `.deb` thẳng vào `$pkgdir`
+  (payload nằm ở `/opt/VoxelXLauncher`, kèm `.desktop` + icon sẵn quyền chuẩn).
+- Set SUID cho `chrome-sandbox` (cần cho Electron sandbox) và tạo symlink
+  `/usr/bin/voxelxlauncher` → `/opt/VoxelXLauncher/voxelxlauncher`.
 
 ## Phát hành lên AUR
 
@@ -51,6 +53,6 @@ git push
 
 ```sh
 cd packaging/aur
-updpkgsums          # cần AppImage đã release sẵn cho pkgver hiện tại
+updpkgsums          # cần .deb đã release sẵn cho pkgver hiện tại
 makepkg -si
 ```

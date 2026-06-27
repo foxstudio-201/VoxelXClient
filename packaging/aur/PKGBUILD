@@ -8,57 +8,25 @@ pkgdesc="VoxelXLauncher - Minecraft Launcher by FoxStudio"
 arch=('x86_64')
 url="https://github.com/foxstudio-201/VoxelXClient"
 license=('MIT')
-provides=("${_binname}")
-conflicts=("${_binname}")
 depends=('gtk3' 'nss' 'alsa-lib' 'libnotify')
 optdepends=('libappindicator-gtk3: tray icon support')
+provides=("${_binname}")
+conflicts=("${_binname}")
 options=('!strip' '!debug')
-source=("${_appname}-${pkgver}.AppImage::${url}/releases/download/v${pkgver}/${_appname}-${pkgver}.AppImage")
+source=("${_binname}-${pkgver}.deb::${url}/releases/download/v${pkgver}/${_binname}_${pkgver}_amd64.deb")
 # CI (publish-aur job) replaces this with the real checksum via `updpkgsums`.
-sha256sums=('SKIP')
-
-prepare() {
-    chmod +x "${_appname}-${pkgver}.AppImage"
-    "./${_appname}-${pkgver}.AppImage" --appimage-extract >/dev/null
-}
+sha256sums=('936e26256f07fa108c9d91befdca181afea9496493a262a8aa4cda9fdc057c79')
 
 package() {
-    # App payload
-    install -dm755 "${pkgdir}/opt/${pkgname}"
-    cp -a squashfs-root/. "${pkgdir}/opt/${pkgname}/"
+  # The release .deb already lays files out in FHS form (/opt + .desktop + icon
+  # with correct perms), so we just unpack its data archive into the package root.
+  bsdtar -xf "${_binname}-${pkgver}.deb" -C "${srcdir}"
+  bsdtar -xf "${srcdir}/data.tar.xz" -C "${pkgdir}"
 
-    # Electron sandbox needs the SUID bit
-    if [ -f "${pkgdir}/opt/${pkgname}/chrome-sandbox" ]; then
-        chmod 4755 "${pkgdir}/opt/${pkgname}/chrome-sandbox"
-    fi
+  # Electron's sandbox helper must be setuid root.
+  chmod 4755 "${pkgdir}/opt/${_appname}/chrome-sandbox"
 
-    # Launcher wrapper
-    install -dm755 "${pkgdir}/usr/bin"
-    cat > "${pkgdir}/usr/bin/${_binname}" <<EOF
-#!/bin/sh
-exec "/opt/${pkgname}/AppRun" "\$@"
-EOF
-    chmod 755 "${pkgdir}/usr/bin/${_binname}"
-
-    # Desktop entry (point Exec at the wrapper)
-    install -dm755 "${pkgdir}/usr/share/applications"
-    _desktop=$(find squashfs-root -maxdepth 1 -name '*.desktop' | head -n1)
-    if [ -n "${_desktop}" ]; then
-        install -Dm644 "${_desktop}" "${pkgdir}/usr/share/applications/${_binname}.desktop"
-        sed -i "s|^Exec=.*|Exec=${_binname} %U|" "${pkgdir}/usr/share/applications/${_binname}.desktop"
-        sed -i "s|^Icon=.*|Icon=${_binname}|" "${pkgdir}/usr/share/applications/${_binname}.desktop"
-    fi
-
-    # Icons (copy every size electron-builder bundled)
-    for _icon in $(find squashfs-root/usr/share/icons -name '*.png' 2>/dev/null); do
-        _size=$(basename "$(dirname "$(dirname "${_icon}")")")
-        install -Dm644 "${_icon}" \
-            "${pkgdir}/usr/share/icons/hicolor/${_size}/apps/${_binname}.png"
-    done
-    # Fallback: top-level icon shipped at the AppImage root
-    if [ ! -d "${pkgdir}/usr/share/icons" ]; then
-        _toplevel=$(find squashfs-root -maxdepth 1 -name '*.png' | head -n1)
-        [ -n "${_toplevel}" ] && install -Dm644 "${_toplevel}" \
-            "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${_binname}.png"
-    fi
+  # CLI launcher (the .deb ships no /usr/bin entry).
+  install -d "${pkgdir}/usr/bin"
+  ln -sf "/opt/${_appname}/${_binname}" "${pkgdir}/usr/bin/${_binname}"
 }
