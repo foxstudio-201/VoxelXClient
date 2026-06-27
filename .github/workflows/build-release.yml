@@ -172,10 +172,69 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-  # ── Create Release (after both builds) ───────────────────────────────────────
+  # ── macOS ─────────────────────────────────────────────────────────────────────
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --ignore-scripts
+
+      - name: Generate app secret
+        run: node scripts/gen-app-secret.cjs
+
+      - name: Fix BOM in package.json
+        run: |
+          python3 -c "
+          import sys
+          with open('package.json', 'rb') as f:
+              data = f.read()
+          if data[:3] == b'\\xef\\xbb\\xbf':
+              with open('package.json', 'wb') as f:
+                  f.write(data[3:])
+              print('Removed BOM from package.json')
+          else:
+              print('No BOM in package.json')
+          "
+
+      - name: Build Vite
+        run: npm run build
+
+      - name: Build Electron (macOS)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npx electron-builder --mac --x64 --arm64 --publish never
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelXLauncher-macOS-${{ steps.version.outputs.VERSION }}
+          path: |
+            dist-electron/*.dmg
+            dist-electron/*.zip
+          if-no-files-found: warn
+          retention-days: 30
+
+  # ── Create Release (after all builds) ────────────────────────────────────────
   create-release:
     name: Create GitHub Release
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
 
@@ -201,6 +260,12 @@ jobs:
           name: VoxelXLauncher-Linux-${{ steps.version.outputs.VERSION }}
           path: release-files/linux
 
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: VoxelXLauncher-macOS-${{ steps.version.outputs.VERSION }}
+          path: release-files/macos
+
       - name: List release files
         run: find release-files -type f | sort
 
@@ -220,6 +285,7 @@ jobs:
             <img src="https://img.shields.io/badge/version-${{ steps.version.outputs.VERSION }}-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
             <img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&labelColor=0a0a0a&logo=windows11&logoColor=0078D4" alt="Windows" />
             <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&labelColor=0a0a0a&logo=linux&logoColor=FCC624" alt="Linux" />
+            <img src="https://img.shields.io/badge/macOS-000000?style=flat-square&labelColor=0a0a0a&logo=apple&logoColor=white" alt="macOS" />
             <img src="https://img.shields.io/badge/electron-42-47848F?style=flat-square&labelColor=0a0a0a&logo=electron" alt="Electron" />
             <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&labelColor=0a0a0a&logo=react" alt="React" />
             <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=0a0a0a" alt="License" />
@@ -250,19 +316,74 @@ jobs:
             | 🪟 Windows | `VoxelXLauncher ${{ steps.version.outputs.VERSION }}.exe` | Portable, không cần cài |
             | 🐧 Linux | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}.AppImage` | Chạy trực tiếp |
             | 🐧 Linux | `voxelxlauncher_${{ steps.version.outputs.VERSION }}_amd64.deb` | Debian / Ubuntu |
+            | 🐧 Arch | `yay -S voxelxlauncher-bin` | Arch Linux / AUR |
+            | 🍎 macOS | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}-arm64.dmg` | Apple Silicon (M1/M2/M3) |
+            | 🍎 macOS | `VoxelXLauncher-${{ steps.version.outputs.VERSION }}-x64.dmg` | Intel Mac |
 
-            > **Yêu cầu:** Windows 10/11 (64-bit) hoặc Linux x64
+            > **Yêu cầu:** Windows 10/11 (64-bit), Linux x64, hoặc macOS 11+
             > ⚠️ Windows: SmartScreen có thể cảnh báo lần đầu — nhấn **More info** → **Run anyway**
             > 🐧 Linux AppImage: `chmod +x VoxelXLauncher*.AppImage && ./VoxelXLauncher*.AppImage`
+            > 🍎 macOS: App chưa ký — mở lần đầu hãy **chuột phải → Open**, rồi xác nhận **Open**
           files: |
             release-files/windows/*.exe
             release-files/windows/*.zip
             release-files/linux/*.AppImage
             release-files/linux/*.deb
             release-files/linux/*.rpm
+            release-files/macos/*.dmg
+            release-files/macos/*.zip
           fail_on_unmatched_files: false
           draft: false
           prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Publish to AUR (after release assets are live) ───────────────────────────
+  publish-aur:
+    name: Publish to AUR
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check AUR secret
+        id: guard
+        env:
+          AUR_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -n "$AUR_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AUR_SSH_PRIVATE_KEY not set — skipping AUR publish"
+          fi
+
+      - name: Get version
+        id: version
+        if: steps.guard.outputs.enabled == 'true'
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump pkgver in PKGBUILD
+        if: steps.guard.outputs.enabled == 'true'
+        run: |
+          sed -i "s/^pkgver=.*/pkgver=${{ steps.version.outputs.VERSION }}/" packaging/aur/PKGBUILD
+          sed -i "s/^pkgrel=.*/pkgrel=1/" packaging/aur/PKGBUILD
+
+      - name: Publish to AUR
+        if: steps.guard.outputs.enabled == 'true'
+        uses: KSXGitHub/github-actions-deploy-aur@v2.7.2
+        with:
+          pkgname: voxelxlauncher-bin
+          pkgbuild: ./packaging/aur/PKGBUILD
+          assets: |
+            ./packaging/aur/README.md
+          commit_username: FoxStudio
+          commit_email: contact@foxstudio.dev
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ steps.version.outputs.VERSION }}"
+          updpkgsums: true
+          ssh_keyscan_types: rsa,ecdsa,ed25519

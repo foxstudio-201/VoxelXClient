@@ -1,0 +1,64 @@
+# Maintainer: FoxStudio <contact@foxstudio.dev>
+pkgname=voxelxlauncher-bin
+_appname=VoxelXLauncher
+_binname=voxelxlauncher
+pkgver=1.3.99
+pkgrel=1
+pkgdesc="VoxelXLauncher - Minecraft Launcher by FoxStudio"
+arch=('x86_64')
+url="https://github.com/foxstudio-201/VoxelXClient"
+license=('MIT')
+provides=("${_binname}")
+conflicts=("${_binname}")
+depends=('gtk3' 'nss' 'alsa-lib' 'libnotify')
+optdepends=('libappindicator-gtk3: tray icon support')
+options=('!strip' '!debug')
+source=("${_appname}-${pkgver}.AppImage::${url}/releases/download/v${pkgver}/${_appname}-${pkgver}.AppImage")
+# CI (publish-aur job) replaces this with the real checksum via `updpkgsums`.
+sha256sums=('SKIP')
+
+prepare() {
+    chmod +x "${_appname}-${pkgver}.AppImage"
+    "./${_appname}-${pkgver}.AppImage" --appimage-extract >/dev/null
+}
+
+package() {
+    # App payload
+    install -dm755 "${pkgdir}/opt/${pkgname}"
+    cp -a squashfs-root/. "${pkgdir}/opt/${pkgname}/"
+
+    # Electron sandbox needs the SUID bit
+    if [ -f "${pkgdir}/opt/${pkgname}/chrome-sandbox" ]; then
+        chmod 4755 "${pkgdir}/opt/${pkgname}/chrome-sandbox"
+    fi
+
+    # Launcher wrapper
+    install -dm755 "${pkgdir}/usr/bin"
+    cat > "${pkgdir}/usr/bin/${_binname}" <<EOF
+#!/bin/sh
+exec "/opt/${pkgname}/AppRun" "\$@"
+EOF
+    chmod 755 "${pkgdir}/usr/bin/${_binname}"
+
+    # Desktop entry (point Exec at the wrapper)
+    install -dm755 "${pkgdir}/usr/share/applications"
+    _desktop=$(find squashfs-root -maxdepth 1 -name '*.desktop' | head -n1)
+    if [ -n "${_desktop}" ]; then
+        install -Dm644 "${_desktop}" "${pkgdir}/usr/share/applications/${_binname}.desktop"
+        sed -i "s|^Exec=.*|Exec=${_binname} %U|" "${pkgdir}/usr/share/applications/${_binname}.desktop"
+        sed -i "s|^Icon=.*|Icon=${_binname}|" "${pkgdir}/usr/share/applications/${_binname}.desktop"
+    fi
+
+    # Icons (copy every size electron-builder bundled)
+    for _icon in $(find squashfs-root/usr/share/icons -name '*.png' 2>/dev/null); do
+        _size=$(basename "$(dirname "$(dirname "${_icon}")")")
+        install -Dm644 "${_icon}" \
+            "${pkgdir}/usr/share/icons/hicolor/${_size}/apps/${_binname}.png"
+    done
+    # Fallback: top-level icon shipped at the AppImage root
+    if [ ! -d "${pkgdir}/usr/share/icons" ]; then
+        _toplevel=$(find squashfs-root -maxdepth 1 -name '*.png' | head -n1)
+        [ -n "${_toplevel}" ] && install -Dm644 "${_toplevel}" \
+            "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${_binname}.png"
+    fi
+}

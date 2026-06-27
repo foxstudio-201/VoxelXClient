@@ -14,6 +14,7 @@ Manage profiles, install mods, and launch any Minecraft version — all in one p
   <img src="https://img.shields.io/badge/version-1.2.0-4ade80?style=flat-square&labelColor=0a0a0a" alt="Version" />
   <img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&labelColor=0a0a0a&logo=windows11&logoColor=0078D4" alt="Windows" />
   <img src="https://img.shields.io/badge/Linux-FCC624?style=flat-square&labelColor=0a0a0a&logo=linux&logoColor=FCC624" alt="Linux" />
+  <img src="https://img.shields.io/badge/macOS-000000?style=flat-square&labelColor=0a0a0a&logo=apple&logoColor=white" alt="macOS" />
   <img src="https://img.shields.io/badge/electron-42-47848F?style=flat-square&labelColor=0a0a0a&logo=electron" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&labelColor=0a0a0a&logo=react" alt="React" />
   <img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square&labelColor=0a0a0a" alt="License" />
@@ -117,9 +118,33 @@ npm run patch:icon   # Regenerate app icon
 
 ## ⬇️ Download
 
-> **Windows 10/11 (64-bit)** — Java is managed automatically, no manual setup needed.
+> Java is managed automatically — no manual setup needed on any platform.
 
-Head to the [Releases](https://github.com/foxstudio-201/VoxelXLauncher/releases) page to download the latest `.exe` installer.
+Head to the [Releases](https://github.com/foxstudio-201/VoxelXClient/releases) page for the latest builds.
+
+| Platform | File | Notes |
+|----------|------|-------|
+| 🪟 Windows | `VoxelXLauncher Setup x.y.z.exe` | Installer (recommended) |
+| 🪟 Windows | `VoxelXLauncher x.y.z.exe` | Portable |
+| 🐧 Linux | `VoxelXLauncher-x.y.z.AppImage` | Run directly (`chmod +x` then run) |
+| 🐧 Linux | `voxelxlauncher_x.y.z_amd64.deb` | Debian / Ubuntu |
+| 🐧 Arch | `yay -S voxelxlauncher-bin` | Arch Linux / AUR |
+| 🍎 macOS | `VoxelXLauncher-x.y.z-arm64.dmg` | Apple Silicon (M1/M2/M3) |
+| 🍎 macOS | `VoxelXLauncher-x.y.z-x64.dmg` | Intel Mac |
+
+### 🐧 Arch Linux (AUR)
+
+```bash
+yay -S voxelxlauncher-bin
+# or
+paru -S voxelxlauncher-bin
+```
+
+See [`packaging/aur/`](packaging/aur/) for the PKGBUILD and publishing details.
+
+### 🍎 macOS
+
+The app is **not code-signed**. On first launch, **right-click the app → Open**, then confirm **Open** to bypass Gatekeeper.
 
 ---
 
