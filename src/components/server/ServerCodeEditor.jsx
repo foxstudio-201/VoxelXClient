@@ -172,7 +172,7 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
         <button
           onClick={async () => { await onSave(); }}
           disabled={saving}
-          className="px-3 py-1 rounded-lg text-xs font-semibold bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/20 transition-all disabled:opacity-50">
+          className="px-3 py-1 rounded-lg text-xs font-semibold bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 border border-orange-500/20 transition-all disabled:opacity-50">
           {saving ? 'Đang lưu...' : 'Lưu'}
         </button>
       </div>
@@ -223,7 +223,7 @@ export default function ServerCodeEditor({ fileName, content, onChange, onSave, 
             style={{
               padding: '8px 12px',
               color: 'transparent',
-              caretColor: '#4ade80',
+              caretColor: '#fb923c',
               scrollbarColor: 'rgba(255,255,255,0.1) transparent',
               border: 'none',
               outline: 'none',

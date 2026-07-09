@@ -380,7 +380,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
               onClick={() => resetTab(item.id)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 tab === item.id
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
                   : 'text-white/40 hover:text-white/70 hover:bg-white/5'
               }`}
             >
@@ -397,7 +397,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
               <div className="flex flex-col gap-4">
                 {otpState === 'sending' ? (
                   <div className="flex flex-col items-center gap-4 py-6">
-                    <svg className="animate-spin w-7 h-7 text-green-400" viewBox="0 0 24 24" fill="none">
+                    <svg className="animate-spin w-7 h-7 text-orange-400" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
@@ -406,8 +406,8 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                 ) : (
                   <form onSubmit={handleOtpSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col items-center gap-3 py-2">
-                      <div className="w-12 h-12 rounded-2xl bg-green-500/15 border border-green-500/25 flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-green-400">
+                      <div className="w-12 h-12 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-orange-400">
                           <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                         </svg>
                       </div>
@@ -626,7 +626,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                       <p className="text-sm font-semibold text-white truncate">{discordDisplayName}</p>
                       <p className="text-xs text-white/45 truncate">{discordTag || 'Discord'}</p>
                     </div>
-                    <span className="flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
+                    <span className="flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
                       <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                       {t('account.addModal.discordVerified')}
                     </span>
@@ -741,7 +741,7 @@ function TextField({ label, value, onChange, placeholder, autoFocus = false }) {
         placeholder={placeholder}
         maxLength={16}
         autoFocus={autoFocus}
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-green-500/50 focus:bg-white/8 transition-all"
+        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-orange-500/50 focus:bg-white/8 transition-all"
       />
     </div>
   )
@@ -822,8 +822,8 @@ function WaitingState({ title, description, colorClass }) {
 function SuccessState({ title, description, actionLabel, onAction }) {
   return (
     <div className="flex flex-col items-center gap-4 py-4">
-      <div className="w-12 h-12 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-green-400">
+      <div className="w-12 h-12 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-orange-400">
           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
         </svg>
       </div>
@@ -833,7 +833,7 @@ function SuccessState({ title, description, actionLabel, onAction }) {
       </div>
       <button
         onClick={onAction}
-        className="w-full py-2.5 rounded-xl text-sm font-bold bg-green-500 hover:bg-green-400 text-white transition-all"
+        className="w-full py-2.5 rounded-xl text-sm font-bold bg-orange-500 hover:bg-orange-400 text-white transition-all"
       >
         {actionLabel}
       </button>
@@ -845,7 +845,7 @@ function PrimaryButton({ children, ...props }) {
   return (
     <button
       {...props}
-      className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-green-500 hover:bg-green-400 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-orange-500 hover:bg-orange-400 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {children}
     </button>

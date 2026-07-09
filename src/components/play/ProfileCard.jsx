@@ -33,7 +33,7 @@ const LOADER_ICONS = {
 }
 
 const LOADER_COLORS = {
-  vanilla:  'text-green-400',
+  vanilla:  'text-orange-400',
   fabric:   'text-purple-400',
   forge:    'text-orange-400',
   neoforge: 'text-rose-400',
@@ -41,7 +41,7 @@ const LOADER_COLORS = {
 
 const IMPORT_SOURCE_CONFIG = {
   curseforge: { label: 'CurseForge', icon: curseforgeIcon, color: '#f97316', bg: 'rgba(249,115,22,0.18)', border: 'rgba(249,115,22,0.35)' },
-  modrinth:   { label: 'Modrinth',   icon: modrinthIcon,   color: '#22c55e', bg: 'rgba(34,197,94,0.18)',  border: 'rgba(34,197,94,0.35)'  },
+  modrinth:   { label: 'Modrinth',   icon: modrinthIcon,   color: '#f97316', bg: 'rgba(249,115,22,0.18)',  border: 'rgba(249,115,22,0.35)'  },
 }
 
 function getMajorVersion(gameVersion) {
@@ -77,7 +77,7 @@ export default function ProfileCard({ profile, isSelected, confirmDelete, onSele
   const { t } = useLang()
   const bgImage     = profile.importBgUrl || getVersionImage(profile.gameVersion)
   const loaderIcon  = profile.importIconUrl || LOADER_ICONS[profile.loader] || vanillaIcon
-  const loaderColor = LOADER_COLORS[profile.loader] || 'text-green-400'
+  const loaderColor = LOADER_COLORS[profile.loader] || 'text-orange-400'
   const importSrc   = profile.importSource ? IMPORT_SOURCE_CONFIG[profile.importSource] : null
   const isElectron  = typeof window !== 'undefined' && window.electronAPI
 
@@ -122,14 +122,14 @@ export default function ProfileCard({ profile, isSelected, confirmDelete, onSele
 
   return (
     <>
-      <div className={`flex flex-col rounded-2xl overflow-hidden border transition-all duration-200 ${isSelected ? 'border-green-500/40 shadow-lg shadow-green-500/10' : 'border-white/5 hover:border-white/10'} bg-[#141414]`}>
+      <div className={`flex flex-col rounded-2xl overflow-hidden border transition-all duration-200 ${isSelected ? 'border-orange-500/40 shadow-lg shadow-orange-500/10' : 'border-white/5 hover:border-white/10'} bg-[#141414]`}>
 
         <div className="relative h-28 overflow-hidden">
           <img src={bgImage} alt={profile.gameVersion} className="w-full h-full object-cover transition-transform duration-500 ease-out hover:scale-110" draggable={false} onError={e => { e.currentTarget.src = getVersionImage(profile.gameVersion) }} />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 pointer-events-none" />
 
           {isSelected && (
-            <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/90 text-white text-[10px] font-bold">
+            <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/90 text-white text-[10px] font-bold">
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               {t ? t('playpage.card.selected') : 'Selected'}
             </div>
@@ -185,7 +185,7 @@ export default function ProfileCard({ profile, isSelected, confirmDelete, onSele
           <button
             onClick={() => onSelect(profile.id)}
             disabled={isSelected}
-            className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 active:scale-95 ${isSelected ? 'bg-green-500/15 text-green-400 border border-green-500/20 cursor-default' : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/15 hover:border-green-500/30'}`}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 active:scale-95 ${isSelected ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20 cursor-default' : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/15 hover:border-orange-500/30'}`}
           >
             {isSelected ? `✓ ${t ? t('playpage.card.selected') : 'Selected'}` : (t ? t('playpage.card.select') : 'Select')}
           </button>

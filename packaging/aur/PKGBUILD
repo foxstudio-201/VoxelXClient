@@ -1,10 +1,10 @@
 # Maintainer: FoxStudio <contact@foxstudio.dev>
 pkgname=voxelxlauncher-bin
-_appname=VoxelXLauncher
+_appname="Martian Launcher"
 _binname=voxelxlauncher
 pkgver=1.4.0
 pkgrel=1
-pkgdesc="VoxelXLauncher - Minecraft Launcher by FoxStudio"
+pkgdesc="Martian Launcher - Minecraft Launcher by FoxStudio"
 arch=('x86_64')
 url="https://github.com/foxstudio-201/VoxelXClient"
 license=('MIT')
@@ -15,7 +15,7 @@ conflicts=("${_binname}")
 options=('!strip' '!debug')
 source=("${_binname}-${pkgver}.deb::${url}/releases/download/v${pkgver}/${_binname}_${pkgver}_amd64.deb")
 # CI (publish-aur job) replaces this with the real checksum via `updpkgsums`.
-sha256sums=('bc262e79c4918a56aa47a93c381dae959363c3540379892ed003e594dbe9d821')
+sha256sums=('561cbb5c08384e0279c71fcc980367f573768980670f5602e38d7efcbe9af3a5')
 
 package() {
   # The release .deb already lays files out in FHS form (/opt + .desktop + icon

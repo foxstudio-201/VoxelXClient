@@ -60,7 +60,7 @@ function openLanWindow(info) {
     frame:           false,
     transparent:     false,
     backgroundColor: '#0f0f0f',
-    title:           'VoxelXLauncher – LAN World Share',
+    title:           'Martian Launcher – LAN World Share',
     icon,
     skipTaskbar:     false,
     alwaysOnTop:     false,  

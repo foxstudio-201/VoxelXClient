@@ -1,6 +1,6 @@
 # AUR package — `voxelxlauncher-bin`
 
-Gói AUR cài VoxelXLauncher trên Arch Linux (và các distro nền Arch như Manjaro,
+Gói AUR cài Martian Launcher trên Arch Linux (và các distro nền Arch như Manjaro,
 EndeavourOS) bằng cách tải **gói `.deb`** từ GitHub Release rồi giải nén thẳng
 vào hệ thống. File `.deb` của electron-builder đã có sẵn layout chuẩn FHS
 (`/opt`, `.desktop`, icon, đúng quyền) nên không dính lỗi phân quyền như cách
@@ -20,9 +20,9 @@ Sau khi cài, chạy bằng lệnh `voxelxlauncher` hoặc mở từ menu ứng 
 
 - `source` trỏ tới `…/releases/download/v$pkgver/voxelxlauncher_${pkgver}_amd64.deb`.
 - `package()` giải nén `data.tar.xz` của `.deb` thẳng vào `$pkgdir`
-  (payload nằm ở `/opt/VoxelXLauncher`, kèm `.desktop` + icon sẵn quyền chuẩn).
+  (payload nằm ở `/opt/Martian Launcher`, kèm `.desktop` + icon sẵn quyền chuẩn).
 - Set SUID cho `chrome-sandbox` (cần cho Electron sandbox) và tạo symlink
-  `/usr/bin/voxelxlauncher` → `/opt/VoxelXLauncher/voxelxlauncher`.
+  `/usr/bin/voxelxlauncher` → `/opt/Martian Launcher/voxelxlauncher`.
 
 ## Phát hành lên AUR
 

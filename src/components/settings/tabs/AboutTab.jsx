@@ -31,30 +31,19 @@
 
 import { useState, useEffect } from 'react'
 import { useLang } from '../../../i18n/LangProvider'
+import martianLogo from '../../../assets/martian-logo.png'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
 function VXCLogo({ size = 56 }) {
-  const s = size
-  const half = s / 2
-  const gap = s * 0.054
-  const r = s * 0.063
-
-  return (
-    <svg viewBox="0 0 24 24" fill="none" width={s} height={s}>
-      <rect x="2"  y="2"  width="9" height="9" fill="#4ade80" rx={r * (24 / s)}/>
-      <rect x="13" y="2"  width="9" height="9" fill="#22c55e" rx={r * (24 / s)}/>
-      <rect x="2"  y="13" width="9" height="9" fill="#16a34a" rx={r * (24 / s)}/>
-      <rect x="13" y="13" width="9" height="9" fill="#4ade80" rx={r * (24 / s)}/>
-    </svg>
-  )
+  return <img src={martianLogo} alt="Martian" className="rounded-xl" style={{ width: size, height: size }} />
 }
 
 function InfoRow({ label, value, mono = false }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
       <span className="text-xs text-white/40">{label}</span>
-      <span className={`text-xs ${mono ? 'font-mono text-green-400' : 'text-white/70'}`}>{value}</span>
+      <span className={`text-xs ${mono ? 'font-mono text-orange-400' : 'text-white/70'}`}>{value}</span>
     </div>
   )
 }
@@ -106,23 +95,23 @@ export default function AboutTab() {
           className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(74,222,128,0.4) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(74,222,128,0.4) 1px, transparent 1px)
+              linear-gradient(rgba(251,146,60,0.4) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(251,146,60,0.4) 1px, transparent 1px)
             `,
             backgroundSize: '20px 20px',
           }}
         />
-        <div className="absolute bottom-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400/20 to-emerald-600/20 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400/20 to-orange-600/20 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
             <VXCLogo size={32} />
           </div>
 
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">VoxelXLauncher</h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">Martian Launcher</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-mono text-green-400 bg-green-500/15 px-2 py-0.5 rounded-md border border-green-500/20">
+              <span className="text-xs font-mono text-orange-400 bg-orange-500/15 px-2 py-0.5 rounded-md border border-orange-500/20">
                 v{version || '...'}
               </span>
               <span className="text-xs text-white/30">by FoxStudio</span>

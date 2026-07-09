@@ -4,7 +4,7 @@
   "flag": "🇻🇳",
   "settings": {
     "title": "Cài đặt",
-    "subtitle": "Tùy chỉnh VoxelXLauncher theo ý bạn",
+    "subtitle": "Tùy chỉnh Martian Launcher theo ý bạn",
     "tabs": {
       "launcher": "Cấu hình Launcher",
       "privacy": "Quyền riêng tư & Bảo mật",
@@ -122,7 +122,7 @@
     "ready": "Sẵn sàng!"
   },
   "update": {
-    "title": "Cập nhật VoxelXLauncher",
+    "title": "Cập nhật Martian Launcher",
     "currentVersion": "Phiên bản hiện tại:",
     "checking": "Đang kiểm tra cập nhật...",
     "upToDate": "Bạn đang dùng phiên bản mới nhất",
@@ -207,7 +207,9 @@
       "createprofile": "Tạo profile để chơi",
       "settings": "Cài đặt profile",
       "closesettings": "Đóng cài đặt",
-      "modpack": "Modpack"
+      "modpack": "Modpack",
+      "noprofile": "Chưa chọn profile",
+      "createprofilehint": "Tạo hoặc chọn profile từ menu bên trên để xem và quản lý mods, world, shader và resource packs."
     },
     "account": {
       "label": "Tài khoản"

@@ -123,7 +123,7 @@ export default function ServerJavaModal({ onClose, onSelect }) {
         <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <svg className="animate-spin w-6 h-6 text-green-400/50" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin w-6 h-6 text-orange-400/50" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
@@ -169,7 +169,7 @@ export default function ServerJavaModal({ onClose, onSelect }) {
                     return (
                       <button key={`${pkg.distro}-${pkg.javaVersion}`}
                         onClick={() => { onSelect(pkg); onClose() }}
-                        className="flex flex-col gap-2 p-4 rounded-2xl border border-white/8 bg-white/3 hover:border-green-500/40 hover:bg-green-500/5 transition-all text-left group">
+                        className="flex flex-col gap-2 p-4 rounded-2xl border border-white/8 bg-white/3 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all text-left group">
                         <div className="flex items-center gap-2">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-base flex-shrink-0"
                             style={{ background: `${d.color}20`, color: d.color }}>
@@ -181,7 +181,7 @@ export default function ServerJavaModal({ onClose, onSelect }) {
                           </div>
                         </div>
                         {mcNote && (
-                          <p className="text-[10px] text-green-400/70 flex items-center gap-1">
+                          <p className="text-[10px] text-orange-400/70 flex items-center gap-1">
                             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 flex-shrink-0">
                               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                             </svg>

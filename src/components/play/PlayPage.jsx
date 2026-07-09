@@ -43,7 +43,7 @@ import neoforgeIcon  from '../../assets/loader/neoforge.png'
 
 const LOADER_FILTERS = (t) => [
   { id: 'all',      label: t('playpage.filters.all'),      icon: null },
-  { id: 'vanilla',  label: t('playpage.filters.vanilla'),  icon: vanillaIcon,  color: '#4ade80' },
+  { id: 'vanilla',  label: t('playpage.filters.vanilla'),  icon: vanillaIcon,  color: '#fb923c' },
   { id: 'fabric',   label: t('playpage.filters.fabric'),   icon: fabricIcon,   color: '#a855f7' },
   { id: 'forge',    label: t('playpage.filters.forge'),    icon: forgeIcon,    color: '#f97316' },
   { id: 'neoforge', label: t('playpage.filters.neoforge'), icon: neoforgeIcon, color: '#f43f5e' },
@@ -59,13 +59,13 @@ function SplashLogoInline({ size = 64, label }) {
       <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
         {}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-green-500/15 rounded-full blur-2xl" style={{ width: size * 0.8, height: size * 0.8, animation: 'play-logo-glow 3s ease-in-out infinite' }} />
+          <div className="bg-orange-500/15 rounded-full blur-2xl" style={{ width: size * 0.8, height: size * 0.8, animation: 'play-logo-glow 3s ease-in-out infinite' }} />
         </div>
         {}
-        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#4ade80', boxShadow: '0 0 10px #4ade8099', animation: 'play-logo-tl 3s ease-in-out 0s infinite' }} />
-        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#22c55e', boxShadow: '0 0 10px #22c55e99', animation: 'play-logo-tr 3s ease-in-out 0.06s infinite' }} />
-        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#16a34a', boxShadow: '0 0 10px #16a34a99', animation: 'play-logo-bl 3s ease-in-out 0.12s infinite' }} />
-        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#4ade80', boxShadow: '0 0 10px #4ade8099', animation: 'play-logo-br 3s ease-in-out 0.18s infinite' }} />
+        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#fb923c', boxShadow: '0 0 10px #fb923c99', animation: 'play-logo-tl 3s ease-in-out 0s infinite' }} />
+        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#f97316', boxShadow: '0 0 10px #f9731699', animation: 'play-logo-tr 3s ease-in-out 0.06s infinite' }} />
+        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#ea580c', boxShadow: '0 0 10px #ea580c99', animation: 'play-logo-bl 3s ease-in-out 0.12s infinite' }} />
+        <div className="absolute rounded-lg" style={{ width: s, height: s, background: '#fb923c', boxShadow: '0 0 10px #fb923c99', animation: 'play-logo-br 3s ease-in-out 0.18s infinite' }} />
       </div>
       {label && <p className="text-[11px] text-white/30 font-medium">{label}</p>}
       <style>{`
@@ -583,7 +583,7 @@ export default function PlayPage() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(v => !v)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-green-500 hover:bg-green-400 text-white text-xs font-bold transition-all duration-150 active:scale-95 shadow-lg shadow-green-500/20"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-xs font-bold transition-all duration-150 active:scale-95 shadow-lg shadow-orange-500/20"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -599,7 +599,7 @@ export default function PlayPage() {
                   onClick={() => { setShowCreate(true); setShowDropdown(false) }}
                   className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-green-400">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-orange-400">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                   </svg>
                   {t('playpage.buttons.newProfile')}
@@ -733,7 +733,7 @@ export default function PlayPage() {
               {profiles.length === 0 && (
                 <button
                   onClick={() => setShowCreate(true)}
-                  className="px-4 py-2 rounded-xl bg-green-500/15 text-green-400 text-xs font-semibold border border-green-500/20 hover:bg-green-500/25 transition-all"
+                  className="px-4 py-2 rounded-xl bg-orange-500/15 text-orange-400 text-xs font-semibold border border-orange-500/20 hover:bg-orange-500/25 transition-all"
                 >
                   {t('playpage.empty.createFirstProfile')}
                 </button>

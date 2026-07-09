@@ -4,7 +4,7 @@
   "flag": "🇬🇧",
   "settings": {
     "title": "Settings",
-    "subtitle": "Customize VoxelXLauncher to your liking",
+    "subtitle": "Customize Martian Launcher to your liking",
     "tabs": {
       "launcher": "Launcher Config",
       "privacy": "Privacy & Security",
@@ -122,7 +122,7 @@
     "ready": "Ready!"
   },
   "update": {
-    "title": "Update VoxelXLauncher",
+    "title": "Update Martian Launcher",
     "currentVersion": "Current version:",
     "checking": "Checking for updates...",
     "upToDate": "You are on the latest version",
@@ -207,7 +207,9 @@
       "createprofile": "Create a profile to play",
       "settings": "Profile settings",
       "closesettings": "Close settings",
-      "modpack": "Modpack"
+      "modpack": "Modpack",
+      "noprofile": "No profile selected",
+      "createprofilehint": "Create or select a profile from the dropdown above to view and manage mods, worlds, shaders, and resource packs."
     },
     "account": {
       "label": "Account"

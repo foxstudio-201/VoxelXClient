@@ -31,31 +31,17 @@
 
 import { useState, useEffect } from 'react'
 import { Icons } from './tab/shared'
-import GeneralTab      from './tab/GeneralTab'
-import WorldsTab       from './tab/WorldsTab'
-import ModsTab         from './tab/ModsTab'
-import ShadersTab      from './tab/ShadersTab'
-import ResourcePacksTab from './tab/ResourcePacksTab'
-import FilesTab        from './tab/FilesTab'
+import GeneralTab from './tab/GeneralTab'
+import FilesTab   from './tab/FilesTab'
 import { useLang } from '../../i18n/LangProvider'
 
 export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdated, accountId }) {
   const { t } = useLang()
-  const isVanilla = !profile?.loader || profile.loader === 'vanilla'
 
-  const ALL_TABS = [
-    { id: 'general',       labelKey: 'profileSettings.tabs.general',       icon: Icons.settings,     component: GeneralTab       },
-    { id: 'worlds',        labelKey: 'profileSettings.tabs.worlds',        icon: Icons.world,        component: WorldsTab        },
-    { id: 'files',         labelKey: 'profileSettings.tabs.files',         icon: Icons.files,        component: FilesTab         },
-    { id: 'mods',          labelKey: 'profileSettings.tabs.mods',          icon: Icons.mod,          component: ModsTab          },
-    { id: 'shaders',       labelKey: 'profileSettings.tabs.shaders',       icon: Icons.shader,       component: ShadersTab       },
-    { id: 'resourcepacks', labelKey: 'profileSettings.tabs.resourcepacks', icon: Icons.resourcepack, component: ResourcePacksTab },
+  const tabs = [
+    { id: 'general', labelKey: 'profileSettings.tabs.general', icon: Icons.settings, component: GeneralTab },
+    { id: 'files',   labelKey: 'profileSettings.tabs.files',   icon: Icons.files,    component: FilesTab   },
   ]
-
-  const tabs = ALL_TABS.filter(tab => {
-    if (tab.id === 'shaders' && isVanilla) return false
-    return true
-  })
 
   const [activeTab, setActiveTab] = useState('general')
 
@@ -109,7 +95,7 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
                 : 'text-white/35 hover:text-white/65 hover:bg-white/5'
             }`}
           >
-            <span className={activeTab === tab.id ? 'text-green-400' : 'text-white/30'}>
+            <span className={activeTab === tab.id ? 'text-orange-400' : 'text-white/30'}>
               {tab.icon}
             </span>
             {t(tab.labelKey)}

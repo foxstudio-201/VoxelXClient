@@ -151,7 +151,7 @@ function PulseBackground() {
         style={{
           width: '60vw', height: '60vw',
           top: '-20vw', left: '-10vw',
-          background: 'radial-gradient(circle, rgba(74,222,128,0.06) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(251,146,60,0.06) 0%, transparent 70%)',
           animation: 'bg-pulse-1 8s ease-in-out infinite',
         }}
       />
@@ -160,7 +160,7 @@ function PulseBackground() {
         style={{
           width: '50vw', height: '50vw',
           bottom: '-15vw', right: '-10vw',
-          background: 'radial-gradient(circle, rgba(34,197,94,0.05) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(249,115,22,0.05) 0%, transparent 70%)',
           animation: 'bg-pulse-2 10s ease-in-out infinite',
         }}
       />
@@ -177,7 +177,7 @@ function PulseBackground() {
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage: 'linear-gradient(rgba(74,222,128,1) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,1) 1px,transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(251,146,60,1) 1px,transparent 1px),linear-gradient(90deg,rgba(251,146,60,1) 1px,transparent 1px)',
           backgroundSize: '48px 48px',
         }}
       />

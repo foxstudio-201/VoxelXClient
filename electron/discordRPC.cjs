@@ -39,12 +39,12 @@ let retryTimer = null
 let intentionalDisconnect = false
 
 const DEFAULT_ACTIVITY = {
-  details:      'VoxelXLauncher',
+  details:      'Martian Launcher',
   state:        'Đang ở menu chính',
   largeImageKey:  'logo',
-  largeImageText: 'VoxelXLauncher',
+  largeImageText: 'Martian Launcher',
   smallImageKey:  'logo',
-  smallImageText: 'VoxelXLauncher',
+  smallImageText: 'Martian Launcher',
   instance: false,
 }
 

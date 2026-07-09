@@ -143,7 +143,7 @@ export function AccountsProvider({ children }) {
 
       if (sync.conflict) {
         // Username đã tồn tại trên web với UUID khác → báo lỗi
-        return { error: `Tên "${account.username}" đã được sử dụng trên hệ thống VoxelXLauncher` }
+        return { error: `Tên "${account.username}" đã được sử dụng trên hệ thống Martian Launcher` }
       }
 
       finalUuid = sync.uuid

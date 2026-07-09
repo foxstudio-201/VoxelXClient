@@ -426,8 +426,8 @@ function createTray() {
     }
 
     tray = new Tray(trayIcon)
-    tray.setToolTip('VoxelXLauncher')
-    tray.setTitle('VoxelXLauncher')
+    tray.setToolTip('Martian Launcher')
+    tray.setTitle('Martian Launcher')
 
     const openMainWindow = () => {
       if (!mainWindow || mainWindow.isDestroyed()) {
@@ -445,12 +445,12 @@ function createTray() {
 
     const trayMenu = Menu.buildFromTemplate([
       {
-        label: 'VoxelXLauncher', enabled: false,
+        label: 'Martian Launcher', enabled: false,
         ...(menuIcon ? { icon: menuIcon } : {}),
       },
       { type: 'separator' },
       {
-        label: 'Mở VoxelXLauncher',
+        label: 'Mở Martian Launcher',
         click: () => openMainWindow(),
       },
       {

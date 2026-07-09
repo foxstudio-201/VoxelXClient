@@ -32,6 +32,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { loadAppSettings } from '../utils/appSettings'
 import { useLang } from '../i18n/LangProvider'
+import martianLogo from '../assets/martian-logo.png'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -168,13 +169,13 @@ export default function SplashScreen({ onDone }) {
     >
       {}
       <div className="absolute inset-0 opacity-[0.04]" style={{
-        backgroundImage: `linear-gradient(rgba(74,222,128,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(74,222,128,0.8) 1px,transparent 1px)`,
+        backgroundImage: `linear-gradient(rgba(251,146,60,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(251,146,60,0.8) 1px,transparent 1px)`,
         backgroundSize: '48px 48px',
       }} />
 
       {}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-96 h-96 bg-green-500/5 rounded-full blur-3xl" />
+        <div className="w-96 h-96 bg-orange-500/5 rounded-full blur-3xl" />
       </div>
 
       {}
@@ -183,56 +184,27 @@ export default function SplashScreen({ onDone }) {
         {}
         <div className="relative flex items-center justify-center" style={{ width: 160, height: 160 }}>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-32 h-32 bg-green-500/20 rounded-full blur-3xl" style={{ animation: 'splash-glow 4s ease-in-out infinite' }} />
+            <div className="w-36 h-36 bg-orange-500/20 rounded-full blur-3xl" style={{ animation: 'splash-pulse 3s ease-in-out infinite' }} />
           </div>
-          <div className="absolute rounded-xl" style={{ width: 36, height: 36, background: '#4ade80', boxShadow: '0 0 18px #4ade8099', animation: 'splash-tl 4s ease-in-out 0s infinite' }} />
-          <div className="absolute rounded-xl" style={{ width: 36, height: 36, background: '#22c55e', boxShadow: '0 0 18px #22c55e99', animation: 'splash-tr 4s ease-in-out 0.06s infinite' }} />
-          <div className="absolute rounded-xl" style={{ width: 36, height: 36, background: '#16a34a', boxShadow: '0 0 18px #16a34a99', animation: 'splash-bl 4s ease-in-out 0.12s infinite' }} />
-          <div className="absolute rounded-xl" style={{ width: 36, height: 36, background: '#4ade80', boxShadow: '0 0 18px #4ade8099', animation: 'splash-br 4s ease-in-out 0.18s infinite' }} />
+          <img src={martianLogo} alt="Martian" className="w-28 h-28 object-contain drop-shadow-[0_0_24px_rgba(251,146,60,0.5)]" style={{ animation: 'splash-float 4s ease-in-out infinite' }} />
         </div>
 
         <style>{`
-          @keyframes splash-tl {
-            0%   { transform:translate(-18px,-18px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%  { transform:translate(-42px,-42px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%  { transform:translate(-42px,-42px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%  { transform:translate(-18px,-18px) rotate(360deg) scale(1);   opacity:.9; }
-            100% { transform:translate(-18px,-18px) rotate(360deg) scale(1);   opacity:.9; }
+          @keyframes splash-float {
+            0%,100% { transform: translateY(0px) scale(1); }
+            25%     { transform: translateY(-6px) scale(1.02); }
+            75%     { transform: translateY(6px) scale(0.98); }
           }
-          @keyframes splash-tr {
-            0%   { transform:translate( 18px,-18px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%  { transform:translate( 42px,-42px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%  { transform:translate( 42px,-42px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%  { transform:translate( 18px,-18px) rotate(360deg) scale(1);   opacity:.9; }
-            100% { transform:translate( 18px,-18px) rotate(360deg) scale(1);   opacity:.9; }
-          }
-          @keyframes splash-bl {
-            0%   { transform:translate(-18px, 18px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%  { transform:translate(-42px, 42px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%  { transform:translate(-42px, 42px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%  { transform:translate(-18px, 18px) rotate(360deg) scale(1);   opacity:.9; }
-            100% { transform:translate(-18px, 18px) rotate(360deg) scale(1);   opacity:.9; }
-          }
-          @keyframes splash-br {
-            0%   { transform:translate( 18px, 18px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%  { transform:translate( 42px, 42px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%  { transform:translate( 42px, 42px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%  { transform:translate( 18px, 18px) rotate(360deg) scale(1);   opacity:.9; }
-            100% { transform:translate( 18px, 18px) rotate(360deg) scale(1);   opacity:.9; }
-          }
-          @keyframes splash-glow {
-            0%   { opacity:0.3; transform:scale(1);   }
-            15%  { opacity:0.9; transform:scale(1.8); }
-            50%  { opacity:0.9; transform:scale(1.8); }
-            65%  { opacity:0.3; transform:scale(1);   }
-            100% { opacity:0.3; transform:scale(1);   }
+          @keyframes splash-pulse {
+            0%,100% { opacity:0.3; transform:scale(1); }
+            50%     { opacity:0.8; transform:scale(1.3); }
           }
         `}</style>
 
         {}
         <div className="text-center">
           <h1 className="text-3xl font-black text-white tracking-tight">
-            VoxelX<span className="text-green-400">Launcher</span>
+            <span className="text-orange-400">Martian</span> Launcher
           </h1>
           <p className="text-xs text-white/25 mt-1 font-mono tracking-widest">{version ? `v${version}` : ''}</p>
         </div>
@@ -249,13 +221,13 @@ export default function SplashScreen({ onDone }) {
                 className="h-full rounded-full"
                 style={{
                   width: `${pct}%`,
-                  background: 'linear-gradient(90deg,#16a34a,#4ade80)',
-                  boxShadow: '0 0 8px rgba(74,222,128,0.6)',
+                  background: 'linear-gradient(90deg,#ea580c,#fb923c)',
+                  boxShadow: '0 0 8px rgba(251,146,60,0.6)',
                   transition: 'width 300ms ease-out',
                 }}
               />
             </div>
-            <span className="text-[11px] text-green-400 font-mono font-bold w-8 text-right flex-shrink-0">{pct}%</span>
+            <span className="text-[11px] text-orange-400 font-mono font-bold w-8 text-right flex-shrink-0">{pct}%</span>
           </div>
         </div>
       </div>

@@ -3,20 +3,20 @@
 <br/>
 
 <!-- Logo -->
-<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/icon.png" width="96" height="96" alt="VoxelXLauncher Logo" />
+<img src="https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/icon.png" width="96" height="96" alt="Martian Launcher Logo" />
 
-<h1>VoxelXLauncher</h1>
+<h1>Martian Launcher</h1>
 
 <p>
-  <strong>The Ultimate Minecraft Launcher</strong>
+  <strong>The Ultimate Minecraft Launcher — Martian Launcher</strong>
   <br/>
   Manage profiles, install mods, and launch any Minecraft version — all in one place.
 </p>
 
 <p>
-  <a href="https://github.com/foxstudio-201/VoxelXClient/releases"><img src="https://img.shields.io/github/package-json/v/foxstudio-201/VoxelXClient?style=for-the-badge&label=version&labelColor=0a0a0a&color=4ade80" alt="Version" /></a>
-  <a href="https://github.com/foxstudio-201/VoxelXClient/releases"><img src="https://img.shields.io/github/downloads/foxstudio-201/VoxelXClient/total?style=for-the-badge&label=downloads&labelColor=0a0a0a&color=22c55e" alt="Downloads" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge&labelColor=0a0a0a" alt="License" /></a>
+  <a href="https://github.com/foxstudio-201/VoxelXClient/releases"><img src="https://img.shields.io/github/package-json/v/foxstudio-201/VoxelXClient?style=for-the-badge&label=version&labelColor=0a0a0a&color=fb923c" alt="Version" /></a>
+  <a href="https://github.com/foxstudio-201/VoxelXClient/releases"><img src="https://img.shields.io/github/downloads/foxstudio-201/VoxelXClient/total?style=for-the-badge&label=downloads&labelColor=0a0a0a&color=f97316" alt="Downloads" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f97316?style=for-the-badge&labelColor=0a0a0a" alt="License" /></a>
 </p>
 
 <p>
@@ -46,25 +46,25 @@
 
 | | Feature | Description |
 |:--:|---|---|
-| <img src="https://api.iconify.design/ph:folders-duotone.svg?color=%234ade80&width=24" width="24" /> | **Multi-Profile** | Unlimited profiles — each with its own loader, version, mods and settings |
-| <img src="https://api.iconify.design/ph:shield-check-duotone.svg?color=%234ade80&width=24" width="24" /> | **Microsoft Login** | Secure OAuth2 authentication, tokens auto-refreshed |
-| <img src="https://api.iconify.design/ph:package-duotone.svg?color=%234ade80&width=24" width="24" /> | **Mod Support** | Import modpacks from CurseForge & Modrinth via drag-and-drop |
-| <img src="https://api.iconify.design/ph:coffee-duotone.svg?color=%234ade80&width=24" width="24" /> | **Java Auto-Install** | Detects and downloads the correct Java runtime per Minecraft version |
-| <img src="https://api.iconify.design/ph:terminal-window-duotone.svg?color=%234ade80&width=24" width="24" /> | **Real-Time Logs** | Color-coded game logs (INFO / WARN / ERROR / DEBUG) with copy support |
-| <img src="https://api.iconify.design/ph:game-controller-duotone.svg?color=%234ade80&width=24" width="24" /> | **Discord RPC** | Rich Presence shows your current profile and playtime automatically |
-| <img src="https://api.iconify.design/ph:chart-bar-duotone.svg?color=%234ade80&width=24" width="24" /> | **Play Stats** | Tracks hours played, world count, and mod count per profile |
-| <img src="https://api.iconify.design/ph:bell-duotone.svg?color=%234ade80&width=24" width="24" /> | **Notifications** | Toast notifications with sound for launch events |
+| <img src="https://api.iconify.design/ph:folders-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Multi-Profile** | Unlimited profiles — each with its own loader, version, mods and settings |
+| <img src="https://api.iconify.design/ph:shield-check-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Microsoft Login** | Secure OAuth2 authentication, tokens auto-refreshed |
+| <img src="https://api.iconify.design/ph:package-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Mod Support** | Import modpacks from CurseForge & Modrinth via drag-and-drop |
+| <img src="https://api.iconify.design/ph:coffee-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Java Auto-Install** | Detects and downloads the correct Java runtime per Minecraft version |
+| <img src="https://api.iconify.design/ph:terminal-window-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Real-Time Logs** | Color-coded game logs (INFO / WARN / ERROR / DEBUG) with copy support |
+| <img src="https://api.iconify.design/ph:game-controller-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Discord RPC** | Rich Presence shows your current profile and playtime automatically |
+| <img src="https://api.iconify.design/ph:chart-bar-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Play Stats** | Tracks hours played, world count, and mod count per profile |
+| <img src="https://api.iconify.design/ph:bell-duotone.svg?color=%23fb923c&width=24" width="24" /> | **Notifications** | Toast notifications with sound for launch events |
 
 ### Loader Support
 
 <table>
   <tr>
-    <td align="center"><img src="https://api.iconify.design/ph:cube-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Vanilla</b><br/><sub>Official</sub></td>
-    <td align="center"><img src="https://api.iconify.design/ph:needle-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Fabric</b><br/><sub>Supported</sub></td>
-    <td align="center"><img src="https://api.iconify.design/ph:hammer-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Forge</b><br/><sub>Supported</sub></td>
-    <td align="center"><img src="https://api.iconify.design/ph:gear-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>NeoForge</b><br/><sub>Supported</sub></td>
-    <td align="center"><img src="https://api.iconify.design/ph:fire-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>CurseForge</b><br/><sub>Import</sub></td>
-    <td align="center"><img src="https://api.iconify.design/ph:leaf-duotone.svg?color=%234ade80&width=30" width="30" /><br/><b>Modrinth</b><br/><sub>Import</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:cube-duotone.svg?color=%23fb923c&width=30" width="30" /><br/><b>Vanilla</b><br/><sub>Official</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:needle-duotone.svg?color=%23fb923c&width=30" width="30" /><br/><b>Fabric</b><br/><sub>Supported</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:hammer-duotone.svg?color=%23fb923c&width=30" width="30" /><br/><b>Forge</b><br/><sub>Supported</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:gear-duotone.svg?color=%23fb923c&width=30" width="30" /><br/><b>NeoForge</b><br/><sub>Supported</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:fire-duotone.svg?color=%23fb923c&width=30" width="30" /><br/><b>CurseForge</b><br/><sub>Import</sub></td>
+    <td align="center"><img src="https://api.iconify.design/ph:leaf-duotone.svg?color=%23fb923c&width=30" width="30" /><br/><b>Modrinth</b><br/><sub>Import</sub></td>
   </tr>
 </table>
 
@@ -84,12 +84,12 @@ Grab the latest build from the **[Releases](https://github.com/foxstudio-201/Vox
   </tr>
   <tr>
     <td><img src="https://api.iconify.design/ph:windows-logo-duotone.svg?color=%234aa3df&width=18" width="18" align="absmiddle" /> <b>Windows</b></td>
-    <td><code>VoxelXLauncher Setup x.y.z.exe</code></td>
+    <td><code>MartianLauncher Setup x.y.z.exe</code></td>
     <td>Installer · portable <code>.exe</code> also available</td>
   </tr>
   <tr>
     <td><img src="https://api.iconify.design/ph:linux-logo-duotone.svg?color=%23e0a23b&width=18" width="18" align="absmiddle" /> <b>Linux</b></td>
-    <td><code>VoxelXLauncher-x.y.z.AppImage</code></td>
+    <td><code>MartianLauncher-x.y.z.AppImage</code></td>
     <td>Run anywhere · <code>.deb</code> also provided</td>
   </tr>
   <tr>
@@ -99,12 +99,12 @@ Grab the latest build from the **[Releases](https://github.com/foxstudio-201/Vox
   </tr>
   <tr>
     <td><img src="https://api.iconify.design/ph:apple-logo-duotone.svg?color=%23b0b0b0&width=18" width="18" align="absmiddle" /> <b>macOS</b> (Apple Silicon)</td>
-    <td><code>VoxelXLauncher-x.y.z-arm64.dmg</code></td>
+    <td><code>MartianLauncher-x.y.z-arm64.dmg</code></td>
     <td>M1 / M2 / M3</td>
   </tr>
   <tr>
     <td><img src="https://api.iconify.design/ph:apple-logo-duotone.svg?color=%23b0b0b0&width=18" width="18" align="absmiddle" /> <b>macOS</b> (Intel)</td>
-    <td><code>VoxelXLauncher-x.y.z-x64.dmg</code></td>
+    <td><code>MartianLauncher-x.y.z-x64.dmg</code></td>
     <td>Intel-based Macs</td>
   </tr>
 </table>
@@ -131,8 +131,8 @@ See [`packaging/aur/`](packaging/aur/) for the PKGBUILD and publishing details.
 <br/>
 
 ```bash
-chmod +x VoxelXLauncher-*.AppImage
-./VoxelXLauncher-*.AppImage
+chmod +x MartianLauncher-*.AppImage
+./MartianLauncher-*.AppImage
 ```
 
 </details>
@@ -144,7 +144,7 @@ chmod +x VoxelXLauncher-*.AppImage
 
 The app is **not code-signed**, so Gatekeeper will warn on first launch:
 
-1. Right-click **VoxelXLauncher.app** → **Open**
+1. Right-click **Martian Launcher.app** → **Open**
 2. Confirm **Open** in the dialog
 
 You only need to do this once.
@@ -164,7 +164,7 @@ On first run Windows SmartScreen may warn. Click **More info** → **Run anyway*
 
 ## Getting Started
 
-Build VoxelXLauncher from source for development or to package your own build.
+Build Martian Launcher from source for development or to package your own build.
 
 ### Prerequisites
 

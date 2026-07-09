@@ -3,48 +3,26 @@ import { loadAppSettings, saveAppSettings } from '../utils/appSettings'
 
 export const LangContext = createContext(null)
 
-const GITHUB_BASE = 'https://raw.githubusercontent.com/foxstudio-201/VoxelXClient/main/public/locales'
 const cache = {}
 
 async function fetchLang(code) {
   if (cache[code]) return cache[code]
-  // Thử local trước (luôn mới nhất khi build)
-  try {
-    const res = await fetch(`/locales/${code}.json`)
-    if (res.ok) {
-      const data = await res.json()
-      cache[code] = data
-      return data
-    }
-  } catch {}
-  // Fallback về GitHub nếu local không có
-  try {
-    const bust = Date.now()
-    const res = await fetch(`${GITHUB_BASE}/${code}.json?v=${bust}`, { cache: 'no-store' })
-    if (!res.ok) throw new Error('fetch failed')
-    const data = await res.json()
-    cache[code] = data
-    return data
-  } catch {
-    return null
-  }
+  const res = await fetch(`/locales/${code}.json`)
+  if (!res.ok) return null
+  const data = await res.json()
+  cache[code] = data
+  return data
 }
 
 async function fetchLangList() {
   try {
-    const res = await fetch(`${GITHUB_BASE}/index.json`, { cache: 'no-store' })
-    if (!res.ok) throw new Error()
+    const res = await fetch('/locales/index.json')
     return (await res.json()).languages || []
   } catch {
-    try {
-      const res2 = await fetch('/locales/index.json')
-      return (await res2.json()).languages || []
-    } catch {
-      return [
-        { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
-        { code: 'en', name: 'English', flag: '🇬🇧' },
-      ]
-    }
+    return [
+      { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
+      { code: 'en', name: 'English', flag: '🇬🇧' },
+    ]
   }
 }
 

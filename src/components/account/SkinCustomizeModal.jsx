@@ -223,7 +223,7 @@ async function handleApply() {
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-all -mb-px ${
                 activeTab === tab.id
-                  ? 'border-green-500 text-green-400'
+                  ? 'border-orange-500 text-orange-400'
                   : 'border-transparent text-white/30 hover:text-white/60'
               }`}>
               {t(tab.labelKey)}
@@ -247,7 +247,7 @@ async function handleApply() {
                     <button key={st.id} onClick={() => setSkinType(st.id)}
                       className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${
                         skinType === st.id
-                          ? 'bg-green-500/15 border-green-500/30 text-green-400'
+                          ? 'bg-orange-500/15 border-orange-500/30 text-orange-400'
                           : 'bg-white/3 border-white/8 text-white/40 hover:text-white/60 hover:bg-white/6'
                       }`}>
                       {t(st.labelKey)}
@@ -270,8 +270,8 @@ async function handleApply() {
                 onClick={handleBrowse}
                 className="flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-200"
                 style={{
-                  background: isDragging ? 'rgba(74,222,128,0.08)' : 'rgba(255,255,255,0.03)',
-                  border: `1px dashed ${isDragging ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                  background: isDragging ? 'rgba(251,146,60,0.08)' : 'rgba(255,255,255,0.03)',
+                  border: `1px dashed ${isDragging ? 'rgba(251,146,60,0.5)' : 'rgba(255,255,255,0.12)'}`,
                 }}
               >
                 {previewUrl && selectedFile ? (
@@ -280,8 +280,8 @@ async function handleApply() {
                     style={{ imageRendering: 'pixelated', background: 'rgba(255,255,255,0.05)' }} />
                 ) : (
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)' }}>
-                    <svg className="w-5 h-5 text-green-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    style={{ background: 'rgba(251,146,60,0.06)', border: '1px solid rgba(251,146,60,0.15)' }}>
+                    <svg className="w-5 h-5 text-orange-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
@@ -320,7 +320,7 @@ async function handleApply() {
           </button>
           <button onClick={handleApply} disabled={!canApply}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-            style={{ background: done ? 'rgba(74,222,128,0.3)' : 'linear-gradient(135deg,#22c55e,#16a34a)', boxShadow: canApply ? '0 4px 16px rgba(34,197,94,0.25)' : 'none' }}>
+            style={{ background: done ? 'rgba(251,146,60,0.3)' : 'linear-gradient(135deg,#f97316,#ea580c)', boxShadow: canApply ? '0 4px 16px rgba(249,115,22,0.25)' : 'none' }}>
             {done ? (
               <>
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>

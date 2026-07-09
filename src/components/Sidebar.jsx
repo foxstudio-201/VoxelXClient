@@ -40,6 +40,7 @@ import {
 
 import PlayerHead from './ui/PlayerHead'
 import { useLang } from '../i18n/LangProvider'
+import martianIcon from '../assets/martian-icon.png'
 
 export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
   const isAccountPage = activePage === 'account'
@@ -57,47 +58,20 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
     <aside className="w-[68px] flex flex-col items-center py-4 gap-0.5 bg-black/25 backdrop-blur-md border-r border-white/[0.06] z-50 overflow-visible">
       {}
       <div className="mb-4 mt-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/10 flex items-center justify-center relative overflow-hidden shadow-lg shadow-green-500/20 select-none border border-green-500/15">
-          {}
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center relative overflow-hidden shadow-lg shadow-orange-500/20 select-none border border-orange-500/15">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-6 h-6 bg-green-500/30 rounded-full blur-lg" style={{ animation: 'sb-glow 3s ease-in-out infinite' }} />
+            <div className="w-7 h-7 bg-orange-500/30 rounded-full blur-lg" style={{ animation: 'sb-pulse 3s ease-in-out infinite' }} />
           </div>
-          {}
-          <div className="absolute rounded-[3px]" style={{ width: 8, height: 8, background: '#4ade80', boxShadow: '0 0 6px #4ade8099', animation: 'sb-tl 3s ease-in-out 0s infinite' }} />
-          <div className="absolute rounded-[3px]" style={{ width: 8, height: 8, background: '#22c55e', boxShadow: '0 0 6px #22c55e99', animation: 'sb-tr 3s ease-in-out 0.06s infinite' }} />
-          <div className="absolute rounded-[3px]" style={{ width: 8, height: 8, background: '#16a34a', boxShadow: '0 0 6px #16a34a99', animation: 'sb-bl 3s ease-in-out 0.12s infinite' }} />
-          <div className="absolute rounded-[3px]" style={{ width: 8, height: 8, background: '#4ade80', boxShadow: '0 0 6px #4ade8099', animation: 'sb-br 3s ease-in-out 0.18s infinite' }} />
+          <img src={martianIcon} alt="Martian" className="w-6 h-6 object-contain" style={{ animation: 'sb-breathe 3s ease-in-out infinite' }} />
         </div>
         <style>{`
-          @keyframes sb-tl {
-            0%,100% { transform: translate(-4px,-4px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%     { transform: translate(-8px,-8px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%     { transform: translate(-8px,-8px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%     { transform: translate(-4px,-4px) rotate(360deg) scale(1);   opacity:.9; }
+          @keyframes sb-breathe {
+            0%,100% { transform: scale(1); opacity:0.9; }
+            50%     { transform: scale(1.12); opacity:1; }
           }
-          @keyframes sb-tr {
-            0%,100% { transform: translate( 4px,-4px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%     { transform: translate( 8px,-8px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%     { transform: translate( 8px,-8px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%     { transform: translate( 4px,-4px) rotate(360deg) scale(1);   opacity:.9; }
-          }
-          @keyframes sb-bl {
-            0%,100% { transform: translate(-4px, 4px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%     { transform: translate(-8px, 8px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%     { transform: translate(-8px, 8px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%     { transform: translate(-4px, 4px) rotate(360deg) scale(1);   opacity:.9; }
-          }
-          @keyframes sb-br {
-            0%,100% { transform: translate( 4px, 4px) rotate(0deg)   scale(1);   opacity:.9; }
-            15%     { transform: translate( 8px, 8px) rotate(0deg)   scale(1.1); opacity:1;  }
-            50%     { transform: translate( 8px, 8px) rotate(360deg) scale(1.1); opacity:1;  }
-            65%     { transform: translate( 4px, 4px) rotate(360deg) scale(1);   opacity:.9; }
-          }
-          @keyframes sb-glow {
-            0%,100% { opacity:0.3; transform:scale(1);   }
-            15%     { opacity:0.8; transform:scale(1.5); }
-            50%     { opacity:0.8; transform:scale(1.5); }
-            65%     { opacity:0.3; transform:scale(1);   }
+          @keyframes sb-pulse {
+            0%,100% { opacity:0.3; transform:scale(1); }
+            50%     { opacity:0.8; transform:scale(1.4); }
           }
         `}</style>
       </div>
@@ -106,7 +80,7 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
       <nav className="flex flex-col gap-1 flex-1 w-full px-2 relative">
         {/* Sliding active indicator */}
         <div
-          className="absolute left-0 w-[3px] h-6 bg-green-400 rounded-r-full transition-all duration-300 ease-out z-20"
+          className="absolute left-0 w-[3px] h-6 bg-orange-400 rounded-r-full transition-all duration-300 ease-out z-20"
           style={{
             top: (() => {
               const idx = navItems.findIndex(n => n.id === activePage)
@@ -127,7 +101,7 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
                 relative w-full h-12 rounded-xl flex items-center justify-center
                 transition-all duration-200 group
                 ${isActive
-                  ? 'bg-green-500/15 text-green-400'
+                  ? 'bg-orange-500/15 text-orange-400'
                   : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
                 }
               `}
@@ -158,20 +132,20 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
             relative w-full h-12 rounded-xl flex items-center justify-center
             transition-all duration-150 group
             ${isAccountPage
-              ? 'bg-green-500/15 text-green-400'
+              ? 'bg-orange-500/15 text-orange-400'
               : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
             }
           `}
         >
           {selectedAccount ? (
-            <div className={`rounded-lg overflow-hidden ${isAccountPage ? 'ring-2 ring-green-400/50 ring-offset-1 ring-offset-black/50' : ''}`}>
+            <div className={`rounded-lg overflow-hidden ${isAccountPage ? 'ring-2 ring-orange-400/50 ring-offset-1 ring-offset-black/50' : ''}`}>
               <PlayerHead uuid={selectedAccount.uuid} username={selectedAccount.username} size={34} />
             </div>
           ) : (
             <UserCircle size={24} weight="duotone" />
           )}
           {selectedAccount && (
-            <span className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-green-400 border-2 border-black/60" />
+            <span className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-400 border-2 border-black/60" />
           )}
           <span className="
             pointer-events-none absolute left-[calc(100%+10px)] px-2.5 py-1.5

@@ -33,6 +33,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
 import PlayerHead from './ui/PlayerHead'
 import coinIcon from '../assets/item/coin.png'
+import martianIcon from '../assets/martian-icon.png'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 const FRIENDS_API = 'https://www.voxelx.io.vn/api/friends'
@@ -53,7 +54,7 @@ function InstanceModal({ instances, onKill, onClose }) {
         {}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
             <h3 className="text-sm font-bold text-white">Running Instances</h3>
             <span className="text-xs text-white/30 bg-white/8 px-1.5 py-0.5 rounded-md font-mono">
               {runningInstances.length}
@@ -83,7 +84,7 @@ function InstanceModal({ instances, onKill, onClose }) {
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/4 border border-white/5">
                   {}
                   <div className="flex-shrink-0">
-                    {isRunning && <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse block" />}
+                    {isRunning && <span className="w-2.5 h-2.5 rounded-full bg-orange-400 animate-pulse block" />}
                     {isLoading && (
                       <svg className="animate-spin w-2.5 h-2.5 text-yellow-400" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
@@ -101,7 +102,7 @@ function InstanceModal({ instances, onKill, onClose }) {
                       <span className="text-[10px] text-white/35">@{inst.accountName}</span>
                       <span className="text-[10px] text-white/20">·</span>
                       <span className={`text-[10px] font-semibold ${
-                        isRunning ? 'text-green-400' :
+                        isRunning ? 'text-orange-400' :
                         isLoading ? 'text-yellow-400' :
                         isStopped ? 'text-white/30' : 'text-red-400'
                       }`}>
@@ -199,16 +200,9 @@ export default function TitleBar({ instances = [], onKillInstance }) {
       <div className="drag-region flex items-center justify-between h-9 px-4 bg-black/40 backdrop-blur-sm border-b border-white/5 absolute top-0 left-0 right-0 z-50">
         {}
         <div className="flex items-center gap-2 no-drag">
-          <div className="w-5 h-5">
-            <svg viewBox="0 0 24 24" fill="none" className="w-full h-full">
-              <rect x="2"  y="2"  width="9" height="9" fill="#4ade80" rx="1"/>
-              <rect x="13" y="2"  width="9" height="9" fill="#22c55e" rx="1"/>
-              <rect x="2"  y="13" width="9" height="9" fill="#16a34a" rx="1"/>
-              <rect x="13" y="13" width="9" height="9" fill="#4ade80" rx="1"/>
-            </svg>
-          </div>
+          <img src={martianIcon} alt="Martian" className="w-5 h-5" />
           <span className="text-ms font-black text-white tracking-tight">
-            VoxelX<span className="text-green-400">Launcher</span>
+            <span className="text-orange-400">Martian</span> Launcher
           </span>
         </div>
 
@@ -217,11 +211,11 @@ export default function TitleBar({ instances = [], onKillInstance }) {
           {runningCount > 0 ? (
             <button
               onClick={() => setShowModal(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/15 border border-green-500/25 text-green-400 text-xs font-semibold hover:bg-green-500/22 transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs font-semibold hover:bg-orange-500/22 transition-all active:scale-95"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
               {runningCount} instance{runningCount > 1 ? 's' : ''} running
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-400/60">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-orange-400/60">
                 <path d="M7 10l5 5 5-5z"/>
               </svg>
             </button>
@@ -289,7 +283,7 @@ export default function TitleBar({ instances = [], onKillInstance }) {
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button onClick={() => handleAccept(req.fromUuid)}
-                            className="w-6 h-6 flex items-center justify-center rounded-lg bg-green-500/15 text-green-400 hover:bg-green-500/30 transition-all" title="Chấp nhận">
+                            className="w-6 h-6 flex items-center justify-center rounded-lg bg-orange-500/15 text-orange-400 hover:bg-orange-500/30 transition-all" title="Chấp nhận">
                             <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                           </button>
                           <button onClick={() => handleReject(req.fromUuid)}

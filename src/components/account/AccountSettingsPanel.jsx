@@ -52,7 +52,7 @@ function Field({ label, type = 'text', value, onChange, placeholder, hint }) {
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none focus:border-green-500/40 transition-all"
+        className="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-xs text-white placeholder-white/20 focus:outline-none focus:border-orange-500/40 transition-all"
       />
       {hint && <p className="text-[10px] text-white/25">{hint}</p>}
     </div>
@@ -73,8 +73,8 @@ function pwdStrength(p) {
     { label: 'Rất yếu', color: '#f87171' },
     { label: 'Yếu',     color: '#fb923c' },
     { label: 'Trung bình', color: '#fbbf24' },
-    { label: 'Mạnh',    color: '#4ade80' },
-    { label: 'Rất mạnh', color: '#22c55e' },
+    { label: 'Mạnh',    color: '#fb923c' },
+    { label: 'Rất mạnh', color: '#f97316' },
   ]
   return { score: s, ...map[s] }
 }
@@ -306,7 +306,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
           {webUser && (
             <>
               <div className="h-px bg-white/5 my-1" />
-              <p className="text-[10px] text-green-400/60 font-semibold uppercase tracking-wider">Web Account</p>
+              <p className="text-[10px] text-orange-400/60 font-semibold uppercase tracking-wider">Web Account</p>
               <InfoRow label="Email" value={webUser.email} />
               <InfoRow label="Trạng thái" value={webUser.verified ? '✓ Đã xác nhận' : '⚠ Chưa xác nhận'} />
             </>
@@ -328,13 +328,13 @@ export default function AccountSettingsPanel({ account, onBack }) {
               <Field label="Mật khẩu" type="password" value={linkPwd} onChange={setLinkPwd} placeholder="••••••••" />
               <Field label="Xác nhận mật khẩu" type="password" value={linkPwd2} onChange={setLinkPwd2} placeholder="••••••••" />
               {linkMsg && (
-                <p className={`text-[10px] ${linkMsg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`text-[10px] ${linkMsg.type === 'ok' ? 'text-orange-400' : 'text-red-400'}`}>
                   {linkMsg.type === 'ok' ? '✓ ' : '✗ '}{linkMsg.text}
                 </p>
               )}
               <button type="submit" disabled={linkLoading || !linkEmail || !linkPwd || !linkPwd2}
                 className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}>
+                style={{ background: 'linear-gradient(135deg,#f97316,#ea580c)' }}>
                 {linkLoading ? 'Đang liên kết...' : 'Liên kết Email'}
               </button>
             </form>
@@ -361,13 +361,13 @@ export default function AccountSettingsPanel({ account, onBack }) {
               )}
               <Field label="Xác nhận mật khẩu mới" type="password" value={confirmPwd} onChange={setConfirmPwd} placeholder="••••••••" />
               {pwdMsg && (
-                <p className={`text-[10px] ${pwdMsg.type === 'ok' ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`text-[10px] ${pwdMsg.type === 'ok' ? 'text-orange-400' : 'text-red-400'}`}>
                   {pwdMsg.type === 'ok' ? '✓ ' : '✗ '}{pwdMsg.text}
                 </p>
               )}
               <button type="submit" disabled={pwdLoading || !oldPwd || !newPwd || !confirmPwd}
                 className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)' }}>
+                style={{ background: 'linear-gradient(135deg,#f97316,#ea580c)' }}>
                 {pwdLoading ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
               </button>
             </form>
@@ -399,7 +399,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
                   </p>
                   <p className="text-[10px] text-white/40">@{account.discordUsername}</p>
                 </div>
-                <span className="flex-shrink-0 text-[9px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded-full">
+                <span className="flex-shrink-0 text-[9px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-1.5 py-0.5 rounded-full">
                   Linked
                 </span>
               </div>
@@ -412,7 +412,7 @@ export default function AccountSettingsPanel({ account, onBack }) {
           ) : (
             <div className="flex flex-col gap-2.5">
               <p className="text-[11px] text-white/30 leading-relaxed">
-                Liên kết tài khoản Discord để nhận role và thông báo trong server VoxelXLauncher.
+                Liên kết tài khoản Discord để nhận role và thông báo trong server Martian Launcher.
               </p>
               <button onClick={handleLinkDiscord} disabled={discordLoading || !isElectron}
                 className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2"
