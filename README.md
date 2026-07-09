@@ -193,7 +193,7 @@ npm run electron:build        # build for your current OS → dist-electron/
 
 Cross-platform builds are produced automatically in CI — see
 [`.github/workflows/build-release.yml`](.github/workflows/build-release.yml).
-Push a `v*` tag (e.g. `git tag v1.4.0 && git push --tags`) to trigger a full
+Push a `v*` tag (e.g. `git tag v1.4.16 && git push --tags`) to trigger a full
 Windows · Linux · macOS · AUR release.
 
 ### Handy Scripts
