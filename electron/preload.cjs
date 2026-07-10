@@ -277,6 +277,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => require('electron').ipcRenderer.removeListener('server:tunnelLog', handler)
   },
 
+  // ── Server Bookmarks ───────────────────────────────────────────────────────
+  serverBookmarksGet:    ()                     => ipcRenderer.invoke('serverBookmarks:get'),
+  serverBookmarksAdd:    (server)               => ipcRenderer.invoke('serverBookmarks:add', server),
+  serverBookmarksUpdate: (id, patch)            => ipcRenderer.invoke('serverBookmarks:update', { id, patch }),
+  serverBookmarksDelete: (id)                   => ipcRenderer.invoke('serverBookmarks:delete', id),
+  serverBookmarksPing:   (address, port)        => ipcRenderer.invoke('serverBookmarks:ping', { address, port }),
+
   // ── LAN World Auto-Tunnel ──────────────────────────────────────────────────
   lanStartScan:  ()  => ipcRenderer.invoke('lan:startScan'),
   lanStopScan:   ()  => ipcRenderer.invoke('lan:stopScan'),
@@ -351,6 +358,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('server:javaProgress', handler)
     return () => ipcRenderer.removeListener('server:javaProgress', handler)
   },
+
+  // ── Skin/Cape Local Files (for offline Authlib-Injector) ─────────────────
+  saveSkinLocalFile:   (opts)              => ipcRenderer.invoke('skin:saveLocalFile', opts),
+  getSkinLocalStatus:  (uuid)              => ipcRenderer.invoke('skin:getLocalStatus', { uuid }),
+  deleteSkinLocalFile: (opts)              => ipcRenderer.invoke('skin:deleteLocalFile', opts),
 
   // ── VoxelX P2P LAN (WireGuard) ────────────────────────────────────────────
   vxlanCheck:  ()                    => ipcRenderer.invoke('vxlan:check'),

@@ -834,7 +834,29 @@
       "files": "Files",
       "mods": "Mods",
       "shaders": "Shaders",
-      "resourcepacks": "Resource Packs"
+      "resourcepacks": "Resource Packs",
+      "servers": "Servers"
+    },
+    "serverBookmarks": {
+      "subtitle": "Quick-join any saved server",
+      "addBtn": "Add Server",
+      "loading": "Loading...",
+      "empty": "No servers saved",
+      "emptyHint": "Add a server to quick-join anytime",
+      "emptyBtn": "Add your first server",
+      "playBtn": "Play",
+      "deleteConfirm": "Delete this server?",
+      "deleteBtn": "Delete",
+      "cancelBtn": "Cancel",
+      "editTitle": "Edit Server",
+      "addTitle": "Add Server",
+      "nameLabel": "Server Name",
+      "namePlaceholder": "My Server",
+      "addressLabel": "Address",
+      "addressPlaceholder": "mc.example.com or 123.45.67.89",
+      "portLabel": "Port",
+      "portPlaceholder": "25565",
+      "saveBtn": "Save"
     },
     "back": "Back",
     "general": {

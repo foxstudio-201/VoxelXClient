@@ -3,7 +3,7 @@ pkgname=voxelxlauncher-bin
 _appname="VoxelXLauncher"
 _binname=voxelxlauncher
 pkgver=1.4.20
-pkgrel=12
+pkgrel=19
 pkgdesc="Martian Launcher - Minecraft Launcher by FoxStudio"
 arch=('x86_64')
 url="https://github.com/foxstudio-201/VoxelXClient"
@@ -14,7 +14,7 @@ provides=("${_binname}")
 conflicts=("${_binname}")
 options=('!strip' '!debug')
 source=("${_binname}-${pkgver}.deb::file:///media/D/client/VoxelXClient/dist-electron/voxelxlauncher_${pkgver}_amd64.deb")
-sha256sums=('SKIP')
+sha256sums=('eec03ebf86dad992c6a4e54ca3705646ece4199f1e22ff94c76dcd85e0241870')
 
 package() {
   # The release .deb already lays files out in FHS form (/opt + .desktop + icon

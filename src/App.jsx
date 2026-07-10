@@ -267,7 +267,7 @@ function AppInner() {
     return () => { cleanupRef.current.forEach(fn => fn?.()) }
   }, [])
 
-  const handleLaunch = useCallback(async (profileId, ramMb, profileName, accountName) => {
+  const handleLaunch = useCallback(async (profileId, ramMb, profileName, accountName, serverAddress) => {
     if (!isElectron) return
     setLaunchState('downloading')
     setLaunchError(null)
@@ -287,7 +287,7 @@ function AppInner() {
       return next
     })
 
-    const result = await window.electronAPI.launchGame({ profileId, ramMb })
+    const result = await window.electronAPI.launchGame({ profileId, ramMb, serverAddress })
     if (result?.error) {
       setLaunchError(result.error)
       setLaunchState('error')

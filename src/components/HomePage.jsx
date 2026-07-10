@@ -54,6 +54,7 @@ import ModsTab from './home/tab/ModsTab'
 import WorldsTab from './home/tab/WorldsTab'
 import ShadersTab from './home/tab/ShadersTab'
 import ResourcePacksTab from './home/tab/ResourcePacksTab'
+import ServerBookmarksTab from './home/tab/ServerBookmarksTab'
 import {
   Plus,
   CaretDown,
@@ -368,7 +369,7 @@ function formatRelativeTime(isoString, t) {
   return t('homepage.relativetime.justnow')
 }
 
-function ProfileContentPanel({ profile, accountId }) {
+function ProfileContentPanel({ profile, accountId, onLaunch }) {
   const { t } = useLang()
   const isVanilla = !profile?.loader || profile.loader === 'vanilla'
 
@@ -377,6 +378,7 @@ function ProfileContentPanel({ profile, accountId }) {
     { id: 'worlds',        labelKey: 'profileSettings.tabs.worlds',        icon: Icons.world,        component: WorldsTab        },
     { id: 'shaders',       labelKey: 'profileSettings.tabs.shaders',       icon: Icons.shader,       component: ShadersTab       },
     { id: 'resourcepacks', labelKey: 'profileSettings.tabs.resourcepacks', icon: Icons.resourcepack, component: ResourcePacksTab },
+    { id: 'servers',       labelKey: 'profileSettings.tabs.servers',       icon: Icons.server,       component: ServerBookmarksTab },
   ]
 
   const tabs = ALL_TABS.filter(tab => {
@@ -419,7 +421,7 @@ function ProfileContentPanel({ profile, accountId }) {
         ))}
       </div>
       <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-        {TabComponent && <TabComponent profile={profile} accountId={accountId} />}
+        {TabComponent && <TabComponent profile={profile} accountId={accountId} onLaunch={onLaunch} />}
       </div>
     </div>
   )
@@ -703,7 +705,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-hidden relative">
             <div className="absolute inset-0 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-              <ProfileContentPanel profile={selectedProfile} accountId={selectedAccount?.id} />
+              <ProfileContentPanel profile={selectedProfile} accountId={selectedAccount?.id} onLaunch={onLaunch} />
             </div>
             {profileSettingsOpen && selectedProfile && (
               <div className="absolute inset-0 z-10 bg-[#0f0f0f]">

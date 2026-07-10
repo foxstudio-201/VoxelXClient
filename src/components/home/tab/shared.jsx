@@ -21,6 +21,7 @@ import {
   MagnifyingGlass,
   X,
   CloudArrowUp,
+  PlugsConnected,
 } from '@phosphor-icons/react'
 
 export const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -45,6 +46,7 @@ export const Icons = {
   shader:        <SunDim size={16} weight="duotone" />,
   resourcepack:  <Package size={16} weight="duotone" />,
   files:         <Folder size={16} weight="duotone" />,
+  server:        <PlugsConnected size={16} weight="duotone" />,
   trash:         <Trash size={14} weight="duotone" />,
   check:         <Check size={12} weight="duotone" />,
   spin:          <SpinnerGap size={16} weight="duotone" className="animate-spin" />,

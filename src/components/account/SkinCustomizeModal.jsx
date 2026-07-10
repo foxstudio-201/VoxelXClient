@@ -173,6 +173,16 @@ async function handleApply() {
 
       if (isElectron) {
         await window.electronAPI.saveSkinPrefs(newPrefs)
+        // Save local PNG file for Authlib-Injector (offline skin/cape)
+        if (persistUrl && persistUrl.startsWith('data:')) {
+          try {
+            await window.electronAPI.saveSkinLocalFile({
+              uuid: account?.uuid,
+              dataUrl: persistUrl,
+              type: activeTab,
+            })
+          } catch {}
+        }
       } else {
         localStorage.setItem(`vxc_skin_prefs_${account?.uuid}`, JSON.stringify(newPrefs))
       }

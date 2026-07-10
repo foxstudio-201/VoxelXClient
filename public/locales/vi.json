@@ -834,7 +834,29 @@
       "files": "Files",
       "mods": "Mods",
       "shaders": "Shaders",
-      "resourcepacks": "Resource Packs"
+      "resourcepacks": "Resource Packs",
+      "servers": "Máy chủ"
+    },
+    "serverBookmarks": {
+      "subtitle": "Vào nhanh máy chủ đã lưu",
+      "addBtn": "Thêm máy chủ",
+      "loading": "Đang tải...",
+      "empty": "Chưa có máy chủ nào",
+      "emptyHint": "Thêm máy chủ để vào nhanh bất cứ lúc nào",
+      "emptyBtn": "Thêm máy chủ đầu tiên",
+      "playBtn": "Vào",
+      "deleteConfirm": "Xóa máy chủ này?",
+      "deleteBtn": "Xóa",
+      "cancelBtn": "Hủy",
+      "editTitle": "Sửa máy chủ",
+      "addTitle": "Thêm máy chủ",
+      "nameLabel": "Tên máy chủ",
+      "namePlaceholder": "Máy chủ của tôi",
+      "addressLabel": "Địa chỉ",
+      "addressPlaceholder": "mc.example.com hoặc 123.45.67.89",
+      "portLabel": "Cổng",
+      "portPlaceholder": "25565",
+      "saveBtn": "Lưu"
     },
     "back": "Quay lại",
     "general": {

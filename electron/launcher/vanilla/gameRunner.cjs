@@ -147,6 +147,7 @@ function launchGame(opts) {
     shimJar = null, shimWorkDir = null,
     boostMode = false,
     bigCoreMode = false,
+    serverAddress,
     onLog, onExit,
   } = opts
 
@@ -285,6 +286,37 @@ function launchGame(opts) {
     }
   }
 
+  const serverArgs = []
+  if (serverAddress) {
+    const parts = serverAddress.split(':')
+    const host = parts[0]
+    const port = parts.length > 1 ? parseInt(parts[1], 10) : 25565
+
+    // Detect if version uses new --quickPlayMultiplayer format (1.20+ / 23w14a+)
+    let useQuickPlay = false
+    const gameArgs = versionJson.arguments?.game
+    if (Array.isArray(gameArgs)) {
+      for (const arg of gameArgs) {
+        if (arg?.rules) {
+          for (const rule of arg.rules) {
+            if (rule.features?.is_quick_play_multiplayer) {
+              useQuickPlay = true
+              break
+            }
+          }
+          if (useQuickPlay) break
+        }
+      }
+    }
+
+    if (useQuickPlay) {
+      serverArgs.push('--quickPlayMultiplayer', `${host}:${port}`)
+    } else {
+      serverArgs.push('--server', host, '--port', String(port))
+    }
+    onLog?.(`[Launcher] Quick-play server: ${host}:${port} (${useQuickPlay ? 'quickPlayMultiplayer' : 'legacy'})`)
+  }
+
   const spawnArgs = [
     ...jvmArgs,
     ...versionJvmArgs,
@@ -292,6 +324,7 @@ function launchGame(opts) {
     ...cleanExtraJvmArgs,
     mainClass,
     ...finalGameArgs,
+    ...serverArgs,
     ...extraGameArgs,
   ]
   const spawnCwd = shimWorkDir || instancePath
