@@ -1,7 +1,7 @@
 pkgbase = voxelxlauncher-bin
 	pkgdesc = Martian Launcher - Minecraft Launcher by FoxStudio
-	pkgver = 1.4.20
-	pkgrel = 19
+	pkgver = 1.4.25
+	pkgrel = 1
 	url = https://github.com/foxstudio-201/VoxelXClient
 	arch = x86_64
 	license = MIT
@@ -14,7 +14,7 @@ pkgbase = voxelxlauncher-bin
 	conflicts = voxelxlauncher
 	options = !strip
 	options = !debug
-	source = voxelxlauncher-1.4.20.deb::file:///media/D/client/VoxelXClient/dist-electron/voxelxlauncher_1.4.20_amd64.deb
-	sha256sums = SKIP
+	source = voxelxlauncher-1.4.25.deb::file:///media/D/client/VoxelXClient/dist-electron/voxelxlauncher_1.4.25_amd64.deb
+	sha256sums = eec03ebf86dad992c6a4e54ca3705646ece4199f1e22ff94c76dcd85e0241870
 
 pkgname = voxelxlauncher-bin

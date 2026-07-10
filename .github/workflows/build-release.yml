@@ -297,14 +297,14 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào fix một số lỗi cơ bản.
+            > Bản cập nhật tập trung vào fix một số lỗi cơ bản + thêm hiển thị danh sách server, add thay đổi skin,cape cho tài khoản offline.
 
             ---
             
-            ### Phúc phíc
+            ### Thêm tính năng mới
 
-            - **Fix bảo mật**: Cải thiện độ ổn định và tính bảo mật.
-            - **Sửa lỗi**: Ngôn ngữ bị lỗi định dạng gần đây
+            - **Server**: Thêm hiển thị danh sách server ở home page, có thể tham gia server trực tiếp
+            - **Skin + Cape**: Thêm lại tính năng thay đổi skin, cape cho tài khoản offline
 
 
             ---

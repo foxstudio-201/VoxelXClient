@@ -2,8 +2,8 @@
 pkgname=voxelxlauncher-bin
 _appname="VoxelXLauncher"
 _binname=voxelxlauncher
-pkgver=1.4.20
-pkgrel=19
+pkgver=1.4.25
+pkgrel=1
 pkgdesc="Martian Launcher - Minecraft Launcher by FoxStudio"
 arch=('x86_64')
 url="https://github.com/foxstudio-201/VoxelXClient"
