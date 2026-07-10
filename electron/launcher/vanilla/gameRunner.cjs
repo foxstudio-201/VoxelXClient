@@ -35,6 +35,28 @@ const { spawn, execFileSync } = require('child_process')
 const path  = require('path')
 const fs    = require('fs')
 
+/**
+ * Linux: detect high-performance (big) CPU cores by reading max frequency.
+ * Returns an array of core indices with the highest frequency, or empty array on error.
+ */
+function detectPerformanceCores() {
+  try {
+    const cores = []
+    let maxFreq = 0
+    for (let i = 0; i < 256; i++) {
+      const freqPath = `/sys/devices/system/cpu/cpu${i}/cpufreq/cpuinfo_max_freq`
+      if (!fs.existsSync(freqPath)) break
+      const freq = parseInt(fs.readFileSync(freqPath, 'utf8').trim(), 10)
+      if (freq > maxFreq) maxFreq = freq
+      cores.push({ id: i, freq })
+    }
+    if (maxFreq === 0) return []
+    return cores.filter(c => c.freq === maxFreq).map(c => c.id)
+  } catch {
+    return []
+  }
+}
+
 function detectJavaMajorVersion(javaPath) {
   try {
     let combined = ''
@@ -124,6 +146,7 @@ function launchGame(opts) {
     ramMb = 2048, mainClassOverride, extraJvmArgs = [], extraGameArgs = [],
     shimJar = null, shimWorkDir = null,
     boostMode = false,
+    bigCoreMode = false,
     onLog, onExit,
   } = opts
 
@@ -160,14 +183,28 @@ function launchGame(opts) {
   const javaMajor = detectJavaMajorVersion(javaPath) ?? (versionJson?.javaVersion?.majorVersion ?? 17)
   const gcArgs    = buildGcArgs(javaMajor, ramMb)
 
+  // Big core detection — a separate toggle from boost mode
+  const bigCores = bigCoreMode ? detectPerformanceCores() : []
+
   const boostJvmArgs = boostMode ? [
     '-XX:+UseThreadPriorities',
     '-XX:ThreadPriorityPolicy=1',
   ] : []
 
+  const bigCoreJvmArgs = bigCores.length > 0 ? [
+    `-XX:ActiveProcessorCount=${bigCores.length}`,
+  ] : []
+
+  // Linux: use taskset at spawn to pin to physical cores
+  const useTaskset = bigCores.length > 0 && process.platform === 'linux'
+  const bigCoreCmd = useTaskset ? 'taskset' : null
+  const bigCoreArgs = useTaskset ? ['-c', bigCores.join(',')] : []
+
   const jvmArgs = [
     `-Xmx${xmx}m`,
     `-Xms${xms}m`,
+    `-Dorg.lwjgl.library.path=${nativesDir}`,
+    `-Dorg.lwjgl.librarypath=${nativesDir}`,
     `-Djava.library.path=${nativesDir}`,
     `-Dminecraft.launcher.brand=VoxelXLauncher`,
     `-Dminecraft.launcher.version=1.0.0`,
@@ -180,6 +217,7 @@ function launchGame(opts) {
 
     ...gcArgs,
     ...boostJvmArgs,
+    ...bigCoreJvmArgs,
 
     '-Dorg.lwjgl.util.NoChecks=true',
     '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=false',
@@ -250,6 +288,7 @@ function launchGame(opts) {
   const spawnArgs = [
     ...jvmArgs,
     ...versionJvmArgs,
+    `-Djava.library.path=${nativesDir}`,
     ...cleanExtraJvmArgs,
     mainClass,
     ...finalGameArgs,
@@ -267,12 +306,25 @@ function launchGame(opts) {
   delete spawnEnv._JAVA_OPTIONS
   delete spawnEnv.JDK_JAVA_OPTIONS
 
-  const proc = spawn(javaPath, spawnArgs, {
+  if (bigCores.length > 0) {
+    onLog?.(`[Launcher] Pinning to performance cores: ${bigCores.join(',')}`)
+  }
+
+  const proc = spawn(bigCoreCmd || javaPath, bigCoreCmd ? [...bigCoreArgs, javaPath, ...spawnArgs] : spawnArgs, {
     cwd:      spawnCwd,
     stdio:    ['ignore', 'pipe', 'pipe'],
     detached: false,
     env: spawnEnv,
   })
+
+  // Post-spawn affinity/priority for non-Linux platforms
+  if (bigCores.length > 0 && proc.pid) {
+    if (process.platform === 'win32') {
+      setWindowsProcessAffinity(proc.pid, bigCores)
+    } else if (process.platform === 'darwin') {
+      setMacOsProcessAffinity(proc.pid)
+    }
+  }
 
   const { StringDecoder } = require('string_decoder')
   const outDecoder = new StringDecoder('utf8')
@@ -311,6 +363,35 @@ function launchGame(opts) {
   })
 
   return proc
+}
+
+/**
+ * Windows: set processor affinity and high-priority class via PowerShell.
+ * Runs asynchronously; errors are silently swallowed.
+ */
+function setWindowsProcessAffinity(pid, cores) {
+  try {
+    const mask = cores.reduce((acc, c) => acc | (1 << c), 0)
+    const psCmd = [
+      `$p = Get-Process -Id ${pid};`,
+      `$p.ProcessorAffinity = ${mask};`,
+      `$p.PriorityClass = [System.Diagnostics.ProcessPriorityClass]::High;`,
+    ].join(' ')
+    const { exec } = require('child_process')
+    exec(`powershell.exe -NoProfile -Command "${psCmd}"`, { windowsHide: true }, () => {})
+  } catch {}
+}
+
+/**
+ * macOS: renice to highest priority and try taskpolicy demand mode.
+ * Runs asynchronously; errors are silently swallowed.
+ */
+function setMacOsProcessAffinity(pid) {
+  try {
+    const { exec } = require('child_process')
+    exec(`renice -n -20 -p ${pid}`, () => {})
+    exec(`taskpolicy -d -p ${pid}`, () => {})
+  } catch {}
 }
 
 module.exports = { launchGame }

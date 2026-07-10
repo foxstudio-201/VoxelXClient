@@ -387,7 +387,7 @@ async function extractNative(jarPath, destDir, excludes) {
   } else {
     const { spawn } = require('child_process')
     await new Promise((resolve) => {
-      const args = ['-o', jarPath, '-d', destDir]
+      const args = ['-o', '-j', jarPath, '-d', destDir]
       if (excludes && excludes.length > 0) {
         args.push('-x')
         excludes.forEach(ex => args.push(`${ex}*`))
@@ -405,7 +405,7 @@ async function extractZipNode(jarPath, destDir, excludes) {
 
   if (process.platform !== 'win32') {
     return new Promise((resolve) => {
-      const args = ['-o', jarPath, '-d', destDir]
+      const args = ['-o', '-j', jarPath, '-d', destDir]
       if (excludes && excludes.length > 0) {
         args.push('-x')
         excludes.forEach(ex => args.push(`${ex}*`))

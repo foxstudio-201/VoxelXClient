@@ -173,6 +173,7 @@ function registerLauncherHandlers(getTrustedWindow) {
     const hideLauncher  = settings.hideLauncherOnLaunch !== false
     const showLog       = settings.showLogWindow !== false
     const boostMode     = settings.boostMode === true
+    const bigCoreMode   = settings.bigCoreMode === true
 
     const instancePath = profile.instancePath
     if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
@@ -607,6 +608,7 @@ function registerLauncherHandlers(getTrustedWindow) {
         accessToken,
         ramMb:             ramMb || 2048,
         boostMode,
+        bigCoreMode,
         onLog: (line) => {
           writeLog(line)
         },

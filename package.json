@@ -56,7 +56,7 @@
   },
   "build": {
     "appId": "com.voxelxclient.launcher",
-    "productName": "Martian Launcher",
+    "productName": "VoxelXLauncher",
     "copyright": "Copyright © 2024 FoxStudio",
     "asar": true,
     "directories": {

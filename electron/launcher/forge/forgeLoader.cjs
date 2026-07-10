@@ -1,44 +1,16 @@
-/**
- * VoxelXLauncher — Minecraft Launcher
- * Created by FoxStudio. AI-assisted development.
- *
- * Source code : https://github.com/foxstudio-201/VoxelXLauncher
- * Website     : https://voxxelxclient.vercel.app
- *
- * NOTICE:
- *   - This software is provided as-is without warranty of any kind.
- *   - Do not redistribute or resell without explicit permission from FoxStudio.
- *   - If you use or reference this code, please credit FoxStudio.
- *   - Minecraft is a trademark of Mojang Studios / Microsoft. This project is not affiliated with Mojang.
- */
-
- /**
- * VoxelXLauncher — Minecraft Launcher
- * Created by FoxStudio. AI-assisted development.
- *
- * Source code : https://github.com/foxstudio-201/VoxelXLauncher
- * Website     : https://voxxelxclient.vercel.app
- *
- * NOTICE:
- *   - Dành cho mấy cháu cứ thích phỉ báng.
- *   - Launcher sử dụng ai đi kèm trong việc tạo, bản thân người tạo không tự nhận là code toàn bộ do có sự hỗ trợ của ai.
- *   - Giỏi giang thì tự code bằng năng lực của mình đang video làm toàn bộ từ đầu đến cuối, còn không làm được đừng có kích đểu ảnh hưởng đến người sử dụng.
- *   - Bạn chẳng phải là anh hùng mặc áo choàng đỏ mặc quần xịt như thằng trẻ trâu rồi lên mạng ra vẻ ta đây là người tốt, là anh hùng, là người bảo vệ công lý gì đâu :).
- *   - Vậy nên bớt ảo tưởng đi.
- *   - Nếu có sử dụng hoặc tham khảo code này, hãy ghi công cho FoxStudio.
- *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
- */
-
 'use strict'
+
+const AdmZip = require('adm-zip')
 const https  = require('https')
 const http   = require('http')
 const fs     = require('fs')
 const path   = require('path')
 const { spawnSync } = require('child_process')
 
-const FORGE_MAVEN  = 'https://maven.minecraftforge.net'
-const BMCLAPI      = 'https://bmclapi2.bangbang93.com'
-const FORGE_MAVEN2 = 'https://files.minecraftforge.net/maven'
+const FORGE_MAVEN   = 'https://maven.minecraftforge.net'
+const BMCLAPI       = 'https://bmclapi2.bangbang93.com'
+const FORGE_MAVEN2  = 'https://files.minecraftforge.net/maven'
+const MANIFEST_URL  = 'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json'
 
 function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
@@ -114,12 +86,383 @@ function resolveJvmArgs(rawArgs, librariesDir, versionName) {
   return result
 }
 
+function parseLibraryComponents(name) {
+  if (!name) return null
+  const atIdx = name.indexOf('@')
+  const ext   = atIdx >= 0 ? name.slice(atIdx + 1) : 'jar'
+  const base  = atIdx >= 0 ? name.slice(0, atIdx)  : name
+  const parts = base.split(':')
+  if (parts.length < 3) return null
+  return {
+    group:      parts[0],
+    artifact:   parts[1],
+    version:    parts[2],
+    classifier: parts[3] || null,
+    ext:        ext,
+  }
+}
+
+function getMainClassFromJar(jarPath) {
+  try {
+    const jar  = new AdmZip(jarPath)
+    const entry = jar.getEntry('META-INF/MANIFEST.MF')
+    if (!entry) return null
+    const content = entry.getData().toString('utf-8')
+    const match = content.match(/Main-Class:\s*(\S+)/)
+    return match ? match[1].trim() : null
+  } catch {
+    return null
+  }
+}
+
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0
+    const nb = pb[i] || 0
+    if (na !== nb) return na - nb
+  }
+  return 0
+}
+
+function replaceTokens(tokens, value) {
+  const buf = []
+  let i = 0
+  while (i < value.length) {
+    const c = value[i]
+    if (c === '\\' && i + 1 < value.length) {
+      buf.push(value[++i])
+    } else if (c === '{') {
+      let j = i + 1
+      let key = ''
+      while (j <= value.length) {
+        if (j === value.length) break
+        const d = value[j]
+        if (d === '\\' && j + 1 < value.length) {
+          key += value[++j]
+        } else if (d === '}') {
+          if (tokens[key] !== undefined) buf.push(tokens[key])
+          i = j
+          break
+        } else {
+          key += d
+        }
+        j++
+      }
+      if (j > value.length) buf.push(c)
+    } else {
+      buf.push(c)
+    }
+    i++
+  }
+  return buf.join('')
+}
+
+function parseLiteral(baseDir, literal, vars, plainConverter) {
+  if (!literal) return null
+  if (literal.startsWith('{') && literal.endsWith('}')) {
+    return vars[literal.slice(1, -1)] ?? null
+  } else if (literal.startsWith("'") && literal.endsWith("'")) {
+    return literal.slice(1, -1)
+  } else if (literal.startsWith('[') && literal.endsWith(']')) {
+    const libPath = mavenToPath(literal.slice(1, -1))
+    return libPath ? path.join(baseDir, 'libraries', libPath) : null
+  }
+  const converted = replaceTokens(vars, literal)
+  return plainConverter ? plainConverter(converted) : converted
+}
+
+function parseOptions(baseDir, args, vars) {
+  const options = {}
+  let currentOpt = null
+  for (const arg of args) {
+    if (arg.startsWith('--')) {
+      if (currentOpt !== null) options[currentOpt] = ''
+      currentOpt = arg.slice(2)
+    } else if (currentOpt !== null) {
+      options[currentOpt] = parseLiteral(baseDir, arg, vars) || arg
+      currentOpt = null
+    }
+  }
+  if (currentOpt !== null) options[currentOpt] = ''
+  return options
+}
+
+function isNewForge(buildOnlyVersion) {
+  const major = parseInt(buildOnlyVersion.split('.')[0], 10)
+  return !isNaN(major) && major >= 20
+}
+
+async function httpGetJson(url) {
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith('https') ? https : http
+    client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return httpGetJson(res.headers.location).then(resolve).catch(reject)
+      }
+      let data = ''
+      res.on('data', c => { data += c })
+      res.on('end', () => {
+        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}: ${url}`))
+        try { resolve(JSON.parse(data)) } catch { reject(new Error(`Invalid JSON from ${url}`)) }
+      })
+    }).on('error', reject)
+  })
+}
+
+async function downloadMojangMappings(mcVersion, outputPath) {
+  const manifest = await httpGetJson(MANIFEST_URL)
+  const entry = manifest.versions.find(v => v.id === mcVersion)
+  if (!entry) throw new Error(`MC version ${mcVersion} not found in manifest`)
+  const versionJson = await httpGetJson(entry.url)
+  const mappings = versionJson.downloads?.clientMappings
+  if (!mappings) throw new Error(`No clientMappings for ${mcVersion}`)
+  const dir = path.dirname(outputPath)
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  await downloadFile(mappings.url, outputPath)
+}
+
+async function installNewForgeHMCL(installerPath, instanceRoot, versionJsonPath, versionId, clientJar, javaPath, fullVersion, onProgress) {
+  const zip = new AdmZip(installerPath)
+
+  const installProfileStr = zip.readAsText('install_profile.json')
+  const installProfile = JSON.parse(installProfileStr)
+  const versionStr = zip.readAsText('version.json')
+
+  const versionDir = path.dirname(versionJsonPath)
+  if (!fs.existsSync(versionDir)) fs.mkdirSync(versionDir, { recursive: true })
+  fs.writeFileSync(versionJsonPath, versionStr)
+
+  const tempDir = path.join(instanceRoot, '.temp', 'forge_installer_cache')
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true })
+
+  const vars = {}
+  const data = installProfile.data
+  if (data && typeof data === 'object') {
+    for (const [key, value] of Object.entries(data)) {
+      if (value && typeof value === 'object' && value.client) {
+        const literal = value.client
+        if (literal.startsWith('{') && literal.endsWith('}')) {
+          continue
+        } else if (literal.startsWith("'") && literal.endsWith("'")) {
+          vars[key] = literal.slice(1, -1)
+        } else {
+          const cleanPath = literal.replace(/^[\\/]+/, '').replace(/\\/g, '/')
+          const entry = zip.getEntry(cleanPath)
+          if (entry) {
+            const destPath = path.join(tempDir, `mapping_${key}`)
+            fs.writeFileSync(destPath, entry.getData())
+            vars[key] = destPath
+          }
+        }
+      }
+    }
+  }
+
+  vars.SIDE = 'client'
+  vars.MINECRAFT_JAR = clientJar
+  vars.MINECRAFT_VERSION = clientJar
+  vars.ROOT = instanceRoot
+  vars.INSTALLER = installerPath
+  vars.LIBRARY_DIR = path.join(instanceRoot, 'libraries')
+
+  const libDir = path.join(instanceRoot, 'libraries')
+  const entries = zip.getEntries()
+  for (const entry of entries) {
+    if (entry.entryName.startsWith('maven/')) {
+      const relPath = entry.entryName.slice(6)
+      if (!relPath) continue
+      const destPath = path.join(libDir, relPath)
+      if (entry.isDirectory) {
+        if (!fs.existsSync(destPath)) fs.mkdirSync(destPath, { recursive: true })
+      } else {
+        const parent = path.dirname(destPath)
+        if (!fs.existsSync(parent)) fs.mkdirSync(parent, { recursive: true })
+        if (!fs.existsSync(destPath) || fs.statSync(destPath).size === 0) {
+          zip.extractEntryTo(entry.entryName, path.dirname(destPath), false, true)
+        }
+      }
+    }
+  }
+
+  const processors = installProfile.processors
+  if (Array.isArray(processors) && processors.length > 0) {
+    for (let i = 0; i < processors.length; i++) {
+      const proc = processors[i]
+      if (proc.sides && !proc.sides.includes('client')) continue
+
+      const procArgs = proc.args || []
+      const options = parseOptions(instanceRoot, procArgs, vars)
+
+      if (options.task === 'DOWNLOAD_MOJMAPS' && options.side === 'client') {
+        if (options.version && options.output) {
+          onProgress?.({ phase: 'forge_process', log: `[${i + 1}/${processors.length}] Downloading Mojang mappings for ${options.version}...` })
+          try {
+            await downloadMojangMappings(options.version, options.output)
+            onProgress?.({ phase: 'forge_process', log: `[${i + 1}/${processors.length}] Mojang mappings downloaded.` })
+          } catch (e) {
+            onProgress?.({ phase: 'forge_process', log: `[WARN] Failed to download mappings: ${e.message}` })
+          }
+        }
+        continue
+      }
+
+      const outputs = proc.outputs || {}
+      const outputKeys = Object.keys(outputs)
+      if (outputKeys.length > 0) {
+        let allExist = true
+        for (const outKey of outputKeys) {
+          const outPath = parseLiteral(instanceRoot, outKey, vars)
+          if (!outPath || !fs.existsSync(outPath) || fs.statSync(outPath).size === 0) {
+            allExist = false
+            break
+          }
+        }
+        if (allExist) continue
+      }
+
+      const jarCoord = proc.jar
+      const jarLibPath = mavenToPath(jarCoord)
+      if (!jarLibPath) throw new Error(`Invalid processor jar coordinate: ${jarCoord}`)
+      const jarPath = path.join(libDir, jarLibPath)
+      if (!fs.existsSync(jarPath)) {
+        onProgress?.({ phase: 'forge_process', log: `[WARN] Processor jar not found: ${jarPath}, skipping.` })
+        continue
+      }
+
+      const mainClass = getMainClassFromJar(jarPath)
+      if (!mainClass) {
+        onProgress?.({ phase: 'forge_process', log: `[WARN] No Main-Class in ${jarPath}, skipping.` })
+        continue
+      }
+
+      const classpathEntries = []
+      if (Array.isArray(proc.classpath)) {
+        for (const cpCoord of proc.classpath) {
+          const cpPath = mavenToPath(cpCoord)
+          if (cpPath) {
+            const fullCp = path.join(libDir, cpPath)
+            if (fs.existsSync(fullCp)) classpathEntries.push(fullCp)
+          }
+        }
+      }
+      classpathEntries.push(jarPath)
+
+      const resolvedArgs = procArgs.map(arg => parseLiteral(instanceRoot, arg, vars) || arg)
+
+      const spawnArgs = ['-cp', classpathEntries.join(path.delimiter), mainClass, ...resolvedArgs]
+
+      onProgress?.({ phase: 'forge_process', log: `[${i + 1}/${processors.length}] Running ${path.basename(jarCoord)}...`, done: i, total: processors.length })
+
+      const result = spawnSync(javaPath, spawnArgs, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 300000,
+        maxBuffer: 64 * 1024 * 1024,
+      })
+
+      if (result.error) throw new Error(`Processor ${jarCoord} failed: ${result.error.message}`)
+      if (result.status !== 0) {
+        const errOutput = (result.stderr?.toString() || result.stdout?.toString() || '').slice(-500)
+        throw new Error(`Processor ${jarCoord} exited with code ${result.status}: ${errOutput}`)
+      }
+
+      onProgress?.({ phase: 'forge_process', log: `[${i + 1}/${processors.length}] ${path.basename(jarCoord)} done.`, done: i + 1, total: processors.length })
+    }
+  }
+}
+
+function installOldForge(installerPath, instanceRoot, versionJsonPath, versionId, inherit) {
+  const zip = new AdmZip(installerPath)
+  const installProfileStr = zip.readAsText('install_profile.json')
+  const installProfile = JSON.parse(installProfileStr)
+
+  const libDir = path.join(instanceRoot, 'libraries')
+  const versionDir = path.dirname(versionJsonPath)
+  if (!fs.existsSync(versionDir)) fs.mkdirSync(versionDir, { recursive: true })
+
+  if (!installProfile.install) {
+    const jsonEntryPath = installProfile.json.replace(/^[\\/]+/, '')
+    const versionStr = zip.readAsText(jsonEntryPath)
+    const versionData = JSON.parse(versionStr)
+    versionData.id = versionId
+    fs.writeFileSync(versionJsonPath, JSON.stringify(versionData, null, 2))
+
+    const entries = zip.getEntries()
+    for (const entry of entries) {
+      if (entry.entryName.startsWith('maven/')) {
+        const relPath = entry.entryName.slice(6)
+        if (!relPath) continue
+        const destPath = path.join(libDir, relPath)
+        if (entry.isDirectory) {
+          if (!fs.existsSync(destPath)) fs.mkdirSync(destPath, { recursive: true })
+        } else {
+          const parent = path.dirname(destPath)
+          if (!fs.existsSync(parent)) fs.mkdirSync(parent, { recursive: true })
+          zip.extractEntryTo(entry.entryName, path.dirname(destPath), false, true)
+        }
+      }
+    }
+  } else {
+    const install = installProfile.install
+    const filePath = install.filePath.replace(/^[\\/]+/, '')
+    const artifact = install.path
+
+    const jarRelPath = mavenToPath(artifact)
+    if (!jarRelPath) throw new Error(`Invalid forge artifact: ${artifact}`)
+    const jarDest = path.join(libDir, jarRelPath)
+
+    const parent = path.dirname(jarDest)
+    if (!fs.existsSync(parent)) fs.mkdirSync(parent, { recursive: true })
+    zip.extractEntryTo(filePath, path.dirname(jarDest), false, true)
+
+    const versionInfo = installProfile.versionInfo
+    if (versionInfo && typeof versionInfo === 'object') {
+      if (!versionInfo.inheritsFrom && inherit) {
+        versionInfo.inheritsFrom = inherit
+      }
+      versionInfo.id = versionId
+      fs.writeFileSync(versionJsonPath, JSON.stringify(versionInfo, null, 2))
+    }
+  }
+}
+
+function progressIgnoreList(versionJsonPath) {
+  let content
+  try { content = JSON.parse(fs.readFileSync(versionJsonPath, 'utf-8')) } catch { return }
+
+  const libs = content.libraries
+  if (!Array.isArray(libs)) return
+
+  const hasNewBSL = libs.some(lib => {
+    if (!lib || !lib.name) return false
+    const parts = parseLibraryComponents(lib.name)
+    return parts && parts.group === 'cpw.mods' && parts.artifact === 'bootstraplauncher'
+      && compareVersions(parts.version, '0.1.17') >= 0
+  })
+  if (!hasNewBSL) return
+
+  const jvmArray = content.arguments?.jvm
+  if (!Array.isArray(jvmArray)) return
+
+  let ignoreIdx = -1
+  for (let i = jvmArray.length - 1; i >= 0; i--) {
+    if (typeof jvmArray[i] === 'string' && jvmArray[i].startsWith('-DignoreList=')) {
+      ignoreIdx = i
+      break
+    }
+  }
+  if (ignoreIdx === -1) return
+
+  jvmArray[ignoreIdx] = jvmArray[ignoreIdx] + ',${primary_jar_name}'
+
+  fs.writeFileSync(versionJsonPath, JSON.stringify(content, null, 2))
+}
+
 async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, javaPath, instanceRoot, onProgress) {
-  // forgeVersion có thể là "40.3.0" hoặc "1.18.2-40.3.0" (đã có mcVersion prefix)
   const fullVersion = forgeVersion.startsWith(`${mcVersion}-`)
     ? forgeVersion
     : `${mcVersion}-${forgeVersion}`
-  // buildOnlyVersion = phần sau mcVersion prefix, ví dụ "40.3.0"
   const buildOnlyVersion = fullVersion.startsWith(`${mcVersion}-`)
     ? fullVersion.slice(mcVersion.length + 1)
     : forgeVersion
@@ -133,7 +476,6 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
 
   if (!fs.existsSync(installerDir)) fs.mkdirSync(installerDir, { recursive: true })
 
-  // ── Download installer ─────────────────────────────────────────────────────
   if (!fs.existsSync(installerPath) || fs.statSync(installerPath).size === 0) {
     onProgress?.({ phase: 'forge_download', log: `Downloading Forge ${fullVersion} installer...`, done: 0, total: 1 })
     let downloaded = false
@@ -153,7 +495,6 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     onProgress?.({ phase: 'forge_download', log: 'Forge installer already cached.', done: 1, total: 1 })
   }
 
-  // ── Place vanilla jar for installer ───────────────────────────────────────
   const vanillaVersionDir = path.join(instanceRoot, 'versions', mcVersion)
   const vanillaJarDest    = path.join(vanillaVersionDir, `${mcVersion}.jar`)
   if (!fs.existsSync(vanillaJarDest) && clientJar && fs.existsSync(clientJar)) {
@@ -166,117 +507,22 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
   const versionDir      = path.join(instanceRoot, 'versions', versionId)
   const versionJsonPath = path.join(versionDir, `${versionId}.json`)
 
-  // instLibDir is where the installer places processed libraries
-  const instLibDir = path.join(instanceRoot, 'libraries')
-
-  // ── Check if Forge post-processed JARs exist ───────────────────────────────
-  // On Linux the installer validates SHA1 of its output and deletes files if they
-  // don't match its hardcoded expected hashes (which were computed on Windows with
-  // deterministic ZIP ordering). We detect this and run each processor tool directly.
-  const forgeClientJar = path.join(instLibDir, 'net', 'minecraftforge', 'forge', fullVersion, `forge-${fullVersion}-client.jar`)
-  const srgJar         = path.join(instLibDir, 'net', 'minecraft', 'client', `${mcVersion}-20230612.114412`, `client-${mcVersion}-20230612.114412-srg.jar`)
-  const extraJar       = path.join(instLibDir, 'net', 'minecraft', 'client', `${mcVersion}-20230612.114412`, `client-${mcVersion}-20230612.114412-extra.jar`)
-
-  const jarOk = p => fs.existsSync(p) && fs.statSync(p).size > 0
-  const forgeOutputsExist = () => jarOk(forgeClientJar) && jarOk(srgJar) && jarOk(extraJar)
-
-  // ── Run installer (only if versionJson is missing) ────────────────────────
   if (!fs.existsSync(versionJsonPath)) {
-    onProgress?.({ phase: 'forge_install', log: 'Running Forge installer (this may take a minute)...', done: 0, total: 1 })
-    const result = spawnSync(javaPath, [
-      '-Djava.awt.headless=true', '-jar', installerPath, '--installClient', instanceRoot,
-    ], { cwd: instanceRoot, stdio: ['ignore', 'pipe', 'pipe'], timeout: 600_000, maxBuffer: 256 * 1024 * 1024 })
-    const allOutput = ((result.stdout?.toString() || '') + '\n' + (result.stderr?.toString() || '')).split('\n').filter(Boolean)
-    for (const line of allOutput) onProgress?.({ phase: 'forge_install', log: `[Installer] ${line}` })
-    if (result.error) throw new Error(`Forge installer failed: ${result.error.message}`)
-    if (result.status !== 0 && !fs.existsSync(versionJsonPath)) {
-      throw new Error(`Forge installer exited with code ${result.status}.\n${(result.stderr?.toString() || '').slice(-500)}`)
-    }
-    onProgress?.({ phase: 'forge_install', log: 'Forge installer finished.', done: 1, total: 1 })
-  } else {
-    onProgress?.({ phase: 'forge_install', log: 'Forge already installed, skipping installer.', done: 1, total: 1 })
-  }
+    onProgress?.({ phase: 'forge_install', log: `Installing Forge via HMCL method...`, done: 0, total: 1 })
 
-  // ── Linux fix: run processor tools directly if output JARs are missing ────
-  // The installer's SHA1 validation deletes output files when hashes don't match
-  // (common on Linux due to non-deterministic ZIP entry ordering). We bypass this
-  // by running jarsplitter, ForgeAutoRenamingTool, and binarypatcher directly.
-  if (!forgeOutputsExist() && process.platform !== 'win32') {
-    onProgress?.({ phase: 'forge_install', log: '[Linux] Output JARs missing after installer. Running processors directly...', done: 0, total: 1 })
-
-    const sep = ':'
-    const mcClientDir  = path.join(instLibDir, 'net', 'minecraft', 'client', `${mcVersion}-20230612.114412`)
-    const slimJar      = path.join(mcClientDir, `client-${mcVersion}-20230612.114412-slim.jar`)
-    const mergedMappings = path.join(instLibDir, 'de', 'oceanlabs', 'mcp', 'mcp_config',
-      `${mcVersion}-20230612.114412`, `mcp_config-${mcVersion}-20230612.114412-mappings-merged.txt`)
-
-    function runTool(label, args) {
-      onProgress?.({ phase: 'forge_install', log: `[Linux] Running ${label}...` })
-      const r = spawnSync(javaPath, args, {
-        stdio: ['ignore', 'pipe', 'pipe'], timeout: 300_000, maxBuffer: 64 * 1024 * 1024,
-      })
-      if (r.error) throw new Error(`${label} failed: ${r.error.message}`)
-      return r.status === 0
-    }
-
-    // Step 1: jarsplitter → slim + extra
-    if (!jarOk(slimJar) || !jarOk(extraJar)) {
-      const cp1 = [
-        path.join(instLibDir, 'net', 'minecraftforge', 'jarsplitter', '1.1.4', 'jarsplitter-1.1.4.jar'),
-        path.join(instLibDir, 'net', 'sf', 'jopt-simple', 'jopt-simple', '5.0.4', 'jopt-simple-5.0.4.jar'),
-        path.join(instLibDir, 'net', 'minecraftforge', 'srgutils', '0.4.3', 'srgutils-0.4.3.jar'),
-      ].filter(jarOk).join(sep)
-      runTool('jarsplitter', ['-cp', cp1, 'net.minecraftforge.jarsplitter.ConsoleTool',
-        '--input', vanillaJarDest, '--slim', slimJar, '--extra', extraJar, '--srg', mergedMappings])
-    }
-
-    // Step 2: ForgeAutoRenamingTool → srg
-    if (!jarOk(srgJar)) {
-      const fart = path.join(instLibDir, 'net', 'minecraftforge', 'ForgeAutoRenamingTool', '0.1.22', 'ForgeAutoRenamingTool-0.1.22-all.jar')
-      if (jarOk(fart) && jarOk(slimJar)) {
-        runTool('ForgeAutoRenamingTool', ['-jar', fart,
-          '--input', slimJar, '--output', srgJar, '--names', mergedMappings,
-          '--ann-fix', '--ids-fix', '--src-fix', '--record-fix'])
-      }
-    }
-
-    // Step 3: binarypatcher → forge client jar
-    if (!jarOk(forgeClientJar) && jarOk(srgJar)) {
-      // Extract client.lzma from installer JAR
-      const lzmaPath = path.join(installerDir, 'client.lzma')
-      if (!jarOk(lzmaPath)) {
-        const { execFileSync } = require('child_process')
-        try {
-          const fd = require('fs').openSync(lzmaPath, 'w')
-          execFileSync('unzip', ['-p', installerPath, 'data/client.lzma'],
-            { stdio: ['ignore', fd, 'pipe'] })
-          require('fs').closeSync(fd)
-        } catch (e) {
-          onProgress?.({ phase: 'forge_install', log: `[WARN] Failed to extract client.lzma: ${e.message}` })
-        }
-      }
-      if (jarOk(lzmaPath)) {
-        const bp = path.join(instLibDir, 'net', 'minecraftforge', 'binarypatcher', '1.1.1', 'binarypatcher-1.1.1.jar')
-        const bpCp = [
-          bp,
-          path.join(instLibDir, 'commons-io', 'commons-io', '2.4', 'commons-io-2.4.jar'),
-          path.join(instLibDir, 'com', 'google', 'guava', 'guava', '25.1-jre', 'guava-25.1-jre.jar'),
-          path.join(instLibDir, 'net', 'sf', 'jopt-simple', 'jopt-simple', '5.0.4', 'jopt-simple-5.0.4.jar'),
-          path.join(instLibDir, 'com', 'github', 'jponge', 'lzma-java', '1.3', 'lzma-java-1.3.jar'),
-          path.join(instLibDir, 'com', 'nothome', 'javaxdelta', '2.0.1', 'javaxdelta-2.0.1.jar'),
-        ].filter(jarOk).join(sep)
-        if (jarOk(bp)) {
-          runTool('binarypatcher', ['-cp', bpCp, 'net.minecraftforge.binarypatcher.ConsoleTool',
-            '--clean', srgJar, '--output', forgeClientJar, '--apply', lzmaPath])
-        }
-      }
-    }
-
-    if (forgeOutputsExist()) {
-      onProgress?.({ phase: 'forge_install', log: '[Linux] All Forge output JARs generated successfully.', done: 1, total: 1 })
+    if (isNewForge(buildOnlyVersion)) {
+      await installNewForgeHMCL(installerPath, instanceRoot, versionJsonPath, versionId, vanillaJarDest, javaPath, fullVersion, onProgress)
     } else {
-      onProgress?.({ phase: 'forge_install', log: '[WARN] Some Forge output JARs still missing after manual processing.', done: 1, total: 1 })
+      installOldForge(installerPath, instanceRoot, versionJsonPath, versionId, mcVersion)
     }
+
+    try { progressIgnoreList(versionJsonPath) } catch (e) {
+      onProgress?.({ phase: 'forge_install', log: `[WARN] Bootstraplauncher fix: ${e.message}` })
+    }
+
+    onProgress?.({ phase: 'forge_install', log: 'Forge installation complete.', done: 1, total: 1 })
+  } else {
+    onProgress?.({ phase: 'forge_install', log: 'Forge already installed.', done: 1, total: 1 })
   }
 
   if (!fs.existsSync(versionJsonPath)) throw new Error(`Forge version JSON not found: ${versionJsonPath}`)
@@ -284,14 +530,20 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
   const mainClass = profile.mainClass
   if (!mainClass) throw new Error('Forge version JSON missing mainClass')
 
+  const instLibDir = path.join(instanceRoot, 'libraries')
   const extraLibraries = []
   for (const lib of (profile.libraries || [])) {
     const relPath = lib.downloads?.artifact?.path || mavenToPath(lib.name)
     if (!relPath) continue
     const instPath   = path.join(instLibDir, relPath)
     const sharedPath = path.join(librariesDir, relPath)
-    if      (fs.existsSync(instPath)   && fs.statSync(instPath).size   > 0) extraLibraries.push(instPath)
-    else if (fs.existsSync(sharedPath) && fs.statSync(sharedPath).size > 0) extraLibraries.push(sharedPath)
+    if (fs.existsSync(instPath) && fs.statSync(instPath).size > 0) {
+      extraLibraries.push(instPath)
+    } else if (fs.existsSync(sharedPath) && fs.statSync(sharedPath).size > 0) {
+      extraLibraries.push(sharedPath)
+    } else {
+      onProgress?.({ phase: 'forge_libraries', log: `[WARN] Library not found: ${relPath}` })
+    }
   }
 
   const effectiveLibDir = fs.existsSync(instLibDir) ? instLibDir : librariesDir
@@ -314,6 +566,8 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
 
   onProgress?.({ phase: 'forge_ready', log: `Forge ${versionName} ready. Main: ${mainClass}`, done: 1, total: 1 })
 
+  const isLegacy = !isNewForge(buildOnlyVersion)
+
   return {
     mainClass,
     extraLibraries,
@@ -321,9 +575,8 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     gameArgs,
     shimJar:               null,
     customClientJar:       null,
-    needsVanillaClasspath: true,
+    needsVanillaClasspath: !isLegacy,
   }
 }
 
 module.exports = { setupForge }
-

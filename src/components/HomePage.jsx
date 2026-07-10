@@ -54,6 +54,17 @@ import ModsTab from './home/tab/ModsTab'
 import WorldsTab from './home/tab/WorldsTab'
 import ShadersTab from './home/tab/ShadersTab'
 import ResourcePacksTab from './home/tab/ResourcePacksTab'
+import {
+  Plus,
+  CaretDown,
+  Play,
+  WarningCircle,
+  ImageSquare,
+  Check,
+  SpinnerGap,
+  Gear,
+  List,
+} from '@phosphor-icons/react'
 import { Icons } from './home/tab/shared'
 
 function markdownToHtml(text) {
@@ -245,9 +256,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
         onClick={() => onNavigate?.('account')}
         className="w-full flex items-center gap-2 bg-white/3 border border-dashed border-white/10 rounded-xl px-3 py-2.5 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs"
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-        </svg>
+        <Plus size={16} weight="duotone" className="flex-shrink-0" />
         {t('homepage.acccount.addacccount')}
       </button>
     )
@@ -270,9 +279,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
             </div>
           </>
         )}
-        <svg viewBox="0 0 24 24" fill="currentColor" className={`w-4 h-4 text-white/40 flex-shrink-0 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}>
-          <path d="M7 10l5 5 5-5z" />
-        </svg>
+        <CaretDown size={16} weight="duotone" className={`text-white/40 flex-shrink-0 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {dropdownOpen && (
@@ -301,9 +308,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
                     <p className="text-[10px] text-white/30">{getAccountTypeLabel(account.type)}</p>
                   </div>
                   {selectedAccount?.id === account.id && (
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-orange-400 flex-shrink-0">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                    </svg>
+                    <Check size={12} weight="duotone" className="text-orange-400 flex-shrink-0" />
                   )}
                 </button>
               ))}
@@ -315,9 +320,7 @@ function AccountDropdown({ accounts, selectedAccount, selectAccount, onNavigate 
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-all text-white/30 hover:text-white/60 text-xs"
               >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 flex-shrink-0">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                </svg>
+                <Plus size={16} weight="duotone" className="flex-shrink-0" />
                 <span>{t('homepage.acccount.addacccount')}</span>
               </button>
             </>
@@ -392,9 +395,7 @@ function ProfileContentPanel({ profile, accountId }) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-6">
         <div className="w-16 h-16 rounded-2xl bg-white/4 border border-white/8 flex items-center justify-center text-white/15">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-          </svg>
+          <ImageSquare size={32} weight="duotone" />
         </div>
         <div className="text-center max-w-xs">
           <p className="text-sm text-white/40 font-medium">{t('homepage.profile.noprofile')}</p>
@@ -596,13 +597,13 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                     <div className={`px-5 py-2.5 rounded-xl flex items-center gap-2.5 transition-all shadow-lg group-hover:scale-105 ${isDownloading ? 'bg-black/60 border border-white/10' : isRunning ? 'bg-orange-500/30 border border-orange-500/40' : isError ? 'bg-red-500/30 border border-red-500/40' : `${launchColor} shadow-orange-500/30`}`}>
                       {isDownloading ? (
-                        <svg className="animate-spin w-4 h-4 text-white/60" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        <SpinnerGap size={16} weight="duotone" className="animate-spin text-white/60" />
                       ) : isRunning ? (
                         <span className="w-2.5 h-2.5 rounded-full bg-orange-400 animate-pulse"/>
                       ) : isError ? (
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-red-400"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <WarningCircle size={16} weight="duotone" className="text-red-400" />
                       ) : (
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white"><path d="M8 5v14l11-7z"/></svg>
+                        <Play size={16} weight="duotone" className="text-white" />
                       )}
                       <span className="text-sm font-bold text-white">{isDownloading ? `${progress?.percent ?? 0}%` : isRunning ? t('homepage.launch.playing') : isError ? t('homepage.launch.retry') : selectedProfile?.name}</span>
                     </div>
@@ -641,7 +642,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
               </div>
             ) : (
               <button onClick={() => onNavigate?.('play')} className="w-full h-48 flex items-center bg-white/3 border border-dashed border-white/10 rounded-xl px-3 text-white/30 hover:text-white/60 hover:border-white/20 transition-all text-xs justify-center flex-col gap-1.5">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 opacity-40"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <Plus size={20} weight="duotone" className="opacity-40" />
                 <span>{t('homepage.profile.createprofile')}</span>
               </button>
             )}
@@ -653,7 +654,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             {selectedProfile && (
               <button onClick={() => { setProfileSettingsOpen(v => !v) }}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${profileSettingsOpen ? 'bg-orange-500/15 border-orange-500/25 text-orange-400' : 'bg-white/3 border-white/8 text-white/40 hover:text-white/70 hover:bg-white/6 hover:border-white/15'}`}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 flex-shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <Gear size={14} weight="duotone" className="flex-shrink-0" />
                 {profileSettingsOpen ? t('homepage.profile.closesettings') : t('homepage.profile.settings')}
                 <span className="ml-auto text-[10px] text-white/20">{selectedProfile.ramGb ?? 4} GB</span>
               </button>
@@ -661,9 +662,9 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             {/* Profile selector dropdown */}
             <div className="relative" ref={profileDropRef}>
               <button onClick={() => setProfileDropOpen(v => !v)} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-white/30 hover:text-white/60 bg-white/3 border border-white/6 hover:border-white/12 transition-all">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 opacity-50"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                <List size={14} weight="duotone" className="opacity-50" />
                 <span className="flex-1 text-left truncate">{t('homepage.profile.label')}</span>
-                <svg viewBox="0 0 24 24" fill="currentColor" className={`w-3 h-3 transition-transform duration-200 ${profileDropOpen ? 'rotate-180' : ''}`}><path d="M7 10l5 5 5-5z"/></svg>
+                <CaretDown size={12} weight="duotone" className={`transition-transform duration-200 ${profileDropOpen ? 'rotate-180' : ''}`} />
               </button>
               {profileDropOpen && (
                 <div className="absolute left-0 right-0 top-full mt-1 max-h-52 overflow-y-auto bg-[#141414] border border-white/10 rounded-xl shadow-2xl z-50" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
@@ -678,14 +679,14 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                         <p className="text-[10px] text-white/30 truncate">{p.gameVersion} · {p.loader}</p>
                       </div>
                       {p.id === selectedProfile?.id && (
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-orange-400 flex-shrink-0"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <Check size={14} weight="duotone" className="text-orange-400 flex-shrink-0" />
                       )}
                     </button>
                   ))}
                   <div className="border-t border-white/5">
                     <button onClick={() => { setProfileDropOpen(false); onNavigate?.('play') }}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-white/5 transition-all text-white/30 hover:text-white/60">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                      <Plus size={14} weight="duotone" />
                       <span className="text-[11px]">Quản lý profile</span>
                     </button>
                   </div>

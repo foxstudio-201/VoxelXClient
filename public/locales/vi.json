@@ -49,6 +49,8 @@
       "discordRPCDesc": "Hiển thị trạng thái chơi game trên Discord",
       "boostMode": "Boost Mode khi khởi động game",
       "boostModeDesc": "Tự động tắt các tiến trình nền không cần thiết (OneDrive, Teams, Spotify...) để dồn tài nguyên CPU/RAM cho game, giúp tăng FPS",
+      "bigCoreMode": "Chế độ Big Core",
+      "bigCoreModeDesc": "Ghim tiến trình game vào các lõi CPU hiệu năng cao nhất và giới hạn ActiveProcessorCount để tối ưu hiệu năng đơn luồng",
       "ui": "Giao diện",
       "uiTabs": ["Kiểu chữ", "Màu sắc", "Đường viền", "Nền"],
       "fontLabel": "Font chữ",

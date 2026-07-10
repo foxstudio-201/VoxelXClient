@@ -839,6 +839,15 @@ export default function LauncherTab({ settings, onChange }) {
             onChange={v => onChange({ boostMode: v })}
           />
         </SettingRow>
+        <SettingRow
+          label={t('settings.launcher.bigCoreMode')}
+          description={t('settings.launcher.bigCoreModeDesc')}
+        >
+          <Toggle
+            checked={settings.bigCoreMode ?? false}
+            onChange={v => onChange({ bigCoreMode: v })}
+          />
+        </SettingRow>
       </Section>
 
       {}

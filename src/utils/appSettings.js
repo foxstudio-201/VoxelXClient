@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS = {
   showLogWindow:        true,
   discordRPC:           false,
   boostMode:            false,
+  bigCoreMode:          false,
   fontId:               'system',
   colorAccent:          '#fb923c',
   colorHover:           '#86efac',

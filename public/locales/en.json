@@ -49,6 +49,8 @@
       "discordRPCDesc": "Show game status on Discord",
       "boostMode": "Boost Mode on game launch",
       "boostModeDesc": "Automatically kills unnecessary background processes (OneDrive, Teams, Spotify...) to free up CPU/RAM for the game and boost FPS",
+      "bigCoreMode": "Big Core Mode",
+      "bigCoreModeDesc": "Pin game process to the highest-performance CPU cores and restrict ActiveProcessorCount for maximum single-threaded performance",
       "ui": "Interface",
       "uiTabs": ["Font", "Colors", "Borders", "Background"],
       "fontLabel": "Font",
