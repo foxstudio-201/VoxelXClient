@@ -109,8 +109,8 @@ export function AccountsProvider({ children }) {
       const data = isElectron
         ? await window.electronAPI.getAccounts()
         : localFallback.get()
-      setAccounts(data.accounts)
-      setSelectedId(data.selectedId)
+      setAccounts(data.accounts || [])
+      setSelectedId(data.selectedId ?? null)
       setLoading(false)
     }
     load()

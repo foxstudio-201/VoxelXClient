@@ -56,7 +56,9 @@ function ensureProfilesFile() {
 function readProfiles() {
   ensureProfilesFile()
   try {
-    return JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf-8'))
+    const data = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf-8'))
+    if (!Array.isArray(data.profiles)) data.profiles = []
+    return data
   } catch {
     return { profiles: [], selectedProfileId: null }
   }

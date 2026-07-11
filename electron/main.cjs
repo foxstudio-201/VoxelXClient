@@ -252,7 +252,11 @@ function ensureAccountsFile() {
 }
 function readAccounts() {
   ensureAccountsFile()
-  try { return JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf-8')) }
+  try {
+    const data = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf-8'))
+    if (!Array.isArray(data.accounts)) data.accounts = []
+    return data
+  }
   catch { return { accounts: [], selectedId: null } }
 }
 function writeAccounts(data) {
