@@ -174,11 +174,76 @@ function getDirSizeLazy(dirPath) {
 
 
 
+const SYNC_EXCLUDED_DIRS = new Set(['assets', 'libraries', 'versions', 'accounts', 'logs', 'crash-reports'])
+
+function syncDirRecursive(srcDir, destDir) {
+  if (!fs.existsSync(srcDir)) return
+  const stat = fs.statSync(srcDir)
+  if (!stat.isDirectory()) return
+  fs.mkdirSync(destDir, { recursive: true })
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry.name)
+    const destPath = path.join(destDir, entry.name)
+    if (entry.isDirectory()) {
+      syncDirRecursive(srcPath, destPath)
+      continue
+    }
+    if (!entry.isFile()) continue
+    let shouldCopy = true
+    if (fs.existsSync(destPath)) {
+      try {
+        const srcStat = fs.statSync(srcPath)
+        const destStat = fs.statSync(destPath)
+        shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
+      } catch {
+        shouldCopy = true
+      }
+    }
+    if (shouldCopy) {
+      fs.mkdirSync(path.dirname(destPath), { recursive: true })
+      try { fs.rmSync(destPath, { force: true }) } catch {}
+      fs.copyFileSync(srcPath, destPath)
+    }
+  }
+}
+
+function syncProfileToAccountDir(srcDir, destDir) {
+  if (!fs.existsSync(srcDir)) return
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true })
+  for (const entry of entries) {
+    if (SYNC_EXCLUDED_DIRS.has(entry.name)) continue
+    if (entry.name.startsWith('.')) continue
+    if (entry.name.endsWith('.tmp')) continue
+    const srcPath = path.join(srcDir, entry.name)
+    const destPath = path.join(destDir, entry.name)
+    if (entry.isDirectory()) {
+      syncDirRecursive(srcPath, destPath)
+    } else if (entry.isFile()) {
+      let shouldCopy = true
+      if (fs.existsSync(destPath)) {
+        try {
+          const srcStat = fs.statSync(srcPath)
+          const destStat = fs.statSync(destPath)
+          shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
+        } catch {
+          shouldCopy = true
+        }
+      }
+      if (shouldCopy) {
+        try { fs.rmSync(destPath, { force: true }) } catch {}
+        fs.copyFileSync(srcPath, destPath)
+      }
+    }
+  }
+}
+
 function getGameDir(profile, accountId) {
   if (!profile?.instancePath) return null
   if (accountId) {
     const accDir = path.join(profile.instancePath, 'accounts', accountId)
     ensureDir(accDir)
+    try { syncProfileToAccountDir(profile.instancePath, accDir) } catch (e) { console.warn('[profileManager] Sync error:', e.message) }
     return accDir
   }
   return profile.instancePath

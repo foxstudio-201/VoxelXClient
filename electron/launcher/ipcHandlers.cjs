@@ -203,15 +203,39 @@ function syncDirRecursive(srcDir, destDir) {
   }
 }
 
-function syncModpackSharedDirs(profile, gameDataDir) {
-  if (!profile?.importSource) return []
+const SYNC_EXCLUDED_DIRS = new Set(['assets', 'libraries', 'versions', 'accounts', 'logs', 'crash-reports'])
 
+function syncProfileToAccount(profile, gameDataDir) {
+  const srcDir = profile.instancePath
+  if (!srcDir || !fs.existsSync(srcDir)) return []
   const synced = []
-  for (const dirName of ['mods', 'config', 'resourcepacks']) {
-    const srcDir = path.join(profile.instancePath, dirName)
-    if (!fs.existsSync(srcDir)) continue
-    syncDirRecursive(srcDir, path.join(gameDataDir, dirName))
-    synced.push(dirName)
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true })
+  for (const entry of entries) {
+    if (SYNC_EXCLUDED_DIRS.has(entry.name)) continue
+    if (entry.name.startsWith('.')) continue
+    if (entry.name.endsWith('.tmp')) continue
+    const srcPath = path.join(srcDir, entry.name)
+    const destPath = path.join(gameDataDir, entry.name)
+    if (entry.isDirectory()) {
+      syncDirRecursive(srcPath, destPath)
+      synced.push(entry.name)
+    } else if (entry.isFile()) {
+      let shouldCopy = true
+      if (fs.existsSync(destPath)) {
+        try {
+          const srcStat = fs.statSync(srcPath)
+          const destStat = fs.statSync(destPath)
+          shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
+        } catch {
+          shouldCopy = true
+        }
+      }
+      if (shouldCopy) {
+        try { fs.rmSync(destPath, { force: true }) } catch {}
+        fs.copyFileSync(srcPath, destPath)
+      }
+      synced.push(entry.name)
+    }
   }
   return synced
 }
@@ -269,12 +293,12 @@ function registerLauncherHandlers(getTrustedWindow) {
     if (!fs.existsSync(gameDataDir)) fs.mkdirSync(gameDataDir, { recursive: true })
 
     try {
-      const syncedDirs = syncModpackSharedDirs(profile, gameDataDir)
+      const syncedDirs = syncProfileToAccount(profile, gameDataDir)
       if (syncedDirs.length > 0) {
         if (!win.isDestroyed()) {
           win.webContents.send('launcher:progress', {
-            phase: 'prepare_modpack',
-            log: `Syncing modpack data: ${syncedDirs.join(', ')}...`,
+            phase: 'prepare_profile',
+            log: `Syncing profile: ${syncedDirs.join(', ')}...`,
             percent: 1,
           })
         }
