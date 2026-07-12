@@ -208,6 +208,36 @@ function syncDirRecursive(srcDir, destDir) {
   }
 }
 
+function syncAccountToProfileDir(accountDir, profileDir) {
+  if (!fs.existsSync(accountDir)) return
+  const entries = fs.readdirSync(accountDir, { withFileTypes: true })
+  for (const entry of entries) {
+    if (SYNC_EXCLUDED_DIRS.has(entry.name)) continue
+    if (entry.name.startsWith('.')) continue
+    if (entry.name.endsWith('.tmp')) continue
+    const srcPath = path.join(accountDir, entry.name)
+    const destPath = path.join(profileDir, entry.name)
+    if (entry.isDirectory()) {
+      syncDirRecursive(srcPath, destPath)
+    } else if (entry.isFile()) {
+      let shouldCopy = true
+      if (fs.existsSync(destPath)) {
+        try {
+          const srcStat = fs.statSync(srcPath)
+          const destStat = fs.statSync(destPath)
+          shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
+        } catch {
+          shouldCopy = true
+        }
+      }
+      if (shouldCopy) {
+        try { fs.rmSync(destPath, { force: true }) } catch {}
+        fs.copyFileSync(srcPath, destPath)
+      }
+    }
+  }
+}
+
 function syncProfileToAccountDir(srcDir, destDir) {
   if (!fs.existsSync(srcDir)) return
   const entries = fs.readdirSync(srcDir, { withFileTypes: true })
@@ -244,6 +274,7 @@ function getGameDir(profile, accountId) {
     const accDir = path.join(profile.instancePath, 'accounts', accountId)
     ensureDir(accDir)
     try { syncProfileToAccountDir(profile.instancePath, accDir) } catch (e) { console.warn('[profileManager] Sync error:', e.message) }
+    try { syncAccountToProfileDir(accDir, profile.instancePath) } catch (e) { console.warn('[profileManager] Sync back error:', e.message) }
     return accDir
   }
   return profile.instancePath

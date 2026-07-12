@@ -205,6 +205,36 @@ function syncDirRecursive(srcDir, destDir) {
 
 const SYNC_EXCLUDED_DIRS = new Set(['assets', 'libraries', 'versions', 'accounts', 'logs', 'crash-reports'])
 
+function syncAccountToProfile(profileDir, accountDir) {
+  if (!fs.existsSync(accountDir)) return
+  const entries = fs.readdirSync(accountDir, { withFileTypes: true })
+  for (const entry of entries) {
+    if (SYNC_EXCLUDED_DIRS.has(entry.name)) continue
+    if (entry.name.startsWith('.')) continue
+    if (entry.name.endsWith('.tmp')) continue
+    const srcPath = path.join(accountDir, entry.name)
+    const destPath = path.join(profileDir, entry.name)
+    if (entry.isDirectory()) {
+      syncDirRecursive(srcPath, destPath)
+    } else if (entry.isFile()) {
+      let shouldCopy = true
+      if (fs.existsSync(destPath)) {
+        try {
+          const srcStat = fs.statSync(srcPath)
+          const destStat = fs.statSync(destPath)
+          shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
+        } catch {
+          shouldCopy = true
+        }
+      }
+      if (shouldCopy) {
+        try { fs.rmSync(destPath, { force: true }) } catch {}
+        fs.copyFileSync(srcPath, destPath)
+      }
+    }
+  }
+}
+
 function syncProfileToAccount(profile, gameDataDir) {
   const srcDir = profile.instancePath
   if (!srcDir || !fs.existsSync(srcDir)) return []
@@ -730,6 +760,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           writeLog(line)
         },
         onExit: (code) => {
+          try { syncAccountToProfile(profile.instancePath, gameDataDir) } catch (e) { writeLog(`[WARN] Sync back settings: ${e.message}`) }
           stopAuthlibServer(gameKey)
           try { logStream.end() } catch {}
           logWinRef = null
