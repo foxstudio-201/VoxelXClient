@@ -939,7 +939,7 @@
     }
   },
   "gaming": {
-    "select": "Chọn",
+    "select": "Chi tiết",
     "play": "Chơi",
     "playing": "Đang chơi"
   },
@@ -966,5 +966,15 @@
     "notFound": "Không tìm thấy",
     "retry": "Thử lại",
     "downloading": "Đang tải..."
+  },
+  "dialog": {
+    "close": {
+      "title": "Đóng Launcher",
+      "ask": "Bạn muốn đóng launcher theo cách nào?",
+      "quit": "Đóng hẳn",
+      "tray": "Thu nhỏ xuống tray",
+      "remember": "Ghi nhớ lựa chọn này",
+      "apply": "Áp dụng"
+    }
   }
 }

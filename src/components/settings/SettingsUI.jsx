@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLang } from '../../i18n/LangProvider'
 
 export function Toggle({ checked, onChange, id }) {
@@ -68,6 +68,13 @@ export function UpdateChecker() {
   const [reinstallError, setReinstallError] = useState('')
   const unsubRef = useState(null)
   const unsubReinstallRef = useState(null)
+  const checkedRef = useRef(false)
+
+  useEffect(() => {
+    if (checkedRef.current) return
+    checkedRef.current = true
+    handleCheck()
+  }, [])
 
   useEffect(() => {
     if (!isElectron || !window.electronAPI.onReinstallProgress) return

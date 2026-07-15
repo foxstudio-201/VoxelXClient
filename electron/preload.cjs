@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow:    () => ipcRenderer.send('window-close'),
+  quitApp:        () => ipcRenderer.send('quit-app'),
 
   getAccounts:   ()        => ipcRenderer.invoke('accounts:get'),
   addAccount:    (account) => ipcRenderer.invoke('accounts:add', account),

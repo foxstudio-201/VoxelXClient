@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useLang } from '../../i18n/LangProvider'
-import { Gear, PlayCircle } from '@phosphor-icons/react'
+import { Gear, PlayCircle, Plus, FileArrowDown } from '@phosphor-icons/react'
 import ProfileSettingsPanel from '../home/ProfileSettingsPanel'
 import GamingModalWrapper from '../ui/GamingModalWrapper'
 import ModsTab from '../home/tab/ModsTab'
@@ -9,7 +9,13 @@ import WorldsTab from '../home/tab/WorldsTab'
 import ShadersTab from '../home/tab/ShadersTab'
 import ResourcePacksTab from '../home/tab/ResourcePacksTab'
 import ServerBookmarksTab from '../home/tab/ServerBookmarksTab'
+import GamingLogPanel from './GamingLogPanel'
+import CreateProfileModal from '../play/CreateProfileModal'
+import ImportProfileModal from '../play/ImportProfileModal'
+import { useToast } from '../../hooks/useToast'
 import defaultBg from '../../assets/minecraft-versions/default.png'
+import selectSound from '../../assets/sound/selected.mp3'
+import clickSound from '../../assets/sound/click.mp3'
 import vanillaIcon from '../../assets/loader/vanilla.png'
 import fabricIcon from '../../assets/loader/fabric.png'
 import forgeIcon from '../../assets/loader/forge.png'
@@ -75,13 +81,72 @@ const ALL_TABS = [
   { id: 'servers',       label: 'Servers',        component: ServerBookmarksTab },
 ]
 
-export default function GamingHomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, profiles, selectedProfileId, accountId, activePage, onOpenSettings, onProfileUpdated, instances, onKillInstance }) {
+export default function GamingHomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, profiles, selectedProfileId, accountId, activePage, onOpenSettings, onProfileUpdated, instances, onKillInstance, onLogPanelOpen }) {
   const { t } = useLang()
   const { selectedAccount } = useAccounts()
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [expanded, setExpanded] = useState(false)
   const [detailTab, setDetailTab] = useState('mods')
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
+  const [logPanelVisible, setLogPanelVisible] = useState(false)
+  const [logManuallyClosed, setLogManuallyClosed] = useState(false)
+  const [persistedLauncherLogs, setPersistedLauncherLogs] = useState([])
+  const [showCreate, setShowCreate] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [groups, setGroups] = useState([])
+  const newLaunchRef = useRef(false)
+  const toast = useToast()
+  const isElectron = typeof window !== 'undefined' && window.electronAPI
+
+  useEffect(() => {
+    if (isElectron) window.electronAPI.getGroups().then(r => setGroups(r?.groups || [])).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    onLogPanelOpen?.(expanded)
+  }, [expanded, onLogPanelOpen])
+
+  async function handleCreate(profileData) {
+    const result = isElectron ? await window.electronAPI.createProfile(profileData) : { error: 'Not available' }
+    if (result?.error) {
+      toast?.({ type: 'error', title: 'Error', message: result.error })
+      return result
+    }
+    if (profileData.groupId && isElectron) {
+      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
+      const gd = await window.electronAPI.getGroups()
+      setGroups(gd?.groups || [])
+    }
+    setShowCreate(false)
+    toast?.({ type: 'success', title: 'Profile created', message: result.profile?.name })
+    onProfileUpdated?.()
+    return result
+  }
+
+  async function handleCreateForImport(profileData) {
+    const result = isElectron ? await window.electronAPI.createProfile(profileData) : { error: 'Not available' }
+    if (result?.error) {
+      toast?.({ type: 'error', title: 'Error', message: result.error })
+      return result
+    }
+    if (profileData.groupId && isElectron) {
+      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
+      const gd = await window.electronAPI.getGroups()
+      setGroups(gd?.groups || [])
+    }
+    toast?.({ type: 'success', title: 'Profile imported', message: result.profile?.name })
+    onProfileUpdated?.()
+    return result
+  }
+
+  async function handleImportClose() {
+    setShowImport(false)
+    if (isElectron) {
+      const gd = await window.electronAPI.getGroups()
+      setGroups(gd?.groups || [])
+    }
+    onProfileUpdated?.()
+  }
   const carouselRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -102,19 +167,38 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     return inst.state // 'downloading' | 'running' | 'error' | 'stopped'
   }
 
+  const selectAudioRef = useRef(null)
+  const clickAudioRef = useRef(null)
+
+  function playSelectSound() {
+    if (!selectAudioRef.current) {
+      selectAudioRef.current = new Audio(selectSound)
+    }
+    selectAudioRef.current.currentTime = 0
+    selectAudioRef.current.play().catch(() => {})
+  }
+
+  function playClickSound() {
+    if (!clickAudioRef.current) {
+      clickAudioRef.current = new Audio(clickSound)
+    }
+    clickAudioRef.current.currentTime = 0
+    clickAudioRef.current.play().catch(() => {})
+  }
+
   function goNext() {
-    if (selectedIdx < profileList.length - 1) setSelectedIdx(selectedIdx + 1)
+    if (selectedIdx < profileList.length - 1) { setSelectedIdx(selectedIdx + 1); playSelectSound() }
   }
   function goPrev() {
-    if (selectedIdx > 0) setSelectedIdx(selectedIdx - 1)
+    if (selectedIdx > 0) { setSelectedIdx(selectedIdx - 1); playSelectSound() }
   }
   function goToCard(idx) {
-    setSelectedIdx(idx)
+    if (idx !== selectedIdx) { setSelectedIdx(idx); playSelectSound() }
   }
   function openDetails() {
-    if (currentProfile) setExpanded(true)
+    if (currentProfile) { setExpanded(true); playClickSound() }
   }
-  function closeExpanded() { setExpanded(false) }
+  function closeExpanded() { setExpanded(false); playClickSound() }
 
   useEffect(() => {
     const el = carouselRef.current
@@ -152,8 +236,48 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const downloading = getProfileState(currentProfile?.id) === 'downloading'
   const currentProgress = currentInst?.progress
 
+  // Auto-show log panel on new launch, don't auto-hide
+  useEffect(() => {
+    if (launchState === 'downloading') {
+      setLogPanelVisible(true)
+      setLogManuallyClosed(false)
+      setPersistedLauncherLogs([])
+      newLaunchRef.current = true
+    } else if (launchState === 'running') {
+      newLaunchRef.current = false
+    }
+  }, [launchState])
+
+  // Persist launcherLogs so they survive instance deletion (after game stops)
+  useEffect(() => {
+    const ll = currentInst?.launcherLogs
+    if (ll?.length > 0) {
+      setPersistedLauncherLogs(ll)
+    }
+  }, [currentInst?.launcherLogs])
+
+  // Display live launcherLogs when available, otherwise persisted (from last session)
+  const displayLogs = currentInst?.launcherLogs || persistedLauncherLogs
+
+  function handleCloseLogPanel() {
+    setLogPanelVisible(false)
+    setLogManuallyClosed(true)
+  }
+
+  function handleReopenLog() {
+    setLogPanelVisible(true)
+    setLogManuallyClosed(false)
+  }
+
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden select-none">
+
+      {/* Log Panel */}
+      <GamingLogPanel
+        visible={logPanelVisible}
+        logs={displayLogs}
+        onClose={handleCloseLogPanel}
+      />
 
       {/* Carousel */}
       <div ref={carouselRef}
@@ -167,7 +291,23 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
             <div className="absolute inset-0 flex items-center justify-center text-white/30">
               <div className="text-center">
                 <p className="text-lg font-semibold mb-1">Chưa có profile</p>
-                <p className="text-xs">Tạo profile mới để bắt đầu</p>
+                <p className="text-xs mb-5">Tạo profile mới để bắt đầu</p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setShowCreate(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 bg-orange-500/80 hover:bg-orange-500 text-white"
+                  >
+                    <Plus size={16} />
+                    Create Profile
+                  </button>
+                  <button
+                    onClick={() => setShowImport(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white"
+                  >
+                    <FileArrowDown size={16} />
+                    Import Profile
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -206,15 +346,33 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
 
                 {i === selectedIdx && (
                   <>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setProfileSettingsOpen(true) }}
-                      className="absolute top-3 left-3 z-10 w-8 h-8 rounded-lg bg-black/45 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/65 transition-all"
-                      title={t('homepage.profile.settings')}
-                      aria-label={t('homepage.profile.settings')}
-                    >
-                      <Gear size={16} weight="duotone" />
-                    </button>
+                    <div className="absolute top-3 left-3 z-10 flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setProfileSettingsOpen(true); playClickSound() }}
+                        className="w-8 h-8 rounded-lg bg-black/45 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/65 transition-all"
+                        title={t('homepage.profile.settings')}
+                        aria-label={t('homepage.profile.settings')}
+                      >
+                        <Gear size={16} weight="duotone" />
+                      </button>
+                      {(() => {
+                        const pActive = getProfileState(p.id) === 'running' || getProfileState(p.id) === 'downloading'
+                        return pActive && !logPanelVisible ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleReopenLog(); playClickSound() }}
+                            className="w-8 h-8 rounded-lg bg-black/45 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/65 transition-all"
+                            title="Logs"
+                          >
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
+                              <path d="M7 9h10v2H7zm0 3h7v2H7zm0-6h10v2H7z"/>
+                            </svg>
+                          </button>
+                        ) : null
+                      })()}
+                    </div>
                     <div className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
                       style={{ background: lc.primary }}>
                       <svg viewBox="0 0 24 24" fill="white" className="w-3.5 h-3.5">
@@ -234,7 +392,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                       <div className="flex gap-2 mb-3">
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); if (!pActive) handleLaunch() }}
+                          onClick={(e) => { e.stopPropagation(); playClickSound(); if (!pActive) handleLaunch() }}
                           className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-xl"
                           style={{ background: lc.primary, color: '#000', opacity: pActive ? 0.75 : 1 }}
                         >
@@ -242,9 +400,10 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                           {pPlaying ? t('gaming.playing') : pDownloading ? `${pInst?.progress?.percent || 0}%` : t('gaming.play')}
                         </button>
                         {pActive && (
+                          <>
                           <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); handleKill(p.id) }}
+                            onClick={(e) => { e.stopPropagation(); handleKill(p.id); playClickSound() }}
                             className="w-11 flex items-center justify-center rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-xl bg-red-500/80 hover:bg-red-500"
                             title={t('homepage.launch.kill')}
                           >
@@ -252,18 +411,34 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                             </svg>
                           </button>
+                          </>
                         )}
                       </div>
                     )
                   })()}
-                  <p className="text-white font-bold text-sm truncate drop-shadow-lg">{p.name}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: `${lc.primary}22`, color: lc.primary }}>
-                      {p.gameVersion}
-                    </span>
-                    {p.loader !== 'vanilla' && (
-                      <span className="text-[10px] text-white/40">{getLoaderTag(p)}</span>
+                  <div className="flex gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm truncate drop-shadow-lg">{p.name}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: `${lc.primary}22`, color: lc.primary }}>
+                          {p.gameVersion}
+                        </span>
+                        {p.loader !== 'vanilla' && (
+                          <span className="text-[10px] text-white/40">{getLoaderTag(p)}</span>
+                        )}
+                      </div>
+                    </div>
+                    {isElectron && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); window.electronAPI.openProfileFolder(p.id) }}
+                        className="w-10 h-[68px] flex items-center justify-center rounded-xl text-white/25 hover:text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/15 transition-all flex-shrink-0 self-center"
+                        title="Open profile folder"
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                          <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                        </svg>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -326,26 +501,40 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                   draggable={false}
                   onError={e => { e.currentTarget.src = LOADER_ICONS[currentProfile?.loader] || vanillaIcon }} />
               </div>
-              <div>
-                <h2 className="text-white font-bold text-lg">{currentProfile?.name}</h2>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-white font-bold text-lg truncate">{currentProfile?.name}</h2>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                     style={{ background: `${colors.primary}22`, color: colors.primary }}>
                     {currentProfile?.gameVersion}
                   </span>
-                  <span className="text-[10px] text-white/40">{getLoaderTag(currentProfile)}</span>
+                  <span className="text-[10px] text-white/40 truncate">{getLoaderTag(currentProfile)}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { if (!playing && !downloading) handleLaunch() }}
+              <button onClick={() => { playClickSound(); if (!playing && !downloading) handleLaunch() }}
                 className="px-5 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95"
                 style={{ background: colors.primary, color: '#000', opacity: (playing || downloading) ? 0.75 : 1 }}>
                 {playing ? t('gaming.playing') : downloading ? `${currentProgress?.percent || 0}%` : t('gaming.play')}
               </button>
               {(playing || downloading) && (
+                <>
+                {!logPanelVisible && (
+                  <button
+                    onClick={() => { handleReopenLog(); playClickSound() }}
+                    className="px-3 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95 bg-white/10 hover:bg-white/20 text-white flex items-center gap-1.5"
+                    title="Logs"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
+                      <path d="M7 9h10v2H7zm0 3h7v2H7zm0-6h10v2H7z"/>
+                    </svg>
+                    Logs
+                  </button>
+                )}
                 <button
-                  onClick={() => handleKill(currentProfile?.id)}
+                  onClick={() => { handleKill(currentProfile?.id); playClickSound() }}
                   className="px-3 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95 bg-red-500/80 hover:bg-red-500 text-white flex items-center gap-1.5"
                   title={t('homepage.launch.kill')}
                 >
@@ -354,6 +543,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                   </svg>
                   {t('homepage.launch.kill')}
                 </button>
+                </>
               )}
               <button onClick={closeExpanded}
                 className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all">
@@ -364,7 +554,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
 
           <div className="flex-shrink-0 flex gap-1 px-6 pt-2 pb-0 border-b border-white/5">
             {ALL_TABS.filter(t => !(t.id === 'shaders' && currentProfile?.loader === 'vanilla')).map(tab => (
-              <button key={tab.id} onClick={() => setDetailTab(tab.id)}
+              <button key={tab.id} onClick={() => { setDetailTab(tab.id); playClickSound() }}
                 className={`px-3 py-2 text-xs font-semibold border-b-2 transition-all -mb-px ${
                   detailTab === tab.id
                     ? 'border-orange-500 text-orange-400'
@@ -406,6 +596,20 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
             />
           </GamingModalWrapper>
         </div>
+      )}
+      {showCreate && (
+        <CreateProfileModal
+          groups={groups}
+          onClose={() => setShowCreate(false)}
+          onCreate={handleCreate}
+        />
+      )}
+      {showImport && (
+        <ImportProfileModal
+          groups={groups}
+          onClose={handleImportClose}
+          onCreate={handleCreateForImport}
+        />
       )}
     </div>
   )

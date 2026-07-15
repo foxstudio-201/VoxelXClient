@@ -136,7 +136,7 @@ function InstanceModal({ instances, onKill, onClose }) {
   )
 }
 
-export default function TitleBar({ instances = [], onKillInstance }) {
+export default function TitleBar({ instances = [], onKillInstance, onCloseRequest }) {
   const [showModal, setShowModal] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [pending, setPending]     = useState([])
@@ -163,7 +163,7 @@ export default function TitleBar({ instances = [], onKillInstance }) {
 
   const handleMinimize = () => isElectron && window.electronAPI.minimizeWindow()
   const handleMaximize = () => isElectron && window.electronAPI.maximizeWindow()
-  const handleClose    = () => isElectron && window.electronAPI.closeWindow()
+  const handleClose    = () => { if (isElectron) { if (onCloseRequest) onCloseRequest(); else window.electronAPI.closeWindow() } }
 
   const runningCount = instances.filter(i => i.state === 'running' || i.state === 'downloading').length
 

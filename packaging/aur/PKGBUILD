@@ -1,10 +1,11 @@
 # Maintainer: FoxStudio <contact@foxstudio.dev>
-pkgname=voxelxlauncher-bin
+# Local build from dist-electron/linux-unpacked/
+pkgname=voxelxlauncher-local
 _appname="VoxelXLauncher"
 _binname=voxelxlauncher
-pkgver=1.4.25
-pkgrel=4
-pkgdesc="Martian Launcher - Minecraft Launcher by FoxStudio"
+pkgver=1.4.75
+pkgrel=1
+pkgdesc="Martian Launcher - Minecraft Launcher by FoxStudio (local build)"
 arch=('x86_64')
 url="https://github.com/foxstudio-201/VoxelXClient"
 license=('MIT')
@@ -13,19 +14,41 @@ optdepends=('libappindicator-gtk3: tray icon support')
 provides=("${_binname}")
 conflicts=("${_binname}")
 options=('!strip' '!debug')
-source=("${_binname}-${pkgver}.deb::file:///media/D/client/VoxelXClient/dist-electron/voxelxlauncher_${pkgver}_amd64.deb")
-sha256sums=('419c93c655f513e77c925b373d1e3d088868b92833fd545f4e27b4346730d1ca')
+
+source=("linux-unpacked.tar.zst")
+sha256sums=('c13c8dcf750d8ff939c966a1b7b43c967b7922c2e42343b21b47707014555351')
+
+prepare() {
+  cd "${srcdir}"
+  bsdtar -xf linux-unpacked.tar.zst
+}
 
 package() {
-  # The release .deb already lays files out in FHS form (/opt + .desktop + icon
-  # with correct perms), so we just unpack its data archive into the package root.
-  bsdtar -xf "${_binname}-${pkgver}.deb" -C "${srcdir}"
-  bsdtar -xf "${srcdir}/data.tar.xz" -C "${pkgdir}"
+  cd "${srcdir}"
 
-  # Electron's sandbox helper must be setuid root.
+  install -d "${pkgdir}/opt/${_appname}"
+  cp -r linux-unpacked/* "${pkgdir}/opt/${_appname}/"
+  cp -r linux-unpacked/.[!.]* "${pkgdir}/opt/${_appname}/" 2>/dev/null || true
+
   chmod 4755 "${pkgdir}/opt/${_appname}/chrome-sandbox"
 
-  # CLI launcher (the .deb ships no /usr/bin entry).
   install -d "${pkgdir}/usr/bin"
   ln -sf "/opt/${_appname}/${_binname}" "${pkgdir}/usr/bin/${_binname}"
+
+  install -d "${pkgdir}/usr/share/applications"
+  cat > "${pkgdir}/usr/share/applications/${_binname}.desktop" << EOF
+[Desktop Entry]
+Name=${_appname}
+Comment=${pkgdesc}
+Exec="/opt/${_appname}/${_binname}" %U
+Terminal=false
+Type=Application
+Icon=${_binname}
+Categories=Game;
+StartupWMClass=${_appname}
+EOF
+
+  install -d "${pkgdir}/usr/share/icons/hicolor/512x512/apps"
+  install -m 644 "${srcdir}/../../public/icon.png" \
+    "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${_binname}.png" 2>/dev/null || true
 }

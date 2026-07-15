@@ -1,7 +1,7 @@
 {
   "name": "voxelxlauncher",
   "private": true,
-  "version": "1.4.70",
+  "version": "1.4.75",
   "description": "Martian Launcher - Minecraft Launcher by FoxStudios",
   "author": {
     "name": "FoxStudio",
@@ -153,8 +153,8 @@
       "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
       "allowElevation": true,
       "installerIcon": "public/icon.ico",
       "uninstallerIcon": "public/icon.ico",

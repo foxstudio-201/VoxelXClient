@@ -291,6 +291,7 @@ const DEFAULT_SETTINGS = {
   language:             'vi',
   gamingMode:           false,
   initialSetupCompleted: false,
+  closeBehavior:        'ask',
 }
 
 const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS)
@@ -638,6 +639,11 @@ ipcMain.on('window-close', (e) => {
   if (!win) return
   if (win === updateWindow) win.close()
   else win.hide()
+})
+
+ipcMain.on('quit-app', () => {
+  app.isQuitting = true
+  app.quit()
 })
 
 const GITHUB_REPO = 'foxstudio-201/VoxelXClient'

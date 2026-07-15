@@ -966,5 +966,15 @@
     "notFound": "Not found",
     "retry": "Retry",
     "downloading": "Downloading..."
+  },
+  "dialog": {
+    "close": {
+      "title": "Close Launcher",
+      "ask": "How do you want to close the launcher?",
+      "quit": "Quit",
+      "tray": "Minimize to tray",
+      "remember": "Remember this choice",
+      "apply": "Apply"
+    }
   }
 }

@@ -31,6 +31,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import TitleBar from './components/TitleBar'
+import CloseModal from './components/CloseModal'
 import Sidebar from './components/Sidebar'
 import HomePage from './components/HomePage'
 import AccountPage from './components/account/AccountPage'
@@ -42,7 +43,7 @@ import UpdateWindow from './components/UpdateWindow'
 import SplashScreen from './components/SplashScreen'
 import InitialSetup from './components/InitialSetup'
 import AppBackground from './components/AppBackground'
-import { ToastContext, useToastState } from './hooks/useToast'
+import { ToastContext, useToastState, useToast } from './hooks/useToast'
 import { AccountsProvider, useAccounts } from './hooks/useAccounts'
 import { loadAppSettings, applyAppSettings, isInitialSetupRequired } from './utils/appSettings'
 import { LangProvider, useLang } from './i18n/LangProvider'
@@ -58,8 +59,11 @@ import { useBgMusic } from './hooks/useBgMusic'
 import {
   House, PlayCircle, PuzzlePiece, HardDrives,
   Gear, UserCircle, CaretDown, Check,
+  Plus, FileArrowDown,
 } from '@phosphor-icons/react'
 import PlayerHead from './components/ui/PlayerHead'
+import CreateProfileModal from './components/play/CreateProfileModal'
+import ImportProfileModal from './components/play/ImportProfileModal'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -77,6 +81,7 @@ function PlaceholderPage({ title }) {
 
 function AppInner({ gamingMode }) {
   const { t } = useLang()
+  const toast = useToast()
   const [activePage, setActivePage] = useState('home')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const handleNavigate = useCallback((page) => {
@@ -88,7 +93,65 @@ function AppInner({ gamingMode }) {
   const [showAddAccount, setShowAddAccount] = useState(false)
   const [showSkinModal, setShowSkinModal] = useState(false)
   const [removeConfirmId, setRemoveConfirmId] = useState(null)
+  const [logPanelOpen, setLogPanelOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const [showCloseModal, setShowCloseModal] = useState(false)
+  const [showPlayDropdown, setShowPlayDropdown] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [groups, setGroups] = useState([])
+
+  useEffect(() => {
+    if (isElectron) {
+      window.electronAPI.getGroups().then(r => setGroups(r?.groups || [])).catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setShowPlayDropdown(false)
+    }
+    if (showPlayDropdown) window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [showPlayDropdown])
+
+  async function handleCreate(profileData) {
+    const result = isElectron ? await window.electronAPI.createProfile(profileData) : { error: 'Not available' }
+    if (result?.error) {
+      toast?.({ type: 'error', title: 'Error', message: result.error })
+      return result
+    }
+    if (profileData.groupId && isElectron) {
+      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
+      const gd = await window.electronAPI.getGroups()
+      setGroups(gd?.groups || [])
+    }
+    setShowCreate(false)
+    toast?.({ type: 'success', title: 'Profile created', message: result.profile?.name })
+    return result
+  }
+
+  async function handleCreateForImport(profileData) {
+    const result = isElectron ? await window.electronAPI.createProfile(profileData) : { error: 'Not available' }
+    if (result?.error) {
+      toast?.({ type: 'error', title: 'Error', message: result.error })
+      return result
+    }
+    if (profileData.groupId && isElectron) {
+      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
+      const gd = await window.electronAPI.getGroups()
+      setGroups(gd?.groups || [])
+    }
+    return result
+  }
+
+  async function handleImportClose() {
+    setShowImport(false)
+    if (isElectron) {
+      const gd = await window.electronAPI.getGroups()
+      setGroups(gd?.groups || [])
+    }
+  }
 
   const NAV_ITEMS = [
     { id: 'home',   Icon: House },
@@ -185,7 +248,12 @@ function AppInner({ gamingMode }) {
             const next = new Map(prev)
             const cur  = next.get(currentKey)
             if (cur) {
-              next.set(currentKey, { ...cur, logs: [...(cur.logs || []).slice(-1999), data.line] })
+              const newLog = data.line
+              const newLogs = [...(cur.logs || []).slice(-1999), newLog]
+              const newLauncherLogs = newLog.startsWith('[Launcher]')
+                ? [...(cur.launcherLogs || []).slice(-1999), newLog]
+                : (cur.launcherLogs || [])
+              next.set(currentKey, { ...cur, logs: newLogs, launcherLogs: newLauncherLogs })
             }
             instancesRef.current = next
             return next
@@ -352,6 +420,14 @@ function AppInner({ gamingMode }) {
     window.electronAPI.stopGame({ profileId: inst.profileId, accountId: inst.accountId })
   }, [instances])
 
+  const handleCloseRequest = useCallback(async () => {
+    if (!isElectron) return
+    const settings = await window.electronAPI.getSettings()
+    if (settings.closeBehavior === 'quit') { window.electronAPI.quitApp(); return }
+    if (settings.closeBehavior === 'tray') { window.electronAPI.closeWindow(); return }
+    setShowCloseModal(true)
+  }, [])
+
   const showHint = !loading && accounts.length === 0 && activePage === 'home'
   const instanceList = Array.from(instances.values())
 
@@ -373,6 +449,7 @@ function AppInner({ gamingMode }) {
             gamingMode={gamingMode}
             activePage={activePage}
             onOpenSettings={() => setSettingsOpen(true)}
+            onLogPanelOpen={setLogPanelOpen}
           />
         )}
         {activePage === 'play' && <PlayPage gamingMode={gamingMode} />}
@@ -391,7 +468,7 @@ function AppInner({ gamingMode }) {
 
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden relative z-10" style={{ background: 'transparent' }}>
-      <TitleBar instances={instanceList} onKillInstance={handleKillInstance} />
+      <TitleBar instances={instanceList} onKillInstance={handleKillInstance} onCloseRequest={handleCloseRequest} />
       <div className="flex flex-1 overflow-hidden mt-9 relative">
         {!gamingMode && (
           <Sidebar
@@ -404,10 +481,58 @@ function AppInner({ gamingMode }) {
         )}
         <main className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
           {gamingMode && (
-            <div className="absolute right-4 top-4 z-50 bg-black/40 backdrop-blur-xl border border-white/[0.06] rounded-2xl px-3 py-2 flex items-center gap-1 shadow-2xl">
+            <div className={`absolute right-4 top-4 z-50 bg-black/40 backdrop-blur-xl border border-white/[0.06] rounded-2xl px-3 py-2 flex items-center gap-1 shadow-2xl transition-all duration-300 ${
+              logPanelOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            }`}>
               {NAV_ITEMS.map(({ id, Icon }) => {
                 const isActive = activePage === id
                 const isHovered = navHover === id
+                if (id === 'play') {
+                  const dropOpen = showPlayDropdown || isActive
+                  const dropHover = showPlayDropdown || navHover === 'play'
+                  return (
+                    <div key={id} className="relative">
+                      <button
+                        onClick={() => setShowPlayDropdown(prev => !prev)}
+                        onMouseEnter={() => setNavHover('play')}
+                        onMouseLeave={() => setNavHover(null)}
+                        className={`relative h-10 rounded-xl flex items-center gap-2 transition-all duration-300 ${
+                          dropOpen
+                            ? 'bg-orange-500/15 text-orange-400'
+                            : 'text-white/40 hover:text-white/70 hover:bg-white/[0.06]'
+                        }`}
+                        style={{ width: dropHover || dropOpen ? '130px' : '40px' }}>
+                        <Icon size={20} weight="duotone" className="flex-shrink-0 ml-[10px]" />
+                        <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 text-xs font-semibold ${
+                          dropHover || dropOpen ? 'max-w-[90px] opacity-100' : 'max-w-0 opacity-0'
+                        }`}>
+                          {t(`sidebar.${id}`)}
+                        </span>
+                      </button>
+                      {showPlayDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowPlayDropdown(false)} />
+                          <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] py-1.5 bg-[#16161a] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                            <button
+                              onClick={() => { setShowCreate(true); setShowPlayDropdown(false) }}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                            >
+                              <Plus size={16} className="text-orange-400" />
+                              Create Profile
+                            </button>
+                            <button
+                              onClick={() => { setShowImport(true); setShowPlayDropdown(false) }}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                            >
+                              <FileArrowDown size={16} className="text-blue-400" />
+                              Import Profile
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                }
                 return (
                   <button key={id}
                     onClick={() => handleNavigate(id)}
@@ -570,6 +695,23 @@ function AppInner({ gamingMode }) {
             setShowSkinModal(false)
           }}
         />
+      )}
+      {showCreate && (
+        <CreateProfileModal
+          groups={groups}
+          onClose={() => setShowCreate(false)}
+          onCreate={handleCreate}
+        />
+      )}
+      {showImport && (
+        <ImportProfileModal
+          groups={groups}
+          onClose={handleImportClose}
+          onCreate={handleCreateForImport}
+        />
+      )}
+      {showCloseModal && (
+        <CloseModal onClose={() => setShowCloseModal(false)} />
       )}
     </div>
   )

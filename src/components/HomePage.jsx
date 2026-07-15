@@ -431,7 +431,7 @@ function ProfileContentPanel({ profile, accountId, onLaunch }) {
   )
 }
 
-export default function HomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, gamingMode, activePage, onOpenSettings, instances, onKillInstance }) {
+export default function HomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, gamingMode, activePage, onOpenSettings, instances, onKillInstance, onLogPanelOpen }) {
   const {t} = useLang()
   const [ram, setRam] = useState(4)
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
@@ -603,6 +603,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         accountId={selectedAccount?.id}
         activePage={activePage}
         onOpenSettings={onOpenSettings}
+        onLogPanelOpen={onLogPanelOpen}
         onProfileUpdated={(profile) => {
           setProfiles(prev => prev.map(p => p.id === profile.id ? profile : p))
           setSelectedProfile(profile)
