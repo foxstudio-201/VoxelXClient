@@ -961,5 +961,8 @@
     "notFound": "Không tìm thấy",
     "retry": "Thử lại",
     "downloading": "Đang tải..."
+  },
+  "gaming": {
+    "select": "Chọn"
   }
 }

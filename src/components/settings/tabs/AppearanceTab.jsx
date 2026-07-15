@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { BG_THEMES } from '../../AppBackground'
 import { useLang } from '../../../i18n/LangProvider'
-import { Section } from '../SettingsUI.jsx'
+import { Section, SettingRow, Toggle } from '../SettingsUI.jsx'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
-function applyBackground(bgId, customBgPath) {
-  window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: bgId, customBgPath }))
+function applyBackground(bgId, customBgPath = '') {
+  window.dispatchEvent(new CustomEvent('vxc-bg-change', {
+    detail: { bgId, customBgPath },
+  }))
+}
+
+function applyGamingMode(v) {
+  window.dispatchEvent(new CustomEvent('vxc-gaming-mode', { detail: v }))
 }
 
 function customBgUrl(filePath) {
@@ -207,6 +213,14 @@ export default function AppearanceTab({ settings, onChange }) {
             )}
           </div>
         </div>
+      </Section>
+
+      <Section title="Gaming Mode">
+        <SettingRow
+          label="Chế độ hiển thị Gaming"
+          description="Giao diện dạng thẻ chạy ngang kiểu cover-flow">
+          <Toggle checked={!!settings.gamingMode} onChange={v => { onChange({ gamingMode: v }); applyGamingMode(v) }} />
+        </SettingRow>
       </Section>
 
     </div>

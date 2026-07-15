@@ -43,14 +43,14 @@ export function LangProvider({ children }) {
     }).catch(() => setReady(true))
   }, [])
 
-  async function setLang(code) {
+  async function setLang(code, { persist = true } = {}) {
     setLoading(true)
     try {
       const data = await fetchLang(code)
       if (data) {
         setTranslations(data)
         setLangState(code)
-        saveAppSettings({ language: code })
+        if (persist) saveAppSettings({ language: code })
         window.dispatchEvent(new CustomEvent('vxc-lang-change', { detail: code }))
       }
     } catch {}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 export const BG_THEMES = [
   {
@@ -51,41 +51,48 @@ function isVideo(ext) { return /^video\//.test(MIME[ext] || '') }
 
 export default function AppBackground({ bgId, customBgPath }) {
   const [bgUrl, setBgUrl] = useState(null)
-  const urlRef = useRef(null)
 
   useEffect(() => {
-    if (bgId !== 'custom' || !customBgPath || !window.electronAPI?.readBgFile) {
+    if (bgId !== 'custom' || !customBgPath) {
       setBgUrl(null)
       return
     }
+
     let cancelled = false
-    window.electronAPI.readBgFile(customBgPath).then(result => {
-      if (cancelled || !result) return
-      const ext = result.ext.toLowerCase()
-      const mime = MIME[ext] || 'application/octet-stream'
-      const blob = new Blob([result.data], { type: mime })
-      const url = URL.createObjectURL(blob)
-      if (urlRef.current) URL.revokeObjectURL(urlRef.current)
-      urlRef.current = url
-      if (!cancelled) setBgUrl(url)
-    }).catch(() => {})
+
+    if (window.electronAPI?.readBgFile) {
+      window.electronAPI.readBgFile(customBgPath).then(result => {
+        if (cancelled) return
+        if (!result?.data) {
+          const p = customBgPath.replace(/\\/g, '/')
+          setBgUrl(`vxc-bg://local?path=${encodeURIComponent(p)}&t=${Date.now()}`)
+          return
+        }
+        const ext = '.' + customBgPath.split('.').pop().toLowerCase()
+        const blob = new Blob([result.data], { type: MIME[ext] || 'image/png' })
+        const url = URL.createObjectURL(blob)
+        if (!cancelled) setBgUrl(url)
+      }).catch(() => {
+        if (cancelled) return
+        const p = customBgPath.replace(/\\/g, '/')
+        setBgUrl(`vxc-bg://local?path=${encodeURIComponent(p)}&t=${Date.now()}`)
+      })
+    } else {
+      const p = customBgPath.replace(/\\/g, '/')
+      setBgUrl(`vxc-bg://local?path=${encodeURIComponent(p)}&t=${Date.now()}`)
+    }
+
     return () => { cancelled = true }
   }, [bgId, customBgPath])
 
-  useEffect(() => {
-    return () => { if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = null } }
-  }, [])
+  const isCustom = bgId === 'custom'
 
-  if (bgId === 'custom' && bgUrl) {
-    const ext = customBgPath ? '.' + customBgPath.split('.').pop().toLowerCase() : ''
+  if (isCustom && bgUrl) {
+    const ext = '.' + customBgPath.split('.').pop().toLowerCase()
     if (isVideo(ext)) {
       return (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-          <video
-            className="w-full h-full object-cover"
-            src={bgUrl}
-            autoPlay loop muted playsInline
-          />
+          <video className="w-full h-full object-cover" src={bgUrl} autoPlay loop muted playsInline />
           <div className="absolute inset-0 bg-black/30" />
         </div>
       )
@@ -99,11 +106,7 @@ export default function AppBackground({ bgId, customBgPath }) {
   }
 
   const theme = BG_THEMES.find(t => t.id === bgId) ?? BG_THEMES[0]
-
   return (
-    <div
-      className="fixed inset-0 z-0 pointer-events-none"
-      style={theme.style}
-    />
+    <div className="fixed inset-0 z-0 pointer-events-none" style={theme.style} />
   )
 }

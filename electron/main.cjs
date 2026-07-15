@@ -288,6 +288,9 @@ const DEFAULT_SETTINGS = {
   agreedPrivacy:        false,
   musicEnabled:         true,
   musicVolume:          35,
+  language:             'vi',
+  gamingMode:           false,
+  initialSetupCompleted: false,
 }
 
 const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS)
@@ -1874,6 +1877,11 @@ ipcMain.handle('settings:get', (e) => {
   return readSettings()
 })
 
+ipcMain.handle('settings:isInitialSetupRequired', (e) => {
+  if (!getTrustedWindow(e)) return false
+  return !readSettings().initialSetupCompleted
+})
+
 ipcMain.handle('bg:pickFile', async (e) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
@@ -1889,7 +1897,17 @@ ipcMain.handle('bg:pickFile', async (e) => {
     ],
   })
   if (result.canceled || !result.filePaths.length) return { canceled: true }
-  return { ok: true, path: result.filePaths[0] }
+
+  const srcPath = result.filePaths[0]
+  const ext = path.extname(srcPath)
+  const bgDir = path.join(ACCOUNTS_DIR, 'backgrounds')
+  if (!fs.existsSync(bgDir)) fs.mkdirSync(bgDir, { recursive: true })
+
+  const destName = `bg-${Date.now()}${ext}`
+  const destPath = path.join(bgDir, destName)
+  fs.copyFileSync(srcPath, destPath)
+
+  return { ok: true, path: destPath }
 })
 
 ipcMain.handle('settings:save', (e, patch) => {

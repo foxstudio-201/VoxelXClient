@@ -54,6 +54,8 @@ export const DEFAULT_SETTINGS = {
   musicEnabled:         true,
   musicVolume:          35,
   language:             'vi',
+  gamingMode:           false,
+  initialSetupCompleted: false,
 }
 
 const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS)
@@ -134,6 +136,14 @@ export async function loadAppSettings() {
   return sanitizeSettings(local)
 }
 
+export async function isInitialSetupRequired() {
+  if (isElectron) {
+    try { return await window.electronAPI.isInitialSetupRequired() } catch { return false }
+  }
+
+  return readLocalSettingsRaw().initialSetupCompleted !== true
+}
+
 export async function saveAppSettings(settings) {
   const safe = sanitizeSettings(settings)
 
@@ -156,7 +166,9 @@ export function applyAppSettings(settings) {
     ? FONT_STACKS[safe.fontId]
     : SYSTEM_FONT_STACK
 
-  window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: safe.background ?? 'dark', customBgPath: safe.customBgPath }))
+  window.dispatchEvent(new CustomEvent('vxc-bg-change', {
+    detail: { bgId: safe.background ?? 'dark', customBgPath: safe.customBgPath ?? '' },
+  }))
   document.documentElement.style.setProperty('--app-font', stack || SYSTEM_FONT_STACK)
   document.body.style.fontFamily = stack || SYSTEM_FONT_STACK
 

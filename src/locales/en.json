@@ -961,5 +961,8 @@
     "notFound": "Not found",
     "retry": "Retry",
     "downloading": "Downloading..."
+  },
+  "gaming": {
+    "select": "Select"
   }
 }

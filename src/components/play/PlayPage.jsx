@@ -370,7 +370,7 @@ function GroupDetailView({ group, selectedProfileId, deleteConfirm, onBack, onSe
   )
 }
 
-export default function PlayPage() {
+export default function PlayPage({ gamingMode }) {
   const { t } = useLang()
   const toast = useToast()
   const [profiles, setProfiles]                   = useState([])
@@ -538,7 +538,7 @@ export default function PlayPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {}
-      <div className="flex-shrink-0 flex items-center justify-between px-6 pt-5 pb-3">
+      <div className={`flex-shrink-0 flex items-center px-6 pt-5 pb-3 ${gamingMode ? 'gap-4' : 'justify-between'}`}>
         <div className="flex items-center gap-2">
           {}
           <button

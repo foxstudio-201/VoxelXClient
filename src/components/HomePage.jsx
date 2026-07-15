@@ -33,6 +33,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
 import PlayerHead from './ui/PlayerHead'
 import ProfileSettingsPanel from './home/ProfileSettingsPanel'
+import GamingHomePage from './gaming/GamingHomePage'
 import vanillaIcon from '../assets/loader/vanilla.png'
 import fabricIcon from '../assets/loader/fabric.png'
 import forgeIcon from '../assets/loader/forge.png'
@@ -430,7 +431,7 @@ function ProfileContentPanel({ profile, accountId, onLaunch }) {
   )
 }
 
-export default function HomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset }) {
+export default function HomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, gamingMode, activePage, onOpenSettings }) {
   const {t} = useLang()
   const [ram, setRam] = useState(4)
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
@@ -586,7 +587,27 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const worldCount = profileStats?.worldCount ?? 0
   const modCount = profileStats?.modCount ?? 0
 
-  return (
+  return gamingMode ? (
+    <div className="w-full h-full overflow-hidden">
+      <GamingHomePage
+        onNavigate={onNavigate}
+        launchState={launchState}
+        progress={progress}
+        launchError={launchError}
+        onLaunch={onLaunch}
+        onLaunchReset={onLaunchReset}
+        profiles={profiles}
+        selectedProfileId={selectedProfile?.id}
+        accountId={selectedAccount?.id}
+        activePage={activePage}
+        onOpenSettings={onOpenSettings}
+        onProfileUpdated={(profile) => {
+          setProfiles(prev => prev.map(p => p.id === profile.id ? profile : p))
+          setSelectedProfile(profile)
+        }}
+      />
+    </div>
+  ) : (
     <div className="flex flex-col h-full overflow-hidden relative">
       <PatchNotesModal patchNotes={patchNotesModal} onClose={() => setPatchNotesModal(null)} />
 

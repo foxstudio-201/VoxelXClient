@@ -69,6 +69,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   getSettings:  ()       => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch)  => ipcRenderer.invoke('settings:save', patch),
+  isInitialSetupRequired: () => ipcRenderer.invoke('settings:isInitialSetupRequired'),
   pickBgFile:   ()       => ipcRenderer.invoke('bg:pickFile'),
   readBgFile:   (path)   => ipcRenderer.invoke('bg:readFile', path),
   systemBoostMode: (enable) => ipcRenderer.invoke('system:boostMode', enable),

@@ -40,11 +40,12 @@ import Toast from './components/Toast'
 import NoAccountHint from './components/NoAccountHint'
 import UpdateWindow from './components/UpdateWindow'
 import SplashScreen from './components/SplashScreen'
+import InitialSetup from './components/InitialSetup'
 import AppBackground from './components/AppBackground'
 import { ToastContext, useToastState } from './hooks/useToast'
 import { AccountsProvider, useAccounts } from './hooks/useAccounts'
-import { loadAppSettings, applyAppSettings } from './utils/appSettings'
-import { LangProvider } from './i18n/LangProvider'
+import { loadAppSettings, applyAppSettings, isInitialSetupRequired } from './utils/appSettings'
+import { LangProvider, useLang } from './i18n/LangProvider'
 import { ModpackInstallProvider } from './components/mods/shared/ModpackInstallContext'
 import CrashAnalyzerModal, { isFabricIncompatibleCrash } from './components/crash/CrashAnalyzerModal'
 
@@ -52,6 +53,11 @@ import ModsPage from './components/mods/ModsPage'
 import ServerPage from './components/server/ServerPage'
 import LanShareWindow from './components/LanShareWindow'
 import { useBgMusic } from './hooks/useBgMusic'
+import {
+  House, PlayCircle, PuzzlePiece, HardDrives,
+  Gear, UserCircle, CaretDown, Check,
+} from '@phosphor-icons/react'
+import PlayerHead from './components/ui/PlayerHead'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -67,13 +73,34 @@ function PlaceholderPage({ title }) {
   )
 }
 
-function AppInner() {
+function AppInner({ gamingMode }) {
+  const { t } = useLang()
   const [activePage, setActivePage] = useState('home')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const handleNavigate = useCallback((page) => {
     setActivePage(page)
   }, [])
-  const { selectedAccount, accounts, loading } = useAccounts()
+  const { selectedAccount, accounts, loading, selectAccount } = useAccounts()
+  const [navHover, setNavHover] = useState(null)
+  const [accDropdown, setAccDropdown] = useState(false)
+  const dropdownRef = useRef(null)
+
+  const NAV_ITEMS = [
+    { id: 'home',   Icon: House },
+    { id: 'play',   Icon: PlayCircle },
+    { id: 'mods',   Icon: PuzzlePiece },
+    { id: 'worlds', Icon: HardDrives },
+  ]
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setAccDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   const [instances, setInstances] = useState(new Map())
   // Ref để track logs realtime, tránh race condition khi onGameStopped đến trước React re-render
@@ -338,11 +365,14 @@ function AppInner() {
             onLaunchReset={handleLaunchReset}
             instances={instanceList}
             onKillInstance={handleKillInstance}
+            gamingMode={gamingMode}
+            activePage={activePage}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
         )}
-        {activePage === 'play'     && <PlayPage />}
-        {activePage === 'mods'     && <ModsPage />}
-        {activePage === 'worlds'   && <ServerPage serverJavaProgress={serverJavaProgress} onServerJavaProgress={setServerJavaProgress} />}
+        {activePage === 'play' && <PlayPage gamingMode={gamingMode} />}
+        {activePage === 'mods' && <ModsPage />}
+        {activePage === 'worlds' && <ServerPage serverJavaProgress={serverJavaProgress} onServerJavaProgress={setServerJavaProgress} gamingMode={gamingMode} />}
         {}
         <div
           style={{ display: activePage === 'account' ? 'flex' : 'none' }}
@@ -358,14 +388,87 @@ function AppInner() {
     <div className="w-screen h-screen flex flex-col overflow-hidden relative z-10" style={{ background: 'transparent' }}>
       <TitleBar instances={instanceList} onKillInstance={handleKillInstance} />
       <div className="flex flex-1 overflow-hidden mt-9 relative">
-        <Sidebar
-          activePage={activePage}
-          onNavigate={handleNavigate}
-          selectedAccount={selectedAccount}
-          settingsOpen={settingsOpen}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
+        {!gamingMode && (
+          <Sidebar
+            activePage={activePage}
+            onNavigate={handleNavigate}
+            selectedAccount={selectedAccount}
+            settingsOpen={settingsOpen}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        )}
         <main className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
+          {gamingMode && (
+            <div className="absolute right-4 top-4 z-50 bg-black/40 backdrop-blur-xl border border-white/[0.06] rounded-2xl px-3 py-2 flex items-center gap-1 shadow-2xl">
+              {NAV_ITEMS.map(({ id, Icon }) => {
+                const isActive = activePage === id
+                const isHovered = navHover === id
+                return (
+                  <button key={id}
+                    onClick={() => handleNavigate(id)}
+                    onMouseEnter={() => setNavHover(id)}
+                    onMouseLeave={() => setNavHover(null)}
+                    className={`relative h-10 rounded-xl flex items-center gap-2 transition-all duration-300 ${
+                      isActive
+                        ? 'bg-orange-500/15 text-orange-400'
+                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.06]'
+                    }`}
+                    style={{ width: isHovered || isActive ? '130px' : '40px' }}>
+                    <Icon size={20} weight="duotone" className="flex-shrink-0 ml-[10px]" />
+                    <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 text-xs font-semibold ${
+                      isHovered || isActive ? 'max-w-[90px] opacity-100' : 'max-w-0 opacity-0'
+                    }`}>
+                      {t(`sidebar.${id}`)}
+                    </span>
+                  </button>
+                )
+              })}
+              <div className="w-px h-6 bg-white/10 mx-1" />
+              <div className="relative" ref={dropdownRef}>
+                <button onClick={() => setAccDropdown(!accDropdown)}
+                  className="h-10 rounded-xl flex items-center gap-1.5 px-2.5 text-white/40 hover:text-white/80 hover:bg-white/[0.06] transition-all">
+                  {selectedAccount ? (
+                    <div className="rounded-lg overflow-hidden flex-shrink-0 ring-1 ring-white/10">
+                      <PlayerHead uuid={selectedAccount.uuid} username={selectedAccount.username} size={26} />
+                    </div>
+                  ) : (
+                    <UserCircle size={20} weight="duotone" />
+                  )}
+                  <span className="text-xs font-semibold text-white/70">{selectedAccount?.username || 'Account'}</span>
+                  <CaretDown size={12} weight="bold" className={`transition-transform ${accDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                {accDropdown && (
+                  <div className="absolute right-0 top-full mt-1 min-w-[180px] bg-[#16161a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                    <div className="py-1 max-h-[200px] overflow-y-auto">
+                      {accounts.map(acc => {
+                        const isSel = acc.id === selectedAccount?.id
+                        return (
+                          <button key={acc.id} onClick={() => { selectAccount(acc.id); setAccDropdown(false) }}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-all ${
+                              isSel ? 'text-orange-400 bg-orange-500/10' : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                            }`}>
+                            <Check size={14} weight="bold" className={`${isSel ? 'opacity-100' : 'opacity-0'}`} />
+                            <span className="font-semibold">{acc.username}</span>
+                            <span className="text-[9px] text-white/30 ml-auto">{acc.type === 'microsoft' ? 'MS' : 'Off'}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <div className="h-px bg-white/10" />
+                    <button onClick={() => { handleNavigate('account'); setAccDropdown(false) }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white hover:bg-white/[0.04] transition-all">
+                      <UserCircle size={14} weight="duotone" />
+                      Quản lý tài khoản
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setSettingsOpen(true)}
+                className="h-10 w-10 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-all">
+                <Gear size={20} weight="duotone" />
+              </button>
+            </div>
+          )}
           {renderPage()}
         </main>
         {showHint && (
@@ -387,14 +490,20 @@ export default function App() {
   const [splashDone, setSplashDone] = useState(false)
   const [bgId, setBgId] = useState('dark')
   const [customBgPath, setCustomBgPath] = useState('')
+  const [gamingMode, setGamingMode] = useState(false)
+  const [initialSettings, setInitialSettings] = useState(null)
+  const [initialSetupOpen, setInitialSetupOpen] = useState(false)
+  const [initialSetupChecked, setInitialSetupChecked] = useState(false)
 
-  useBgMusic(splashDone)
+  useBgMusic(splashDone && initialSetupChecked && !initialSetupOpen)
 
   useEffect(() => {
     loadAppSettings().then(s => {
+      setInitialSettings(s)
       applyAppSettings(s)
       if (s?.background) setBgId(s.background)
       if (s?.customBgPath) setCustomBgPath(s.customBgPath)
+      if (s?.gamingMode !== undefined) setGamingMode(s.gamingMode)
       window.dispatchEvent(new CustomEvent('vxc-music-init', {
         detail: {
           enabled: s?.musicEnabled !== false,
@@ -404,16 +513,27 @@ export default function App() {
     }).catch(() => {})
 
     const bgHandler = (e) => {
-      setBgId(e.detail)
-      if (e.detail === 'custom' && e.customBgPath) {
-        setCustomBgPath(e.customBgPath)
-      } else if (e.detail !== 'custom') {
-        setCustomBgPath('')
-      }
+      const { bgId: nextBgId, customBgPath: nextPath } = e.detail ?? {}
+      if (!nextBgId) return
+      setBgId(nextBgId)
+      setCustomBgPath(nextBgId === 'custom' ? (nextPath ?? '') : '')
     }
     window.addEventListener('vxc-bg-change', bgHandler)
-    return () => window.removeEventListener('vxc-bg-change', bgHandler)
+    const gmHandler = (e) => setGamingMode(e.detail)
+    window.addEventListener('vxc-gaming-mode', gmHandler)
+    return () => {
+      window.removeEventListener('vxc-bg-change', bgHandler)
+      window.removeEventListener('vxc-gaming-mode', gmHandler)
+    }
   }, [])
+
+  useEffect(() => {
+    if (!splashDone) return
+    isInitialSetupRequired().then(required => {
+      setInitialSetupOpen(required)
+      setInitialSetupChecked(true)
+    }).catch(() => setInitialSetupChecked(true))
+  }, [splashDone])
 
   const params = new URLSearchParams(window.location.search)
   const isUpdateWindow = params.get('window') === 'update'
@@ -439,7 +559,16 @@ export default function App() {
             {!splashDone && (
               <SplashScreen onDone={() => setSplashDone(true)} />
             )}
-            <AppInner />
+            <AppInner gamingMode={gamingMode} />
+            {splashDone && initialSetupChecked && initialSetupOpen && (
+              <InitialSetup
+                initialSettings={initialSettings || {}}
+                onComplete={(settings) => {
+                  setInitialSettings(settings)
+                  setInitialSetupOpen(false)
+                }}
+              />
+            )}
             <Toast
               toast={toastState.toast}
               visible={toastState.visible}

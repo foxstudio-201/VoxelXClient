@@ -297,15 +297,20 @@ jobs:
             </p>
             </div>
 
-            > Bản cập nhật tập trung vào fix một số lỗi cơ bản + thêm hiển thị danh sách server, add thay đổi skin,cape cho tài khoản offline.
+            > Bản cập nhật tập trung vào fix một số lỗi cơ bản , thêm trình hiên thị dạng gamming, sửa lỗi đồng bộ dữ liệu.
 
             ---
             
             ### Thêm tính năng mới
 
-            - **Server**: Thêm hiển thị danh sách server ở home page, có thể tham gia server trực tiếp
-            - **Skin + Cape**: Thêm lại tính năng thay đổi skin, cape cho tài khoản offline
+            - **Hiển thị**:  Thêm chức năng Gaming ui để hiển thị chế độ giao diện đơn giản hơn, hiệu ứng đẹp và tối giản.
+            - **Backround**: thêm chức năng tuỳ chỉnh nền Background hỗ trợ định dạng 'png, gif, mp4'.
+            
 
+            ### Sửa lỗi
+
+            - Chỉnh sửa luồng nhập profile từ ngoài vào, tránh gây lag khi nhập.
+            - Từ giờ luồng load dữ liệu profile sẽ chỉ đồng bộ vào tài khoản một lần ( không ghi đè giá trị cũ)
 
             ---
 
