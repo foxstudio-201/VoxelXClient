@@ -34,9 +34,11 @@ import { Icons } from './tab/shared'
 import GeneralTab from './tab/GeneralTab'
 import FilesTab   from './tab/FilesTab'
 import { useLang } from '../../i18n/LangProvider'
+import { useModalClose } from '../ui/GamingModalWrapper'
 
-export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdated, accountId }) {
+export default function ProfileSettingsPanel({ profile, onClose: onCloseProp, onProfileUpdated, accountId }) {
   const { t } = useLang()
+  const onClose = useModalClose(onCloseProp)
 
   const tabs = [
     { id: 'general', labelKey: 'profileSettings.tabs.general', icon: Icons.settings, component: GeneralTab },

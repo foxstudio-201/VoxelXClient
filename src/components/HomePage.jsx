@@ -431,7 +431,7 @@ function ProfileContentPanel({ profile, accountId, onLaunch }) {
   )
 }
 
-export default function HomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, gamingMode, activePage, onOpenSettings }) {
+export default function HomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, gamingMode, activePage, onOpenSettings, instances, onKillInstance }) {
   const {t} = useLang()
   const [ram, setRam] = useState(4)
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
@@ -596,6 +596,8 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         launchError={launchError}
         onLaunch={onLaunch}
         onLaunchReset={onLaunchReset}
+        instances={instances || []}
+        onKillInstance={onKillInstance}
         profiles={profiles}
         selectedProfileId={selectedProfile?.id}
         accountId={selectedAccount?.id}

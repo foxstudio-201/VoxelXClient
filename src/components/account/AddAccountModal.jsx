@@ -33,6 +33,7 @@ import { useState } from 'react'
 import PlayerHead from '../ui/PlayerHead'
 import { offlineUUID } from '../../utils/offlineUUID'
 import { useLang } from '../../i18n/LangProvider'
+import GamingModalWrapper, { useModalClose } from '../ui/GamingModalWrapper'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -104,8 +105,9 @@ function normalizeDiscordProfile(profile) {
   }
 }
 
-export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existingAccounts = [] }) {
+export default function AddAccountModal({ onClose: onCloseProp, onAdd, onLinkDiscord, existingAccounts = [] }) {
   const { t } = useLang()
+  const onClose = useModalClose(onCloseProp)
   const [tab, setTab] = useState('offline')
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
@@ -289,7 +291,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-[460px] border border-white/10 rounded-2xl shadow-2xl overflow-hidden" style={{ background: 'rgba(14,14,14,0.98)' }}>
+      <GamingModalWrapper onClose={onClose} className="w-[460px] border border-white/10 rounded-2xl shadow-2xl overflow-hidden" style={{ background: 'rgba(14,14,14,0.98)' }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <h2 className="text-base font-bold text-white">{t('account.addModal.title')}</h2>
           <button
@@ -603,7 +605,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
             </form>
           )}
         </div>
-      </div>
+      </GamingModalWrapper>
     </div>
   )
 }

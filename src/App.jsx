@@ -48,6 +48,8 @@ import { loadAppSettings, applyAppSettings, isInitialSetupRequired } from './uti
 import { LangProvider, useLang } from './i18n/LangProvider'
 import { ModpackInstallProvider } from './components/mods/shared/ModpackInstallContext'
 import CrashAnalyzerModal, { isFabricIncompatibleCrash } from './components/crash/CrashAnalyzerModal'
+import AddAccountModal from './components/account/AddAccountModal'
+import SkinCustomizeModal from './components/account/SkinCustomizeModal'
 
 import ModsPage from './components/mods/ModsPage'
 import ServerPage from './components/server/ServerPage'
@@ -80,9 +82,12 @@ function AppInner({ gamingMode }) {
   const handleNavigate = useCallback((page) => {
     setActivePage(page)
   }, [])
-  const { selectedAccount, accounts, loading, selectAccount } = useAccounts()
+  const { selectedAccount, accounts, loading, selectAccount, addAccount, updateAccount, removeAccount } = useAccounts()
   const [navHover, setNavHover] = useState(null)
   const [accDropdown, setAccDropdown] = useState(false)
+  const [showAddAccount, setShowAddAccount] = useState(false)
+  const [showSkinModal, setShowSkinModal] = useState(false)
+  const [removeConfirmId, setRemoveConfirmId] = useState(null)
   const dropdownRef = useRef(null)
 
   const NAV_ITEMS = [
@@ -442,24 +447,65 @@ function AppInner({ gamingMode }) {
                     <div className="py-1 max-h-[200px] overflow-y-auto">
                       {accounts.map(acc => {
                         const isSel = acc.id === selectedAccount?.id
+                        const isConfirm = removeConfirmId === acc.id
                         return (
-                          <button key={acc.id} onClick={() => { selectAccount(acc.id); setAccDropdown(false) }}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-all ${
-                              isSel ? 'text-orange-400 bg-orange-500/10' : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
-                            }`}>
-                            <Check size={14} weight="bold" className={`${isSel ? 'opacity-100' : 'opacity-0'}`} />
-                            <span className="font-semibold">{acc.username}</span>
-                            <span className="text-[9px] text-white/30 ml-auto">{acc.type === 'microsoft' ? 'MS' : 'Off'}</span>
-                          </button>
+                          <div key={acc.id} className="relative group">
+                            <button
+                              onClick={() => { selectAccount(acc.id); setAccDropdown(false); setRemoveConfirmId(null) }}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-all pr-8 ${
+                                isSel ? 'text-orange-400 bg-orange-500/10' : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                              }`}>
+                              <Check size={14} weight="bold" className={`flex-shrink-0 ${isSel ? 'opacity-100' : 'opacity-0'}`} />
+                              <span className="font-semibold truncate">{acc.username}</span>
+                              <span className="text-[9px] text-white/30 ml-auto">{acc.type === 'microsoft' ? 'MS' : 'Off'}</span>
+                            </button>
+                            {isConfirm ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  removeAccount(acc.id)
+                                  setRemoveConfirmId(null)
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/80 hover:bg-red-500 text-white transition-all"
+                                title="Xác nhận xóa"
+                              >
+                                Xóa?
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setRemoveConfirmId(acc.id)
+                                  setTimeout(() => setRemoveConfirmId(p => p === acc.id ? null : p), 3000)
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 w-5 h-5 rounded flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                title="Xóa tài khoản"
+                              >
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
                     <div className="h-px bg-white/10" />
-                    <button onClick={() => { handleNavigate('account'); setAccDropdown(false) }}
+                    <button onClick={() => { setShowAddAccount(true); setAccDropdown(false) }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white hover:bg-white/[0.04] transition-all">
                       <UserCircle size={14} weight="duotone" />
-                      Quản lý tài khoản
+                      {t('account.addModal.title')}
                     </button>
+                    {selectedAccount && (
+                      <button onClick={() => { setShowSkinModal(true); setAccDropdown(false) }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white hover:bg-white/[0.04] transition-all">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 flex-shrink-0">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        {t('account.page.customize')}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -481,6 +527,50 @@ function AppInner({ gamingMode }) {
       />
 
       {settingsOpen && <SettingsPage onClose={() => setSettingsOpen(false)} />}
+
+      {showAddAccount && (
+        <AddAccountModal
+          onClose={() => setShowAddAccount(false)}
+          onAdd={async (account) => {
+            await addAccount(account)
+          }}
+          onLinkDiscord={async (accountId, discordProfile) => {
+            await updateAccount(accountId, {
+              discordId:            discordProfile.discordId,
+              discordUsername:      discordProfile.discordUsername,
+              discordGlobalName:    discordProfile.discordGlobalName,
+              discordDiscriminator: discordProfile.discordDiscriminator,
+              discordAvatarUrl:     discordProfile.discordAvatarUrl,
+              linkedAt:             new Date().toISOString(),
+            })
+          }}
+          existingAccounts={accounts}
+        />
+      )}
+
+      {showSkinModal && selectedAccount && (
+        <SkinCustomizeModal
+          account={selectedAccount}
+          onClose={() => setShowSkinModal(false)}
+          onApply={async ({ type, url, skinType }) => {
+            const prefs = {
+              uuid:      selectedAccount.uuid,
+              skinUrl:   type === 'skin'   ? url : undefined,
+              capeUrl:   type === 'cape'   ? url : undefined,
+              elytraUrl: type === 'elytra' ? url : undefined,
+              skinType:  skinType,
+            }
+            try {
+              if (typeof window !== 'undefined' && window.electronAPI) {
+                await window.electronAPI.saveSkinPrefs(prefs)
+              } else {
+                localStorage.setItem(`vxc_skin_prefs_${selectedAccount.uuid}`, JSON.stringify(prefs))
+              }
+            } catch {}
+            setShowSkinModal(false)
+          }}
+        />
+      )}
     </div>
   )
 }

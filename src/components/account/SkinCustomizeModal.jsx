@@ -31,6 +31,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useLang } from '../../i18n/LangProvider'
+import GamingModalWrapper, { useModalClose } from '../ui/GamingModalWrapper'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -45,8 +46,9 @@ const SKIN_TYPES = [
   { id: 'slim', labelKey: 'account.skinModal.skinTypeSlim' },
 ]
 
-export default function SkinCustomizeModal({ account, onClose, onApply }) {
+export default function SkinCustomizeModal({ account, onClose: onCloseProp, onApply }) {
   const { t } = useLang()
+  const onClose = useModalClose(onCloseProp)
   const [activeTab, setActiveTab]         = useState('skin')
   const [selectedFile, setSelectedFile]   = useState(null)
   const [previewUrl, setPreviewUrl]       = useState(null)
@@ -204,7 +206,8 @@ async function handleApply() {
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div
+      <GamingModalWrapper
+        onClose={onClose}
         className="relative z-10 w-full max-w-lg rounded-2xl overflow-hidden flex flex-col"
         style={{
           background: 'rgba(14,14,14,0.98)',
@@ -339,7 +342,7 @@ async function handleApply() {
             ) : applying ? t('account.skinModal.applying') : t('account.skinModal.apply')}
           </button>
         </div>
-      </div>
+      </GamingModalWrapper>
     </div>
   )
 }

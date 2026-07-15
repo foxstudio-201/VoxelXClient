@@ -938,6 +938,11 @@
       "file": "File"
     }
   },
+  "gaming": {
+    "select": "Select",
+    "play": "Play",
+    "playing": "Playing"
+  },
   "crash": {
     "title": "Game crashed",
     "fabricIncompatible": "Incompatible mods (Fabric)",
@@ -961,8 +966,5 @@
     "notFound": "Not found",
     "retry": "Retry",
     "downloading": "Downloading..."
-  },
-  "gaming": {
-    "select": "Select"
   }
 }

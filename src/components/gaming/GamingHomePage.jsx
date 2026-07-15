@@ -3,6 +3,7 @@ import { useAccounts } from '../../hooks/useAccounts'
 import { useLang } from '../../i18n/LangProvider'
 import { Gear, PlayCircle } from '@phosphor-icons/react'
 import ProfileSettingsPanel from '../home/ProfileSettingsPanel'
+import GamingModalWrapper from '../ui/GamingModalWrapper'
 import ModsTab from '../home/tab/ModsTab'
 import WorldsTab from '../home/tab/WorldsTab'
 import ShadersTab from '../home/tab/ShadersTab'
@@ -74,7 +75,7 @@ const ALL_TABS = [
   { id: 'servers',       label: 'Servers',        component: ServerBookmarksTab },
 ]
 
-export default function GamingHomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, profiles, selectedProfileId, accountId, activePage, onOpenSettings, onProfileUpdated }) {
+export default function GamingHomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, profiles, selectedProfileId, accountId, activePage, onOpenSettings, onProfileUpdated, instances, onKillInstance }) {
   const { t } = useLang()
   const { selectedAccount } = useAccounts()
   const [selectedIdx, setSelectedIdx] = useState(0)
@@ -88,6 +89,18 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const currentProfile = profileList[selectedIdx] || null
   const colors = LOADER_COLORS[currentProfile?.loader] || LOADER_COLORS.vanilla
   const profileIcon = currentProfile?.importIconUrl || LOADER_ICONS[currentProfile?.loader] || vanillaIcon
+
+  // Tìm instance đang chạy của một profile cụ thể
+  function getProfileInstance(profileId) {
+    if (!instances || !profileId) return null
+    return instances.find(inst => inst.profileId === profileId && inst.state !== 'stopped') || null
+  }
+
+  function getProfileState(profileId) {
+    const inst = getProfileInstance(profileId)
+    if (!inst) return 'idle'
+    return inst.state // 'downloading' | 'running' | 'error' | 'stopped'
+  }
 
   function goNext() {
     if (selectedIdx < profileList.length - 1) setSelectedIdx(selectedIdx + 1)
@@ -128,8 +141,16 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     onLaunch(pid, ramMb || (p.ramGb || 4) * 1024, profileName || p.name, accountName || selectedAccount?.username || '', serverAddress)
   }
 
-  const playing = launchState === 'running'
-  const downloading = launchState === 'downloading'
+  function handleKill(profileId) {
+    const inst = getProfileInstance(profileId)
+    if (!inst || !onKillInstance) return
+    onKillInstance(inst.key)
+  }
+
+  const currentInst = getProfileInstance(currentProfile?.id)
+  const playing = getProfileState(currentProfile?.id) === 'running'
+  const downloading = getProfileState(currentProfile?.id) === 'downloading'
+  const currentProgress = currentInst?.progress
 
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden select-none">
@@ -204,6 +225,37 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                 )}
 
                 <div className="absolute inset-x-0 bottom-0 p-4">
+                  {i === selectedIdx && (() => {
+                    const pInst = getProfileInstance(p.id)
+                    const pPlaying = getProfileState(p.id) === 'running'
+                    const pDownloading = getProfileState(p.id) === 'downloading'
+                    const pActive = pPlaying || pDownloading
+                    return (
+                      <div className="flex gap-2 mb-3">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); if (!pActive) handleLaunch() }}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-xl"
+                          style={{ background: lc.primary, color: '#000', opacity: pActive ? 0.75 : 1 }}
+                        >
+                          <PlayCircle size={20} weight="fill" />
+                          {pPlaying ? t('gaming.playing') : pDownloading ? `${pInst?.progress?.percent || 0}%` : t('gaming.play')}
+                        </button>
+                        {pActive && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleKill(p.id) }}
+                            className="w-11 flex items-center justify-center rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-xl bg-red-500/80 hover:bg-red-500"
+                            title={t('homepage.launch.kill')}
+                          >
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white">
+                              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()}
                   <p className="text-white font-bold text-sm truncate drop-shadow-lg">{p.name}</p>
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
@@ -252,9 +304,9 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
             </div>
           )}
           <button onClick={openDetails}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-bold transition-all hover:scale-105 active:scale-95 shadow-lg"
+            className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95 shadow-lg"
             style={{ background: colors.primary, color: '#000' }}>
-            <PlayCircle size={14} weight="duotone" />
+            <PlayCircle size={18} weight="duotone" />
             {t('gaming.select')}
           </button>
         </div>
@@ -286,11 +338,23 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => handleLaunch()}
+              <button onClick={() => { if (!playing && !downloading) handleLaunch() }}
                 className="px-5 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95"
-                style={{ background: colors.primary, color: '#000' }}>
-                {playing ? 'Đang chơi' : downloading ? `${progress?.percent || 0}%` : 'Chơi'}
+                style={{ background: colors.primary, color: '#000', opacity: (playing || downloading) ? 0.75 : 1 }}>
+                {playing ? t('gaming.playing') : downloading ? `${currentProgress?.percent || 0}%` : t('gaming.play')}
               </button>
+              {(playing || downloading) && (
+                <button
+                  onClick={() => handleKill(currentProfile?.id)}
+                  className="px-3 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95 bg-red-500/80 hover:bg-red-500 text-white flex items-center gap-1.5"
+                  title={t('homepage.launch.kill')}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                  {t('homepage.launch.kill')}
+                </button>
+              )}
               <button onClick={closeExpanded}
                 className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
@@ -329,15 +393,18 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
           className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setProfileSettingsOpen(false) }}
         >
-          <div className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh] animate-modal-in"
-            style={{ background: 'rgba(14,14,14,0.98)' }}>
+          <GamingModalWrapper
+            onClose={() => setProfileSettingsOpen(false)}
+            className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh]"
+            style={{ background: 'rgba(14,14,14,0.98)' }}
+          >
             <ProfileSettingsPanel
               profile={currentProfile}
               accountId={accountId}
               onClose={() => setProfileSettingsOpen(false)}
               onProfileUpdated={onProfileUpdated}
             />
-          </div>
+          </GamingModalWrapper>
         </div>
       )}
     </div>

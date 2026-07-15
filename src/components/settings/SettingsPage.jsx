@@ -36,8 +36,10 @@ import AboutTab       from './tabs/AboutTab'
 import AppearanceTab  from './tabs/AppearanceTab'
 import { DEFAULT_SETTINGS, sanitizeSettings, loadAppSettings, saveAppSettings, applyAppSettings } from '../../utils/appSettings'
 import { useLang } from '../../i18n/LangProvider'
+import GamingModalWrapper, { useModalClose } from '../ui/GamingModalWrapper'
 
-export default function SettingsPage({ onClose }) {
+export default function SettingsPage({ onClose: onCloseProp }) {
+  const onClose = useModalClose(onCloseProp)
   const [activeTab, setActiveTab] = useState('launcher')
   const [settings, setSettings]  = useState(DEFAULT_SETTINGS)
   const [loaded, setLoaded]      = useState(false)
@@ -117,7 +119,7 @@ export default function SettingsPage({ onClose }) {
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}>
-      <div className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh] animate-modal-in"
+      <GamingModalWrapper onClose={onClose} className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh]"
         style={{ background: 'rgba(14,14,14,0.98)' }}>
         <div className="flex flex-col min-h-0 flex-1">
           <div className="flex-shrink-0 px-6 pt-6 pb-0">
@@ -160,7 +162,7 @@ export default function SettingsPage({ onClose }) {
             {activeTab === 'appearance' && <AppearanceTab settings={settings} onChange={handleChange} />}
           </div>
         </div>
-      </div>
+      </GamingModalWrapper>
     </div>
   )
 }

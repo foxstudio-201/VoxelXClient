@@ -938,6 +938,11 @@
       "file": "Tệp"
     }
   },
+  "gaming": {
+    "select": "Chọn",
+    "play": "Chơi",
+    "playing": "Đang chơi"
+  },
   "crash": {
     "title": "Game bị crash",
     "fabricIncompatible": "Mod không tương thích (Fabric)",
@@ -961,8 +966,5 @@
     "notFound": "Không tìm thấy",
     "retry": "Thử lại",
     "downloading": "Đang tải..."
-  },
-  "gaming": {
-    "select": "Chọn"
   }
 }
