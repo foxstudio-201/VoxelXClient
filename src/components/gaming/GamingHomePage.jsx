@@ -125,7 +125,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     const pid = profileId || currentProfile?.id
     const p = profileList.find(x => x.id === pid) || currentProfile
     if (!p) return
-    onLaunch(pid, ramMb || p.ramGb || 4, profileName || p.name, accountName || selectedAccount?.username || '', serverAddress)
+    onLaunch(pid, ramMb || (p.ramGb || 4) * 1024, profileName || p.name, accountName || selectedAccount?.username || '', serverAddress)
   }
 
   const playing = launchState === 'running'
