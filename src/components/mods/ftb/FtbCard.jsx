@@ -76,7 +76,7 @@ function GridCard({ project, onClick }) {
               style={{ background: 'linear-gradient(to right, rgba(10,10,10,1) 0%, rgba(10,10,10,0.92) 35%, rgba(10,10,10,0.55) 65%, rgba(10,10,10,0.2) 100%)' }} />
           </>
         ) : (
-          <div className="absolute inset-0 bg-[#111]" />
+          <div className="absolute inset-0" style={{ background: 'rgba(14,14,14,0.98)' }} />
         )}
       </div>
 

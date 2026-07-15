@@ -36,9 +36,8 @@ const fs     = require('fs')
 const path   = require('path')
 const { spawnSync } = require('child_process')
 
-const FORGE_MAVEN  = 'https://maven.minecraftforge.net'
 const BMCLAPI      = 'https://bmclapi2.bangbang93.com'
-const FORGE_MAVEN2 = 'https://files.minecraftforge.net/maven'
+const FORGE_MAVEN  = 'https://files.minecraftforge.net/maven'
 
 function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
@@ -128,7 +127,6 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
   const installerDir  = path.join(librariesDir, 'net', 'minecraftforge', 'forge', fullVersion)
   const installerPath = path.join(installerDir, installerName)
   const installerUrl  = `${FORGE_MAVEN}/net/minecraftforge/forge/${fullVersion}/${installerName}`
-  const installerUrl2 = `${FORGE_MAVEN2}/net/minecraftforge/forge/${fullVersion}/${installerName}`
   const bmclapiUrl    = `${BMCLAPI}/maven/net/minecraftforge/forge/${fullVersion}/${installerName}`
 
   if (!fs.existsSync(installerDir)) fs.mkdirSync(installerDir, { recursive: true })
@@ -137,7 +135,7 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
   if (!fs.existsSync(installerPath) || fs.statSync(installerPath).size === 0) {
     onProgress?.({ phase: 'forge_download', log: `Downloading Forge ${fullVersion} installer...`, done: 0, total: 1 })
     let downloaded = false
-    for (const url of [installerUrl, installerUrl2, bmclapiUrl]) {
+    for (const url of [installerUrl, bmclapiUrl]) {
       try {
         onProgress?.({ phase: 'forge_download', log: `Trying ${url.split('?')[0]}...` })
         await downloadFile(url, installerPath)

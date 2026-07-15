@@ -58,6 +58,7 @@
       "fontPreview": "Xem trước",
       "borderRadius": "Độ cong góc",
       "borderColor": "Màu viền",
+      "background": "Nền",
       "borderPresets": {
         "default": "Mặc định",
         "green": "Xanh lá",

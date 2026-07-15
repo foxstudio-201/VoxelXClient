@@ -46,6 +46,7 @@ export const DEFAULT_SETTINGS = {
   colorHover:           '#86efac',
   colorActive:          '#f97316',
   background:           'dark',
+  customBgPath:         '',
   borderRadius:         12,
   borderColor:          'rgba(255,255,255,0.08)',
   agreedTos:            false,
@@ -155,7 +156,7 @@ export function applyAppSettings(settings) {
     ? FONT_STACKS[safe.fontId]
     : SYSTEM_FONT_STACK
 
-  window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: safe.background ?? 'dark' }))
+  window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: safe.background ?? 'dark', customBgPath: safe.customBgPath }))
   document.documentElement.style.setProperty('--app-font', stack || SYSTEM_FONT_STACK)
   document.body.style.fontFamily = stack || SYSTEM_FONT_STACK
 

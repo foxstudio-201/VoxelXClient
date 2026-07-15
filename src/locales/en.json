@@ -58,6 +58,7 @@
       "fontPreview": "Preview",
       "borderRadius": "Corner radius",
       "borderColor": "Border color",
+      "background": "Background",
       "borderPresets": {
         "default": "Default",
         "green": "Green",

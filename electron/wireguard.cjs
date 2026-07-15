@@ -14,7 +14,7 @@ const crypto    = require('crypto')
 const { app, ipcMain } = require('electron')
 const { spawnSync, execFileSync } = require('child_process')
 
-const API_BASE         = process.env.VXC_WEB_BASE_URL || 'https://www.voxelx.io.vn'
+const API_BASE         = process.env.VXC_WEB_BASE_URL || ''
 const WG_PORT          = 51820
 const PING_INTERVAL_MS = 10000
 
@@ -346,6 +346,7 @@ async function stopWg() {
 
 // ── API ───────────────────────────────────────────────────────────────────────
 function apiPost(action, body) {
+  if (!process.env.VXC_WEB_BASE_URL) return Promise.reject(new Error('API LAN không khả dụng'))
   const https   = require('https')
   const bodyStr = JSON.stringify(body)
   const url     = new URL(`${API_BASE}/api/lan-room?action=${action}`)
@@ -379,6 +380,7 @@ function apiPost(action, body) {
 }
 
 function apiGet(action, params = {}) {
+  if (!process.env.VXC_WEB_BASE_URL) return Promise.reject(new Error('API LAN không khả dụng'))
   const https = require('https')
   const qs    = new URLSearchParams({ action, ...params }).toString()
   const url   = new URL(`${API_BASE}/api/lan-room?${qs}`)

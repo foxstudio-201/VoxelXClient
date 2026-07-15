@@ -102,6 +102,7 @@ async function waitForLinkedProfile(sessionId, pollToken) {
 }
 
 async function startDiscordLink() {
+  if (!process.env.VXC_WEB_BASE_URL) throw new Error('API Discord không khả dụng')
   const session = await createLinkSession()
   await shell.openExternal(session.authUrl)
   return waitForLinkedProfile(session.sessionId, session.pollToken)

@@ -199,22 +199,7 @@ export default function AccountPage() {
 
         const localSkin = prefs?.skinUrl
 
-        // Nếu chưa có webSkinUrl, thử fetch từ web API theo UUID
-        let fetchedWebSkin = webSkin
-        if (!fetchedWebSkin && selected.uuid && isElectron) {
-          try {
-            const res = await fetch(
-              `https://www.voxelx.io.vn/api/auth?action=lookup-by-uuid&uuid=${encodeURIComponent(selected.uuid)}`,
-              { signal: AbortSignal.timeout(5000) }
-            )
-            if (res.ok) {
-              const data = await res.json()
-              if (data.ok && data.skinUrl) fetchedWebSkin = data.skinUrl
-            }
-          } catch {}
-        }
-
-        const finalSkin = fetchedWebSkin || (localSkin && !localSkin.startsWith('blob:') ? localSkin : null)
+        const finalSkin = webSkin || (localSkin && !localSkin.startsWith('blob:') ? localSkin : null)
         setAppliedSkinUrl(finalSkin || null)
       } catch { setAppliedSkinUrl(null) }
     }

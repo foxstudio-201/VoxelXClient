@@ -50,6 +50,7 @@ const technicSearch = require('./technic/technicSearch.cjs')
 const ftbSearch = require('./ftb/ftbSearch.cjs')
 const { launchGame }          = require('./vanilla/gameRunner.cjs')
 const { startPlaytimeTracker, getProfileStats } = require('./statsTracker.cjs')
+const rpc                     = require('../discordRPC.cjs')
 
 const DATA_DIR      = path.join(app.getPath('appData'), '.VoxelXClient')
 const PROFILES_FILE = path.join(DATA_DIR, 'profiles.json')
@@ -236,6 +237,9 @@ function syncAccountToProfile(profileDir, accountDir) {
 }
 
 function syncProfileToAccount(profile, gameDataDir) {
+  const marker = path.join(gameDataDir, '.initialized')
+  if (fs.existsSync(marker)) return []
+
   const srcDir = profile.instancePath
   if (!srcDir || !fs.existsSync(srcDir)) return []
   const synced = []
@@ -267,10 +271,12 @@ function syncProfileToAccount(profile, gameDataDir) {
       synced.push(entry.name)
     }
   }
+  try { fs.writeFileSync(marker, '') } catch {}
   return synced
 }
 
 const { createLogWindow } = require('./logWindow.cjs')
+
 
 function registerLauncherHandlers(getTrustedWindow) {
 
@@ -760,6 +766,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           writeLog(line)
         },
         onExit: (code) => {
+          try { rpc.PRESETS.menu() } catch {}
           try { syncAccountToProfile(profile.instancePath, gameDataDir) } catch (e) { writeLog(`[WARN] Sync back settings: ${e.message}`) }
           stopAuthlibServer(gameKey)
           try { logStream.end() } catch {}
@@ -803,6 +810,7 @@ function registerLauncherHandlers(getTrustedWindow) {
       runningGames.set(gameKey, { proc, stopTracker, logWin })
 
       sendProgress({ phase: 'running', log: 'Minecraft is running!', percent: 100 })
+      try { rpc.PRESETS.playing(profile.gameVersion, profile.name, account.username) } catch {}
       return { ok: true }
 
     } catch (err) {
@@ -1155,104 +1163,8 @@ function registerLauncherHandlers(getTrustedWindow) {
     }
   })
 
-  ipcMain.handle('skin:uploadToWeb', async (e, { dataUrl, type, skinType, webToken, uuid }) => {
-    if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    if (!dataUrl || !type || !webToken) return { error: 'Thiếu thông tin' }
-
-    const https = require('https')
-
-    try {
-      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '')
-      const fileBuffer = Buffer.from(base64, 'base64')
-      const fileName = `${type}.png`
-
-      const boundary = 'vxc_skin_' + Date.now()
-      const CRLF = '\r\n'
-
-      const parts = []
-
-      parts.push(
-        `--${boundary}${CRLF}` +
-        `Content-Disposition: form-data; name="file"; filename="${fileName}"${CRLF}` +
-        `Content-Type: image/png${CRLF}${CRLF}`
-      )
-
-      const typePart =
-        `--${boundary}${CRLF}` +
-        `Content-Disposition: form-data; name="type"${CRLF}${CRLF}` +
-        type + CRLF
-
-      const skinTypePart = type === 'skin'
-        ? `--${boundary}${CRLF}` +
-          `Content-Disposition: form-data; name="skinType"${CRLF}${CRLF}` +
-          (skinType || 'wide') + CRLF
-        : ''
-
-      const header = Buffer.from(parts[0], 'utf8')
-      const typePartBuf = Buffer.from(typePart, 'utf8')
-      const skinTypePartBuf = Buffer.from(skinTypePart, 'utf8')
-      const footer = Buffer.from(`${CRLF}--${boundary}--${CRLF}`, 'utf8')
-
-      const body = Buffer.concat([
-        header, fileBuffer, Buffer.from(CRLF, 'utf8'),
-        typePartBuf,
-        ...(skinTypePart ? [skinTypePartBuf] : []),
-        footer,
-      ])
-
-      const result = await new Promise((resolve, reject) => {
-        const req = https.request({
-          hostname: 'voxelx.io.vn',
-          path: '/api/upload-skin',
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${webToken}`,
-            'Content-Type': `multipart/form-data; boundary=${boundary}`,
-            'Content-Length': body.length,
-            'User-Agent': 'VoxelXLauncher/1.0',
-          },
-        }, (res) => {
-          let data = ''
-          res.on('data', c => { data += c })
-          res.on('end', () => {
-            try { resolve({ status: res.statusCode, body: JSON.parse(data) }) }
-            catch { resolve({ status: res.statusCode, body: { error: data } }) }
-          })
-        })
-        req.on('error', reject)
-        req.write(body)
-        req.end()
-      })
-
-      if (result.status !== 200) {
-        return { error: result.body?.error || `HTTP ${result.status}` }
-      }
-
-      const uploadedUrl = result.body?.url
-      if (!uploadedUrl) return { error: 'Không nhận được URL từ server' }
-
-      if (uuid) {
-        try {
-          const skinPrefsPath = path.join(DATA_DIR, 'skin_prefs.json')
-          let prefs = {}
-          if (fs.existsSync(skinPrefsPath)) {
-            try { prefs = JSON.parse(fs.readFileSync(skinPrefsPath, 'utf-8')) } catch {}
-          }
-          prefs[uuid] = {
-            ...prefs[uuid],
-            [type === 'skin' ? 'skinUrl' : type === 'cape' ? 'capeUrl' : 'elytraUrl']: uploadedUrl,
-            updatedAt: new Date().toISOString(),
-          }
-          const tmp = skinPrefsPath + '.tmp'
-          fs.writeFileSync(tmp, JSON.stringify(prefs, null, 2), { mode: 0o600 })
-          fs.renameSync(tmp, skinPrefsPath)
-        } catch {}
-      }
-
-      return { ok: true, url: uploadedUrl, type, skinType }
-    } catch (err) {
-      return { error: err.message }
-    }
+  ipcMain.handle('skin:uploadToWeb', async () => {
+    return { error: 'Web API không khả dụng' }
   })
 }
 

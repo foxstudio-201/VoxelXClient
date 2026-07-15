@@ -234,7 +234,7 @@ export default function ServerBookmarksTab({ profile, accountId, onLaunch }) {
                     </div>
                   </div>
                   {confirmDel === server.id && (
-                    <div className="absolute inset-0 rounded-xl bg-[#0a0a0a]/95 border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3">
+                    <div className="absolute inset-0 rounded-xl border border-red-500/25 flex items-center justify-center gap-2 z-10 px-3" style={{ background: 'rgba(14,14,14,0.95)' }}>
                       <span className="text-xs text-white/60 flex-1">{t('profileSettings.serverBookmarks.deleteConfirm')}</span>
                       <button onClick={() => handleDelete(server.id)}
                         className="px-2 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">{t('profileSettings.serverBookmarks.deleteBtn')}</button>
@@ -298,7 +298,7 @@ function ServerFormModal({ title, initial, onSave, onClose, t }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md mx-4 rounded-2xl bg-[#111] border border-white/10 shadow-2xl"
+      <div className="w-full max-w-md mx-4 rounded-2xl border border-white/10 shadow-2xl" style={{ background: 'rgba(14,14,14,0.98)' }}
         onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSubmit}>
           <div className="px-6 pt-5 pb-3">

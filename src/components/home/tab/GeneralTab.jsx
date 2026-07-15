@@ -101,7 +101,7 @@ function LoaderVersionPicker({ loader, gameVersion, value, onChange }) {
 
       {/* Dropdown */}
       {expanded && (
-        <div className="rounded-xl border border-white/8 overflow-hidden bg-[#111]">
+        <div className="rounded-xl border border-white/8 overflow-hidden" style={{ background: 'rgba(14,14,14,0.98)' }}>
           {/* Search */}
           <div className="px-3 py-2 border-b border-white/5">
             <input

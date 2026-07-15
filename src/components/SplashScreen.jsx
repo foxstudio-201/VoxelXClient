@@ -74,7 +74,7 @@ export default function SplashScreen({ onDone }) {
       try {
         const s = await loadAppSettings()
         if (s?.background && !cancelled) {
-          window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: s.background }))
+          window.dispatchEvent(new CustomEvent('vxc-bg-change', { detail: s.background, customBgPath: s.customBgPath }))
         }
         if (typeof s?.autoCheckUpdate === 'boolean') {
           autoCheckUpdate = s.autoCheckUpdate

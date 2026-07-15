@@ -175,7 +175,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
         style={{
           bottom: 20,
           left: MINIMIZED_LEFT,
-          background: '#1a1a1a',
+          background: 'rgba(14,14,14,0.98)',
           border: `1px solid ${isError ? '#ef444455' : isDone ? '#f9731655' : src.color + '55'}`,
           minWidth: 260,
           maxWidth: 340,

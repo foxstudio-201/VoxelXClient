@@ -32,6 +32,7 @@
 import { useState, useEffect } from 'react'
 import { useLang } from '../../../i18n/LangProvider'
 import martianLogo from '../../../assets/martian-logo.png'
+import { Section, SettingRow, Toggle, UpdateChecker } from '../SettingsUI'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -69,7 +70,7 @@ function LinkButton({ href, icon, label }) {
   )
 }
 
-export default function AboutTab() {
+export default function AboutTab({ settings, onChange }) {
   const { t } = useLang()
   const [version, setVersion] = useState('')
   const [hwid, setHwid]       = useState('')
@@ -87,7 +88,7 @@ export default function AboutTab() {
   }, [])
 
   return (
-    <div className="h-full overflow-y-auto px-6 py-5">
+    <div className="px-6 py-5">
 
       {}
       <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-[#0d2b1a] via-[#0a1a0f] to-[#050d07] p-6 mb-6 relative overflow-hidden">
@@ -131,6 +132,22 @@ export default function AboutTab() {
           <InfoRow label={t('settings.about.version')}  value={version || '...'} mono />
         </div>
       </div>
+
+      {}
+      <Section title={t('settings.launcher.update')}>
+        <SettingRow
+          label={t('settings.launcher.autoCheckUpdate')}
+          description={t('settings.launcher.autoCheckUpdateDesc')}
+        >
+          <Toggle
+            checked={settings?.autoCheckUpdate ?? true}
+            onChange={v => onChange?.({ autoCheckUpdate: v })}
+          />
+        </SettingRow>
+        <div className="py-1">
+          <UpdateChecker />
+        </div>
+      </Section>
 
       {}
       <div className="mb-6">

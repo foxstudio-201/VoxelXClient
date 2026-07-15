@@ -530,21 +530,7 @@ export default function LanShareWindow() {
         // 1. webSkinUrl trên account object
         let finalSkin = acc.webSkinUrl || null
 
-        // 2. Fetch từ web API theo UUID
-        if (!finalSkin && acc.uuid) {
-          try {
-            const res = await fetch(
-              `https://www.voxelx.io.vn/api/auth?action=lookup-by-uuid&uuid=${encodeURIComponent(acc.uuid)}`,
-              { signal: AbortSignal.timeout(5000) }
-            )
-            if (res.ok) {
-              const d = await res.json()
-              if (d.ok && d.skinUrl) finalSkin = d.skinUrl
-            }
-          } catch {}
-        }
-
-        // 3. Local skin prefs
+        // 2. Local skin prefs
         if (!finalSkin) {
           const prefs = await window.electronAPI.getSkinPrefs?.({ uuid: acc.uuid }).catch(() => null)
           if (prefs?.skinUrl && !prefs.skinUrl.startsWith('blob:')) finalSkin = prefs.skinUrl

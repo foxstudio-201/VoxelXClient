@@ -40,7 +40,16 @@ const zlib   = require('zlib')
 const CF_API_BASE  = 'https://api.curseforge.com/v1'
 const CF_PROXY     = 'https://api.curse.tools/v1/cf'
 
-function readZipEntry(buf, entryName) {
+function inflateRawAsync(buf) {
+  return new Promise((resolve, reject) => {
+    zlib.inflateRaw(buf, (err, result) => {
+      if (err) reject(err)
+      else resolve(result)
+    })
+  })
+}
+
+async function readZipEntry(buf, entryName) {
   let eocdOffset = -1
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65558); i--) {
     if (buf.readUInt32LE(i) === 0x06054b50) { eocdOffset = i; break }
@@ -67,7 +76,7 @@ function readZipEntry(buf, entryName) {
       const dataOff = localOffset + 30 + lfnLen + lexLen
       const comp    = buf.slice(dataOff, dataOff + compSize)
       if (compMethod === 0) return comp
-      if (compMethod === 8) return zlib.inflateRawSync(comp)
+      if (compMethod === 8) return inflateRawAsync(comp)
       return null
     }
     pos += 46 + fnLen + extraLen + commentLen
@@ -75,7 +84,7 @@ function readZipEntry(buf, entryName) {
   return null
 }
 
-function iterZipEntries(buf, cb) {
+async function iterZipEntries(buf, cb) {
   let eocdOffset = -1
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65558); i--) {
     if (buf.readUInt32LE(i) === 0x06054b50) { eocdOffset = i; break }
@@ -96,16 +105,17 @@ function iterZipEntries(buf, cb) {
     const localOffset = buf.readUInt32LE(pos + 42)
     const fileName    = buf.slice(pos + 46, pos + 46 + fnLen).toString('utf8')
 
-    cb(fileName, () => {
+    await cb(fileName, async () => {
       const lfnLen  = buf.readUInt16LE(localOffset + 26)
       const lexLen  = buf.readUInt16LE(localOffset + 28)
       const dataOff = localOffset + 30 + lfnLen + lexLen
       const comp    = buf.slice(dataOff, dataOff + compSize)
       if (compMethod === 0) return comp
-      if (compMethod === 8) return zlib.inflateRawSync(comp)
+      if (compMethod === 8) return inflateRawAsync(comp)
       return null
     })
     pos += 46 + fnLen + extraLen + commentLen
+    if (i % 10 === 0) await new Promise(r => setImmediate(r))
   }
 }
 
@@ -130,12 +140,12 @@ function httpsGetJson(url, headers = {}) {
   })
 }
 
-function downloadFile(url, destPath, headers = {}) {
-  return new Promise((resolve, reject) => {
-    const dir     = path.dirname(destPath)
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    const tmpPath = destPath + '.tmp'
+async function downloadFile(url, destPath, headers = {}) {
+  const dir     = path.dirname(destPath)
+  await fs.promises.mkdir(dir, { recursive: true })
+  const tmpPath = destPath + '.tmp'
 
+  return new Promise((resolve, reject) => {
     let settled = false
     function done(err) {
       if (settled) return
@@ -156,18 +166,17 @@ function downloadFile(url, destPath, headers = {}) {
           res.resume()
           return done(new Error(`HTTP ${res.statusCode}: ${reqUrl}`))
         }
-        // Chỉ tạo file sau khi đã resolve hết redirect
         const out = fs.createWriteStream(tmpPath)
         res.pipe(out)
-        out.on('finish', () => {
-          try { fs.renameSync(tmpPath, destPath) } catch {
-            try { fs.copyFileSync(tmpPath, destPath) } catch {}
-            try { fs.unlinkSync(tmpPath) } catch {}
+        out.on('finish', async () => {
+          try { await fs.promises.rename(tmpPath, destPath) } catch {
+            await fs.promises.copyFile(tmpPath, destPath).catch(() => {})
+            await fs.promises.unlink(tmpPath).catch(() => {})
           }
           done()
         })
-        out.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {}; done(err) })
-        res.on('error',  err => { try { fs.unlinkSync(tmpPath) } catch {}; done(err) })
+        out.on('error', async err => { await fs.promises.unlink(tmpPath).catch(() => {}); done(err) })
+        res.on('error',  async err => { await fs.promises.unlink(tmpPath).catch(() => {}); done(err) })
       }).on('error', err => done(err))
     }
     doGet(url, 0)
@@ -197,9 +206,9 @@ async function getModDownloadUrl(projectId, fileId, apiKey) {
 async function importCurseForgePack(zipPath, instancePath, onProgress, apiKey) {
   onProgress?.({ phase: 'read', log: 'Đọc file modpack...', percent: 2 })
 
-  const buf = fs.readFileSync(zipPath)
+  const buf = await fs.promises.readFile(zipPath)
 
-  const manifestData = readZipEntry(buf, 'manifest.json')
+  const manifestData = await readZipEntry(buf, 'manifest.json')
   if (!manifestData) throw new Error('manifest.json không tìm thấy trong file')
 
   const manifest = JSON.parse(manifestData.toString('utf8'))
@@ -217,53 +226,71 @@ async function importCurseForgePack(zipPath, instancePath, onProgress, apiKey) {
   const mods  = manifest.files || []
   const total = mods.length
   const modsDir = path.join(instancePath, 'mods')
-  if (!fs.existsSync(modsDir)) fs.mkdirSync(modsDir, { recursive: true })
+  await fs.promises.mkdir(modsDir, { recursive: true })
 
-  onProgress?.({ phase: 'mods', log: `Tải ${total} mods...`, done: 0, total, percent: 5 })
+  onProgress?.({ phase: 'mods', log: `Bắt đầu tải ${total} mods...`, done: 0, total, percent: 5 })
 
   let done = 0
   let skipped = 0
 
-  for (const mod of mods) {
-    done++
-    const pct = 5 + Math.round((done / total) * 80)
+  onProgress?.({ phase: 'mods', log: `[1/${total}] Đang lấy danh sách URL...`, done: 0, total, percent: 5 })
 
+  const urlResults = []
+  for (const mod of mods) {
     const url = await getModDownloadUrl(mod.projectID, mod.fileID, apiKey)
+    urlResults.push(url)
+    const idx = urlResults.length
+    if (idx % 10 === 0 || idx === total) {
+      onProgress?.({ phase: 'mods', log: `Đã lấy URL: ${idx}/${total}`, done: idx, total, percent: 5 + Math.round((idx / total) * 15) })
+      await new Promise(r => setImmediate(r))
+    }
+  }
+
+  for (let i = 0; i < total; i++) {
+    done++
+    const pct = 20 + Math.round((done / total) * 60)
+
+    const url = urlResults[i]
     if (!url) {
       skipped++
-      onProgress?.({ phase: 'mods', log: `[${done}/${total}] Bỏ qua (không lấy được URL): projectID=${mod.projectID}`, done, total, percent: pct })
+      onProgress?.({ phase: 'mods', log: `[${done}/${total}] Bỏ qua (không lấy được URL): projectID=${mods[i].projectID}`, done, total, percent: pct })
+      if (done % 3 === 0) await new Promise(r => setImmediate(r))
       continue
     }
 
     const fileName = url.split('/').pop().split('?')[0]
     const destPath = path.join(modsDir, decodeURIComponent(fileName))
 
-    if (fs.existsSync(destPath)) {
+    const exists = await fs.promises.access(destPath).then(() => true).catch(() => false)
+    if (exists) {
       onProgress?.({ phase: 'mods', log: `[${done}/${total}] Đã có: ${fileName}`, done, total, percent: pct })
+      if (done % 3 === 0) await new Promise(r => setImmediate(r))
       continue
     }
 
-    onProgress?.({ phase: 'mods', log: `[${done}/${total}] Tải: ${fileName}`, done, total, percent: pct })
+    onProgress?.({ phase: 'mods', log: `[${done}/${total}] Đang tải: ${fileName}`, done, total, percent: pct })
     try {
       await downloadFile(url, destPath)
     } catch (err) {
       skipped++
       onProgress?.({ phase: 'mods', log: `[WARN] Lỗi tải ${fileName}: ${err.message}`, done, total, percent: pct })
     }
+
+    if (done % 3 === 0) await new Promise(r => setImmediate(r))
   }
 
-  onProgress?.({ phase: 'overrides', log: 'Giải nén overrides...', percent: 87 })
+  onProgress?.({ phase: 'overrides', log: 'Giải nén overrides...', percent: 85 })
 
-  iterZipEntries(buf, (fileName, getData) => {
+  await iterZipEntries(buf, async (fileName, getData) => {
     if (!fileName.startsWith('overrides/') || fileName.endsWith('/')) return
     const relPath  = fileName.slice('overrides/'.length)
     const destPath = path.join(instancePath, relPath)
     const destDir  = path.dirname(destPath)
 
     try {
-      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
-      const data = getData()
-      if (data) fs.writeFileSync(destPath, data)
+      await fs.promises.mkdir(destDir, { recursive: true })
+      const data = await getData()
+      if (data) await fs.promises.writeFile(destPath, data)
     } catch {}
   })
 
@@ -276,4 +303,3 @@ async function importCurseForgePack(zipPath, instancePath, onProgress, apiKey) {
 }
 
 module.exports = { importCurseForgePack }
-

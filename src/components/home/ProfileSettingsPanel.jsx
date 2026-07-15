@@ -81,21 +81,15 @@ export default function ProfileSettingsPanel({ profile, onClose, onProfileUpdate
       </div>
 
       {/* Tab bar */}
-      <div
-        className="flex-shrink-0 flex items-center gap-0.5 px-3 py-2 border-b border-white/5 overflow-x-auto"
-        style={{ scrollbarWidth: 'none' }}
-      >
+      <div className="flex-shrink-0 flex gap-1 px-4 border-b border-white/5">
         {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all duration-150 -mb-px ${
               activeTab === tab.id
-                ? 'bg-white/10 text-white/90'
-                : 'text-white/35 hover:text-white/65 hover:bg-white/5'
-            }`}
-          >
-            <span className={activeTab === tab.id ? 'text-orange-400' : 'text-white/30'}>
+                ? 'border-orange-500 text-orange-400'
+                : 'border-transparent text-white/35 hover:text-white/60 hover:border-white/15'
+            }`}>
+            <span className={activeTab === tab.id ? 'text-orange-400' : 'text-white/25'}>
               {tab.icon}
             </span>
             {t(tab.labelKey)}

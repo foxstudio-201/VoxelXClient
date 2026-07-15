@@ -280,7 +280,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
         style={{
           bottom: 20,
           left: MINIMIZED_LEFT,
-          background: '#1a1a1a',
+          background: 'rgba(14,14,14,0.98)',
           border: `1px solid ${isError ? '#ef444455' : isDone ? '#f9731655' : theme.color + '55'}`,
           minWidth: 260,
           maxWidth: 340,
@@ -361,7 +361,7 @@ export default function ImportProfileModal({ onClose, onCreate, groups = [] }) {
     >
       <div
         className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ background: 'rgba(14,14,14,0.98)', border: '1px solid rgba(255,255,255,0.08)' }}
       >
         {}
         <div className="flex items-center justify-between px-5 pt-5 pb-4">

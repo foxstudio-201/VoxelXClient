@@ -69,6 +69,10 @@ function PlaceholderPage({ title }) {
 
 function AppInner() {
   const [activePage, setActivePage] = useState('home')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const handleNavigate = useCallback((page) => {
+    setActivePage(page)
+  }, [])
   const { selectedAccount, accounts, loading } = useAccounts()
 
   const [instances, setInstances] = useState(new Map())
@@ -325,7 +329,8 @@ function AppInner() {
         {}
         {activePage === 'home' && (
           <HomePage
-            onNavigate={setActivePage}
+            key="home"
+            onNavigate={handleNavigate}
             launchState={launchState}
             progress={progress}
             launchError={launchError}
@@ -338,8 +343,6 @@ function AppInner() {
         {activePage === 'play'     && <PlayPage />}
         {activePage === 'mods'     && <ModsPage />}
         {activePage === 'worlds'   && <ServerPage serverJavaProgress={serverJavaProgress} onServerJavaProgress={setServerJavaProgress} />}
-        {activePage === 'settings' && <SettingsPage />}
-
         {}
         <div
           style={{ display: activePage === 'account' ? 'flex' : 'none' }}
@@ -357,20 +360,24 @@ function AppInner() {
       <div className="flex flex-1 overflow-hidden mt-9 relative">
         <Sidebar
           activePage={activePage}
-          onNavigate={setActivePage}
+          onNavigate={handleNavigate}
           selectedAccount={selectedAccount}
+          settingsOpen={settingsOpen}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
         <main className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
           {renderPage()}
         </main>
         {showHint && (
-          <NoAccountHint onGoToAccount={() => setActivePage('account')} />
+          <NoAccountHint onGoToAccount={() => handleNavigate('account')} />
         )}
       </div>
       <CrashAnalyzerModal
         crashData={crashData}
         onClose={() => setCrashData(null)}
       />
+
+      {settingsOpen && <SettingsPage onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }
@@ -379,16 +386,15 @@ export default function App() {
   const toastState = useToastState()
   const [splashDone, setSplashDone] = useState(false)
   const [bgId, setBgId] = useState('dark')
+  const [customBgPath, setCustomBgPath] = useState('')
 
-  // Phát nhạc nền LIGHTS sau khi splash xong
-  // musicSettings được load trực tiếp trong hook qua event, không cần state ở đây
   useBgMusic(splashDone)
 
   useEffect(() => {
     loadAppSettings().then(s => {
       applyAppSettings(s)
       if (s?.background) setBgId(s.background)
-      // Thông báo cho hook nhạc biết settings ban đầu
+      if (s?.customBgPath) setCustomBgPath(s.customBgPath)
       window.dispatchEvent(new CustomEvent('vxc-music-init', {
         detail: {
           enabled: s?.musicEnabled !== false,
@@ -397,7 +403,14 @@ export default function App() {
       }))
     }).catch(() => {})
 
-    const bgHandler = (e) => setBgId(e.detail)
+    const bgHandler = (e) => {
+      setBgId(e.detail)
+      if (e.detail === 'custom' && e.customBgPath) {
+        setCustomBgPath(e.customBgPath)
+      } else if (e.detail !== 'custom') {
+        setCustomBgPath('')
+      }
+    }
     window.addEventListener('vxc-bg-change', bgHandler)
     return () => window.removeEventListener('vxc-bg-change', bgHandler)
   }, [])
@@ -422,7 +435,7 @@ export default function App() {
       <AccountsProvider>
         <ModpackInstallProvider>
           <ToastContext.Provider value={toastState}>
-            <AppBackground bgId={bgId} />
+            <AppBackground bgId={bgId} customBgPath={customBgPath} />
             {!splashDone && (
               <SplashScreen onDone={() => setSplashDone(true)} />
             )}

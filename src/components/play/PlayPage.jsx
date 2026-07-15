@@ -190,7 +190,7 @@ function GroupCard({ group, onOpen, onDelete, t }) {
 
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden border border-white/5 hover:border-white/10 bg-[#141414] transition-all duration-200 cursor-pointer group"
+      className="flex flex-col rounded-2xl overflow-hidden border border-white/5 hover:border-white/10 transition-all duration-200 cursor-pointer group" style={{ background: 'rgba(14,14,14,0.98)' }}
       onClick={() => onOpen(group.id)}
     >
       {}
@@ -272,7 +272,7 @@ function CreateGroupModal({ onClose, onCreate, t }) {
     >
       <div
         className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ background: 'rgba(14,14,14,0.98)', border: '1px solid rgba(255,255,255,0.08)' }}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-4">
           <h2 className="text-base font-bold text-white">{t ? t('playpage.modal.createGroupTitle') : 'Create new group'}</h2>
@@ -594,7 +594,7 @@ export default function PlayPage() {
               </svg>
             </button>
             {showDropdown && (
-              <div className="absolute right-0 top-full mt-1.5 w-44 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden z-50">
+              <div className="absolute right-0 top-full mt-1.5 w-44 border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden z-50" style={{ background: 'rgba(14,14,14,0.98)' }}>
                 <button
                   onClick={() => { setShowCreate(true); setShowDropdown(false) }}
                   className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-all"

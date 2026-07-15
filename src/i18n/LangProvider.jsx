@@ -1,33 +1,24 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { loadAppSettings, saveAppSettings } from '../utils/appSettings'
+import vi from '../locales/vi.json'
+import en from '../locales/en.json'
+import langList from '../locales/index.json'
 
 export const LangContext = createContext(null)
 
-const cache = {}
+const builtin = { vi, en }
+const cache = { ...builtin }
 
-async function fetchLang(code) {
+function fetchLang(code) {
   if (cache[code]) return cache[code]
-  try {
-    const res = await fetch(`./locales/${code}.json`)
-    if (!res.ok) return null
-    const data = await res.json()
-    cache[code] = data
-    return data
-  } catch {
-    return null
-  }
+  return null
 }
 
-async function fetchLangList() {
-  try {
-    const res = await fetch('./locales/index.json')
-    return (await res.json()).languages || []
-  } catch {
-    return [
-      { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
-      { code: 'en', name: 'English', flag: '🇬🇧' },
-    ]
-  }
+function fetchLangList() {
+  return langList.languages || [
+    { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+  ]
 }
 
 function getNestedValue(obj, keyPath) {
@@ -42,13 +33,13 @@ export function LangProvider({ children }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    fetchLangList().then(setLangs).catch(() => {})
+    setLangs(fetchLangList())
     loadAppSettings().then(s => {
       const code = s?.language || 'vi'
       setLangState(code)
-      fetchLang(code).then(data => {
-        if (data) setTranslations(data)
-      }).catch(() => {}).finally(() => setReady(true))
+      const data = fetchLang(code)
+      if (data) { setTranslations(data); setReady(true) }
+      else { console.warn(`[LangProvider] Không có translations cho: ${code}`); setReady(true) }
     }).catch(() => setReady(true))
   }, [])
 

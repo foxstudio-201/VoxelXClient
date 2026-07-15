@@ -11,7 +11,7 @@ const http  = require('http')
 const fs    = require('fs')
 const path  = require('path')
 
-const API_BASE = 'https://voxelx.io.vn/api/mods'
+const API_BASE = process.env.VXC_API_BASE ? `${process.env.VXC_API_BASE}/api/mods` : ''
 
 function httpsGetJson(url) {
   return new Promise((resolve, reject) => {
@@ -73,6 +73,8 @@ function downloadFile(url, destPath) {
  * @returns {Promise<string[]>}  
  */
 async function ensureVoxelXMods(gameVersion, instancePath, onProgress) {
+  if (!process.env.VXC_API_BASE) return []
+
   const vxcLibDir = path.join(instancePath, 'libraries', 'net', 'fabricmc', 'voxelx', gameVersion)
   if (!fs.existsSync(vxcLibDir)) fs.mkdirSync(vxcLibDir, { recursive: true })
 

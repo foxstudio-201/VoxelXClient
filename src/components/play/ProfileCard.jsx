@@ -122,7 +122,7 @@ export default function ProfileCard({ profile, isSelected, confirmDelete, onSele
 
   return (
     <>
-      <div className={`flex flex-col rounded-2xl overflow-hidden border transition-all duration-200 ${isSelected ? 'border-orange-500/40 shadow-lg shadow-orange-500/10' : 'border-white/5 hover:border-white/10'} bg-[#141414]`}>
+      <div className={`flex flex-col rounded-2xl overflow-hidden border transition-all duration-200 ${isSelected ? 'border-orange-500/40 shadow-lg shadow-orange-500/10' : 'border-white/5 hover:border-white/10'}`} style={{ background: 'rgba(14,14,14,0.98)' }}>
 
         <div className="relative h-28 overflow-hidden">
           <img src={bgImage} alt={profile.gameVersion} className="w-full h-full object-cover transition-transform duration-500 ease-out hover:scale-110" draggable={false} onError={e => { e.currentTarget.src = getVersionImage(profile.gameVersion) }} />
@@ -171,7 +171,7 @@ export default function ProfileCard({ profile, isSelected, confirmDelete, onSele
 
         <div className="relative px-3 py-2.5 flex gap-2 items-center justify-center">
           {confirmDelete && (
-            <div className="absolute inset-0 rounded-b-2xl bg-[#141414]/97 border-t border-red-500/20 flex items-center justify-center gap-2 px-3 z-10">
+            <div className="absolute inset-0 rounded-b-2xl border-t border-red-500/20 flex items-center justify-center gap-2 px-3 z-10" style={{ background: 'rgba(14,14,14,0.97)' }}>
               <span className="text-xs text-white/50 flex-1">{t ? t('playpage.card.deleteConfirm') : 'Delete this profile?'}</span>
               <button onClick={() => onDelete(profile.id)} className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition-all">
                 {t ? t('playpage.card.delete') : 'Delete'}
@@ -222,7 +222,7 @@ export default function ProfileCard({ profile, isSelected, confirmDelete, onSele
 
       {showLogs && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }} onClick={e => { if (e.target === e.currentTarget) setShowLogs(false) }}>
-          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl" style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'rgba(14,14,14,0.98)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/6">
               <div>
                 <h2 className="text-sm font-bold text-white">Lịch sử log</h2>

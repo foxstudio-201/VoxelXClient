@@ -99,7 +99,7 @@ function GridCard({ project, onClick }) {
             />
           </>
         ) : (
-          <div className="absolute inset-0 bg-[#111]" />
+          <div className="absolute inset-0" style={{ background: 'rgba(14,14,14,0.98)' }} />
         )}
       </div>
 

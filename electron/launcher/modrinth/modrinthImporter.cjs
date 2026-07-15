@@ -37,7 +37,16 @@ const fs     = require('fs')
 const path   = require('path')
 const zlib   = require('zlib')
 
-function readZipEntry(buf, entryName) {
+function inflateRawAsync(buf) {
+  return new Promise((resolve, reject) => {
+    zlib.inflateRaw(buf, (err, result) => {
+      if (err) reject(err)
+      else resolve(result)
+    })
+  })
+}
+
+async function readZipEntry(buf, entryName) {
   const view = new DataView(buf.buffer ?? buf)
   let eocdOffset = -1
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65558); i--) {
@@ -65,7 +74,7 @@ function readZipEntry(buf, entryName) {
       const dataOff = localOffset + 30 + lfnLen + lexLen
       const comp    = buf.slice(dataOff, dataOff + compSize)
       if (compMethod === 0) return comp
-      if (compMethod === 8) return zlib.inflateRawSync(comp)
+      if (compMethod === 8) return inflateRawAsync(comp)
       return null
     }
     pos += 46 + fnLen + extraLen + commentLen
@@ -73,7 +82,7 @@ function readZipEntry(buf, entryName) {
   return null
 }
 
-function iterZipEntries(buf, cb) {
+async function iterZipEntries(buf, cb) {
   let eocdOffset = -1
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65558); i--) {
     if (buf.readUInt32LE(i) === 0x06054b50) { eocdOffset = i; break }
@@ -94,26 +103,27 @@ function iterZipEntries(buf, cb) {
     const localOffset = buf.readUInt32LE(pos + 42)
     const fileName    = buf.slice(pos + 46, pos + 46 + fnLen).toString('utf8')
 
-    cb(fileName, () => {
+    await cb(fileName, async () => {
       const lfnLen  = buf.readUInt16LE(localOffset + 26)
       const lexLen  = buf.readUInt16LE(localOffset + 28)
       const dataOff = localOffset + 30 + lfnLen + lexLen
       const comp    = buf.slice(dataOff, dataOff + compSize)
       if (compMethod === 0) return comp
-      if (compMethod === 8) return zlib.inflateRawSync(comp)
+      if (compMethod === 8) return inflateRawAsync(comp)
       return null
     })
     pos += 46 + fnLen + extraLen + commentLen
+    if (i % 10 === 0) await new Promise(r => setImmediate(r))
   }
 }
 
-function downloadFile(url, destPath) {
+async function downloadFile(url, destPath) {
+  const dir     = path.dirname(destPath)
+  await fs.promises.mkdir(dir, { recursive: true })
+  const tmpPath = destPath + '.tmp'
+
   return new Promise((resolve, reject) => {
     const client  = url.startsWith('https') ? https : http
-    const dir     = path.dirname(destPath)
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    const tmpPath = destPath + '.tmp'
-
     const req = client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         return downloadFile(res.headers.location, destPath).then(resolve).catch(reject)
@@ -124,15 +134,15 @@ function downloadFile(url, destPath) {
       }
       const out = fs.createWriteStream(tmpPath)
       res.pipe(out)
-      out.on('finish', () => {
-        try { fs.renameSync(tmpPath, destPath) } catch {
-          fs.copyFileSync(tmpPath, destPath)
-          try { fs.unlinkSync(tmpPath) } catch {}
+      out.on('finish', async () => {
+        try { await fs.promises.rename(tmpPath, destPath) } catch {
+          await fs.promises.copyFile(tmpPath, destPath).catch(() => {})
+          await fs.promises.unlink(tmpPath).catch(() => {})
         }
         resolve()
       })
-      out.on('error', err => { try { fs.unlinkSync(tmpPath) } catch {}; reject(err) })
-      res.on('error',  err => { try { fs.unlinkSync(tmpPath) } catch {}; reject(err) })
+      out.on('error', async err => { await fs.promises.unlink(tmpPath).catch(() => {}); reject(err) })
+      res.on('error',  async err => { await fs.promises.unlink(tmpPath).catch(() => {}); reject(err) })
     })
     req.on('error', reject)
   })
@@ -141,9 +151,9 @@ function downloadFile(url, destPath) {
 async function importModrinthPack(mrpackPath, instancePath, onProgress) {
   onProgress?.({ phase: 'read', log: 'Đọc file modpack...', percent: 2 })
 
-  const buf = fs.readFileSync(mrpackPath)
+  const buf = await fs.promises.readFile(mrpackPath)
 
-  const indexData = readZipEntry(buf, 'modrinth.index.json')
+  const indexData = await readZipEntry(buf, 'modrinth.index.json')
   if (!indexData) throw new Error('modrinth.index.json không tìm thấy trong file')
 
   const index = JSON.parse(indexData.toString('utf8'))
@@ -161,37 +171,42 @@ async function importModrinthPack(mrpackPath, instancePath, onProgress) {
   )
   const total = files.length
 
-  onProgress?.({ phase: 'mods', log: `Tải ${total} mods...`, done: 0, total, percent: 5 })
+  onProgress?.({ phase: 'mods', log: `Bắt đầu tải ${total} mods...`, done: 0, total, percent: 5 })
 
   let done = 0
   for (const file of files) {
     done++
     const destPath = path.join(instancePath, file.path)
-    const pct = 5 + Math.round((done / total) * 80)
+    const pct = 5 + Math.round((done / total) * 75)
 
-    if (fs.existsSync(destPath)) {
+    const exists = await fs.promises.access(destPath).then(() => true).catch(() => false)
+    if (exists) {
       onProgress?.({ phase: 'mods', log: `[${done}/${total}] Đã có: ${path.basename(file.path)}`, done, total, percent: pct })
+      if (done % 3 === 0) await new Promise(r => setImmediate(r))
       continue
     }
 
     const url = file.downloads?.[0]
     if (!url) {
       onProgress?.({ phase: 'mods', log: `[${done}/${total}] Bỏ qua (không có URL): ${file.path}`, done, total, percent: pct })
+      if (done % 3 === 0) await new Promise(r => setImmediate(r))
       continue
     }
 
-    onProgress?.({ phase: 'mods', log: `[${done}/${total}] Tải: ${path.basename(file.path)}`, done, total, percent: pct })
+    onProgress?.({ phase: 'mods', log: `[${done}/${total}] Đang tải: ${path.basename(file.path)}`, done, total, percent: pct })
     try {
       await downloadFile(url, destPath)
     } catch (err) {
       onProgress?.({ phase: 'mods', log: `[WARN] Lỗi tải ${path.basename(file.path)}: ${err.message}`, done, total, percent: pct })
     }
+
+    if (done % 3 === 0) await new Promise(r => setImmediate(r))
   }
 
-  onProgress?.({ phase: 'overrides', log: 'Giải nén overrides...', percent: 87 })
+  onProgress?.({ phase: 'overrides', log: 'Giải nén overrides...', percent: 83 })
 
   const overridePrefixes = ['overrides/', 'client-overrides/']
-  iterZipEntries(buf, (fileName, getData) => {
+  await iterZipEntries(buf, async (fileName, getData) => {
     const prefix = overridePrefixes.find(p => fileName.startsWith(p))
     if (!prefix || fileName.endsWith('/')) return
 
@@ -200,9 +215,9 @@ async function importModrinthPack(mrpackPath, instancePath, onProgress) {
     const destDir  = path.dirname(destPath)
 
     try {
-      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
-      const data = getData()
-      if (data) fs.writeFileSync(destPath, data)
+      await fs.promises.mkdir(destDir, { recursive: true })
+      const data = await getData()
+      if (data) await fs.promises.writeFile(destPath, data)
     } catch {}
   })
 
@@ -212,4 +227,3 @@ async function importModrinthPack(mrpackPath, instancePath, onProgress) {
 }
 
 module.exports = { importModrinthPack }
-

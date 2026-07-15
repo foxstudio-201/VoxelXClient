@@ -41,10 +41,8 @@ let intentionalDisconnect = false
 const DEFAULT_ACTIVITY = {
   details:      'Martian Launcher',
   state:        'Đang ở menu chính',
-  largeImageKey:  'logo',
+  largeImageKey:  'voxelx_logo',
   largeImageText: 'Martian Launcher',
-  smallImageKey:  'logo',
-  smallImageText: 'Martian Launcher',
   instance: false,
 }
 
@@ -124,9 +122,11 @@ const PRESETS = {
     details: `Đang khởi chạy Minecraft ${version}`,
     state:   'Chuẩn bị vào game...',
   }),
-  playing: (version, username) => setActivity({
+  playing: (version, profileName, username) => setActivity({
     details: `Đang chơi Minecraft ${version}`,
-    state:   username ? `Tài khoản: ${username}` : 'Đang chơi',
+    state:   profileName ? `${profileName} · ${username}` : (username || 'Đang chơi'),
+    largeImageKey: 'voxelx_logo',
+    largeImageText: profileName || 'Martian Launcher',
   }),
 }
 

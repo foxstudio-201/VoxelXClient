@@ -30,18 +30,25 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import LauncherTab from './tabs/LauncherTab'
-import PrivacyTab  from './tabs/PrivacyTab'
-import AboutTab    from './tabs/AboutTab'
+import LauncherTab    from './tabs/LauncherTab'
+import PrivacyTab     from './tabs/PrivacyTab'
+import AboutTab       from './tabs/AboutTab'
+import AppearanceTab  from './tabs/AppearanceTab'
 import { DEFAULT_SETTINGS, sanitizeSettings, loadAppSettings, saveAppSettings, applyAppSettings } from '../../utils/appSettings'
 import { useLang } from '../../i18n/LangProvider'
 
-export default function SettingsPage() {
+export default function SettingsPage({ onClose }) {
   const [activeTab, setActiveTab] = useState('launcher')
   const [settings, setSettings]  = useState(DEFAULT_SETTINGS)
   const [loaded, setLoaded]      = useState(false)
   const saveTimerRef             = useRef(null)
   const { t } = useLang()
+
+  useEffect(() => {
+    function handleKey(e) { if (e.key === 'Escape') onClose?.() }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [onClose])
 
   const TABS = [
     {
@@ -71,15 +78,28 @@ export default function SettingsPage() {
         </svg>
       ),
     },
+    {
+      id: 'appearance',
+      label: t('settings.tabs.appearance'),
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+          <path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10zm1-17.93c3.94.49 7 3.85 7 7.93 0 .62-.08 1.21-.21 1.79L13 8V4.07zM11 4.07V10l-6.79 3.79c-.13-.58-.21-1.17-.21-1.79 0-4.08 3.06-7.44 7-7.93zM4.21 15.21L11 11.33v6.6c-2.99-.49-5.36-2.66-6.21-5.46.02-.16.04-.31.04-.47.01-.33.04-.65.1-.96.02-.11.04-.22.07-.33l-.79.54v-.02zm8.79 2.72V13.4l6.79 3.79-.02.01c-1.14 1.82-3.08 3.11-5.34 3.48l-1.43-2.11v-.64z"/>
+        </svg>
+      ),
+    },
   ]
 
   useEffect(() => {
     loadAppSettings().then(s => {
       setSettings(s)
       setLoaded(true)
-      applyAppSettings(s)
     })
   }, [])
+
+  useEffect(() => {
+    if (!loaded) return
+    applyAppSettings(settings)
+  }, [settings, loaded])
 
   useEffect(() => {
     if (!loaded) return
@@ -91,58 +111,55 @@ export default function SettingsPage() {
   }, [settings, loaded])
 
   const handleChange = useCallback((patch) => {
-    setSettings(prev => {
-      const next = sanitizeSettings({ ...prev, ...patch })
-      applyAppSettings(next)
-      return next
-    })
+    setSettings(prev => sanitizeSettings({ ...prev, ...patch }))
   }, [])
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-
-      {}
-      <div className="flex-shrink-0 px-6 pt-6 pb-0">
-        <div className="mb-4">
-          <h1 className="text-lg font-bold text-white">{t('settings.title')}</h1>
-          <p className="text-xs text-white/30 mt-0.5">{t('settings.subtitle')}</p>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}>
+      <div className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh] animate-modal-in"
+        style={{ background: 'rgba(14,14,14,0.98)' }}>
+        <div className="flex flex-col min-h-0 flex-1">
+          <div className="flex-shrink-0 px-6 pt-6 pb-0">
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h1 className="text-lg font-bold text-white">{t('settings.title')}</h1>
+                <p className="text-xs text-white/30 mt-0.5">{t('settings.subtitle')}</p>
+              </div>
+              {onClose && (
+                <button onClick={onClose} className="p-1.5 rounded-lg text-white/30 hover:text-white/70 hover:bg-white/5 transition-all">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+            <div className="flex gap-1 border-b border-white/5">
+              {TABS.map(tab => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center gap-2 px-4 py-2.5 text-xs font-semibold
+                    border-b-2 transition-all duration-150 -mb-px
+                    ${activeTab === tab.id
+                      ? 'border-orange-500 text-orange-400'
+                      : 'border-transparent text-white/35 hover:text-white/60 hover:border-white/15'
+                    }
+                  `}>
+                  <span className={activeTab === tab.id ? 'text-orange-400' : 'text-white/25'}>
+                    {tab.icon}
+                  </span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {activeTab === 'launcher' && <LauncherTab settings={settings} onChange={handleChange} />}
+            {activeTab === 'privacy' && <PrivacyTab settings={settings} onChange={handleChange} />}
+            {activeTab === 'about' && <AboutTab settings={settings} onChange={handleChange} />}
+            {activeTab === 'appearance' && <AppearanceTab settings={settings} onChange={handleChange} />}
+          </div>
         </div>
-
-        {}
-        <div className="flex gap-1 border-b border-white/5">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex items-center gap-2 px-4 py-2.5 text-xs font-semibold
-                border-b-2 transition-all duration-150 -mb-px
-                ${activeTab === tab.id
-                  ? 'border-orange-500 text-orange-400'
-                  : 'border-transparent text-white/35 hover:text-white/60 hover:border-white/15'
-                }
-              `}
-            >
-              <span className={activeTab === tab.id ? 'text-orange-400' : 'text-white/25'}>
-                {tab.icon}
-              </span>
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === 'launcher' && (
-          <LauncherTab settings={settings} onChange={handleChange} />
-        )}
-        {activeTab === 'privacy' && (
-          <PrivacyTab settings={settings} onChange={handleChange} />
-        )}
-        {activeTab === 'about' && (
-          <AboutTab />
-        )}
       </div>
     </div>
   )

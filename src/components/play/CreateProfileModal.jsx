@@ -708,8 +708,8 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
     >
       {}
       <div
-        className="bg-[#141414] rounded-2xl border border-white/5 shadow-2xl flex overflow-hidden"
-        style={{ width: 1100, maxHeight: '92vh' }}
+        className="rounded-2xl border border-white/5 shadow-2xl flex overflow-hidden"
+        style={{ width: 1100, maxHeight: '92vh', background: 'rgba(14,14,14,0.98)' }}
         onClick={e => e.stopPropagation()}
       >
         {}

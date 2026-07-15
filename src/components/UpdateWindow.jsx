@@ -175,7 +175,7 @@ export default function UpdateWindow() {
   }
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-[#0f0f0f] overflow-hidden select-none">
+    <div className="w-screen h-screen flex flex-col overflow-hidden select-none" style={{ background: 'rgba(14,14,14,0.98)' }}>
       {}
       <div className="drag-region flex items-center justify-between h-9 px-4 bg-black/40 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-2 no-drag">

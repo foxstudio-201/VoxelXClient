@@ -501,36 +501,36 @@ function ModFixItem({ missingMod, gameVersion, loader, instancePath, accountId, 
                 }`}
               >
                 {classified.compatible.length > 0 && (
-                  <optgroup label={`✓ Compatible — ${gameVersion} + ${loader}`} style={{ background: '#141414' }}>
+                  <optgroup label={`✓ Compatible — ${gameVersion} + ${loader}`} style={{ background: 'rgba(14,14,14,0.98)' }}>
                     {classified.compatible.map(v => (
-                      <option key={v.id} value={v.id} className="bg-[#141414]">
+                      <option key={v.id} value={v.id} style={{ background: 'rgba(14,14,14,0.98)' }}>
                         {versionOptionLabel(v, gameVersion, loader)}
                       </option>
                     ))}
                   </optgroup>
                 )}
                 {classified.gameOnly.length > 0 && (
-                  <optgroup label={`~ MC ${gameVersion} only`} style={{ background: '#141414' }}>
+                  <optgroup label={`~ MC ${gameVersion} only`} style={{ background: 'rgba(14,14,14,0.98)' }}>
                     {classified.gameOnly.map(v => (
-                      <option key={v.id} value={v.id} className="bg-[#141414]">
+                      <option key={v.id} value={v.id} style={{ background: 'rgba(14,14,14,0.98)' }}>
                         {versionOptionLabel(v, gameVersion, loader)}
                       </option>
                     ))}
                   </optgroup>
                 )}
                 {classified.loaderOnly.length > 0 && (
-                  <optgroup label={`~ ${loader} loader only (other MC versions)`} style={{ background: '#141414' }}>
+                  <optgroup label={`~ ${loader} loader only (other MC versions)`} style={{ background: 'rgba(14,14,14,0.98)' }}>
                     {classified.loaderOnly.slice(0, 5).map(v => (
-                      <option key={v.id} value={v.id} className="bg-[#141414]">
+                      <option key={v.id} value={v.id} style={{ background: 'rgba(14,14,14,0.98)' }}>
                         {versionOptionLabel(v, gameVersion, loader)}
                       </option>
                     ))}
                   </optgroup>
                 )}
                 {noCompatible && classified.incompatible.length > 0 && (
-                  <optgroup label="✗ Không tương thích (other versions)" style={{ background: '#141414' }}>
+                  <optgroup label="✗ Không tương thích (other versions)" style={{ background: 'rgba(14,14,14,0.98)' }}>
                     {classified.incompatible.slice(0, 5).map(v => (
-                      <option key={v.id} value={v.id} className="bg-[#141414]">
+                      <option key={v.id} value={v.id} style={{ background: 'rgba(14,14,14,0.98)' }}>
                         {versionOptionLabel(v, gameVersion, loader)}
                       </option>
                     ))}
@@ -829,7 +829,7 @@ export default function CrashAnalyzerModal({ crashData, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div
-        className="bg-[#0f0f0f] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col"
+        className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ background: 'rgba(14,14,14,0.98)' }}
         style={{ maxHeight: '90vh' }}
       >
         {/* Header */}

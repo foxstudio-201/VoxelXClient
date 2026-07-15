@@ -114,14 +114,6 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
   const [msState, setMsState] = useState('idle')
   const [msAccount, setMsAccount] = useState(null)
 
-  // OTP flow
-  const [otpState, setOtpState] = useState('idle') // 'idle' | 'sending' | 'waiting' | 'verifying'
-  const [otpCode, setOtpCode] = useState('')
-  const [otpPendingName, setOtpPendingName] = useState('')
-  const [otpError, setOtpError] = useState('')
-
-  const WEB_API = 'https://www.voxelx.io.vn/api/auth'
-
   const [discordState, setDiscordState] = useState('idle')
   const [discordProfile, setDiscordProfile] = useState(null)
   const [discordPlayerName, setDiscordPlayerName] = useState('')
@@ -154,37 +146,6 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
       return
     }
 
-    // Kiểm tra xem tên này có trên web và có email không
-    try {
-      const lookupRes = await fetch(`${WEB_API}?action=lookup&username=${encodeURIComponent(name)}`)
-      if (lookupRes.ok) {
-        const data = await lookupRes.json()
-        // Tài khoản có trên web và có email thực (không phải app_account)
-        if (data.ok && data.uuid && !data.email?.includes('@offline.local')) {
-          // Gửi OTP về mail
-          setOtpPendingName(name)
-          setOtpState('sending')
-          setLoading(false)
-          const otpRes = await fetch(`${WEB_API}?action=send-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uuid: data.uuid }),
-          })
-          const otpData = await otpRes.json()
-          if (otpRes.ok) {
-            setOtpState('waiting')
-          } else {
-            // Không gửi được OTP (chưa verify email, v.v.) → cho đăng nhập bình thường
-            setOtpState('idle')
-            await doAddAccount(name)
-          }
-          return
-        }
-      }
-    } catch {
-      // Lỗi mạng → cho đăng nhập bình thường
-    }
-
     await doAddAccount(name)
   }
 
@@ -197,37 +158,6 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
       return
     }
     onClose()
-  }
-
-  async function handleOtpSubmit(e) {
-    e.preventDefault()
-    setOtpError('')
-    setOtpState('verifying')
-
-    try {
-      // Lấy UUID từ lookup
-      const lookupRes = await fetch(`${WEB_API}?action=lookup&username=${encodeURIComponent(otpPendingName)}`)
-      const lookupData = await lookupRes.json()
-      if (!lookupData.ok) throw new Error('Không tìm thấy tài khoản')
-
-      const verifyRes = await fetch(`${WEB_API}?action=verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: lookupData.uuid, otp: otpCode }),
-      })
-      const verifyData = await verifyRes.json()
-      if (!verifyRes.ok) throw new Error(verifyData.error || 'Mã OTP không đúng')
-
-      // OTP đúng → lưu web token và thêm tài khoản
-      if (verifyData.token) {
-        try { localStorage.setItem('vxc_auth_token', verifyData.token) } catch {}
-      }
-      setOtpState('idle')
-      await doAddAccount(otpPendingName)
-    } catch (err) {
-      setOtpError(err.message)
-      setOtpState('waiting')
-    }
   }
 
   async function startMsLogin() {
@@ -359,7 +289,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-[460px] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-[460px] border border-white/10 rounded-2xl shadow-2xl overflow-hidden" style={{ background: 'rgba(14,14,14,0.98)' }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
           <h2 className="text-base font-bold text-white">{t('account.addModal.title')}</h2>
           <button
@@ -391,56 +321,6 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
 
         <div className="px-6 py-5 flex flex-col gap-4">
           {tab === 'offline' && (
-            <>
-            {/* OTP verification screen */}
-            {(otpState === 'sending' || otpState === 'waiting' || otpState === 'verifying') ? (
-              <div className="flex flex-col gap-4">
-                {otpState === 'sending' ? (
-                  <div className="flex flex-col items-center gap-4 py-6">
-                    <svg className="animate-spin w-7 h-7 text-orange-400" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
-                    <p className="text-sm text-white/60">Đang gửi mã xác nhận...</p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleOtpSubmit} className="flex flex-col gap-4">
-                    <div className="flex flex-col items-center gap-3 py-2">
-                      <div className="w-12 h-12 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-orange-400">
-                          <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                        </svg>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-white/80">Xác nhận đăng nhập</p>
-                        <p className="text-xs text-white/35 mt-1 leading-relaxed">
-                          Mã OTP đã được gửi về email liên kết với tài khoản <strong className="text-white/60">{otpPendingName}</strong>
-                        </p>
-                      </div>
-                    </div>
-
-                    <TextField
-                      label="Mã OTP (6 chữ số)"
-                      value={otpCode}
-                      onChange={setOtpCode}
-                      placeholder="000000"
-                      autoFocus
-                    />
-
-                    {otpError && <ErrorBanner message={otpError} />}
-
-                    <div className="flex gap-2">
-                      <SecondaryButton type="button" onClick={() => { setOtpState('idle'); setOtpCode(''); setOtpError('') }}>
-                        Huỷ
-                      </SecondaryButton>
-                      <PrimaryButton type="submit" disabled={otpState === 'verifying' || otpCode.length < 6}>
-                        {otpState === 'verifying' ? 'Đang xác nhận...' : 'Xác nhận'}
-                      </PrimaryButton>
-                    </div>
-                  </form>
-                )}
-              </div>
-            ) : (
             <form onSubmit={handleOfflineSubmit} className="flex flex-col gap-4">
               <TextField
                 label={t('account.addModal.usernameLabel')}
@@ -457,7 +337,7 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                 type="offline"
                 uuid={offlinePreviewUuid}
                 username={username.trim() || t('account.addModal.noNameYet')}
-                subtitle={`Offline · ${offlinePreviewUuid || '—'}`}
+                subtitle={`Offline \u00b7 ${offlinePreviewUuid || '\u2014'}`}
               />
 
               {error && <ErrorBanner message={error} />}
@@ -469,8 +349,6 @@ export default function AddAccountModal({ onClose, onAdd, onLinkDiscord, existin
                 </PrimaryButton>
               </div>
             </form>
-            )}
-            </>
           )}
 
           {tab === 'online' && (

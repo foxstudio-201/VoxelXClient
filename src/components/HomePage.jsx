@@ -49,7 +49,6 @@ import v119 from '../assets/minecraft-versions/1.19.png'
 import v120 from '../assets/minecraft-versions/1.20.png'
 import v121 from '../assets/minecraft-versions/1.21.png'
 import { useLang } from '../i18n/LangProvider'
-import FriendsPanel from './friends/FriendsPanel'
 import ModsTab from './home/tab/ModsTab'
 import WorldsTab from './home/tab/WorldsTab'
 import ShadersTab from './home/tab/ShadersTab'
@@ -409,19 +408,23 @@ function ProfileContentPanel({ profile, accountId, onLaunch }) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-shrink-0 flex items-center gap-0.5 px-4 py-2 border-b border-white/5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-        {tabs.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
-              activeTab === tab.id ? 'bg-white/10 text-white/90' : 'text-white/35 hover:text-white/65 hover:bg-white/5'
-            }`}>
-            <span className={activeTab === tab.id ? 'text-orange-400' : 'text-white/30'}>{tab.icon}</span>
-            {t(tab.labelKey)}
-          </button>
-        ))}
-      </div>
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-        {TabComponent && <TabComponent profile={profile} accountId={accountId} onLaunch={onLaunch} />}
+      <div className="flex-1 overflow-hidden rounded-xl border border-white/5 flex flex-col min-h-0">
+        <div className="flex-shrink-0 flex gap-1 px-4 border-b border-white/5">
+          {tabs.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all duration-150 -mb-px ${
+                activeTab === tab.id
+                  ? 'border-orange-500 text-orange-400'
+                  : 'border-transparent text-white/35 hover:text-white/60 hover:border-white/15'
+              }`}>
+              <span className={activeTab === tab.id ? 'text-orange-400' : 'text-white/25'}>{tab.icon}</span>
+              {t(tab.labelKey)}
+            </button>
+          ))}
+        </div>
+        <div className="flex-1 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
+          {TabComponent && <TabComponent profile={profile} accountId={accountId} onLaunch={onLaunch} />}
+        </div>
       </div>
     </div>
   )
@@ -514,8 +517,9 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     if (!isElectron) return
     await window.electronAPI.selectProfile(id)
     const data = await window.electronAPI.getProfiles()
-    setProfiles(data.profiles || [])
+    const profiles = data.profiles || []
     const profile = data.profiles?.find(p => p.id === data.selectedProfileId) ?? null
+    setProfiles(profiles)
     setSelectedProfile(profile)
     setProfileDropOpen(false)
     if (profile) {
@@ -531,16 +535,17 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         const data = isElectron
           ? await window.electronAPI.getProfiles()
           : JSON.parse(localStorage.getItem('vxc_profiles') || '{"profiles":[],"selectedProfileId":null}')
-        setProfiles(data.profiles || [])
+        const profiles = data.profiles || []
         const profile = data.profiles?.find(p => p.id === data.selectedProfileId) ?? null
-        setSelectedProfile(profile)
-
-        setRam(profile?.ramGb ?? 4)
-
+        const ram = profile?.ramGb ?? 4
+        let stats = null
         if (profile && isElectron) {
-          const stats = await window.electronAPI.getProfileStats({ profileId: profile.id })
-          setProfileStats(stats)
+          stats = await window.electronAPI.getProfileStats({ profileId: profile.id })
         }
+        setProfiles(profiles)
+        setSelectedProfile(profile)
+        setRam(ram)
+        setProfileStats(stats)
       } catch {
         setSelectedProfile(null)
       }
@@ -586,7 +591,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
       <PatchNotesModal patchNotes={patchNotesModal} onClose={() => setPatchNotesModal(null)} />
 
       {/* ── Launch Panel ── */}
-      <div className="flex-shrink-0 border-b border-white/5 bg-black/20 p-4">
+      <div className="flex-shrink-0 border-b border-white/5 p-4">
         <div className="flex gap-4 items-stretch">
           {/* Bên trái: Profile card + Play overlay */}
           <div className="flex-1 min-w-0">
@@ -699,34 +704,29 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         </div>
       </div>
 
-      {}
-      <div className="flex flex-1 overflow-hidden gap-0">
-        {}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-hidden relative">
-            <div className="absolute inset-0 overflow-y-auto" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-              <ProfileContentPanel profile={selectedProfile} accountId={selectedAccount?.id} onLaunch={onLaunch} />
+      <div className="flex-1 overflow-hidden relative">
+        <div className="absolute inset-0 overflow-y-auto p-3" style={{ scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
+          <ProfileContentPanel profile={selectedProfile} accountId={selectedAccount?.id} onLaunch={onLaunch} />
+        </div>
+        {profileSettingsOpen && selectedProfile && (
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setProfileSettingsOpen(false) }}
+          >
+            <div className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh] animate-modal-in"
+              style={{ background: 'rgba(14,14,14,0.98)' }}>
+              <ProfileSettingsPanel
+                profile={selectedProfile}
+                accountId={selectedAccount?.id}
+                onClose={() => setProfileSettingsOpen(false)}
+                onProfileUpdated={(p) => {
+                  setProfiles(prev => prev.map(pr => pr.id === p.id ? p : pr))
+                  setSelectedProfile(p)
+                }}
+              />
             </div>
-            {profileSettingsOpen && selectedProfile && (
-              <div className="absolute inset-0 z-10 bg-[#0f0f0f]">
-                <ProfileSettingsPanel
-                  profile={selectedProfile}
-                  accountId={selectedAccount?.id}
-                  onClose={() => setProfileSettingsOpen(false)}
-                  onProfileUpdated={(p) => {
-                    setProfiles(prev => prev.map(pr => pr.id === p.id ? p : pr))
-                    setSelectedProfile(p)
-                  }}
-                />
-              </div>
-            )}
           </div>
-        </div>
-
-        {}
-        <div className="w-80 flex-shrink-0 border-l border-white/5 bg-black/20 flex flex-col overflow-hidden">
-          <FriendsPanel />
-        </div>
+        )}
       </div>
     </div>
   )

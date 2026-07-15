@@ -164,7 +164,7 @@ export default function PrivacyTab({ settings, onChange }) {
   const bothAgreed = agreedTos && agreedPrivacy
 
   return (
-    <div className="h-full overflow-y-auto px-6 py-5">
+    <div className="px-6 py-5">
 
       <PolicySection
         title={t('settings.privacy.tos')}

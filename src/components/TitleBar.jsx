@@ -29,14 +29,13 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccounts } from '../hooks/useAccounts'
 import PlayerHead from './ui/PlayerHead'
 import coinIcon from '../assets/item/coin.png'
 import martianIcon from '../assets/martian-icon.png'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
-const FRIENDS_API = 'https://www.voxelx.io.vn/api/friends'
 
 function InstanceModal({ instances, onKill, onClose }) {
   const runningInstances = instances.filter(i => i.state === 'running' || i.state === 'downloading')
@@ -146,31 +145,6 @@ export default function TitleBar({ instances = [], onKillInstance }) {
   const { selectedAccount } = useAccounts()
   const myUuid = selectedAccount?.uuid
 
-  // Load pending friend requests
-  const loadPending = useCallback(async () => {
-    if (!myUuid) return
-    try {
-      const r = await fetch(`${FRIENDS_API}?action=pending&uuid=${myUuid}`).then(r => r.json())
-      if (r.ok) setPending(r.pending || [])
-    } catch {}
-  }, [myUuid])
-
-  // Load coins
-  const loadCoins = useCallback(async () => {
-    if (!myUuid) return
-    try {
-      const r = await fetch(`${FRIENDS_API}?action=get-coins&uuid=${myUuid}`).then(r => r.json())
-      if (r.ok) setCoins(r.coins ?? 0)
-    } catch {}
-  }, [myUuid])
-
-  useEffect(() => { loadPending(); loadCoins() }, [loadPending, loadCoins])
-  useEffect(() => {
-    if (!myUuid) return
-    const iv = setInterval(() => { loadPending(); loadCoins() }, 15000)
-    return () => clearInterval(iv)
-  }, [myUuid, loadPending, loadCoins])
-
   // Close notif on outside click
   useEffect(() => {
     function handleClick(e) {
@@ -180,12 +154,10 @@ export default function TitleBar({ instances = [], onKillInstance }) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [notifOpen])
 
-  async function handleAccept(fromUuid) {
-    await fetch(`${FRIENDS_API}?action=accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uuid: myUuid, fromUuid }) })
+  function handleAccept(fromUuid) {
     setPending(p => p.filter(r => r.fromUuid !== fromUuid))
   }
-  async function handleReject(fromUuid) {
-    await fetch(`${FRIENDS_API}?action=reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uuid: myUuid, fromUuid }) })
+  function handleReject(fromUuid) {
     setPending(p => p.filter(r => r.fromUuid !== fromUuid))
   }
 
@@ -197,7 +169,7 @@ export default function TitleBar({ instances = [], onKillInstance }) {
 
   return (
     <>
-      <div className="drag-region flex items-center justify-between h-9 px-4 bg-black/40 backdrop-blur-sm border-b border-white/5 absolute top-0 left-0 right-0 z-50">
+      <div className="drag-region flex items-center justify-between h-9 px-4 absolute top-0 left-0 right-0 z-50">
         {}
         <div className="flex items-center gap-2 no-drag">
           <img src={martianIcon} alt="Martian" className="w-5 h-5" />

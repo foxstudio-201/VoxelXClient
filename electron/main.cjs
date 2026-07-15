@@ -29,9 +29,10 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell, protocol, net } = require('electron')
 const path = require('path')
 const fs   = require('fs')
+const { Readable } = require('stream')
 const rpc  = require('./discordRPC.cjs')
 const { getHwid, getHwidFormatted } = require('./hwid.cjs')
 const { startDiscordLink } = require('./discordAuth.cjs')
@@ -43,7 +44,7 @@ const { loginWithWindow, refreshMinecraftToken } = require('./msAuth.cjs')
 const { registerLanHandlers, setLanWindowRef } = require('./lanScanner.cjs')
 const { openLanWindow, registerLanWindowHandlers, injectSetLanWindowRef } = require('./lanWindow.cjs')
 const { registerVxLanHandlers } = require('./wireguard.cjs')
-const { startHeartbeat, setPlayingState } = require('./heartbeat.cjs')
+
 
 injectSetLanWindowRef(setLanWindowRef)
 
@@ -280,6 +281,7 @@ const DEFAULT_SETTINGS = {
   colorHover:           '#86efac',
   colorActive:          '#22c55e',
   background:           'dark',
+  customBgPath:         '',
   borderRadius:         12,
   borderColor:          'rgba(255,255,255,0.08)',
   agreedTos:            false,
@@ -491,7 +493,38 @@ function createTray() {
   }
 }
 
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'vxc-bg', privileges: { standard: true, secure: true, supportFetchAPI: true, bypassCSP: true, corsEnabled: true, stream: true } }
+])
+
 app.whenReady().then(() => {
+
+  ipcMain.handle('bg:readFile', async (e, filePath) => {
+    try {
+      const data = await fs.promises.readFile(filePath)
+      return { data: new Uint8Array(data.buffer, data.byteOffset, data.byteLength), ext: path.extname(filePath) }
+    } catch { return null }
+  })
+
+  protocol.handle('vxc-bg', async (request) => {
+    const u = new URL(request.url)
+    const filePath = decodeURIComponent(u.searchParams.get('path'))
+    const MIME = {
+      '.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg',
+      '.webp':'image/webp','.bmp':'image/bmp','.gif':'image/gif',
+      '.mp4':'video/mp4','.webm':'video/webm','.mov':'video/quicktime',
+      '.avi':'video/x-msvideo',
+    }
+    try {
+      const ext = path.extname(filePath).toLowerCase()
+      const cType = MIME[ext] || 'application/octet-stream'
+      const stream = fs.createReadStream(filePath)
+      return new Response(Readable.toWeb(stream), {
+        status: 200,
+        headers: { 'Content-Type': cType, 'Access-Control-Allow-Origin': '*' }
+      })
+    } catch { return new Response(null, { status: 404 }) }
+  })
 
   try {
     const os = require('os')
@@ -531,7 +564,7 @@ app.whenReady().then(() => {
           "font-src 'self' data:;" +
           "img-src 'self' data: blob: https:;" +
           "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://youtube-nocookie.com https://youtube.com;" +
-          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://maven.minecraftforge.net https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://voxelx.io.vn https://www.voxelx.io.vn https://foxstudio.site;"
+          "connect-src 'self' blob: http://localhost:5173 ws://localhost:5173 https://minotar.net https://crafthead.net https://mc-heads.net https://meta.fabricmc.net https://maven.fabricmc.net https://api.modrinth.com https://cdn.modrinth.com https://files.minecraftforge.net https://repo1.maven.org https://maven.neoforged.net https://api.foxstudio.site https://api.github.com https://github.com https://raw.githubusercontent.com https://voxelx.io.vn https://www.voxelx.io.vn https://foxstudio.site;"
         ],
       },
     })
@@ -571,10 +604,9 @@ app.whenReady().then(() => {
     globalShortcut.unregisterAll()
   })
   const initSettings = readSettings()
-  if (initSettings.discordRPC) rpc.connect()
+  if (initSettings.discordRPC) { rpc.connect(); rpc.PRESETS.menu() }
 
-  // Bắt đầu gửi online status
-  startHeartbeat()
+
 
   app.on('activate', () => {
     if (!mainWindow) createMainWindow(); else mainWindow.show()
@@ -1459,12 +1491,13 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
 
   const path = require('path')
   const fs   = require('fs')
+  const { fork } = require('child_process')
 
   if (!filePath || !fs.existsSync(filePath)) return { error: 'File không tồn tại' }
   if (!['curseforge', 'modrinth'].includes(source)) return { error: 'Source không hợp lệ' }
 
   const DATA_DIR_IMPORT = path.join(require('electron').app.getPath('appData'), '.VoxelXClient')
-  const PROFILES_FILE_IMPORT = require('path').join(DATA_DIR_IMPORT, 'profiles.json')
+  const PROFILES_FILE_IMPORT = path.join(DATA_DIR_IMPORT, 'profiles.json')
   let profilesData
   try { profilesData = JSON.parse(fs.readFileSync(PROFILES_FILE_IMPORT, 'utf-8')) }
   catch { profilesData = { profiles: [] } }
@@ -1474,51 +1507,52 @@ ipcMain.handle('profiles:importModpack', async (e, { filePath, source, profileId
   const instancePath = profile.instancePath
   if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
 
-  function sendProgress(data) {
-    if (!win.isDestroyed()) win.webContents.send('import:progress', data)
-  }
+  const worker = fork(path.join(__dirname, 'launcher', 'importWorker.cjs'), [], { stdio: 'pipe' })
+
+  let settled = false
+  const result = await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      settled = true
+      try { worker.kill() } catch {}
+      reject(new Error('Import timeout'))
+    }, 600000)
+
+    worker.on('message', (msg) => {
+      if (msg.type === 'progress') {
+        if (!win.isDestroyed()) win.webContents.send('import:progress', msg.data)
+      } else if (msg.type === 'done') {
+        settled = true; clearTimeout(timeout); resolve({ ok: true })
+      } else if (msg.type === 'error') {
+        settled = true; clearTimeout(timeout); reject(new Error(msg.message))
+      }
+    })
+
+    worker.on('exit', (code) => {
+      clearTimeout(timeout)
+      if (!settled) reject(new Error(`Worker exited with code ${code}`))
+    })
+
+    worker.on('error', (err) => {
+      settled = true; clearTimeout(timeout); reject(err)
+    })
+
+    worker.send({ type: 'start', filePath, source, instancePath })
+  })
+
+  try { worker.kill() } catch {}
 
   try {
-    let result
-    if (source === 'modrinth') {
-      const { importModrinthPack } = require('./launcher/modrinth/modrinthImporter.cjs')
-      result = await importModrinthPack(filePath, instancePath, sendProgress)
-    } else {
-      const { importCurseForgePack } = require('./launcher/curseforge/curseforgeImporter.cjs')
-      result = await importCurseForgePack(filePath, instancePath, sendProgress)
+    const latestData = JSON.parse(fs.readFileSync(PROFILES_FILE_IMPORT, 'utf-8'))
+    const idx = latestData.profiles.findIndex(p => p.id === profileId)
+    if (idx >= 0) {
+      latestData.profiles[idx].importSource = source
+      const tmp = PROFILES_FILE_IMPORT + '.tmp'
+      fs.writeFileSync(tmp, JSON.stringify(latestData, null, 2), { mode: 0o600 })
+      fs.renameSync(tmp, PROFILES_FILE_IMPORT)
     }
+  } catch {}
 
-    try {
-      const latestData = JSON.parse(fs.readFileSync(PROFILES_FILE_IMPORT, 'utf-8'))
-      const idx = latestData.profiles.findIndex(p => p.id === profileId)
-      if (idx >= 0) {
-        if (result.gameVersion)   latestData.profiles[idx].gameVersion   = result.gameVersion
-        if (result.loader)        latestData.profiles[idx].loader        = result.loader
-        if (result.loaderVersion) latestData.profiles[idx].loaderVersion = result.loaderVersion
-        if (result.name && !latestData.profiles[idx].name.trim()) {
-          latestData.profiles[idx].name = result.name
-        }
-
-        latestData.profiles[idx].importSource  = source
-
-        if (result.iconUrl) {
-          latestData.profiles[idx].importIconUrl = result.iconUrl
-          latestData.profiles[idx].importBgUrl   = result.iconUrl
-        }
-        if (result.bgUrl && result.bgUrl !== result.iconUrl) {
-          latestData.profiles[idx].importBgUrl = result.bgUrl
-        }
-        const tmp = PROFILES_FILE_IMPORT + '.tmp'
-        fs.writeFileSync(tmp, JSON.stringify(latestData, null, 2), { mode: 0o600 })
-        fs.renameSync(tmp, PROFILES_FILE_IMPORT)
-      }
-    } catch {}
-
-    return { ok: true, ...result }
-  } catch (err) {
-    sendProgress({ phase: 'error', log: `Lỗi: ${err.message}`, percent: 0 })
-    return { error: err.message }
-  }
+  return result
 })
 
 ipcMain.handle('profiles:saveTempFile', async (e, { name, buffer }) => {
@@ -1840,6 +1874,24 @@ ipcMain.handle('settings:get', (e) => {
   return readSettings()
 })
 
+ipcMain.handle('bg:pickFile', async (e) => {
+  const win = getTrustedWindow(e)
+  if (!win) return { error: 'Unauthorized' }
+  const { dialog } = require('electron')
+  const result = await dialog.showOpenDialog(win, {
+    title: 'Chọn ảnh / GIF / video nền',
+    buttonLabel: 'Chọn',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Hình ảnh & Video', extensions: ['png','jpg','jpeg','webp','bmp','gif','mp4','webm','mov','avi'] },
+      { name: 'Hình ảnh', extensions: ['png','jpg','jpeg','webp','bmp','gif'] },
+      { name: 'Video',    extensions: ['mp4','webm','mov','avi'] },
+    ],
+  })
+  if (result.canceled || !result.filePaths.length) return { canceled: true }
+  return { ok: true, path: result.filePaths[0] }
+})
+
 ipcMain.handle('settings:save', (e, patch) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
   if (!patch || typeof patch !== 'object') return { error: 'Dữ liệu không hợp lệ' }
@@ -1854,7 +1906,7 @@ ipcMain.handle('settings:save', (e, patch) => {
   writeSettings(updated)
 
   if ('discordRPC' in safe && safe.discordRPC !== current.discordRPC) {
-    if (safe.discordRPC) rpc.connect()
+    if (safe.discordRPC) { rpc.connect(); rpc.PRESETS.menu() }
     else rpc.disconnect()
   }
 

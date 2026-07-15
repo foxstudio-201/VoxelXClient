@@ -239,6 +239,8 @@ function syncAccountToProfileDir(accountDir, profileDir) {
 }
 
 function syncProfileToAccountDir(srcDir, destDir) {
+  const marker = path.join(destDir, '.initialized')
+  if (fs.existsSync(marker)) return
   if (!fs.existsSync(srcDir)) return
   const entries = fs.readdirSync(srcDir, { withFileTypes: true })
   for (const entry of entries) {
@@ -266,6 +268,7 @@ function syncProfileToAccountDir(srcDir, destDir) {
       }
     }
   }
+  try { fs.writeFileSync(marker, '') } catch {}
 }
 
 function getGameDir(profile, accountId) {
@@ -343,13 +346,17 @@ function registerProfileHandlers(getTrustedWindow) {
     const data = readProfiles()
     const profile = data.profiles.find(p => p.id === id)
     if (!profile) return { error: 'Profile không tồn tại' }
-    if (!profile.isCustomPath && profile.instancePath.startsWith(INSTANCES_DIR)) {
-      try {
-        if (fs.existsSync(profile.instancePath)) {
-          fs.rmSync(profile.instancePath, { recursive: true, force: true })
+    if (!profile.isCustomPath) {
+      const normalizedPath = path.resolve(profile.instancePath)
+      const normalizedInstances = path.resolve(INSTANCES_DIR)
+      if (normalizedPath.startsWith(normalizedInstances)) {
+        try {
+          if (fs.existsSync(normalizedPath)) {
+            fs.rmSync(normalizedPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 })
+          }
+        } catch (ex) {
+          try { fs.rmSync(normalizedPath, { recursive: true, force: true }) } catch {}
         }
-      } catch (ex) {
-        console.warn('[profileManager] Could not delete instance dir:', ex.message)
       }
     }
     data.profiles = data.profiles.filter(p => p.id !== id)

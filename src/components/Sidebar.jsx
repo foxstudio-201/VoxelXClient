@@ -40,9 +40,8 @@ import {
 
 import PlayerHead from './ui/PlayerHead'
 import { useLang } from '../i18n/LangProvider'
-import martianIcon from '../assets/martian-icon.png'
 
-export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
+export default function Sidebar({ activePage, onNavigate, selectedAccount, settingsOpen, onOpenSettings }) {
   const isAccountPage = activePage === 'account'
   const { t } = useLang()
 
@@ -51,44 +50,64 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
     { id: 'play',     label: t('sidebar.play'),     Icon: PlayCircle  },
     { id: 'mods',     label: t('sidebar.mods'),     Icon: PuzzlePiece },
     { id: 'worlds',   label: t('sidebar.worlds'),   Icon: HardDrives  },
-    { id: 'settings', label: t('sidebar.settings'), Icon: Gear        },
   ]
 
+  function navIndex(id) {
+    if (id === 'account' || id === 'settings') return -1
+    return navItems.findIndex(n => n.id === id)
+  }
+
   return (
-    <aside className="w-[68px] flex flex-col items-center py-4 gap-0.5 bg-black/25 backdrop-blur-md border-r border-white/[0.06] z-50 overflow-visible">
+    <aside className="w-[68px] flex flex-col items-center py-3 gap-0.5 bg-black/25 backdrop-blur-md rounded-xl ml-3 mt-3 mb-3 z-50 overflow-visible">
       {}
-      <div className="mb-4 mt-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center relative overflow-hidden shadow-lg shadow-orange-500/20 select-none border border-orange-500/15">
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-7 h-7 bg-orange-500/30 rounded-full blur-lg" style={{ animation: 'sb-pulse 3s ease-in-out infinite' }} />
-          </div>
-          <img src={martianIcon} alt="Martian" className="w-6 h-6 object-contain" style={{ animation: 'sb-breathe 3s ease-in-out infinite' }} />
-        </div>
-        <style>{`
-          @keyframes sb-breathe {
-            0%,100% { transform: scale(1); opacity:0.9; }
-            50%     { transform: scale(1.12); opacity:1; }
-          }
-          @keyframes sb-pulse {
-            0%,100% { opacity:0.3; transform:scale(1); }
-            50%     { opacity:0.8; transform:scale(1.4); }
-          }
-        `}</style>
+      <div className="w-full px-2 pt-1">
+        <button
+          onClick={() => onNavigate('account')}
+          className={`
+            relative w-full h-12 rounded-xl flex items-center justify-center
+            transition-all duration-150 group
+            ${isAccountPage
+              ? 'bg-orange-500/15 text-orange-400'
+              : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
+            }
+          `}
+        >
+          {selectedAccount ? (
+            <div className={`rounded-lg overflow-hidden ${isAccountPage ? 'ring-2 ring-orange-400/50 ring-offset-1 ring-offset-black/50' : ''}`}>
+              <PlayerHead uuid={selectedAccount.uuid} username={selectedAccount.username} size={34} />
+            </div>
+          ) : (
+            <UserCircle size={24} weight="duotone" />
+          )}
+          {selectedAccount && (
+            <span className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-400 border-2 border-black/60" />
+          )}
+          <span className="
+            pointer-events-none absolute left-[calc(100%+10px)] px-2.5 py-1.5
+            bg-[#1a1a1a] border border-white/[0.08] rounded-lg
+            text-white/80 text-[11px] font-semibold whitespace-nowrap
+            shadow-2xl shadow-black/60
+            opacity-0 group-hover:opacity-100
+            -translate-x-2 group-hover:translate-x-0
+            transition-all duration-150 z-[999]
+          ">{selectedAccount?.username ?? 'Account'}</span>
+        </button>
       </div>
 
       {}
+      <div className="w-8 h-px bg-white/10 my-2" />
+
+      {}
       <nav className="flex flex-col gap-1 flex-1 w-full px-2 relative">
-        {/* Sliding active indicator */}
         <div
           className="absolute left-0 w-[3px] h-6 bg-orange-400 rounded-r-full transition-all duration-300 ease-out z-20"
           style={{
             top: (() => {
-              const idx = navItems.findIndex(n => n.id === activePage)
+              const idx = navIndex(activePage)
               if (idx < 0) return '-100px'
-              // Mỗi button h-12 (48px) + gap-1 (4px) = 52px mỗi item, centered là 48/2 - 24/2 = 12px offset
               return `${idx * 52 + 12}px`
             })(),
-            opacity: navItems.some(n => n.id === activePage) ? 1 : 0,
+            opacity: navIndex(activePage) >= 0 ? 1 : 0,
           }}
         />
         {navItems.map(({ id, label, Icon }) => {
@@ -127,26 +146,17 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
       {}
       <div className="w-full px-2 pb-1">
         <button
-          onClick={() => onNavigate('account')}
+          onClick={onOpenSettings}
           className={`
             relative w-full h-12 rounded-xl flex items-center justify-center
             transition-all duration-150 group
-            ${isAccountPage
+            ${settingsOpen
               ? 'bg-orange-500/15 text-orange-400'
               : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
             }
           `}
         >
-          {selectedAccount ? (
-            <div className={`rounded-lg overflow-hidden ${isAccountPage ? 'ring-2 ring-orange-400/50 ring-offset-1 ring-offset-black/50' : ''}`}>
-              <PlayerHead uuid={selectedAccount.uuid} username={selectedAccount.username} size={34} />
-            </div>
-          ) : (
-            <UserCircle size={24} weight="duotone" />
-          )}
-          {selectedAccount && (
-            <span className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-400 border-2 border-black/60" />
-          )}
+          <Gear size={28} weight="duotone" />
           <span className="
             pointer-events-none absolute left-[calc(100%+10px)] px-2.5 py-1.5
             bg-[#1a1a1a] border border-white/[0.08] rounded-lg
@@ -155,7 +165,7 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount }) {
             opacity-0 group-hover:opacity-100
             -translate-x-2 group-hover:translate-x-0
             transition-all duration-150 z-[999]
-          ">{selectedAccount?.username ?? 'Account'}</span>
+          ">{t('sidebar.settings')}</span>
         </button>
       </div>
     </aside>

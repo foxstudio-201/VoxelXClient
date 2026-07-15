@@ -115,10 +115,10 @@ export default function Toast({ toast, visible, onDismiss }) {
     >
       <div className={`
         relative overflow-hidden rounded-xl
-        bg-[#1a1a1a] border ${s.border}
+        border ${s.border}
         shadow-2xl shadow-black/50
         backdrop-blur-sm
-      `}>
+      `} style={{ background: 'rgba(14,14,14,0.98)' }}>
         {}
         <div
           className={`absolute top-0 left-0 h-[2px] ${s.bar} ${visible ? 'animate-toast-bar' : ''}`}
