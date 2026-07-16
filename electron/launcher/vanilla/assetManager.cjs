@@ -177,11 +177,11 @@ class SpeedTracker {
   }
 }
 
-async function downloadAssets(versionJson, gameDir, onProgress) {
+async function downloadAssets(versionJson, launcherDir, onProgress) {
   const os = getCurrentOS()
-  const versionsDir  = path.join(gameDir, 'versions', versionJson.id)
-  const librariesDir = path.join(gameDir, 'libraries')
-  const assetsDir    = path.join(gameDir, 'assets')
+  const versionsDir  = path.join(launcherDir, 'versions', versionJson.id)
+  const librariesDir = path.join(launcherDir, 'libraries')
+  const assetsDir    = path.join(launcherDir, 'assets')
   const nativesDir   = path.join(versionsDir, 'natives')
 
   if (!fs.existsSync(versionsDir))  fs.mkdirSync(versionsDir,  { recursive: true })

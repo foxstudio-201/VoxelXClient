@@ -58,6 +58,7 @@ const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json')
 const SKIN_DIR      = path.join(DATA_DIR, 'account_skins')
 const CAPE_DIR      = path.join(DATA_DIR, 'account_capes')
 const AUTHLIB_JAR   = path.join(DATA_DIR, 'authlib-injector.jar')
+const LAUNCHER_DIR  = path.join(DATA_DIR, 'launcher')
 
 for (const d of [SKIN_DIR, CAPE_DIR]) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true })
@@ -162,118 +163,6 @@ function forceKillGame(proc) {
   try { process.kill(pid, 'SIGKILL') } catch {}
 }
 
-function syncDirRecursive(srcDir, destDir) {
-  if (!fs.existsSync(srcDir)) return
-
-  const stat = fs.statSync(srcDir)
-  if (!stat.isDirectory()) return
-
-  fs.mkdirSync(destDir, { recursive: true })
-
-  const entries = fs.readdirSync(srcDir, { withFileTypes: true })
-  for (const entry of entries) {
-    const srcPath = path.join(srcDir, entry.name)
-    const destPath = path.join(destDir, entry.name)
-
-    if (entry.isDirectory()) {
-      syncDirRecursive(srcPath, destPath)
-      continue
-    }
-
-    if (!entry.isFile()) continue
-
-    let shouldCopy = true
-    if (fs.existsSync(destPath)) {
-      try {
-        const srcStat = fs.statSync(srcPath)
-        const destStat = fs.statSync(destPath)
-        shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
-      } catch {
-        shouldCopy = true
-      }
-    }
-
-    if (shouldCopy) {
-      fs.mkdirSync(path.dirname(destPath), { recursive: true })
-      // Một số mod (vd: euphoria_patcher) ghi file ở chế độ read-only (444).
-      // copyFileSync không ghi đè được file read-only -> EACCES trên Linux/macOS.
-      // Gỡ file đích trước (force xoá kể cả read-only) rồi mới copy.
-      try { fs.rmSync(destPath, { force: true }) } catch {}
-      fs.copyFileSync(srcPath, destPath)
-    }
-  }
-}
-
-const SYNC_EXCLUDED_DIRS = new Set(['assets', 'libraries', 'versions', 'accounts', 'logs', 'crash-reports'])
-
-function syncAccountToProfile(profileDir, accountDir) {
-  if (!fs.existsSync(accountDir)) return
-  const entries = fs.readdirSync(accountDir, { withFileTypes: true })
-  for (const entry of entries) {
-    if (SYNC_EXCLUDED_DIRS.has(entry.name)) continue
-    if (entry.name.startsWith('.')) continue
-    if (entry.name.endsWith('.tmp')) continue
-    const srcPath = path.join(accountDir, entry.name)
-    const destPath = path.join(profileDir, entry.name)
-    if (entry.isDirectory()) {
-      syncDirRecursive(srcPath, destPath)
-    } else if (entry.isFile()) {
-      let shouldCopy = true
-      if (fs.existsSync(destPath)) {
-        try {
-          const srcStat = fs.statSync(srcPath)
-          const destStat = fs.statSync(destPath)
-          shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
-        } catch {
-          shouldCopy = true
-        }
-      }
-      if (shouldCopy) {
-        try { fs.rmSync(destPath, { force: true }) } catch {}
-        fs.copyFileSync(srcPath, destPath)
-      }
-    }
-  }
-}
-
-function syncProfileToAccount(profile, gameDataDir) {
-  const marker = path.join(gameDataDir, '.initialized')
-  if (fs.existsSync(marker)) return []
-
-  const srcDir = profile.instancePath
-  if (!srcDir || !fs.existsSync(srcDir)) return []
-  const synced = []
-  const entries = fs.readdirSync(srcDir, { withFileTypes: true })
-  for (const entry of entries) {
-    if (SYNC_EXCLUDED_DIRS.has(entry.name)) continue
-    if (entry.name.startsWith('.')) continue
-    if (entry.name.endsWith('.tmp')) continue
-    const srcPath = path.join(srcDir, entry.name)
-    const destPath = path.join(gameDataDir, entry.name)
-    if (entry.isDirectory()) {
-      syncDirRecursive(srcPath, destPath)
-      synced.push(entry.name)
-    } else if (entry.isFile()) {
-      let shouldCopy = true
-      if (fs.existsSync(destPath)) {
-        try {
-          const srcStat = fs.statSync(srcPath)
-          const destStat = fs.statSync(destPath)
-          shouldCopy = srcStat.size !== destStat.size || srcStat.mtimeMs > destStat.mtimeMs + 1000
-        } catch {
-          shouldCopy = true
-        }
-      }
-      if (shouldCopy) {
-        try { fs.rmSync(destPath, { force: true }) } catch {}
-        fs.copyFileSync(srcPath, destPath)
-      }
-      synced.push(entry.name)
-    }
-  }
-  try { fs.writeFileSync(marker, '') } catch {}
-  return synced
-}
 
 const { createLogWindow } = require('./logWindow.cjs')
 
@@ -310,7 +199,10 @@ function registerLauncherHandlers(getTrustedWindow) {
     const instancePath = profile.instancePath
     if (!fs.existsSync(instancePath)) fs.mkdirSync(instancePath, { recursive: true })
 
-    const launcherProfilesPath = path.join(instancePath, 'launcher_profiles.json')
+    const launcherDir  = LAUNCHER_DIR
+    if (!fs.existsSync(launcherDir)) fs.mkdirSync(launcherDir, { recursive: true })
+
+    const launcherProfilesPath = path.join(launcherDir, 'launcher_profiles.json')
     if (!fs.existsSync(launcherProfilesPath)) {
       fs.writeFileSync(launcherProfilesPath, JSON.stringify({
         profiles: {},
@@ -321,27 +213,12 @@ function registerLauncherHandlers(getTrustedWindow) {
       }, null, 2))
     }
 
-    const sharedPath  = instancePath
     // Java runtime dùng chung cho tất cả profiles — lưu ở DATA_DIR/runtimes/
     // tránh mỗi profile tải Java riêng gây tốn disk và RAM
     const runtimesDir = path.join(DATA_DIR, 'runtimes')
     const gameDataDir = path.join(instancePath, 'accounts', account.id)
     if (!fs.existsSync(gameDataDir)) fs.mkdirSync(gameDataDir, { recursive: true })
 
-    try {
-      const syncedDirs = syncProfileToAccount(profile, gameDataDir)
-      if (syncedDirs.length > 0) {
-        if (!win.isDestroyed()) {
-          win.webContents.send('launcher:progress', {
-            phase: 'prepare_profile',
-            log: `Syncing profile: ${syncedDirs.join(', ')}...`,
-            percent: 1,
-          })
-        }
-      }
-    } catch (syncErr) {
-      return { error: `Failed to sync modpack files: ${syncErr.message}` }
-    }
 
     function sendProgress(data) {
       if (!win.isDestroyed()) win.webContents.send('launcher:progress', data)
@@ -386,7 +263,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
     try {
       sendProgressAndLog({ phase: 'resolve', log: `Loading version info for ${profile.gameVersion}...`, percent: 2 })
-      const versionJson = await resolveVersion(profile.gameVersion, sharedPath)
+      const versionJson = await resolveVersion(profile.gameVersion, launcherDir)
 
       sendProgressAndLog({ phase: 'java', log: 'Checking Java runtime...', percent: 5 })
 
@@ -415,7 +292,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       sendProgressAndLog({ phase: 'assets', log: 'Checking game assets...', percent: 30 })
       let lastAssetPhase = ''
-      const assets = await downloadAssets(versionJson, sharedPath, (p) => {
+      const assets = await downloadAssets(versionJson, launcherDir, (p) => {
         let pct = 30
         if (p.totalFiles > 0) pct = 30 + Math.round((p.doneFiles / p.totalFiles) * 65)
         if (p.phase === 'asset_error') {
@@ -492,7 +369,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       if (profile.loader === 'fabric' && profile.loaderVersion) {
         sendProgressAndLog({ phase: 'fabric', log: `Setting up Fabric ${profile.loaderVersion}...`, percent: 96 })
-        const fabricLibsDir = path.join(sharedPath, 'libraries')
+        const fabricLibsDir = path.join(launcherDir, 'libraries')
         let lastFabricPhase = ''
         const fabricResult = await setupFabric(
           profile.gameVersion,
@@ -528,7 +405,7 @@ function registerLauncherHandlers(getTrustedWindow) {
         sendProgressAndLog({ phase: 'fabric', log: `Fabric ready. Main: ${mainClassOverride}`, percent: 97 })
 
         sendProgressAndLog({ phase: 'fabric_mods', log: 'Checking Fabric mods (Fabric API, Mod Menu)...', percent: 97 })
-        const modsDir = path.join(gameDataDir, 'mods')
+        const modsDir = path.join(instancePath, 'mods')
 
         if (profile.autoPerformanceMods === true) {
           await ensureFabricMods(profile.gameVersion, modsDir, (p) => {
@@ -538,7 +415,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           try {
             const vxcJars = await ensureVoxelXMods(
               profile.gameVersion,
-              sharedPath,
+              launcherDir,
               (p) => sendProgressAndLog({ phase: 'fabric_mods', log: p.log, percent: 97 })
             )
             if (vxcJars.length > 0) {
@@ -569,7 +446,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       if (profile.loader === 'forge' && profile.loaderVersion) {
         sendProgressAndLog({ phase: 'forge', log: `Setting up Forge ${profile.loaderVersion}...`, percent: 93 })
-        const forgeLibsDir = path.join(sharedPath, 'libraries')
+        const forgeLibsDir = path.join(launcherDir, 'libraries')
         let lastForgePhase = ''
 
         const forgeResult = await setupForge(
@@ -578,7 +455,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           forgeLibsDir,
           assets.clientJar,
           javaPath,
-          sharedPath,
+          launcherDir,
           (p) => {
             const phaseChanged = p.phase !== lastForgePhase
             if (phaseChanged) {
@@ -619,7 +496,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       if (profile.loader === 'neoforge' && profile.loaderVersion) {
         sendProgressAndLog({ phase: 'neoforge', log: `Setting up NeoForge ${profile.loaderVersion}...`, percent: 93 })
-        const neoforgeLibsDir = path.join(sharedPath, 'libraries')
+        const neoforgeLibsDir = path.join(launcherDir, 'libraries')
         let lastNeoForgePhase = ''
 
         const neoforgeResult = await setupNeoForge(
@@ -628,7 +505,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           neoforgeLibsDir,
           assets.clientJar,
           javaPath,
-          sharedPath,
+          launcherDir,
           (p) => {
             const phaseChanged = p.phase !== lastNeoForgePhase
             if (phaseChanged) {
@@ -752,8 +629,8 @@ function registerLauncherHandlers(getTrustedWindow) {
         extraJvmArgs,
         extraGameArgs,
         shimJar:           forgeShimJar,
-        shimWorkDir:       sharedPath,
-        instancePath:      gameDataDir,
+        shimWorkDir:       instancePath,
+        instancePath:      instancePath,
         gameVersion:       profile.gameVersion,
         username:          account.username,
         uuid:              account.uuid,
@@ -767,7 +644,6 @@ function registerLauncherHandlers(getTrustedWindow) {
         },
         onExit: (code) => {
           try { rpc.PRESETS.menu() } catch {}
-          try { syncAccountToProfile(profile.instancePath, gameDataDir) } catch (e) { writeLog(`[WARN] Sync back settings: ${e.message}`) }
           stopAuthlibServer(gameKey)
           try { logStream.end() } catch {}
           logWinRef = null

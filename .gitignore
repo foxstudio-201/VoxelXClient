@@ -63,3 +63,5 @@ electron/app-secret.cjs
 .env.local
 
 
+packaging/aur/linux-unpacked.tar.zst
+*.mp3

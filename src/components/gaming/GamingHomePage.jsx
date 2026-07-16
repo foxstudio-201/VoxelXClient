@@ -277,6 +277,8 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
         visible={logPanelVisible}
         logs={displayLogs}
         onClose={handleCloseLogPanel}
+        progress={currentProgress}
+        loader={currentProfile?.loader}
       />
 
       {/* Carousel */}

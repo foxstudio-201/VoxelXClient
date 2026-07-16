@@ -1,11 +1,94 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 
-export default function GamingLogPanel({ visible, logs = [], onClose }) {
+const PHASE_ORDER = ['resolve', 'java', 'assets']
+
+const LOADER_PHASES = {
+  fabric:    ['fabric', 'fabric_mods'],
+  forge:     ['forge'],
+  neoforge:  ['neoforge'],
+}
+
+const PHASE_DEFS = {
+  resolve:      { label: 'Version info' },
+  java:         { label: 'Java runtime' },
+  assets:       { label: 'Game assets' },
+  fabric:       { label: 'Fabric loader' },
+  forge:        { label: 'Forge loader' },
+  neoforge:     { label: 'NeoForge loader' },
+  fabric_mods:  { label: 'Fabric mods' },
+  launching:    { label: 'Launching' },
+}
+
+function getTaskPhases(loader) {
+  const loaderExtra = LOADER_PHASES[loader] || []
+  return [...PHASE_ORDER, ...loaderExtra, 'launching']
+}
+
+const TERMINAL_PHASES = ['running', 'error']
+
+export default function GamingLogPanel({ visible, logs = [], onClose, progress, loader }) {
   const logEndRef = useRef(null)
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
+
+  const tasks = useMemo(() => {
+    const phases = getTaskPhases(loader)
+    const currentPhase = progress?.phase || ''
+    const currentPercent = progress?.percent ?? 0
+    const error = currentPhase === 'error'
+    const isFinished = TERMINAL_PHASES.includes(currentPhase)
+
+    return phases.map((phase, idx) => {
+      const thisIdx = idx
+      const curPhaseIdx = isFinished ? phases.length : phases.indexOf(currentPhase)
+
+      const isDone = !error && (thisIdx < curPhaseIdx)
+      const isActive = !error && !isFinished && thisIdx === curPhaseIdx
+      const isFailed = error && thisIdx <= curPhaseIdx
+
+      let status = 'pending'
+      let statusBadge = null
+      if (isFailed) {
+        status = 'error'
+        statusBadge = { text: '✗', cls: 'bg-red-500 text-white' }
+      } else if (isDone || isFinished) {
+        status = 'done'
+        statusBadge = { text: '✓', cls: 'bg-green-500 text-black' }
+      } else if (isActive) {
+        status = 'active'
+        if (phase === 'assets' && progress?.totalFiles) {
+          const d = progress.doneFiles || 0
+          const t = progress.totalFiles
+          statusBadge = d >= t
+            ? { text: '✓', cls: 'bg-green-500 text-black' }
+            : { text: `${d}/${t}`, cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/40' }
+        } else if (currentPercent > 0 && phase !== 'launching') {
+          statusBadge = { text: `${Math.round(currentPercent)}%`, cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/40' }
+        } else {
+          statusBadge = { text: '↻', cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/40' }
+        }
+      }
+
+      const border = status === 'active' ? 'border border-dashed border-orange-500/60 bg-orange-500/[0.04]'
+        : status === 'done'  ? 'border border-solid border-green-500/40 bg-green-500/[0.04]'
+        : status === 'error' ? 'border border-solid border-red-500/40 bg-red-500/[0.04]'
+        : 'border border-solid border-white/[0.06]'
+
+      const numCls = status === 'active' ? 'bg-orange-500 text-black'
+        : status === 'done'  ? 'bg-green-500 text-black'
+        : status === 'error' ? 'bg-red-500 text-white'
+        : 'bg-white/[0.08] text-white/35'
+
+      const labelCls = status === 'active' ? 'text-orange-200'
+        : status === 'done'  ? 'text-green-200'
+        : status === 'error' ? 'text-red-300'
+        : 'text-white/40'
+
+      return { phase, ...PHASE_DEFS[phase], idx: idx + 1, status, statusBadge, numCls, labelCls, border }
+    })
+  }, [progress, loader])
 
   return (
     <div
@@ -20,7 +103,7 @@ export default function GamingLogPanel({ visible, logs = [], onClose }) {
       }}
     >
     <div
-      className={`w-full h-full transition-all duration-500 ease-out ${
+      className={`w-full h-full flex flex-col transition-all duration-500 ease-out ${
         visible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'
       }`}
       style={{
@@ -31,6 +114,7 @@ export default function GamingLogPanel({ visible, logs = [], onClose }) {
         backdropFilter: 'blur(16px)',
       }}
     >
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="relative flex w-2 h-2">
@@ -60,8 +144,32 @@ export default function GamingLogPanel({ visible, logs = [], onClose }) {
           </button>
         </div>
       </div>
+
+      {/* Tasks */}
+      <div className="flex-shrink-0 overflow-y-auto px-4 py-3 border-b border-white/5 space-y-2 max-h-[40%]">
+        {tasks.map((task) => (
+          <div
+            key={task.phase}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${task.border}`}
+          >
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${task.numCls}`}>
+              {task.idx}
+            </span>
+            <span className={`truncate ${task.labelCls}`}>
+              {task.label}
+            </span>
+            {task.statusBadge && (
+              <span className={`ml-auto px-2 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${task.statusBadge.cls}`}>
+                {task.statusBadge.text}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Logs */}
       <div
-        className="h-[calc(100%-41px)] overflow-y-auto p-3 font-mono text-[11px] leading-relaxed"
+        className="flex-1 min-h-0 overflow-y-auto p-3 font-mono text-[11px] leading-relaxed"
         style={{ scrollbarColor: 'rgba(255,255,255,0.06) transparent' }}
       >
         {logs.length === 0 ? (
@@ -73,13 +181,22 @@ export default function GamingLogPanel({ visible, logs = [], onClose }) {
             const isLauncher = line.startsWith('[Launcher]')
             const isError = line.startsWith('[ERR]')
             const isWarn = line.startsWith('[WARN]')
+            if (isLauncher) {
+              const bracket = line.match(/^(\[Launcher\])\s*/)
+              if (bracket) {
+                const prefix = bracket[0]
+                const rest = line.slice(prefix.length)
+                return (
+                  <div key={i} className="py-[1px] whitespace-pre-wrap break-all">
+                    <span className="text-green-400">{prefix}</span>
+                    <span className="text-white/60">{rest}</span>
+                  </div>
+                )
+              }
+            }
             return (
               <div key={i} className="py-[1px] whitespace-pre-wrap break-all">
-                <span
-                  className={`${
-                    isLauncher ? 'text-cyan-400' : isError ? 'text-red-400' : isWarn ? 'text-yellow-400' : 'text-white/60'
-                  }`}
-                >
+                <span className={`${isError ? 'text-red-400' : isWarn ? 'text-yellow-400' : 'text-white/60'}`}>
                   {line}
                 </span>
               </div>
