@@ -62,8 +62,6 @@ import {
   Plus, FileArrowDown,
 } from '@phosphor-icons/react'
 import PlayerHead from './components/ui/PlayerHead'
-import CreateProfileModal from './components/play/CreateProfileModal'
-import ImportProfileModal from './components/play/ImportProfileModal'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -97,8 +95,6 @@ function AppInner({ gamingMode }) {
   const dropdownRef = useRef(null)
   const [showCloseModal, setShowCloseModal] = useState(false)
   const [showPlayDropdown, setShowPlayDropdown] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
-  const [showImport, setShowImport] = useState(false)
   const [groups, setGroups] = useState([])
 
   useEffect(() => {
@@ -114,44 +110,6 @@ function AppInner({ gamingMode }) {
     if (showPlayDropdown) window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [showPlayDropdown])
-
-  async function handleCreate(profileData) {
-    const result = isElectron ? await window.electronAPI.createProfile(profileData) : { error: 'Not available' }
-    if (result?.error) {
-      toast?.({ type: 'error', title: 'Error', message: result.error })
-      return result
-    }
-    if (profileData.groupId && isElectron) {
-      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
-      const gd = await window.electronAPI.getGroups()
-      setGroups(gd?.groups || [])
-    }
-    setShowCreate(false)
-    toast?.({ type: 'success', title: 'Profile created', message: result.profile?.name })
-    return result
-  }
-
-  async function handleCreateForImport(profileData) {
-    const result = isElectron ? await window.electronAPI.createProfile(profileData) : { error: 'Not available' }
-    if (result?.error) {
-      toast?.({ type: 'error', title: 'Error', message: result.error })
-      return result
-    }
-    if (profileData.groupId && isElectron) {
-      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
-      const gd = await window.electronAPI.getGroups()
-      setGroups(gd?.groups || [])
-    }
-    return result
-  }
-
-  async function handleImportClose() {
-    setShowImport(false)
-    if (isElectron) {
-      const gd = await window.electronAPI.getGroups()
-      setGroups(gd?.groups || [])
-    }
-  }
 
   const NAV_ITEMS = [
     { id: 'home',   Icon: House },
@@ -514,14 +472,14 @@ function AppInner({ gamingMode }) {
                           <div className="fixed inset-0 z-40" onClick={() => setShowPlayDropdown(false)} />
                           <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] py-1.5 bg-[#16161a] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                             <button
-                              onClick={() => { setShowCreate(true); setShowPlayDropdown(false) }}
+                              onClick={() => { window.dispatchEvent(new CustomEvent('vxc:openCreateProfile')); setShowPlayDropdown(false) }}
                               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-all"
                             >
                               <Plus size={16} className="text-orange-400" />
                               Create Profile
                             </button>
                             <button
-                              onClick={() => { setShowImport(true); setShowPlayDropdown(false) }}
+                              onClick={() => { window.dispatchEvent(new CustomEvent('vxc:openImportProfile')); setShowPlayDropdown(false) }}
                               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-all"
                             >
                               <FileArrowDown size={16} className="text-blue-400" />
@@ -694,20 +652,6 @@ function AppInner({ gamingMode }) {
             } catch {}
             setShowSkinModal(false)
           }}
-        />
-      )}
-      {showCreate && (
-        <CreateProfileModal
-          groups={groups}
-          onClose={() => setShowCreate(false)}
-          onCreate={handleCreate}
-        />
-      )}
-      {showImport && (
-        <ImportProfileModal
-          groups={groups}
-          onClose={handleImportClose}
-          onCreate={handleCreateForImport}
         />
       )}
       {showCloseModal && (

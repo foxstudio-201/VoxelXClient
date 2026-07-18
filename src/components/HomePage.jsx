@@ -598,26 +598,10 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         onLaunchReset={onLaunchReset}
         instances={instances || []}
         onKillInstance={onKillInstance}
-        profiles={profiles}
-        selectedProfileId={selectedProfile?.id}
         accountId={selectedAccount?.id}
         activePage={activePage}
         onOpenSettings={onOpenSettings}
         onLogPanelOpen={onLogPanelOpen}
-        onProfileUpdated={async (profile) => {
-          if (profile?.id) {
-            setProfiles(prev => prev.map(p => p.id === profile.id ? profile : p))
-            setSelectedProfile(profile)
-          } else {
-            try {
-              const data = await window.electronAPI.getProfiles()
-              const profiles = data.profiles || []
-              setProfiles(profiles)
-              const p = profiles.find(x => x.id === data.selectedProfileId) ?? null
-              setSelectedProfile(p)
-            } catch {}
-          }
-        }}
       />
     </div>
   ) : (

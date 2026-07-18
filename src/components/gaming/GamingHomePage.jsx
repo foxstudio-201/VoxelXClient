@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useLang } from '../../i18n/LangProvider'
-import { Gear, PlayCircle, Plus, FileArrowDown } from '@phosphor-icons/react'
+import { Gear, Plus, FileArrowDown } from '@phosphor-icons/react'
 import ProfileSettingsPanel from '../home/ProfileSettingsPanel'
 import GamingModalWrapper from '../ui/GamingModalWrapper'
 import ModsTab from '../home/tab/ModsTab'
@@ -81,9 +81,10 @@ const ALL_TABS = [
   { id: 'servers',       label: 'Servers',        component: ServerBookmarksTab },
 ]
 
-export default function GamingHomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, profiles, selectedProfileId, accountId, activePage, onOpenSettings, onProfileUpdated, instances, onKillInstance, onLogPanelOpen }) {
+export default function GamingHomePage({ onNavigate, launchState, progress, launchError, onLaunch, onLaunchReset, accountId, activePage, onOpenSettings, instances, onKillInstance, onLogPanelOpen }) {
   const { t } = useLang()
   const { selectedAccount } = useAccounts()
+  const [profiles, setProfiles] = useState([])
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [expanded, setExpanded] = useState(false)
   const [detailTab, setDetailTab] = useState('mods')
@@ -99,10 +100,38 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const newLaunchRef = useRef(false)
   const toast = useToast()
   const isElectron = typeof window !== 'undefined' && window.electronAPI
+  const initLoaded = useRef(false)
+
+  useEffect(() => {
+    if (!isElectron) return
+    window.electronAPI.getProfiles().then(data => {
+      if (!initLoaded.current) {
+        setProfiles(data.profiles || [])
+        initLoaded.current = true
+      }
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (isElectron) window.electronAPI.getGroups().then(r => setGroups(r?.groups || [])).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    function onOpenCreate() { setShowCreate(true) }
+    function onOpenImport() { setShowImport(true) }
+    window.addEventListener('vxc:openCreateProfile', onOpenCreate)
+    window.addEventListener('vxc:openImportProfile', onOpenImport)
+    return () => {
+      window.removeEventListener('vxc:openCreateProfile', onOpenCreate)
+      window.removeEventListener('vxc:openImportProfile', onOpenImport)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedIdx >= profileList.length) {
+      setSelectedIdx(Math.max(0, profileList.length - 1))
+    }
+  }, [profiles])
 
   useEffect(() => {
     onLogPanelOpen?.(expanded)
@@ -123,6 +152,9 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
       toast?.({ type: 'error', title: 'Error', message: result.error })
       return result
     }
+    const data = isElectron ? await window.electronAPI.getProfiles() : { profiles: [] }
+    setProfiles(data.profiles || [])
+    initLoaded.current = true
     if (profileData.groupId && isElectron) {
       await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
       const gd = await window.electronAPI.getGroups()
@@ -130,7 +162,6 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     }
     setShowCreate(false)
     toast?.({ type: 'success', title: 'Profile created', message: result.profile?.name })
-    onProfileUpdated?.()
     return result
   }
 
@@ -140,13 +171,15 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
       toast?.({ type: 'error', title: 'Error', message: result.error })
       return result
     }
+    const data = isElectron ? await window.electronAPI.getProfiles() : { profiles: [] }
+    setProfiles(data.profiles || [])
+    initLoaded.current = true
     if (profileData.groupId && isElectron) {
       await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
       const gd = await window.electronAPI.getGroups()
       setGroups(gd?.groups || [])
     }
     toast?.({ type: 'success', title: 'Profile imported', message: result.profile?.name })
-    onProfileUpdated?.()
     return result
   }
 
@@ -156,15 +189,42 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
       const gd = await window.electronAPI.getGroups()
       setGroups(gd?.groups || [])
     }
-    onProfileUpdated?.()
+    if (isElectron) {
+      window.electronAPI.getProfiles().then(data => {
+        setProfiles(data.profiles || [])
+      }).catch(() => {})
+    }
   }
 
   async function handleDelete(id) {
-    if (isElectron) {
-      await window.electronAPI.deleteProfile(id)
-    }
+    try {
+      const result = isElectron ? await window.electronAPI.deleteProfile(id) : null
+      if (result?.error) {
+        toast?.({ type: 'error', title: 'Error', message: result.error })
+        return
+      }
+    } catch {}
+    setProfiles(prev => prev.filter(p => p.id !== id))
+    initLoaded.current = true
     setDeleteTarget(null)
-    onProfileUpdated?.()
+  }
+
+  async function handleProfileUpdated(updatedProfile) {
+    initLoaded.current = true
+    if (updatedProfile?.id) {
+      setProfiles(prev => {
+        const idx = prev.findIndex(p => p.id === updatedProfile.id)
+        if (idx !== -1) {
+          const arr = [...prev]; arr[idx] = updatedProfile; return arr
+        }
+        return prev
+      })
+    } else if (isElectron) {
+      try {
+        const data = await window.electronAPI.getProfiles()
+        setProfiles(data.profiles || [])
+      } catch {}
+    }
   }
   const carouselRef = useRef(null)
   const containerRef = useRef(null)
@@ -566,12 +626,13 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
               ))}
             </div>
           )}
-          <button onClick={openDetails}
-            className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95 shadow-lg"
-            style={{ background: colors.primary, color: '#000' }}>
-            <PlayCircle size={18} weight="duotone" />
-            {t('gaming.select')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={openDetails}
+              className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95 shadow-lg"
+              style={{ background: colors.primary, color: '#000' }}>
+              {t('gaming.select')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -686,7 +747,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
               profile={currentProfile}
               accountId={accountId}
               onClose={() => setProfileSettingsOpen(false)}
-              onProfileUpdated={onProfileUpdated}
+              onProfileUpdated={handleProfileUpdated}
             />
           </GamingModalWrapper>
         </div>
