@@ -211,6 +211,13 @@
       "createprofile": "Create a profile to play",
       "settings": "Profile settings",
       "closesettings": "Close settings",
+      "delete": "Delete",
+      "deleteTitle": "Delete profile?",
+      "deleteDescription": "Profile \"{{name}}\" and all its data will be permanently deleted.",
+      "cancel": "Cancel",
+      "accounts": "Accounts",
+      "runningAccounts": "Running accounts",
+      "otherRunning": "other accounts",
       "modpack": "Modpack",
       "noprofile": "No profile selected",
       "createprofilehint": "Create or select a profile from the dropdown above to view and manage mods, worlds, shaders, and resource packs."

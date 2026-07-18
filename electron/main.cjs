@@ -648,6 +648,8 @@ ipcMain.on('quit-app', () => {
 
 const GITHUB_REPO = 'foxstudio-201/VoxelXClient'
 
+let _pendingPreloadPayload = null
+
 ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
   if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
 
@@ -655,24 +657,16 @@ ipcMain.handle('updater:openUpdateWindow', (e, checkResult) => {
 
   createUpdateWindow()
 
-  const payload = checkResult ? { ...checkResult, autoDownload: true } : checkResult
+  const autoDownload = checkResult?.installerAsset != null
+  const payload = checkResult ? { ...checkResult, autoDownload } : checkResult
+  _pendingPreloadPayload = payload
 
-  if (updateWindow && !updateWindow.isDestroyed()) {
-    updateWindow.webContents.once('did-finish-load', () => {
-      if (!updateWindow.isDestroyed()) {
-        updateWindow.webContents.send('updater:preloadResult', payload)
-      }
-    })
-
-    if (updateWindow.webContents.getURL() !== '') {
-      setTimeout(() => {
-        if (updateWindow && !updateWindow.isDestroyed()) {
-          updateWindow.webContents.send('updater:preloadResult', payload)
-        }
-      }, 300)
-    }
-  }
   return { ok: true }
+})
+
+ipcMain.handle('updater:getPreloadResult', (e) => {
+  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
+  return _pendingPreloadPayload
 })
 
 ipcMain.handle('updater:check', async (e) => {
@@ -738,19 +732,20 @@ ipcMain.handle('updater:check', async (e) => {
 
     let installerAsset = null
     if (process.platform === 'win32') {
-
       const exePath = process.execPath || ''
       const isInstalled = /program files/i.test(exePath) || /appdata/i.test(exePath)
       if (isInstalled) {
-
         installerAsset = assets.find(a => /setup/i.test(a.name) && /\.exe$/i.test(a.name))
       }
-
+      if (!installerAsset) {
+        installerAsset = assets.find(a => /\.exe$/i.test(a.name))
+      }
     } else if (process.platform === 'darwin') {
       installerAsset = assets.find(a => /\.dmg$/i.test(a.name))
     } else {
       installerAsset = assets.find(a => /\.AppImage$/i.test(a.name))
         || assets.find(a => /\.deb$/i.test(a.name))
+        || assets.find(a => /\.rpm$/i.test(a.name))
     }
 
     return {

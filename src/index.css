@@ -216,26 +216,6 @@
   animation: toast-bar 3.5s linear forwards;
 }
 
-@keyframes gaming-modal-in {
-  0%   { opacity: 0; transform: scale(0.88) translateY(12px); }
-  65%  { opacity: 1; transform: scale(1.03) translateY(-3px); }
-  82%  { transform: scale(0.985) translateY(1px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes gaming-modal-out {
-  0%   { opacity: 1; transform: scale(1) translateY(0); }
-  100% { opacity: 0; transform: scale(0.9) translateY(8px); }
-}
-
-.gaming-modal-in {
-  animation: gaming-modal-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.gaming-modal-out {
-  animation: gaming-modal-out 0.18s ease-in forwards;
-}
-
 @keyframes pulse-ring {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50%       { opacity: 1;   transform: scale(1.06); }

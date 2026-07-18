@@ -604,9 +604,19 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
         activePage={activePage}
         onOpenSettings={onOpenSettings}
         onLogPanelOpen={onLogPanelOpen}
-        onProfileUpdated={(profile) => {
-          setProfiles(prev => prev.map(p => p.id === profile.id ? profile : p))
-          setSelectedProfile(profile)
+        onProfileUpdated={async (profile) => {
+          if (profile?.id) {
+            setProfiles(prev => prev.map(p => p.id === profile.id ? profile : p))
+            setSelectedProfile(profile)
+          } else {
+            try {
+              const data = await window.electronAPI.getProfiles()
+              const profiles = data.profiles || []
+              setProfiles(profiles)
+              const p = profiles.find(x => x.id === data.selectedProfileId) ?? null
+              setSelectedProfile(p)
+            } catch {}
+          }
         }}
       />
     </div>
@@ -737,7 +747,7 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
             className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setProfileSettingsOpen(false) }}
           >
-            <div className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh] animate-modal-in"
+            <div className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh] "
               style={{ background: 'rgba(14,14,14,0.98)' }}>
               <ProfileSettingsPanel
                 profile={selectedProfile}

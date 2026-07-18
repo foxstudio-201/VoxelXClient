@@ -211,6 +211,13 @@
       "createprofile": "Tạo profile để chơi",
       "settings": "Cài đặt profile",
       "closesettings": "Đóng cài đặt",
+      "delete": "Xóa",
+      "deleteTitle": "Xóa profile?",
+      "deleteDescription": "Profile \"{{name}}\" và toàn bộ dữ liệu sẽ bị xóa vĩnh viễn.",
+      "cancel": "Hủy",
+      "accounts": "Tài khoản",
+      "runningAccounts": "Tài khoản đang chạy",
+      "otherRunning": "tài khoản khác",
       "modpack": "Modpack",
       "noprofile": "Chưa chọn profile",
       "createprofilehint": "Tạo hoặc chọn profile từ menu bên trên để xem và quản lý mods, world, shader và resource packs."

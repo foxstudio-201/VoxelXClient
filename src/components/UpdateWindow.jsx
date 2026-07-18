@@ -50,7 +50,6 @@ export default function UpdateWindow() {
   const [dlProgress, setDlProgress] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const unsubRef = useRef(null)
-  const preloadReceivedRef = useRef(false)
   const startDownloadRef = useRef(null)
   async function runDownload(r) {
     if (!r?.installerAsset) {
@@ -103,14 +102,16 @@ export default function UpdateWindow() {
       unsubRef.current = window.electronAPI.onDownloadProgress(p => setDlProgress(p))
     }
 
-    let unsubPreload = null
-    if (isElectron && window.electronAPI.onUpdaterPreloadResult) {
-      unsubPreload = window.electronAPI.onUpdaterPreloadResult((res) => {
-        preloadReceivedRef.current = true
+    async function loadPreload() {
+      if (!isElectron || !window.electronAPI.getPreloadResult) {
+        handleCheck()
+        return
+      }
+      const res = await window.electronAPI.getPreloadResult()
+      if (res) {
         setResult(res)
-
         if (res?.hasUpdate) {
-          if (res?.autoDownload) {
+          if (res?.autoDownload && res?.installerAsset) {
             startDownloadRef.current(res)
           } else {
             setStatus('updateAvailable')
@@ -118,21 +119,18 @@ export default function UpdateWindow() {
         } else {
           setStatus('upToDate')
         }
-      })
+      } else {
+        handleCheck()
+      }
     }
+    loadPreload()
 
     return () => {
       unsubRef.current?.()
-      unsubPreload?.()
     }
   }, [])
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (status === 'idle' && !preloadReceivedRef.current) handleCheck()
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
+
 
   async function handleCheck() {
     setStatus('checking')

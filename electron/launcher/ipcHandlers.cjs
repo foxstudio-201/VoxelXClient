@@ -169,7 +169,7 @@ const { createLogWindow } = require('./logWindow.cjs')
 
 function registerLauncherHandlers(getTrustedWindow) {
 
-  ipcMain.handle('launcher:launch', async (e, { profileId, ramMb, serverAddress }) => {
+  ipcMain.handle('launcher:launch', async (e, { profileId, ramMb, serverAddress, accountId }) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
 
@@ -182,7 +182,8 @@ function registerLauncherHandlers(getTrustedWindow) {
       accountsData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'accounts.json'), 'utf-8'))
     } catch { accountsData = { accounts: [], selectedId: null } }
 
-    const account = accountsData.accounts.find(a => a.id === accountsData.selectedId)
+    const targetId = accountId || accountsData.selectedId
+    const account = accountsData.accounts.find(a => a.id === targetId)
     if (!account) return { error: 'No account selected' }
 
     const gameKey = makeKey(profileId, account.id)
@@ -812,12 +813,7 @@ function registerLauncherHandlers(getTrustedWindow) {
   })
   ipcMain.handle('curseforge:install', async (e, opts) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    let targetPath = opts.instancePath
-    if (opts.accountId) {
-      targetPath = path.join(opts.instancePath, 'accounts', opts.accountId)
-      if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath, { recursive: true })
-    }
-    return await cfSearch.installVersion({ ...opts, instancePath: targetPath }, (p) => {
+    return await cfSearch.installVersion(opts, (p) => {
       const wins = require('electron').BrowserWindow.getAllWindows()
       wins.forEach(w => {
         if (!w.isDestroyed()) w.webContents.send('curseforge:installProgress', p)
@@ -926,18 +922,10 @@ function registerLauncherHandlers(getTrustedWindow) {
   ipcMain.handle('modrinth:install', async (e, opts) => {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
-    
-    // Resolve correct instance path for the account if provided
-    let targetPath = opts.instancePath
-    if (opts.accountId) {
-      targetPath = path.join(opts.instancePath, 'accounts', opts.accountId)
-      if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath, { recursive: true })
-    }
 
     try {
       return await installVersion({
         ...opts,
-        instancePath: targetPath,
         onProgress: (p) => {
           if (!win.isDestroyed()) win.webContents.send('modrinth:installProgress', p)
         },

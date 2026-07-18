@@ -59,11 +59,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('updater:reinstallProgress', handler)
     return () => ipcRenderer.removeListener('updater:reinstallProgress', handler)
   },
-  onUpdaterPreloadResult: (cb) => {
-    const handler = (_e, data) => cb(data)
-    ipcRenderer.on('updater:preloadResult', handler)
-    return () => ipcRenderer.removeListener('updater:preloadResult', handler)
-  },
+  getPreloadResult: () => ipcRenderer.invoke('updater:getPreloadResult'),
   getVersion:  () => ipcRenderer.invoke('app:version'),
   getHwid:     () => ipcRenderer.invoke('app:hwid'),
   getCurrentPatchNotes: () => ipcRenderer.invoke('patchnotes:getCurrentVersion'),

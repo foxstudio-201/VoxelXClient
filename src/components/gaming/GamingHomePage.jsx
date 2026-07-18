@@ -93,6 +93,8 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const [persistedLauncherLogs, setPersistedLauncherLogs] = useState([])
   const [showCreate, setShowCreate] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [accountMenuProfile, setAccountMenuProfile] = useState(null)
   const [groups, setGroups] = useState([])
   const newLaunchRef = useRef(false)
   const toast = useToast()
@@ -105,6 +107,15 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   useEffect(() => {
     onLogPanelOpen?.(expanded)
   }, [expanded, onLogPanelOpen])
+
+  useEffect(() => {
+    if (!accountMenuProfile) return
+    function onMouseDown(e) {
+      if (!e.target.closest('.account-menu-container')) setAccountMenuProfile(null)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [accountMenuProfile])
 
   async function handleCreate(profileData) {
     const result = isElectron ? await window.electronAPI.createProfile(profileData) : { error: 'Not available' }
@@ -147,6 +158,14 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     }
     onProfileUpdated?.()
   }
+
+  async function handleDelete(id) {
+    if (isElectron) {
+      await window.electronAPI.deleteProfile(id)
+    }
+    setDeleteTarget(null)
+    onProfileUpdated?.()
+  }
   const carouselRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -156,15 +175,24 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const profileIcon = currentProfile?.importIconUrl || LOADER_ICONS[currentProfile?.loader] || vanillaIcon
 
   // Tìm instance đang chạy của một profile cụ thể
-  function getProfileInstance(profileId) {
+  function getProfileInstance(profileId, accountId) {
     if (!instances || !profileId) return null
-    return instances.find(inst => inst.profileId === profileId && inst.state !== 'stopped') || null
+    return instances.find(inst =>
+      inst.profileId === profileId &&
+      inst.state !== 'stopped' &&
+      (!accountId || inst.accountId === accountId)
+    ) || null
   }
 
-  function getProfileState(profileId) {
-    const inst = getProfileInstance(profileId)
+  function getProfileState(profileId, accountId) {
+    const inst = getProfileInstance(profileId, accountId)
     if (!inst) return 'idle'
     return inst.state // 'downloading' | 'running' | 'error' | 'stopped'
+  }
+
+  function getProfileInstances(profileId) {
+    if (!instances || !profileId) return []
+    return instances.filter(inst => inst.profileId === profileId && inst.state !== 'stopped')
   }
 
   const selectAudioRef = useRef(null)
@@ -222,19 +250,20 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     const pid = profileId || currentProfile?.id
     const p = profileList.find(x => x.id === pid) || currentProfile
     if (!p) return
-    onLaunch(pid, ramMb || (p.ramGb || 4) * 1024, profileName || p.name, accountName || selectedAccount?.username || '', serverAddress)
+    onLaunch(pid, ramMb || (p.ramGb || 4) * 1024, profileName || p.name, accountName || selectedAccount?.username || '', serverAddress, selectedAccount?.id)
   }
 
-  function handleKill(profileId) {
-    const inst = getProfileInstance(profileId)
+  function handleKill(profileId, accountId) {
+    const inst = accountId ? getProfileInstance(profileId, accountId) : getProfileInstance(profileId)
     if (!inst || !onKillInstance) return
     onKillInstance(inst.key)
   }
 
-  const currentInst = getProfileInstance(currentProfile?.id)
-  const playing = getProfileState(currentProfile?.id) === 'running'
-  const downloading = getProfileState(currentProfile?.id) === 'downloading'
+  const currentInst = getProfileInstance(currentProfile?.id, selectedAccount?.id)
+  const playing = getProfileState(currentProfile?.id, selectedAccount?.id) === 'running'
+  const downloading = getProfileState(currentProfile?.id, selectedAccount?.id) === 'downloading'
   const currentProgress = currentInst?.progress
+  const otherRunning = currentProfile ? getProfileInstances(currentProfile.id).filter(i => i.accountId !== selectedAccount?.id) : []
 
   // Auto-show log panel on new launch, don't auto-hide
   useEffect(() => {
@@ -358,8 +387,65 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                       >
                         <Gear size={16} weight="duotone" />
                       </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); playClickSound() }}
+                        className="w-8 h-8 rounded-lg bg-black/45 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/70 hover:text-red-400 hover:bg-red-500/15 hover:border-red-500/25 transition-all"
+                        title={t('homepage.profile.delete')}
+                        aria-label={t('homepage.profile.delete')}
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                      </button>
                       {(() => {
-                        const pActive = getProfileState(p.id) === 'running' || getProfileState(p.id) === 'downloading'
+                        const pAllInst = getProfileInstances(p.id)
+                        const runningCount = pAllInst.length
+                        return runningCount > 0 ? (
+                          <div className="relative account-menu-container">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setAccountMenuProfile(accountMenuProfile === p.id ? null : p.id); playClickSound() }}
+                              className="w-8 h-8 rounded-lg bg-black/45 backdrop-blur-sm border border-white/15 flex items-center justify-center text-white/70 hover:text-green-400 hover:bg-green-500/15 hover:border-green-500/25 transition-all relative"
+                              title={t('homepage.profile.accounts')}
+                              aria-label={t('homepage.profile.accounts')}
+                            >
+                              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                              </svg>
+                              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border border-black/50" />
+                            </button>
+                            {accountMenuProfile === p.id && (
+                              <div
+                                className="absolute top-full left-0 mt-1.5 w-52 rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden"
+                                style={{ background: 'rgba(14,14,14,0.98)' }}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <div className="px-3 py-2 text-[10px] text-white/40 font-semibold uppercase tracking-wider border-b border-white/5">
+                                  {t('homepage.profile.runningAccounts')}
+                                </div>
+                                {pAllInst.map(inst => (
+                                  <div key={inst.key} className="flex items-center gap-2 px-3 py-2 border-b border-white/5 last:border-0">
+                                    <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
+                                    <span className="flex-1 text-xs text-white truncate">{inst.accountName || inst.accountId}</span>
+                                    <button
+                                      onClick={() => { handleKill(p.id, inst.accountId); setAccountMenuProfile(null) }}
+                                      className="w-6 h-6 flex items-center justify-center rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                      title={t('homepage.launch.kill')}
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                      </svg>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : null
+                      })()}
+                      {(() => {
+                        const pActive = getProfileState(p.id, selectedAccount?.id) === 'running' || getProfileState(p.id, selectedAccount?.id) === 'downloading'
                         return pActive && !logPanelVisible ? (
                           <button
                             type="button"
@@ -386,26 +472,27 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
 
                 <div className="absolute inset-x-0 bottom-0 p-4">
                   {i === selectedIdx && (() => {
-                    const pInst = getProfileInstance(p.id)
-                    const pPlaying = getProfileState(p.id) === 'running'
-                    const pDownloading = getProfileState(p.id) === 'downloading'
+                    const pInst = getProfileInstance(p.id, selectedAccount?.id)
+                    const pPlaying = getProfileState(p.id, selectedAccount?.id) === 'running'
+                    const pDownloading = getProfileState(p.id, selectedAccount?.id) === 'downloading'
                     const pActive = pPlaying || pDownloading
+                    const pAllInstances = getProfileInstances(p.id)
+                    const otherActive = pAllInstances.filter(x => x.accountId !== selectedAccount?.id)
                     return (
                       <div className="flex gap-2 mb-3">
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); playClickSound(); if (!pActive) handleLaunch() }}
+                          onClick={(e) => { e.stopPropagation(); playClickSound(); if (!pActive && !pDownloading) handleLaunch() }}
                           className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-xl"
-                          style={{ background: lc.primary, color: '#000', opacity: pActive ? 0.75 : 1 }}
+                          style={{ background: lc.primary, color: '#000', opacity: (pActive || pDownloading) ? 0.75 : 1 }}
                         >
                           <PlayCircle size={20} weight="fill" />
                           {pPlaying ? t('gaming.playing') : pDownloading ? `${pInst?.progress?.percent || 0}%` : t('gaming.play')}
                         </button>
                         {pActive && (
-                          <>
                           <button
                             type="button"
-                            onClick={(e) => { e.stopPropagation(); handleKill(p.id); playClickSound() }}
+                            onClick={(e) => { e.stopPropagation(); handleKill(p.id, selectedAccount?.id); playClickSound() }}
                             className="w-11 flex items-center justify-center rounded-xl font-bold text-sm transition-all hover:brightness-110 active:scale-95 shadow-xl bg-red-500/80 hover:bg-red-500"
                             title={t('homepage.launch.kill')}
                           >
@@ -413,7 +500,6 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                             </svg>
                           </button>
-                          </>
                         )}
                       </div>
                     )
@@ -515,6 +601,12 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {otherRunning.length > 0 && !playing && !downloading && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/10 border border-green-500/15 text-[10px] text-green-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  +{otherRunning.length} {t('homepage.profile.otherRunning')}
+                </div>
+              )}
               <button onClick={() => { playClickSound(); if (!playing && !downloading) handleLaunch() }}
                 className="px-5 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95"
                 style={{ background: colors.primary, color: '#000', opacity: (playing || downloading) ? 0.75 : 1 }}>
@@ -536,7 +628,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                   </button>
                 )}
                 <button
-                  onClick={() => { handleKill(currentProfile?.id); playClickSound() }}
+                  onClick={() => { handleKill(currentProfile?.id, selectedAccount?.id); playClickSound() }}
                   className="px-3 py-2 rounded-xl font-semibold text-sm transition-all active:scale-95 bg-red-500/80 hover:bg-red-500 text-white flex items-center gap-1.5"
                   title={t('homepage.launch.kill')}
                 >
@@ -596,6 +688,46 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
               onClose={() => setProfileSettingsOpen(false)}
               onProfileUpdated={onProfileUpdated}
             />
+          </GamingModalWrapper>
+        </div>
+      )}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setDeleteTarget(null) }}
+        >
+          <GamingModalWrapper
+            onClose={() => setDeleteTarget(null)}
+            className="border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+            style={{ background: 'rgba(14,14,14,0.98)' }}
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-red-400">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-base">{t('homepage.profile.deleteTitle')}</h3>
+                  <p className="text-sm text-white/50 mt-0.5">{t('homepage.profile.deleteDescription', { name: deleteTarget.name })}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end mt-6">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/8 hover:bg-white/12 text-white/60 hover:text-white transition-all"
+                >
+                  {t('homepage.profile.cancel')}
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteTarget.id)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-500 hover:bg-red-400 text-white transition-all"
+                >
+                  {t('homepage.profile.delete')}
+                </button>
+              </div>
+            </div>
           </GamingModalWrapper>
         </div>
       )}

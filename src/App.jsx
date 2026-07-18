@@ -301,8 +301,7 @@ function AppInner({ gamingMode }) {
         // Tìm instance: thử realKey trước, rồi pending key, rồi theo profileId
         let inst = realKey ? currentInstances.get(realKey) : null
         if (!inst && data?.profileId) {
-          // Thử key pending
-          inst = currentInstances.get(`${data.profileId}::pending`)
+          inst = currentInstances.get(`${data.profileId}::`)
         }
         if (!inst && data?.profileId) {
           // Tìm theo profileId bất kỳ key nào
@@ -371,18 +370,19 @@ function AppInner({ gamingMode }) {
     return () => { cleanupRef.current.forEach(fn => fn?.()) }
   }, [])
 
-  const handleLaunch = useCallback(async (profileId, ramMb, profileName, accountName, serverAddress) => {
+  const handleLaunch = useCallback(async (profileId, ramMb, profileName, accountName, serverAddress, accountId) => {
     if (!isElectron) return
     setLaunchState('downloading')
     setLaunchError(null)
     setProgress({ phase: 'starting', log: 'Preparing...', percent: 0 })
 
-    const tempKey = `${profileId}::pending`
+    const aid = accountId || ''
+    const tempKey = `${profileId}::${aid}`
     setActiveKey(tempKey)
     setInstances(prev => {
       const next = new Map(prev)
       next.set(tempKey, {
-        key: tempKey, profileId, accountId: null,
+        key: tempKey, profileId, accountId: aid,
         profileName: profileName || profileId,
         accountName: accountName || '',
         state: 'downloading', progress: null, logs: [],
@@ -391,7 +391,7 @@ function AppInner({ gamingMode }) {
       return next
     })
 
-    const result = await window.electronAPI.launchGame({ profileId, ramMb, serverAddress })
+    const result = await window.electronAPI.launchGame({ profileId, ramMb, serverAddress, accountId: aid })
     if (result?.error) {
       setLaunchError(result.error)
       setLaunchState('error')
