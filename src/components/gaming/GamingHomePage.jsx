@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useLang } from '../../i18n/LangProvider'
-import { Gear, Plus, FileArrowDown } from '@phosphor-icons/react'
+import { Gear, PlayCircle, Plus, FileArrowDown } from '@phosphor-icons/react'
 import ProfileSettingsPanel from '../home/ProfileSettingsPanel'
 import GamingModalWrapper from '../ui/GamingModalWrapper'
 import ModsTab from '../home/tab/ModsTab'
@@ -229,6 +229,22 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const carouselRef = useRef(null)
   const containerRef = useRef(null)
 
+  function onCardMove(e) {
+    const el = e.currentTarget
+    const r = el.getBoundingClientRect()
+    const x = e.clientX - r.left, y = e.clientY - r.top
+    const ex = Math.min(x, r.width - x) / (r.width / 2)
+    const ey = Math.min(y, r.height - y) / (r.height / 2)
+    const ep = Math.round((1 - Math.min(ex, ey)) * 100)
+    const cx = r.width / 2, cy = r.height / 2
+    const ca = Math.round(Math.atan2(y - cy, x - cx) * (180 / Math.PI)) + 90
+    el.style.setProperty('--ep', String(ep))
+    el.style.setProperty('--ca', ca + 'deg')
+  }
+  function onCardLeave(e) {
+    e.currentTarget.style.setProperty('--ep', '0')
+  }
+
   const profileList = profiles || []
   const currentProfile = profileList[selectedIdx] || null
   const colors = LOADER_COLORS[currentProfile?.loader] || LOADER_COLORS.vanilla
@@ -360,6 +376,12 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
 
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden select-none">
+      <style dangerouslySetInnerHTML={{__html:[
+        '.glow-card{isolation:isolate;overflow:visible}',
+        '.glow-card .glow-inner{position:relative;z-index:1;isolation:isolate}',
+        '.glow-card>.glow-edge{position:absolute;inset:-25px;border-radius:inherit;z-index:0;pointer-events:none;opacity:calc((var(--ep,0) - 30)/70);transition:opacity .12s ease-out;-webkit-mask-image:conic-gradient(from var(--ca,0deg) at center,#000 5%,transparent 15%,transparent 85%,#000 95%);mask-image:conic-gradient(from var(--ca,0deg) at center,#000 5%,transparent 15%,transparent 85%,#000 95%);mix-blend-mode:plus-lighter}',
+        '.glow-card>.glow-edge::before{content:"";position:absolute;inset:25px;border-radius:inherit;box-shadow:0 0 0 1.5px var(--gc),0 0 12px 3px color-mix(in srgb,var(--gc) 45%,transparent),inset 0 0 0 1.5px var(--gc),inset 0 0 10px 0 color-mix(in srgb,var(--gc) 35%,transparent)}',
+      ].join('')}} />
 
       {/* Log Panel */}
       <GamingLogPanel
@@ -418,8 +440,13 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                 tabIndex={0}
                 onClick={() => goToCard(i)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') goToCard(i) }}
-                className="absolute rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl cursor-pointer focus:outline-none text-left group"
+                onMouseMove={onCardMove}
+                onMouseLeave={onCardLeave}
+                className="absolute rounded-2xl shadow-2xl cursor-pointer focus:outline-none text-left group glow-card"
                 style={{
+                  '--ep': 0,
+                  '--ca': '0deg',
+                  '--gc': lc.primary,
                   width: CARD_W,
                   height: CARD_H,
                   transform: `translateX(${x}px) scale(${scale})`,
@@ -427,6 +454,8 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                   opacity,
                   transition: 'all 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
                 }}>
+                <span className="glow-edge" />
+                <div className="glow-inner rounded-2xl overflow-hidden w-full h-full">
                 <div className="absolute inset-0" style={{ background: vc }} />
                 <img src={p.importBgUrl || getVersionImage(p.gameVersion)}
                   className="absolute inset-0 w-full h-full object-cover"
@@ -590,8 +619,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                     )}
                   </div>
                 </div>
-
-                <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: lc.primary }} />
+                </div>
               </div>
             )
           })}

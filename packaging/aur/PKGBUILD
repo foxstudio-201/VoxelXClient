@@ -4,7 +4,7 @@ pkgname=voxelxlauncher-local
 _appname="VoxelXLauncher"
 _binname=voxelxlauncher
 pkgver=1.5.3
-pkgrel=10
+pkgrel=26
 pkgdesc="Martian Launcher - Minecraft Launcher by FoxStudio (local build)"
 arch=('x86_64')
 url="https://github.com/foxstudio-201/VoxelXClient"
@@ -16,7 +16,7 @@ conflicts=("${_binname}")
 options=('!strip' '!debug')
 
 source=("linux-unpacked.tar.zst")
-sha256sums=('519a5bd16fd121c062c34ca8eaaf49cdcd960b56d489403f45a60390a89dd7a9')
+sha256sums=('7008502eaacc3744109a62def0505c85f483a8bd0ff2946cd9cf975cfd880219')
 
 prepare() {
   cd "${srcdir}"
