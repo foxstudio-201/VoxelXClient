@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useLang } from '../../i18n/LangProvider'
-import { Gear, PlayCircle, Plus, FileArrowDown } from '@phosphor-icons/react'
+import { Gear, PlayCircle, Plus, FileArrowDown, SpinnerGap } from '@phosphor-icons/react'
 import ProfileSettingsPanel from '../home/ProfileSettingsPanel'
 import GamingModalWrapper from '../ui/GamingModalWrapper'
 import ModsTab from '../home/tab/ModsTab'
@@ -9,6 +9,7 @@ import WorldsTab from '../home/tab/WorldsTab'
 import ShadersTab from '../home/tab/ShadersTab'
 import ResourcePacksTab from '../home/tab/ResourcePacksTab'
 import ServerBookmarksTab from '../home/tab/ServerBookmarksTab'
+import AnalyticsPanel from './AnalyticsPanel'
 import GamingLogPanel from './GamingLogPanel'
 import CreateProfileModal from '../play/CreateProfileModal'
 import ImportProfileModal from '../play/ImportProfileModal'
@@ -97,6 +98,8 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [accountMenuProfile, setAccountMenuProfile] = useState(null)
   const [groups, setGroups] = useState([])
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const newLaunchRef = useRef(false)
   const toast = useToast()
   const isElectron = typeof window !== 'undefined' && window.electronAPI
@@ -132,6 +135,13 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
       setSelectedIdx(Math.max(0, profileList.length - 1))
     }
   }, [profiles])
+
+  useEffect(() => {
+    if (!profileList[selectedIdx]) return
+    setProfileLoading(true)
+    const timer = setTimeout(() => setProfileLoading(false), 1200)
+    return () => clearTimeout(timer)
+  }, [selectedIdx])
 
   useEffect(() => {
     onLogPanelOpen?.(expanded)
@@ -291,13 +301,13 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   }
 
   function goNext() {
-    if (selectedIdx < profileList.length - 1) { setSelectedIdx(selectedIdx + 1); playSelectSound() }
+    if (selectedIdx < profileList.length - 1) startTransition(() => { setSelectedIdx(selectedIdx + 1); playSelectSound() })
   }
   function goPrev() {
-    if (selectedIdx > 0) { setSelectedIdx(selectedIdx - 1); playSelectSound() }
+    if (selectedIdx > 0) startTransition(() => { setSelectedIdx(selectedIdx - 1); playSelectSound() })
   }
   function goToCard(idx) {
-    if (idx !== selectedIdx) { setSelectedIdx(idx); playSelectSound() }
+    if (idx !== selectedIdx) startTransition(() => { setSelectedIdx(idx); playSelectSound() })
   }
   function openDetails() {
     if (currentProfile) { setExpanded(true); playClickSound() }
@@ -658,6 +668,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
             <button onClick={openDetails}
               className="flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95 shadow-lg"
               style={{ background: colors.primary, color: '#000' }}>
+              {profileLoading || isPending ? <SpinnerGap size={16} className="animate-spin" /> : null}
               {t('gaming.select')}
             </button>
           </div>
@@ -748,15 +759,21 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
             ))}
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-4">
-            {ALL_TABS.filter(t => !(t.id === 'shaders' && currentProfile?.loader === 'vanilla')).map(tab => {
-              const TabComp = tab.component
-              return (
-                <div key={tab.id} className={detailTab === tab.id ? 'block' : 'hidden'}>
-                  <TabComp profile={currentProfile} accountId={accountId} onLaunch={handleLaunch} />
-                </div>
-              )
-            })}
+          <div className="flex-1 min-h-0 flex">
+            <div className="flex-[2] min-w-0 overflow-y-auto p-4">
+              {ALL_TABS.filter(t => !(t.id === 'shaders' && currentProfile?.loader === 'vanilla')).map(tab => {
+                if (tab.id !== detailTab) return null
+                const TabComp = tab.component
+                return (
+                  <div key={tab.id} className="h-full">
+                    <TabComp profile={currentProfile} accountId={accountId} onLaunch={handleLaunch} />
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex-1 min-w-0 border-l border-white/5">
+              <AnalyticsPanel profileId={currentProfile?.id} t={t} />
+            </div>
           </div>
         </div>
       </div>

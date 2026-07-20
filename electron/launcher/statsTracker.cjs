@@ -37,15 +37,52 @@ const path = require('path')
 function startPlaytimeTracker(profileId, profilesData, writeProfiles) {
   const startTime = Date.now()
 
-  return function stop() {
+  return function stop(crashed) {
     const elapsed = Math.floor((Date.now() - startTime) / 1000)
     const profile = profilesData.profiles.find(p => p.id === profileId)
     if (!profile) return
 
     profile.playtimeSeconds = (profile.playtimeSeconds || 0) + elapsed
     profile.lastPlayed = new Date().toISOString()
+    profile.sessionCount = (profile.sessionCount || 0) + 1
+    if (crashed) profile.crashCount = (profile.crashCount || 0) + 1
+
+    const today = new Date().toISOString().slice(0, 10)
+    profile.dailyPlay = profile.dailyPlay || {}
+    profile.dailyPlay[today] = (profile.dailyPlay[today] || 0) + elapsed
+
     writeProfiles(profilesData)
     return elapsed
+  }
+}
+
+function getProfileAnalytics(profile) {
+  const stats = getProfileStats(profile)
+  const sessionCount = profile.sessionCount || 0
+  const playtimeSeconds = profile.playtimeSeconds || 0
+  const effectiveSessions = sessionCount > 0 ? sessionCount : (playtimeSeconds > 0 ? 1 : 0)
+  const avgSessionSeconds = effectiveSessions > 0 ? Math.floor(playtimeSeconds / effectiveSessions) : 0
+  const crashCount = profile.crashCount || 0
+
+  const dailyPlay = profile.dailyPlay || {}
+  const now = new Date()
+  const daily = []
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    const key = d.toISOString().slice(0, 10)
+    daily.push({ date: key, seconds: dailyPlay[key] || 0 })
+  }
+
+  return {
+    playtimeSeconds: stats.playtimeSeconds,
+    playtimeFormatted: stats.playtimeFormatted,
+    playtimeShort: stats.playtimeShort,
+    lastPlayed: stats.lastPlayed,
+    sessionCount,
+    avgSessionSeconds,
+    crashCount,
+    daily,
   }
 }
 
@@ -210,5 +247,6 @@ module.exports = {
   getWorlds,
   getMods,
   getProfileStats,
+  getProfileAnalytics,
 }
 

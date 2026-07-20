@@ -49,7 +49,7 @@ const cfSearch = require('./curseforge/curseForgeSearch.cjs')
 const technicSearch = require('./technic/technicSearch.cjs')
 const ftbSearch = require('./ftb/ftbSearch.cjs')
 const { launchGame }          = require('./vanilla/gameRunner.cjs')
-const { startPlaytimeTracker, getProfileStats } = require('./statsTracker.cjs')
+const { startPlaytimeTracker, getProfileStats, getProfileAnalytics } = require('./statsTracker.cjs')
 const rpc                     = require('../discordRPC.cjs')
 
 const DATA_DIR      = path.join(app.getPath('appData'), '.VoxelXClient')
@@ -650,7 +650,7 @@ function registerLauncherHandlers(getTrustedWindow) {
           logWinRef = null
           const game = runningGames.get(gameKey)
           if (game) {
-            const elapsed = game.stopTracker()
+            const elapsed = game.stopTracker(code !== 0)
             runningGames.delete(gameKey)
             try { process.setProcessPriority(process.pid, 'normal') } catch {}
             if (!win.isDestroyed()) {
@@ -740,6 +740,14 @@ function registerLauncherHandlers(getTrustedWindow) {
     const profile = profilesData.profiles.find(p => p.id === profileId)
     if (!profile) return null
     return getProfileStats(profile)
+  })
+
+  ipcMain.handle('launcher:getAnalytics', (e, { profileId }) => {
+    if (!getTrustedWindow(e)) return null
+    const profilesData = readProfiles()
+    const profile = profilesData.profiles.find(p => p.id === profileId)
+    if (!profile) return null
+    return getProfileAnalytics(profile)
   })
 
   ipcMain.handle('launcher:getLatestLog', (e, { profileId }) => {

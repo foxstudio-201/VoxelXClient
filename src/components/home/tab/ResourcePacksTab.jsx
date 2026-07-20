@@ -58,7 +58,6 @@ export default function ResourcePacksTab({ profile, accountId }) {
 
   async function handleDropFiles(files) {
     if (!isElectron || !profile?.id) return
-    // Resource pack nhận .zip và .rar, không nhận .jar
     const valid = files.filter(f => {
       const n = f.name.toLowerCase()
       return n.endsWith('.zip') || n.endsWith('.rar')
@@ -69,13 +68,11 @@ export default function ResourcePacksTab({ profile, accountId }) {
       try {
         const srcPath = window.electronAPI.getFilePath(file)
         if (!srcPath) continue
-        const r = await window.electronAPI.profileInstallFile(profile.id, 'resourcepack', srcPath, accountId)
-        if (r?.ok && !r.skipped) {
-          setPacks(prev => [...prev, { fileName: r.fileName, displayName: r.fileName, size: r.size, mtime: r.mtime }])
-        }
+        await window.electronAPI.profileInstallFile(profile.id, 'resourcepack', srcPath, accountId)
       } catch {}
     }
     setInstalling([])
+    load()
   }
 
   if (loading) return <LoadingState text={t('profileSettings.resourcepacks.loading')} />

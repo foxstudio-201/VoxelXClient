@@ -174,7 +174,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   stopGame:        (opts)       => ipcRenderer.invoke('launcher:stop', opts),
   isGameRunning:   (opts)       => ipcRenderer.invoke('launcher:isRunning', opts),
   listRunningGames: ()          => ipcRenderer.invoke('launcher:listRunning'),
-  getProfileStats: (opts)       => ipcRenderer.invoke('launcher:getStats', opts),
+  getProfileStats: (opts) => ipcRenderer.invoke('launcher:getStats', opts),
+  getProfileAnalytics: (opts) => ipcRenderer.invoke('launcher:getAnalytics', opts),
   getLatestLog:    (opts)       => ipcRenderer.invoke('launcher:getLatestLog', opts),
   listLogs:        (opts)       => ipcRenderer.invoke('launcher:listLogs', opts),
   onLaunchProgress: (cb) => {

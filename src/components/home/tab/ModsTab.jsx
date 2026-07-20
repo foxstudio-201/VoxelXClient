@@ -84,22 +84,18 @@ export default function ModsTab({ profile, accountId }) {
 
   async function handleDropFiles(files) {
     if (!isElectron || !profile?.id) return
-    // Chỉ nhận file .jar cho mods
     const valid = files.filter(f => f.name.toLowerCase().endsWith('.jar'))
     if (!valid.length) return
     setInstalling(valid.map(f => f.name))
     for (const file of valid) {
       try {
-        // Lấy path thật từ webUtils (Electron)
         const srcPath = window.electronAPI.getFilePath(file)
         if (!srcPath) continue
-        const r = await window.electronAPI.profileInstallFile(profile.id, 'mod', srcPath, accountId)
-        if (r?.ok && !r.skipped) {
-          setMods(prev => [...prev, { fileName: r.fileName, displayName: r.fileName, size: r.size, mtime: r.mtime, enabled: true }])
-        }
+        await window.electronAPI.profileInstallFile(profile.id, 'mod', srcPath, accountId)
       } catch {}
     }
     setInstalling([])
+    load()
   }
 
   if (loading) return <LoadingState text={t('profileSettings.mods.loading')} />

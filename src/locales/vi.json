@@ -944,6 +944,19 @@
     "play": "Chơi",
     "playing": "Đang chơi"
   },
+  "analytics": {
+    "title": "Phân tích",
+    "totalPlaytime": "Tổng thời gian chơi",
+    "avgSession": "Trung bình mỗi lần",
+    "sessions": "Số lần chơi",
+    "crashes": "Số lần crash",
+    "lastPlayed": "Chơi gần nhất",
+    "never": "Chưa chơi",
+    "days": "Ngày",
+    "today": "Hôm nay",
+    "noData": "Chưa có dữ liệu chơi",
+    "barChart": "Thời gian chơi (14 ngày qua)"
+  },
   "crash": {
     "title": "Game bị crash",
     "fabricIncompatible": "Mod không tương thích (Fabric)",

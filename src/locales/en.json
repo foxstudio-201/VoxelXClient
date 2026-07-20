@@ -944,6 +944,19 @@
     "play": "Play",
     "playing": "Playing"
   },
+  "analytics": {
+    "title": "Analytics",
+    "totalPlaytime": "Total Playtime",
+    "avgSession": "Avg Session",
+    "sessions": "Sessions",
+    "crashes": "Crashes",
+    "lastPlayed": "Last Played",
+    "never": "Never",
+    "days": "Days",
+    "today": "Today",
+    "noData": "No play data yet",
+    "barChart": "Daily Play (last 14 days)"
+  },
   "crash": {
     "title": "Game crashed",
     "fabricIncompatible": "Incompatible mods (Fabric)",
