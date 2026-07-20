@@ -152,12 +152,6 @@
     "createnow": "Create an account now"
   },
   "homepage": {
-    "patchnote": {
-      "nopatchnote": "No patch note content",
-      "version": "Version",
-      "viewongithub": "View on GitHub →",
-      "close": "Close"
-    },
     "acccount": {
       "addacccount": "Add account",
       "selectedaccount": "Select account",

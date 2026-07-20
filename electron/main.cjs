@@ -1047,42 +1047,6 @@ function fetchGitHubReleaseByTag(repo, tag, currentVersion) {
   })
 }
 
-ipcMain.handle('patchnotes:getCurrentVersion', async (e) => {
-  if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-
-  const currentVersion = app.getVersion()
-
-  try {
-    const release =
-      await fetchGitHubReleaseByTag(GITHUB_REPO, `v${currentVersion}`, currentVersion) ||
-      await fetchGitHubReleaseByTag(GITHUB_REPO, currentVersion, currentVersion)
-
-    if (!release) {
-      return {
-        ok: false,
-        currentVersion,
-        message: 'Không tìm thấy patch note cho phiên bản hiện tại.',
-      }
-    }
-
-    return {
-      ok: true,
-      currentVersion,
-      version: (release.tag_name || currentVersion).replace(/^v/, ''),
-      title: release.name || `VoxelXLauncher ${currentVersion}`,
-      body: release.body || '',
-      htmlUrl: release.html_url || `https://github.com/${GITHUB_REPO}/releases`,
-      publishedAt: release.published_at || null,
-    }
-  } catch (err) {
-    return {
-      ok: false,
-      currentVersion,
-      message: `Không thể tải patch note: ${err.message}`,
-    }
-  }
-})
-
 ipcMain.handle('app:version', (e) => {
   if (!getTrustedWindow(e)) return null
   return app.getVersion()

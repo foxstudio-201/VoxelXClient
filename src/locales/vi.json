@@ -152,12 +152,6 @@
     "createnow": "Tạo tài khoản ngay"
   },
   "homepage": {
-    "patchnote": {
-      "nopatchnote": "Không có nội dung patch note",
-      "version": "Phiên bản",
-      "viewongithub": "Xem trên GitHub →",
-      "close": "Đóng"
-    },
     "acccount": {
       "addacccount": "Thêm tài khoản",
       "selectedaccount": "Chọn tài khoản",

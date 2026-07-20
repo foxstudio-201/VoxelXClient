@@ -68,41 +68,6 @@ import {
 } from '@phosphor-icons/react'
 import { Icons } from './home/tab/shared'
 
-function markdownToHtml(text) {
-  if (!text) return ''
-  let html = String(text)
-
-  html = html.replace(/<img[^>]*shields\.io[^>]*>/gi, '')
-  html = html.replace(/!\[[^\]]*\]\(https?:\/\/img\.shields\.io[^)]*\)/g, '')
-
-  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g,
-    '<img src="$2" alt="$1" style="max-width:72px;max-height:72px;border-radius:12px;margin:6px auto;display:block;" />')
-
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-    '<span class="md-link" data-href="$2">$1 â†—</span>')
-
-  html = html.replace(/^#{4,6}\s+(.+)$/gm, '<h4 class="md-h4">$1</h4>')
-  html = html.replace(/^###\s+(.+)$/gm, '<h3 class="md-h3">$1</h3>')
-  html = html.replace(/^##\s+(.+)$/gm, '<h2 class="md-h2">$1</h2>')
-  html = html.replace(/^#\s+(.+)$/gm, '<h1 class="md-h1">$1</h1>')
-
-  html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
-  html = html.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>')
-
-  html = html.replace(/^>\s+(.+)$/gm, '<blockquote class="md-blockquote">$1</blockquote>')
-
-  html = html.replace(/^---+$/gm, '<hr class="md-hr" />')
-
-  html = html.replace(/^[-*]\s+(.+)$/gm, '<li class="md-li">$1</li>')
-  html = html.replace(/(<li class="md-li">[\s\S]*?<\/li>\n?)+/g, m => `<ul class="md-ul">${m}</ul>`)
-
-  html = html.replace(/^(?!<[a-zA-Z/]|$)(.+)$/gm, '<p class="md-p">$1</p>')
-
-  return html
-}
-
 function renderInlineMarkdown(text) {
   const parts = []
   const regex = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s]+)/g
@@ -143,91 +108,6 @@ function renderInlineMarkdown(text) {
 
   if (lastIndex < text.length) parts.push(text.slice(lastIndex))
   return parts
-}
-
-function renderPatchNotesBody(body, t) {
-  const html = markdownToHtml(body)
-  if (!html.trim()) return <p className="text-white/40">{t('homepage.patchnote.nopatchnote')}</p>
-
-  return (
-    <>
-      <style>{`
-        .md-h1 { font-size:1.25rem; font-weight:800; color:rgba(255,255,255,0.95); margin:16px 0 8px; }
-        .md-h2 { font-size:1.1rem; font-weight:700; color:rgba(255,255,255,0.9); margin:14px 0 6px; }
-        .md-h3 { font-size:0.95rem; font-weight:700; color:rgba(255,255,255,0.85); margin:12px 0 5px; display:flex; align-items:center; gap:6px; }
-        .md-h4 { font-size:0.875rem; font-weight:600; color:rgba(255,255,255,0.75); margin:10px 0 4px; }
-        .md-p  { color:rgba(255,255,255,0.65); margin:4px 0; line-height:1.6; font-size:0.875rem; }
-        .md-ul { list-style:none; padding:0; margin:4px 0 8px; }
-        .md-li { color:rgba(255,255,255,0.65); font-size:0.875rem; line-height:1.6; padding:2px 0 2px 16px; position:relative; }
-        .md-li::before { content:"â€¢"; color:#fb923c; position:absolute; left:0; }
-        .md-code { background:rgba(255,255,255,0.08); color:#86efac; padding:1px 5px; border-radius:4px; font-family:monospace; font-size:0.8rem; }
-        .md-blockquote { border-left:3px solid rgba(251,146,60,0.4); padding:4px 12px; margin:8px 0; color:rgba(255,255,255,0.5); font-style:italic; font-size:0.875rem; }
-        .md-hr { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:12px 0; }
-        .md-link { color:#fb923c; cursor:pointer; text-decoration:underline; text-underline-offset:2px; font-size:0.875rem; }
-        .md-link:hover { color:#86efac; }
-        strong { color:rgba(255,255,255,0.9); font-weight:700; }
-        em { color:rgba(255,255,255,0.7); font-style:italic; }
-      `}</style>
-      <div
-        dangerouslySetInnerHTML={{ __html: html }}
-        onClick={e => {
-          const el = e.target.closest('.md-link')
-          if (el) {
-            const href = el.getAttribute('data-href')
-            if (href) window.electronAPI?.openExternal?.(href)
-          }
-        }}
-      />
-    </>
-  )
-}
-
-function PatchNotesModal({ patchNotes, onClose }) {
-  const {t} = useLang()
-  if (!patchNotes) return null
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-[#141414] border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="flex-shrink-0 flex items-start justify-between px-6 py-4 border-b border-white/5">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-white mb-1">{patchNotes.title}</h2>
-            <p className="text-xs text-white/40">
-              {t('homepage.patchnote.version')} {patchNotes.version}
-              {patchNotes.publishedAt && (
-                <>
-                  {' '} Â· {new Date(patchNotes.publishedAt).toLocaleDateString('vi-VN')}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="max-w-none text-sm break-words font-sans">
-            {renderPatchNotesBody(patchNotes.body, t)}
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-t border-white/5 bg-black/20">
-          {patchNotes.htmlUrl && (
-            <button
-              onClick={() => window.electronAPI?.openExternal?.(patchNotes.htmlUrl)}
-              className="text-xs text-orange-400 hover:text-orange-300 transition-colors underline underline-offset-2"
-            >
-              {t('homepage.patchnote.viewongithub')}
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="ml-auto px-4 py-2 rounded-lg bg-orange-500/15 border border-orange-500/25 text-orange-400 text-xs font-semibold hover:bg-orange-500/25 transition-all"
-          >
-            {t('homepage.patchnote.close')}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 function getAccountTypeLabel(type) {
@@ -435,48 +315,9 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const {t} = useLang()
   const [ram, setRam] = useState(4)
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
-  const [patchNotesModal, setPatchNotesModal] = useState(null)
   const ramSaveTimer = useRef(null)
-  const patchNotesShownRef = useRef(new Set())
 
   useEffect(() => () => clearTimeout(ramSaveTimer.current), [])
-
-  useEffect(() => {
-    const loadPatchNotes = async () => {
-      if (!isElectron) return
-
-      try {
-        const result = await window.electronAPI.getCurrentPatchNotes()
-
-        if (!result.ok) return
-
-        const versionKey = `patchnotes_${result.currentVersion}`
-        if (patchNotesShownRef.current.has(versionKey)) return
-
-        const timer = setTimeout(() => {
-          setPatchNotesModal(result)
-          patchNotesShownRef.current.add(versionKey)
-
-          try {
-            const shown = JSON.parse(localStorage.getItem('vxc_patchnotes_shown') || '[]')
-            if (!shown.includes(versionKey)) {
-              shown.push(versionKey)
-              localStorage.setItem('vxc_patchnotes_shown', JSON.stringify(shown))
-            }
-          } catch {}
-        }, 3000)
-
-        return () => clearTimeout(timer)
-      } catch {}
-    }
-
-    try {
-      const shown = JSON.parse(localStorage.getItem('vxc_patchnotes_shown') || '[]')
-      shown.forEach(v => patchNotesShownRef.current.add(v))
-    } catch {}
-
-    loadPatchNotes()
-  }, [])
 
   const particles = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
     size: Math.random() * 3 + 1.5,
@@ -606,7 +447,6 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     </div>
   ) : (
     <div className="flex flex-col h-full overflow-hidden relative">
-      <PatchNotesModal patchNotes={patchNotesModal} onClose={() => setPatchNotesModal(null)} />
 
       {/* ── Launch Panel ── */}
       <div className="flex-shrink-0 border-b border-white/5 p-4">
