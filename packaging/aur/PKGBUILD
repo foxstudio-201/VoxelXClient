@@ -16,7 +16,7 @@ conflicts=("${_binname}")
 options=('!strip' '!debug')
 
 source=("linux-unpacked.tar.zst")
-sha256sums=('239ea4942f5c7dad8da4b4dacfd8b7e689b6bc1e0042ad274ea4c54a9bee6668')
+sha256sums=('16ad50c62d0198db3caa2dc1bd24f46da1d8cde5da3a0b0f5fd072563e795814')
 
 prepare() {
   cd "${srcdir}"
