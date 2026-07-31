@@ -12,7 +12,6 @@ export default function ShadersTab({ profile, accountId }) {
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [installing, setInstalling] = useState([])
   const [query, setQuery] = useState('')
-  const fetchingMeta = useRef(new Set())
 
   const q = query.trim().toLowerCase()
   const filteredShaders = q
@@ -32,17 +31,30 @@ export default function ShadersTab({ profile, accountId }) {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    if (!isElectron || shaders.length === 0) return
-    for (const s of shaders) {
-      if (metaCache[s.fileName] !== undefined) continue
-      if (fetchingMeta.current.has(s.fileName)) continue
-      fetchingMeta.current.add(s.fileName)
-      window.electronAPI.profileGetShaderMeta(profile.id, s.fileName, accountId)
-        .then(r => setMetaCache(prev => ({ ...prev, [s.fileName]: r?.meta || null })))
-        .catch(() => setMetaCache(prev => ({ ...prev, [s.fileName]: null })))
-        .finally(() => fetchingMeta.current.delete(s.fileName))
-    }
-  }, [shaders, profile?.id, accountId])
+    if (!isElectron || !profile?.id) return
+    window.electronAPI.profileGetInstalledContent(profile.id)
+      .then(r => {
+        if (!r?.ok || !r.meta) return
+        const metaAdd = {}
+        for (const [key, m] of Object.entries(r.meta)) {
+          if (!key.startsWith('shader:')) continue
+          metaAdd[key.slice(7)] = m
+        }
+        if (Object.keys(metaAdd).length) setMetaCache(prev => ({ ...prev, ...metaAdd }))
+      })
+      .catch(() => {})
+    window.electronAPI.profileMatchInstalledContent(profile.id)
+      .then(r => {
+        if (!r?.ok || !r.meta) return
+        const metaAdd = {}
+        for (const [key, m] of Object.entries(r.meta)) {
+          if (!key.startsWith('shader:')) continue
+          metaAdd[key.slice(7)] = m
+        }
+        if (Object.keys(metaAdd).length) setMetaCache(prev => ({ ...prev, ...metaAdd }))
+      })
+      .catch(() => {})
+  }, [profile?.id])
 
   async function handleDelete(shader) {
     if (!isElectron) return

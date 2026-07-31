@@ -13,12 +13,67 @@ export default function ModsTab({ profile, accountId }) {
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [installing, setInstalling] = useState([])
   const [query, setQuery] = useState('')
-  const fetchingMeta = useRef(new Set())
+  const [tracked, setTracked] = useState({})
+  const [updateMap, setUpdateMap] = useState({})
+  const updateFetching = useRef(new Set())
+  const updateMapRef = useRef({})
+  useEffect(() => { updateMapRef.current = updateMap }, [updateMap])
 
   const q = query.trim().toLowerCase()
   const filteredMods = q
     ? mods.filter(m => (metaCache[m.fileName]?.name || m.displayName || m.fileName || '').toLowerCase().includes(q))
     : mods
+
+  const loadTracked = useCallback(async () => {
+    if (!isElectron || !profile?.id) return
+    try {
+      const r = await window.electronAPI.profileGetInstalledContent(profile.id)
+      if (!r?.ok) return
+      const map = {}
+      for (const [pid, info] of Object.entries(r.installed || {})) {
+        if (info.type !== 'mod') continue
+        map[info.filename] = {
+          projectId: pid,
+          versionId: info.versionId,
+          platform: typeof info.versionId === 'number' ? 'curseforge' : 'modrinth',
+        }
+      }
+      setTracked(map)
+      if (r.meta) {
+        const metaAdd = {}
+        for (const [key, m] of Object.entries(r.meta)) {
+          if (!key.startsWith('mod:')) continue
+          const f = key.slice(4)
+          metaAdd[f] = m
+        }
+        setMetaCache(prev => ({ ...prev, ...metaAdd }))
+      }
+    } catch {}
+    try {
+      const r = await window.electronAPI.profileMatchInstalledContent(profile.id)
+      if (r?.ok) {
+        const matched = r.matchedFiles || {}
+        const add = {}
+        for (const [baseName, info] of Object.entries(matched)) {
+          if (info.type !== 'mod') continue
+          add[baseName] = {
+            projectId: info.projectId,
+            versionId: info.versionId,
+            platform: info.platform || 'modrinth',
+          }
+        }
+        setTracked(prev => ({ ...prev, ...add }))
+        if (r.meta) {
+          const metaAdd = {}
+          for (const [key, m] of Object.entries(r.meta)) {
+            if (!key.startsWith('mod:')) continue
+            metaAdd[key.slice(4)] = m
+          }
+          setMetaCache(prev => ({ ...prev, ...metaAdd }))
+        }
+      }
+    } catch {}
+  }, [profile?.id])
 
   const load = useCallback(async () => {
     if (!isElectron || !profile?.id) { setLoading(false); return }
@@ -31,19 +86,81 @@ export default function ModsTab({ profile, accountId }) {
   }, [profile?.id, accountId])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => { loadTracked() }, [loadTracked])
 
   useEffect(() => {
-    if (!isElectron || mods.length === 0) return
+    if (!isElectron || !profile?.id || mods.length === 0) return
+    const jobs = []
     for (const mod of mods) {
-      if (metaCache[mod.fileName] !== undefined) continue
-      if (fetchingMeta.current.has(mod.fileName)) continue
-      fetchingMeta.current.add(mod.fileName)
-      window.electronAPI.profileGetModMeta(profile.id, mod.fileName, accountId)
-        .then(r => setMetaCache(prev => ({ ...prev, [mod.fileName]: r?.meta || null })))
-        .catch(() => setMetaCache(prev => ({ ...prev, [mod.fileName]: null })))
-        .finally(() => fetchingMeta.current.delete(mod.fileName))
+      const base = mod.fileName.replace(/\.(off|disabled)$/i, '')
+      const t = tracked[base]
+      if (!t || updateMapRef.current[mod.fileName] !== undefined) continue
+      if (updateFetching.current.has(mod.fileName)) continue
+      jobs.push({ mod, base, t })
     }
-  }, [mods, profile?.id, accountId])
+    if (jobs.length === 0) return
+    const filters = {
+      gameVersions: [profile.gameVersion],
+      loaders: profile.loader !== 'vanilla' ? [profile.loader] : [],
+    }
+    let idx = 0
+    const runNext = () => {
+      if (idx >= jobs.length) return
+      const { mod, base, t } = jobs[idx++]
+      updateFetching.current.add(mod.fileName)
+      const getVersions = t.platform === 'curseforge'
+        ? window.electronAPI.curseforgeGetVersions(t.projectId, filters)
+        : window.electronAPI.modrinthGetVersions(t.projectId, filters)
+      getVersions
+        .then(data => {
+          const vers = Array.isArray(data) ? data : []
+          const latest = vers.find(v => v.version_type === 'release') || vers[0]
+          let installedVersionId = t.versionId
+          if (!installedVersionId) {
+            const matchedVer = vers.find(v => (v.files || []).some(f => f.filename === base))
+            installedVersionId = matchedVer ? matchedVer.id : null
+          }
+          const hasUpdate = !!latest && !!installedVersionId && String(latest.id) !== String(installedVersionId)
+          setUpdateMap(prev => ({ ...prev, [mod.fileName]: hasUpdate ? { hasUpdate, latest, platform: t.platform } : { hasUpdate: false, latest: null, platform: t.platform } }))
+        })
+        .catch(() => setUpdateMap(prev => ({ ...prev, [mod.fileName]: { hasUpdate: false, latest: null, platform: t.platform } })))
+        .finally(() => {
+          updateFetching.current.delete(mod.fileName)
+          runNext()
+        })
+    }
+    for (let i = 0; i < Math.min(4, jobs.length); i++) runNext()
+  }, [mods, tracked, profile?.id, profile?.gameVersion, profile?.loader])
+
+  async function handleUpdate(mod) {
+    if (!isElectron || !profile?.id) return
+    const u = updateMap[mod.fileName]
+    if (!u?.hasUpdate || !u.latest) return
+    setUpdateMap(prev => ({ ...prev, [mod.fileName]: { ...prev[mod.fileName], installing: true } }))
+    try {
+      const latest = u.latest
+      const opts = {
+        versionId: latest.id,
+        projectId: latest.project_id,
+        downloadUrl: latest.files?.[0]?.url,
+        filename: latest.files?.[0]?.filename,
+        fileLength: latest.files?.[0]?.size,
+        projectType: 'mod',
+        instancePath: profile.instancePath,
+      }
+      if (u.platform === 'curseforge') {
+        await window.electronAPI.curseforgeInstall({ ...opts, deleteOldVersions: true })
+      } else {
+        await window.electronAPI.modrinthInstall({ ...opts, deleteOldVersions: true })
+      }
+      updateFetching.current.delete(mod.fileName)
+      setUpdateMap(prev => { const n = { ...prev }; delete n[mod.fileName]; return n })
+      await load()
+      await loadTracked()
+    } catch {} finally {
+      setUpdateMap(prev => prev[mod.fileName] ? { ...prev[mod.fileName], installing: false } : prev)
+    }
+  }
 
   async function handleToggle(mod) {
     if (!isElectron) return
@@ -159,6 +276,26 @@ export default function ModsTab({ profile, accountId }) {
                         </>
                       ) : (
                         <>
+                          {(() => {
+                            const u = updateMap[mod.fileName]
+                            if (!u) return null
+                            if (u.installing) return <span className="text-[9px] px-2 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/25 text-yellow-300 font-bold flex items-center gap-1">{Icons.spin}</span>
+                            if (u.hasUpdate) return (
+                              <button onClick={() => handleUpdate(mod)}
+                                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-white flex items-center gap-1 transition-all hover:scale-105"
+                                style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
+                                title="Update to latest version">
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M11 5v11.17l-4.88-4.88-1.42 1.41L12 19.71l7.3-7.01-1.42-1.41L13 16.17V5h-2zM5 21h14v-2H5v2z"/></svg>
+                                Update
+                              </button>
+                            )
+                            return (
+                              <span className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-green-300 bg-green-500/15 border border-green-500/25 flex items-center gap-1" title="Ready to use">
+                                {Icons.check}
+                                Ready to use
+                              </span>
+                            )
+                          })()}
                           <button
                             onClick={() => handleToggle(mod)}
                             disabled={toggling === mod.fileName}
@@ -204,6 +341,20 @@ export default function ModsTab({ profile, accountId }) {
                       <p className="text-[10px] font-medium text-white/70 truncate leading-tight">{meta?.name || mod.displayName}</p>
                       <div className="flex items-center justify-between mt-1">
                         <span className="text-[9px] text-white/25">{formatBytes(mod.size)}</span>
+                        {(() => {
+                          const u = updateMap[mod.fileName]
+                          if (u?.hasUpdate && !u.installing) {
+                            return (
+                              <button onClick={() => handleUpdate(mod)}
+                                className="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 text-[9px] font-bold hover:bg-yellow-500/30 transition-all">
+                                Update
+                              </button>
+                            )
+                          }
+                          if (u?.installing) return <span className="text-yellow-300/60">{Icons.spin}</span>
+                          if (u) return <span className="text-green-300/60" title="Ready to use">{Icons.check}</span>
+                          return null
+                        })()}
                         {confirmDelete === mod.fileName ? (
                           <div className="flex gap-1">
                             <button onClick={() => handleDelete(mod.fileName)} disabled={deleting === mod.fileName} className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all disabled:opacity-50">

@@ -364,7 +364,7 @@ function registerLauncherHandlers(getTrustedWindow) {
 
       let mainClassOverride = null
       let extraLibraries    = []
-      let extraJvmArgs      = []
+      let extraJvmArgs      = profile.jvmArgs ? profile.jvmArgs.trim().split(/\s+/).filter(Boolean) : []
       let extraGameArgs     = []
       let forgeShimJar      = null
 
@@ -821,7 +821,13 @@ function registerLauncherHandlers(getTrustedWindow) {
   })
   ipcMain.handle('curseforge:install', async (e, opts) => {
     if (!getTrustedWindow(e)) return { error: 'Unauthorized' }
-    return await cfSearch.installVersion(opts, (p) => {
+    const { gameVersion, loaders, deleteOldVersions } = opts
+    return await cfSearch.installVersion({
+      ...opts,
+      gameVersion: gameVersion || '',
+      loaders: loaders || [],
+      deleteOldVersions: deleteOldVersions === true,
+    }, (p) => {
       const wins = require('electron').BrowserWindow.getAllWindows()
       wins.forEach(w => {
         if (!w.isDestroyed()) w.webContents.send('curseforge:installProgress', p)
@@ -931,9 +937,17 @@ function registerLauncherHandlers(getTrustedWindow) {
     const win = getTrustedWindow(e)
     if (!win) return { error: 'Unauthorized' }
 
+    const { versionId, projectId, projectType, instancePath, gameVersion, loaders, deleteOldVersions } = opts
+
     try {
       return await installVersion({
-        ...opts,
+        versionId,
+        projectId,
+        projectType,
+        instancePath,
+        gameVersion: gameVersion || '',
+        loaders: loaders || [],
+        deleteOldVersions: deleteOldVersions === true,
         onProgress: (p) => {
           if (!win.isDestroyed()) win.webContents.send('modrinth:installProgress', p)
         },

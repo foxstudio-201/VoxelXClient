@@ -142,6 +142,7 @@ function formatProject(p) {
     versions: [],
     client_side: 'optional',
     server_side: 'optional',
+    gallery: (p.screenshots || []).map(s => ({ url: s.url || s.thumbnailUrl, title: s.title || '' })),
     source: 'curseforge'
   }
 }
@@ -210,8 +211,59 @@ async function getCategories(projectType = 'mod') {
   }))
 }
 
+function deleteOldModFiles(destDir, projectId, newFilename, versionMeta) {
+  if (!fs.existsSync(destDir)) return
+  const trackPath = path.join(destDir, '.installed.json')
+  let tracking = {}
+  try { tracking = JSON.parse(fs.readFileSync(trackPath, 'utf8')) } catch {}
+  const old = tracking[projectId]
+  if (old && typeof old === 'string' && old !== newFilename) {
+    const oldPath = path.join(destDir, old)
+    if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath) } catch {} }
+  } else if (old && typeof old === 'object' && old.filename && old.filename !== newFilename) {
+    const oldPath = path.join(destDir, old.filename)
+    if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath) } catch {} }
+  }
+  tracking[projectId] = {
+    filename:    newFilename,
+    versionId:   versionMeta?.versionId   ?? null,
+    versionNumber: versionMeta?.versionNumber ?? null,
+    datePublished: versionMeta?.datePublished ?? null,
+  }
+  try { fs.writeFileSync(trackPath, JSON.stringify(tracking, null, 2)) } catch {}
+}
+
+async function resolveCfDependencies(file, gameVersion, loaders, depth = 0, visited = new Set(), deps = []) {
+  if (depth > 3 || !file.dependencies || file.dependencies.length === 0) return deps
+
+  for (const dep of file.dependencies) {
+    if (dep.relationType !== 3) continue
+    if (!dep.modId || visited.has(dep.modId)) continue
+    visited.add(dep.modId)
+
+    try {
+      const depFiles = await fetchCfSafe(`/mods/${dep.modId}/files`)
+      if (!depFiles || !depFiles.data) continue
+
+      let candidates = depFiles.data
+      if (gameVersion) {
+        candidates = candidates.filter(f => f.gameVersions.some(gv => gv === gameVersion))
+      }
+      if (loaders && loaders.length > 0) {
+        candidates = candidates.filter(f => f.gameVersions.some(gv => loaders.some(l => gv.toLowerCase().includes(l.toLowerCase()))))
+      }
+
+      const best = candidates.sort((a, b) => new Date(b.fileDate) - new Date(a.fileDate))[0]
+      if (!best) continue
+      deps.push(best)
+      await resolveCfDependencies(best, gameVersion, loaders, depth + 1, visited, deps)
+    } catch {}
+  }
+  return deps
+}
+
 async function installVersion(opts, onProgress) {
-  const { versionId, projectId, projectType, instancePath } = opts
+  const { versionId, projectId, projectType, instancePath, deleteOldVersions } = opts
 
   let file = null
   if (projectId) {
@@ -219,7 +271,7 @@ async function installVersion(opts, onProgress) {
     if (fileData && fileData.data) file = fileData.data
   }
   if (!file && opts.downloadUrl && opts.filename) {
-    file = { downloadUrl: opts.downloadUrl, fileName: opts.filename, fileLength: opts.fileLength || 0 }
+    file = { downloadUrl: opts.downloadUrl, fileName: opts.filename, fileLength: opts.fileLength || 0, modId: projectId }
   }
   if (!file) throw new Error('File not found')
 
@@ -240,9 +292,16 @@ async function installVersion(opts, onProgress) {
   const destPath = path.join(destDir, filename)
   const tmpPath  = destPath + '.tmp'
 
-  if (onProgress) onProgress({ log: `Bắt đầu tải ${filename}...`, percent: 0, total: file.fileLength })
+  if (deleteOldVersions) {
+    deleteOldModFiles(destDir, String(projectId), filename, {
+      versionId:    file.id ?? null,
+      versionNumber: file.displayName ?? null,
+      datePublished: file.fileDate ?? null,
+    })
+  }
 
-  // Dùng stream pipe thay vì arrayBuffer() để không load cả file vào RAM
+  if (onProgress) onProgress({ log: `Downloading ${filename}...`, percent: 0, total: file.fileLength })
+
   await new Promise((resolve, reject) => {
     function doGet(url) {
       const client = url.startsWith('https') ? https : http
@@ -266,7 +325,7 @@ async function installVersion(opts, onProgress) {
             const pct = Math.round(received / total * 100)
             const elapsed = (Date.now() - startTime) / 1000
             const speed = elapsed > 0 ? Math.round(received / elapsed / 1024) : 0
-            onProgress({ log: `Đang tải ${filename}: ${pct}%`, percent: pct, total, received, speed })
+            onProgress({ log: `Downloading ${filename}: ${pct}%`, percent: pct, total, received, speed })
           }
         })
         res.pipe(out)
@@ -285,7 +344,59 @@ async function installVersion(opts, onProgress) {
     doGet(downloadUrl)
   })
 
-  if (onProgress) onProgress({ log: `Đã cài đặt ${filename}`, percent: 100, total: file.fileLength })
+  if (onProgress) onProgress({ log: `Installed ${filename}`, percent: 100, total: file.fileLength })
+
+  if (projectType === 'mod' && projectId) {
+    const gameVersion = opts.gameVersion || ''
+    const loaders = opts.loaders || []
+    if (gameVersion || loaders.length > 0) {
+      onProgress?.({ log: 'Checking dependencies...', percent: 0 })
+      const dependencies = await resolveCfDependencies(file, gameVersion, loaders)
+      if (dependencies.length > 0) {
+        onProgress?.({ log: `Found ${dependencies.length} required dependenc(ies)`, percent: 10 })
+        for (let i = 0; i < dependencies.length; i++) {
+          const dep = dependencies[i]
+          const depUrl = dep.downloadUrl
+          const depFilename = dep.fileName
+          if (!depUrl || !depFilename) continue
+          const depPath = path.join(destDir, depFilename)
+          if (fs.existsSync(depPath)) {
+            onProgress?.({ log: `[${i + 1}/${dependencies.length}] Already installed: ${depFilename}`, percent: 10 + Math.round((i / dependencies.length) * 80) })
+            continue
+          }
+          const depTmp = depPath + '.tmp'
+          onProgress?.({ log: `[${i + 1}/${dependencies.length}] Downloading dependency: ${depFilename}...`, percent: 10 + Math.round((i / dependencies.length) * 80) })
+          try {
+            await new Promise((resolve, reject) => {
+              function doGetDep(url) {
+                const client = url.startsWith('https') ? https : http
+                client.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' }, timeout: 60000 }, (res) => {
+                  if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    res.resume()
+                    return doGetDep(res.headers.location)
+                  }
+                  if (res.statusCode !== 200) { res.resume(); return reject(new Error(`HTTP ${res.statusCode}`)) }
+                  const out = fs.createWriteStream(depTmp)
+                  res.pipe(out)
+                  out.on('finish', () => {
+                    try { fs.renameSync(depTmp, depPath) } catch { try { fs.copyFileSync(depTmp, depPath); fs.unlinkSync(depTmp) } catch {} }
+                    resolve()
+                  })
+                  out.on('error', err => { try { fs.unlinkSync(depTmp) } catch {}; reject(err) })
+                  res.on('error', err => { try { fs.unlinkSync(depTmp) } catch {}; reject(err) })
+                }).on('error', reject)
+              }
+              doGetDep(depUrl)
+            })
+          } catch (err) {
+            onProgress?.({ log: `[${i + 1}/${dependencies.length}] Failed: ${depFilename} - ${err.message}`, percent: 10 + Math.round((i / dependencies.length) * 80) })
+          }
+        }
+      }
+    }
+    onProgress?.({ log: 'Install complete', percent: 100 })
+  }
+
   return { success: true, file: filename }
 }
 

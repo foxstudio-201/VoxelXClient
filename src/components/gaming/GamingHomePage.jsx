@@ -12,6 +12,9 @@ import ServerBookmarksTab from '../home/tab/ServerBookmarksTab'
 import AnalyticsPanel from './AnalyticsPanel'
 import GamingLogPanel from './GamingLogPanel'
 import CreateProfileModal from '../play/CreateProfileModal'
+import { ContentBrowser } from './ContentBrowser'
+import modrinthIcon from '../../assets/loader/modrinth.png'
+import curseforgeIcon from '../../assets/loader/curseforge.png'
 import ImportProfileModal from '../play/ImportProfileModal'
 import { useToast } from '../../hooks/useToast'
 import defaultBg from '../../assets/minecraft-versions/default.png'
@@ -92,12 +95,13 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
   const [logPanelVisible, setLogPanelVisible] = useState(false)
   const [logManuallyClosed, setLogManuallyClosed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [browsing, setBrowsing] = useState(null)
   const [persistedLauncherLogs, setPersistedLauncherLogs] = useState([])
   const [showCreate, setShowCreate] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [accountMenuProfile, setAccountMenuProfile] = useState(null)
-  const [groups, setGroups] = useState([])
   const [profileLoading, setProfileLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
   const newLaunchRef = useRef(false)
@@ -113,10 +117,6 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
         initLoaded.current = true
       }
     }).catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (isElectron) window.electronAPI.getGroups().then(r => setGroups(r?.groups || [])).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -165,11 +165,6 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     const data = isElectron ? await window.electronAPI.getProfiles() : { profiles: [] }
     setProfiles(data.profiles || [])
     initLoaded.current = true
-    if (profileData.groupId && isElectron) {
-      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
-      const gd = await window.electronAPI.getGroups()
-      setGroups(gd?.groups || [])
-    }
     setShowCreate(false)
     toast?.({ type: 'success', title: 'Profile created', message: result.profile?.name })
     return result
@@ -184,21 +179,12 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
     const data = isElectron ? await window.electronAPI.getProfiles() : { profiles: [] }
     setProfiles(data.profiles || [])
     initLoaded.current = true
-    if (profileData.groupId && isElectron) {
-      await window.electronAPI.addProfileToGroup(profileData.groupId, result.profile.id)
-      const gd = await window.electronAPI.getGroups()
-      setGroups(gd?.groups || [])
-    }
     toast?.({ type: 'success', title: 'Profile imported', message: result.profile?.name })
     return result
   }
 
   async function handleImportClose() {
     setShowImport(false)
-    if (isElectron) {
-      const gd = await window.electronAPI.getGroups()
-      setGroups(gd?.groups || [])
-    }
     if (isElectron) {
       window.electronAPI.getProfiles().then(data => {
         setProfiles(data.profiles || [])
@@ -739,6 +725,7 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
                 </button>
                 </>
               )}
+
               <button onClick={closeExpanded}
                 className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
@@ -759,21 +746,86 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
             ))}
           </div>
 
+          {browsing ? (
+            <div className="flex items-center justify-between px-6 py-2 border-b border-white/5">
+              <button onClick={() => { playClickSound(); setBrowsing(null) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white/40 hover:text-white transition-all">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Back to {detailTab}
+              </button>
+              <p className="text-[10px] text-white/30 capitalize">{browsing.platform} · {browsing.contentType}</p>
+            </div>
+          ) : detailTab !== 'servers' && (
+            <div className="flex items-center justify-between px-6 py-2 border-b border-white/5">
+              <button onClick={() => { playClickSound(); setBrowsing({ step: 'platform', contentType:
+                detailTab === 'mods' ? 'mod' :
+                detailTab === 'shaders' ? 'shader' :
+                detailTab === 'resourcepacks' ? 'resourcepack' :
+                detailTab === 'worlds' ? 'world' : 'mod'
+              }) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/15 text-xs font-semibold hover:bg-cyan-500/20 transition-all active:scale-95">
+                <Plus weight="bold" className="w-3.5 h-3.5" />
+                Add {detailTab === 'resourcepacks' ? 'Resource Pack' : detailTab === 'shaders' ? 'Shader' : detailTab === 'mods' ? 'Mod' : 'World'}
+              </button>
+              <button onClick={() => { playClickSound(); setReloadKey(k => k + 1) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-white/40 hover:text-cyan-400 text-xs font-semibold transition-all active:scale-95">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                Reload
+              </button>
+            </div>
+          )}
           <div className="flex-1 min-h-0 flex">
-            <div className="flex-[2] min-w-0 overflow-y-auto p-4">
-              {ALL_TABS.filter(t => !(t.id === 'shaders' && currentProfile?.loader === 'vanilla')).map(tab => {
-                if (tab.id !== detailTab) return null
-                const TabComp = tab.component
-                return (
-                  <div key={tab.id} className="h-full">
-                    <TabComp profile={currentProfile} accountId={accountId} onLaunch={handleLaunch} />
+            {browsing ? (
+              <div className="flex-1 min-w-0 overflow-y-auto p-4 flex flex-col">
+                {browsing.step === 'platform' ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-4">
+                    <p className="text-xs text-white/40 font-medium">Choose a platform to browse {browsing.contentType}s</p>
+                    <div className="flex gap-4">
+                      <button onClick={() => setBrowsing({ ...browsing, step: 'browse', platform: 'modrinth' })}
+                        className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl transition-all hover:scale-105 cursor-pointer"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      >
+                        <img src={modrinthIcon} alt="Modrinth" className="w-12 h-12 object-contain" />
+                        <span className="text-sm font-bold text-white">Modrinth</span>
+                        <span className="text-[10px] text-white/30 text-center">Open-source mod platform</span>
+                      </button>
+                      <button onClick={() => setBrowsing({ ...browsing, step: 'browse', platform: 'curseforge' })}
+                        className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl transition-all hover:scale-105 cursor-pointer"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+                      >
+                        <img src={curseforgeIcon} alt="CurseForge" className="w-12 h-12 object-contain" />
+                        <span className="text-sm font-bold text-white">CurseForge</span>
+                        <span className="text-[10px] text-white/30 text-center">Largest modding community</span>
+                      </button>
+                    </div>
                   </div>
-                )
-              })}
-            </div>
-            <div className="flex-1 min-w-0 border-l border-white/5">
-              <AnalyticsPanel profileId={currentProfile?.id} t={t} />
-            </div>
+                ) : (
+                  <ContentBrowser
+                    profile={currentProfile}
+                    contentType={browsing.contentType}
+                    platform={browsing.platform}
+                    onBack={() => setBrowsing({ ...browsing, step: 'platform', platform: null })}
+                  />
+                )}
+              </div>
+            ) : (
+              <>
+              <div className="flex-[2] min-w-0 overflow-y-auto p-4">
+                {ALL_TABS.filter(t => !(t.id === 'shaders' && currentProfile?.loader === 'vanilla')).map(tab => {
+                  if (tab.id !== detailTab) return null
+                  const TabComp = tab.component
+                  return (
+                    <div key={`${tab.id}-${reloadKey}`} className="h-full">
+                      <TabComp profile={currentProfile} accountId={accountId} onLaunch={handleLaunch} />
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex-1 min-w-0 border-l border-white/5">
+                <AnalyticsPanel profileId={currentProfile?.id} t={t} />
+              </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -839,14 +891,12 @@ export default function GamingHomePage({ onNavigate, launchState, progress, laun
       )}
       {showCreate && (
         <CreateProfileModal
-          groups={groups}
           onClose={() => setShowCreate(false)}
           onCreate={handleCreate}
         />
       )}
       {showImport && (
         <ImportProfileModal
-          groups={groups}
           onClose={handleImportClose}
           onCreate={handleCreateForImport}
         />

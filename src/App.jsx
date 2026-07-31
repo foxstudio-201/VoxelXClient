@@ -29,14 +29,11 @@
  *   - Minecraft là một thương hiệu của Mojang Studios / Microsoft. Dự án này không liên kết với Mojang.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import TitleBar from './components/TitleBar'
 import CloseModal from './components/CloseModal'
 import Sidebar from './components/Sidebar'
 import HomePage from './components/HomePage'
-import AccountPage from './components/account/AccountPage'
-import SettingsPage from './components/settings/SettingsPage'
-import PlayPage from './components/play/PlayPage'
 import Toast from './components/Toast'
 import NoAccountHint from './components/NoAccountHint'
 import UpdateWindow from './components/UpdateWindow'
@@ -48,12 +45,7 @@ import { AccountsProvider, useAccounts } from './hooks/useAccounts'
 import { loadAppSettings, applyAppSettings, isInitialSetupRequired } from './utils/appSettings'
 import { LangProvider, useLang } from './i18n/LangProvider'
 import { ModpackInstallProvider } from './components/mods/shared/ModpackInstallContext'
-import CrashAnalyzerModal, { isFabricIncompatibleCrash } from './components/crash/CrashAnalyzerModal'
-import AddAccountModal from './components/account/AddAccountModal'
-import SkinCustomizeModal from './components/account/SkinCustomizeModal'
 
-import ModsPage from './components/mods/ModsPage'
-import ServerPage from './components/server/ServerPage'
 import LanShareWindow from './components/LanShareWindow'
 import { useBgMusic } from './hooks/useBgMusic'
 import {
@@ -62,6 +54,14 @@ import {
   Plus, FileArrowDown,
 } from '@phosphor-icons/react'
 import PlayerHead from './components/ui/PlayerHead'
+
+const AccountPage = lazy(() => import('./components/account/AccountPage'))
+const SettingsPage = lazy(() => import('./components/settings/SettingsPage'))
+const ModsPage = lazy(() => import('./components/mods/ModsPage'))
+const ServerPage = lazy(() => import('./components/server/ServerPage'))
+const CrashAnalyzerModal = lazy(() => import('./components/crash/CrashAnalyzerModal'))
+const AddAccountModal = lazy(() => import('./components/account/AddAccountModal'))
+const SkinCustomizeModal = lazy(() => import('./components/account/SkinCustomizeModal'))
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -73,6 +73,14 @@ function PlaceholderPage({ title }) {
         <h2 className="text-xl font-bold text-white/30">{title}</h2>
         <p className="text-sm text-white/20 mt-1">Coming soon</p>
       </div>
+    </div>
+  )
+}
+
+function PageLoading() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin" />
     </div>
   )
 }
@@ -95,13 +103,6 @@ function AppInner({ gamingMode }) {
   const dropdownRef = useRef(null)
   const [showCloseModal, setShowCloseModal] = useState(false)
   const [showPlayDropdown, setShowPlayDropdown] = useState(false)
-  const [groups, setGroups] = useState([])
-
-  useEffect(() => {
-    if (isElectron) {
-      window.electronAPI.getGroups().then(r => setGroups(r?.groups || [])).catch(() => {})
-    }
-  }, [])
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -392,7 +393,6 @@ function AppInner({ gamingMode }) {
   function renderPage() {
     return (
       <>
-        {}
         {activePage === 'home' && (
           <HomePage
             key="home"
@@ -410,15 +410,23 @@ function AppInner({ gamingMode }) {
             onLogPanelOpen={setLogPanelOpen}
           />
         )}
-        {activePage === 'play' && <PlayPage gamingMode={gamingMode} />}
-        {activePage === 'mods' && <ModsPage />}
-        {activePage === 'worlds' && <ServerPage serverJavaProgress={serverJavaProgress} onServerJavaProgress={setServerJavaProgress} gamingMode={gamingMode} />}
-        {}
+        {activePage === 'mods' && (
+          <Suspense fallback={<PageLoading />}>
+            <ModsPage />
+          </Suspense>
+        )}
+        {activePage === 'worlds' && (
+          <Suspense fallback={<PageLoading />}>
+            <ServerPage serverJavaProgress={serverJavaProgress} onServerJavaProgress={setServerJavaProgress} gamingMode={gamingMode} />
+          </Suspense>
+        )}
         <div
           style={{ display: activePage === 'account' ? 'flex' : 'none' }}
           className="flex-1 min-h-0 overflow-hidden"
         >
-          <AccountPage />
+          <Suspense fallback={<PageLoading />}>
+            <AccountPage />
+          </Suspense>
         </div>
       </>
     )
@@ -604,55 +612,67 @@ function AppInner({ gamingMode }) {
           <NoAccountHint onGoToAccount={() => handleNavigate('account')} />
         )}
       </div>
-      <CrashAnalyzerModal
-        crashData={crashData}
-        onClose={() => setCrashData(null)}
-      />
+      {crashData && (
+        <Suspense fallback={null}>
+          <CrashAnalyzerModal
+            crashData={crashData}
+            onClose={() => setCrashData(null)}
+          />
+        </Suspense>
+      )}
 
-      {settingsOpen && <SettingsPage onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsPage onClose={() => setSettingsOpen(false)} />
+        </Suspense>
+      )}
 
       {showAddAccount && (
-        <AddAccountModal
-          onClose={() => setShowAddAccount(false)}
-          onAdd={async (account) => {
-            await addAccount(account)
-          }}
-          onLinkDiscord={async (accountId, discordProfile) => {
-            await updateAccount(accountId, {
-              discordId:            discordProfile.discordId,
-              discordUsername:      discordProfile.discordUsername,
-              discordGlobalName:    discordProfile.discordGlobalName,
-              discordDiscriminator: discordProfile.discordDiscriminator,
-              discordAvatarUrl:     discordProfile.discordAvatarUrl,
-              linkedAt:             new Date().toISOString(),
-            })
-          }}
-          existingAccounts={accounts}
-        />
+        <Suspense fallback={null}>
+          <AddAccountModal
+            onClose={() => setShowAddAccount(false)}
+            onAdd={async (account) => {
+              await addAccount(account)
+            }}
+            onLinkDiscord={async (accountId, discordProfile) => {
+              await updateAccount(accountId, {
+                discordId:            discordProfile.discordId,
+                discordUsername:      discordProfile.discordUsername,
+                discordGlobalName:    discordProfile.discordGlobalName,
+                discordDiscriminator: discordProfile.discordDiscriminator,
+                discordAvatarUrl:     discordProfile.discordAvatarUrl,
+                linkedAt:             new Date().toISOString(),
+              })
+            }}
+            existingAccounts={accounts}
+          />
+        </Suspense>
       )}
 
       {showSkinModal && selectedAccount && (
-        <SkinCustomizeModal
-          account={selectedAccount}
-          onClose={() => setShowSkinModal(false)}
-          onApply={async ({ type, url, skinType }) => {
-            const prefs = {
-              uuid:      selectedAccount.uuid,
-              skinUrl:   type === 'skin'   ? url : undefined,
-              capeUrl:   type === 'cape'   ? url : undefined,
-              elytraUrl: type === 'elytra' ? url : undefined,
-              skinType:  skinType,
-            }
-            try {
-              if (typeof window !== 'undefined' && window.electronAPI) {
-                await window.electronAPI.saveSkinPrefs(prefs)
-              } else {
-                localStorage.setItem(`vxc_skin_prefs_${selectedAccount.uuid}`, JSON.stringify(prefs))
+        <Suspense fallback={null}>
+          <SkinCustomizeModal
+            account={selectedAccount}
+            onClose={() => setShowSkinModal(false)}
+            onApply={async ({ type, url, skinType }) => {
+              const prefs = {
+                uuid:      selectedAccount.uuid,
+                skinUrl:   type === 'skin'   ? url : undefined,
+                capeUrl:   type === 'cape'   ? url : undefined,
+                elytraUrl: type === 'elytra' ? url : undefined,
+                skinType:  skinType,
               }
-            } catch {}
-            setShowSkinModal(false)
-          }}
-        />
+              try {
+                if (typeof window !== 'undefined' && window.electronAPI) {
+                  await window.electronAPI.saveSkinPrefs(prefs)
+                } else {
+                  localStorage.setItem(`vxc_skin_prefs_${selectedAccount.uuid}`, JSON.stringify(prefs))
+                }
+              } catch {}
+              setShowSkinModal(false)
+            }}
+          />
+        </Suspense>
       )}
       {showCloseModal && (
         <CloseModal onClose={() => setShowCloseModal(false)} />

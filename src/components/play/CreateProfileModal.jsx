@@ -31,7 +31,6 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useLang } from '../../i18n/LangProvider'
-import GroupSelect from '../ui/GroupSelect'
 
 import vanillaIcon   from '../../assets/loader/vanilla.png'
 import fabricIcon    from '../../assets/loader/fabric.png'
@@ -644,14 +643,13 @@ function LoaderVersionList({ loader, gameVersion, selectedVersion, onSelect }) {
   return null
 }
 
-export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
+export default function CreateProfileModal({ onClose, onCreate }) {
   const { t } = useLang()
   const [loader, setLoader]               = useState('vanilla')
   const [gameVersion, setGameVersion]     = useState('')
   const [loaderVersion, setLoaderVersion] = useState('')
   const [name, setName]                   = useState('')
   const [instancePath, setInstancePath]   = useState('')
-  const [selectedGroupId, setSelectedGroupId] = useState('')
   const [submitting, setSubmitting]       = useState(false)
   const [versionGroups, setVersionGroups] = useState({ releaseGroups: RELEASE_GROUPS_FALLBACK, vanillaGroups: null })
 
@@ -691,7 +689,6 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
         gameVersion,
         loaderVersion: loader === 'vanilla' ? '' : loaderVersion,
         instancePath,
-        groupId: selectedGroupId || null,
       })
     } finally {
       setSubmitting(false)
@@ -795,20 +792,7 @@ export default function CreateProfileModal({ onClose, onCreate, groups = [] }) {
           </div>
 
           {}
-          {groups.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                {t('playpage.createProfile.group')}
-              </label>
-              <GroupSelect
-                groups={groups}
-                value={selectedGroupId}
-                onChange={setSelectedGroupId}
-              />
-            </div>
-          )}
 
-          {}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] text-white/40 font-semibold uppercase tracking-wider">
               {t('playpage.createProfile.loader')}

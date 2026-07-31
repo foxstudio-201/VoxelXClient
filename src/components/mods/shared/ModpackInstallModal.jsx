@@ -34,7 +34,6 @@ import { DownloadSimple, X, CheckCircle, WarningCircle } from '@phosphor-icons/r
 import curseforgeIcon from '../../../assets/loader/curseforge.png'
 import modrinthIcon   from '../../../assets/loader/modrinth.png'
 import technicIcon    from '../../../assets/loader/technic.png'
-import GroupSelect    from '../../ui/GroupSelect'
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI
 
@@ -52,14 +51,11 @@ const VERSION_TYPE_STYLE = {
   alpha:   'bg-red-500/15 text-red-400 border-red-500/25',
 }
 
-export default function ModpackInstallModal({ project, version, source, onClose, groups = [] }) {
+export default function ModpackInstallModal({ project, version, source, onClose }) {
   const [phase, setPhase]       = useState('idle')
   const [progress, setProgress] = useState(null)
   const [errorMsg, setErrorMsg] = useState(null)
   const [minimized, setMinimized] = useState(false)
-  const [selectedGroupId, setSelectedGroupId] = useState('')
-  const [availableGroups, setAvailableGroups] = useState(groups)
-  const [groupsLoading, setGroupsLoading] = useState(false)
   const unsubRef = useRef(null)
   // Track max percent seen to prevent backward jumps
   const maxPctRef = useRef(0)
@@ -83,23 +79,6 @@ export default function ModpackInstallModal({ project, version, source, onClose,
       maxPctRef.current = 0
     }
   }, [])
-
-  // Load groups một lần duy nhất khi modal mở
-  useEffect(() => {
-    if (!isElectron) return
-    // Nếu prop đã có data thì dùng luôn
-    if (groups.length > 0) {
-      setAvailableGroups(groups)
-      return
-    }
-    // Không có thì fetch
-    setGroupsLoading(true)
-    window.electronAPI.getGroups?.()
-      .then(data => { setAvailableGroups(data?.groups || []) })
-      .catch(() => { setAvailableGroups([]) })
-      .finally(() => setGroupsLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // chỉ chạy 1 lần khi mount, không phụ thuộc groups prop
 
   useEffect(() => {
     function onKey(e) {
@@ -143,7 +122,6 @@ export default function ModpackInstallModal({ project, version, source, onClose,
       downloadUrl,
       filename,
       source,
-      groupId: selectedGroupId || null,
       profileMeta: {
         name:          project?.title || filename.replace(/\.(zip|mrpack)$/i, ''),
         iconUrl:       project?.icon_url || null,
@@ -321,21 +299,7 @@ export default function ModpackInstallModal({ project, version, source, onClose,
           )}
 
           {}
-          {availableGroups.length > 0 && (
-            <div>
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-1.5 block">
-                Group (tuỳ chọn)
-              </label>
-              <GroupSelect
-                groups={availableGroups}
-                value={selectedGroupId}
-                onChange={setSelectedGroupId}
-                disabled={isRunning}
-              />
-            </div>
-          )}
 
-          {}
           {!isRunning && !isDone && !isError && (
             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-xs text-white/40"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>

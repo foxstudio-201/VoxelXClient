@@ -65,3 +65,4 @@ electron/app-secret.cjs
 
 packaging/aur/linux-unpacked.tar.zst
 *.mp3
+linux-unpacked.tar.zst

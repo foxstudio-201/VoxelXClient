@@ -47,7 +47,6 @@ export default function Sidebar({ activePage, onNavigate, selectedAccount, setti
 
   const navItems = [
     { id: 'home',     label: t('sidebar.home'),     Icon: House       },
-    { id: 'play',     label: t('sidebar.play'),     Icon: PlayCircle  },
     { id: 'mods',     label: t('sidebar.mods'),     Icon: PuzzlePiece },
     { id: 'worlds',   label: t('sidebar.worlds'),   Icon: HardDrives  },
   ]

@@ -12,7 +12,6 @@ export default function ResourcePacksTab({ profile, accountId }) {
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [installing, setInstalling] = useState([])
   const [query, setQuery] = useState('')
-  const fetchingMeta = useRef(new Set())
 
   const q = query.trim().toLowerCase()
   const filteredPacks = q
@@ -32,17 +31,30 @@ export default function ResourcePacksTab({ profile, accountId }) {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    if (!isElectron || packs.length === 0) return
-    for (const p of packs) {
-      if (metaCache[p.fileName] !== undefined) continue
-      if (fetchingMeta.current.has(p.fileName)) continue
-      fetchingMeta.current.add(p.fileName)
-      window.electronAPI.profileGetResourcePackMeta(profile.id, p.fileName, accountId)
-        .then(r => setMetaCache(prev => ({ ...prev, [p.fileName]: r?.meta || null })))
-        .catch(() => setMetaCache(prev => ({ ...prev, [p.fileName]: null })))
-        .finally(() => fetchingMeta.current.delete(p.fileName))
-    }
-  }, [packs, profile?.id, accountId])
+    if (!isElectron || !profile?.id) return
+    window.electronAPI.profileGetInstalledContent(profile.id)
+      .then(r => {
+        if (!r?.ok || !r.meta) return
+        const metaAdd = {}
+        for (const [key, m] of Object.entries(r.meta)) {
+          if (!key.startsWith('resourcepack:')) continue
+          metaAdd[key.slice(13)] = m
+        }
+        if (Object.keys(metaAdd).length) setMetaCache(prev => ({ ...prev, ...metaAdd }))
+      })
+      .catch(() => {})
+    window.electronAPI.profileMatchInstalledContent(profile.id)
+      .then(r => {
+        if (!r?.ok || !r.meta) return
+        const metaAdd = {}
+        for (const [key, m] of Object.entries(r.meta)) {
+          if (!key.startsWith('resourcepack:')) continue
+          metaAdd[key.slice(13)] = m
+        }
+        if (Object.keys(metaAdd).length) setMetaCache(prev => ({ ...prev, ...metaAdd }))
+      })
+      .catch(() => {})
+  }, [profile?.id])
 
   async function handleDelete(fileName) {
     if (!isElectron) return

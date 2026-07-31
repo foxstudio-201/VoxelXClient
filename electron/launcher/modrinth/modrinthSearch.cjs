@@ -140,8 +140,51 @@ async function getProjects(ids) {
   return httpsGetJson(`${BASE}/projects?${params}`)
 }
 
+async function resolveDependencies(version, gameVersion, loaders, depth = 0, visited = new Set(), deps = []) {
+  if (depth > 3) return deps
+  if (!version.dependencies || version.dependencies.length === 0) return deps
+
+  for (const dep of version.dependencies) {
+    if (dep.dependency_type !== 'required') continue
+    if (!dep.project_id || visited.has(dep.project_id)) continue
+    visited.add(dep.project_id)
+
+    try {
+      const depVersions = await getProjectVersions(dep.project_id, { gameVersions: [gameVersion], loaders })
+      if (!Array.isArray(depVersions) || depVersions.length === 0) continue
+      const bestVersion = depVersions.find(v => v.version_type === 'release') || depVersions[0]
+      if (!bestVersion) continue
+      deps.push(bestVersion)
+      await resolveDependencies(bestVersion, gameVersion, loaders, depth + 1, visited, deps)
+    } catch {}
+  }
+  return deps
+}
+
+function deleteOldModFiles(destDir, projectId, newFilename, versionMeta) {
+  if (!fs.existsSync(destDir)) return
+  const trackPath = path.join(destDir, '.installed.json')
+  let tracking = {}
+  try { tracking = JSON.parse(fs.readFileSync(trackPath, 'utf8')) } catch {}
+  const old = tracking[projectId]
+  if (old && typeof old === 'string' && old !== newFilename) {
+    const oldPath = path.join(destDir, old)
+    if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath) } catch {} }
+  } else if (old && typeof old === 'object' && old.filename && old.filename !== newFilename) {
+    const oldPath = path.join(destDir, old.filename)
+    if (fs.existsSync(oldPath)) { try { fs.unlinkSync(oldPath) } catch {} }
+  }
+  tracking[projectId] = {
+    filename:    newFilename,
+    versionId:   versionMeta?.versionId   ?? null,
+    versionNumber: versionMeta?.versionNumber ?? null,
+    datePublished: versionMeta?.datePublished ?? null,
+  }
+  try { fs.writeFileSync(trackPath, JSON.stringify(tracking, null, 2)) } catch {}
+}
+
 async function installVersion(opts) {
-  const { versionId, projectType, instancePath, onProgress } = opts
+  const { versionId, projectType, instancePath, onProgress, deleteOldVersions } = opts
 
   const version = await getVersion(versionId)
   const primaryFile = version.files?.find(f => f.primary) || version.files?.[0]
@@ -162,9 +205,17 @@ async function installVersion(opts) {
 
   const destPath = path.join(destDir, primaryFile.filename)
 
-  if (fs.existsSync(destPath)) {
+  if (fs.existsSync(destPath) && !deleteOldVersions) {
     onProgress?.({ log: `Already installed: ${primaryFile.filename}`, percent: 100 })
     return { ok: true, path: destPath, alreadyInstalled: true }
+  }
+
+  if (deleteOldVersions) {
+    deleteOldModFiles(destDir, String(version.project_id), primaryFile.filename, {
+      versionId:    version.id,
+      versionNumber: version.version_number,
+      datePublished: version.date_published,
+    })
   }
 
   onProgress?.({ log: `Downloading ${primaryFile.filename}...`, percent: 0 })
@@ -172,6 +223,36 @@ async function installVersion(opts) {
     onProgress?.({ ...p, log: `${primaryFile.filename}: ${p.percent}%` })
   })
   onProgress?.({ log: `Installed: ${primaryFile.filename}`, percent: 100 })
+
+  const gameVersions = version.game_versions || []
+  const loaders = version.loaders || []
+  const gameVersion = gameVersions[0] || ''
+  if (projectType === 'mod' && gameVersion && loaders.length > 0) {
+    onProgress?.({ log: 'Checking dependencies...', percent: 0 })
+    const dependencies = await resolveDependencies(version, gameVersion, loaders)
+    if (dependencies.length > 0) {
+      onProgress?.({ log: `Found ${dependencies.length} required dependenc(ies)`, percent: 10 })
+      for (let i = 0; i < dependencies.length; i++) {
+        const dep = dependencies[i]
+        const depFile = dep.files?.find(f => f.primary) || dep.files?.[0]
+        if (!depFile) continue
+        const depPath = path.join(destDir, depFile.filename)
+        if (fs.existsSync(depPath)) {
+          onProgress?.({ log: `[${i + 1}/${dependencies.length}] Already installed: ${depFile.filename}`, percent: 10 + Math.round((i / dependencies.length) * 80) })
+          continue
+        }
+        onProgress?.({ log: `[${i + 1}/${dependencies.length}] Downloading dependency: ${depFile.filename}...`, percent: 10 + Math.round((i / dependencies.length) * 80) })
+        try {
+          await downloadFile(depFile.url, depPath, (p) => {
+            onProgress?.({ ...p, log: `[${i + 1}/${dependencies.length}] Dependency ${depFile.filename}: ${p.percent}%` })
+          })
+        } catch (err) {
+          onProgress?.({ log: `[${i + 1}/${dependencies.length}] Failed: ${depFile.filename} - ${err.message}`, percent: 10 + Math.round((i / dependencies.length) * 80) })
+        }
+      }
+    }
+    onProgress?.({ log: 'Install complete', percent: 100 })
+  }
 
   return { ok: true, path: destPath, filename: primaryFile.filename }
 }

@@ -55,21 +55,22 @@ export default function SplashScreen({ onDone }) {
 
   useEffect(() => {
     let cancelled = false
+    const MIN_SPLASH_MS = 1800 
 
     async function run() {
+      const startTime = Date.now()
 
-      setProgress(5, (tRef.current('splash.init')))
+      setProgress(10, (tRef.current('splash.init')))
       if (isElectron) {
         try {
           const v = await window.electronAPI.getVersion()
           if (v && !cancelled) setVersion(v)
         } catch {}
       }
-      await delay(120)
 
       if (cancelled) return
 
-      setProgress(20, (tRef.current('splash.loadSettings')))
+      setProgress(25, (tRef.current('splash.loadSettings')))
       let autoCheckUpdate = true
       try {
         const s = await loadAppSettings()
@@ -85,77 +86,56 @@ export default function SplashScreen({ onDone }) {
           autoCheckUpdate = s.autoCheckUpdate
         }
       } catch {}
-      await delay(100)
 
       if (cancelled) return
 
       if (autoCheckUpdate && isElectron) {
-        setProgress(30, (tRef.current('splash.checkUpdate')))
+        setProgress(40, (tRef.current('splash.checkUpdate')))
         try {
           const updateResult = await window.electronAPI.checkUpdate()
           if (!cancelled && updateResult?.hasUpdate) {
-
-            setProgress(35, (tRef.current('splash.newVersion', { version: updateResult.latestVersion || '' })))
-            await delay(400)
             window.electronAPI.openUpdateWindow(updateResult)
             return
           }
         } catch {}
       }
 
-      setProgress(45, (tRef.current('splash.loadAccounts')))
+      setProgress(55, (tRef.current('splash.loadAccounts')))
       if (isElectron) {
         try {
           const accountData = await window.electronAPI.getAccounts()
           const selected = (accountData?.accounts || []).find(a => a.id === accountData?.selectedId)
 
           if (selected?.type === 'microsoft') {
-            setProgress(50, (tRef.current('splash.syncMs', { username: selected.username || '' })))
+            setProgress(65, (tRef.current('splash.syncMs', { username: selected.username || '' })))
             try {
               await window.electronAPI.msRefreshToken(selected.id)
             } catch {}
           }
-
-          const otherMs = (accountData?.accounts || []).filter(
-            a => a.type === 'microsoft' && a.id !== selected?.id
-          )
-          for (const acc of otherMs) {
-            try { await window.electronAPI.msRefreshToken(acc.id) } catch {}
-          }
         } catch {}
       }
-      await delay(100)
 
       if (cancelled) return
 
-      setProgress(65, (tRef.current('splash.loadProfiles')))
+      setProgress(80, (tRef.current('splash.loadProfiles')))
       if (isElectron) {
         try { await window.electronAPI.getProfiles() } catch {}
       }
-      await delay(100)
-
-      if (cancelled) return
-
-      setProgress(80, (tRef.current('splash.loadVersions')))
-      if (isElectron) {
-        try { await window.electronAPI.minecraftListVersions() } catch {}
-      }
-      await delay(100)
 
       if (cancelled) return
 
       setProgress(95, (tRef.current('splash.finishing')))
-      await delay(200)
 
-      if (cancelled) return
-
-      setProgress(100, (tRef.current('splash.ready')))
-      await delay(350)
+      const elapsed = Date.now() - startTime
+      const remaining = MIN_SPLASH_MS - elapsed
+      if (remaining > 0) {
+        await new Promise(r => setTimeout(r, remaining))
+      }
 
       if (cancelled) return
 
       setFadeOut(true)
-      await delay(550)
+      await new Promise(r => setTimeout(r, 550))
 
       if (!doneRef.current && !cancelled) {
         doneRef.current = true
@@ -240,7 +220,5 @@ export default function SplashScreen({ onDone }) {
   )
 }
 
-function delay(ms) {
-  return new Promise(r => setTimeout(r, ms))
-}
+
 

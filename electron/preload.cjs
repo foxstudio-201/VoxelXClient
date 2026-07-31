@@ -199,18 +199,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('launcher:stopped', handler)
   },
 
-  getGroups:              ()                   => ipcRenderer.invoke('groups:get'),
-  createGroup:            (data)               => ipcRenderer.invoke('groups:create', data),
-  deleteGroup:            (id)                 => ipcRenderer.invoke('groups:delete', id),
-  addProfileToGroup:      (groupId, profileId) => ipcRenderer.invoke('groups:addProfile', groupId, profileId),
-  removeProfileFromGroup: (groupId, profileId) => ipcRenderer.invoke('groups:removeProfile', groupId, profileId),
-  renameGroup:            (id, name)           => ipcRenderer.invoke('groups:rename', id, name),
-
   saveSkinPrefs: (opts) => ipcRenderer.invoke('skin:savePrefs', opts),
   getSkinPrefs:  (opts) => ipcRenderer.invoke('skin:getPrefs', opts),
   uploadSkinToWeb: (opts) => ipcRenderer.invoke('skin:uploadToWeb', opts),
 
   profileListMods:          (profileId, accountId)            => ipcRenderer.invoke('profile:listMods', profileId, accountId),
+  profileGetInstalledContent: (profileId)                     => ipcRenderer.invoke('profile:getInstalledContent', profileId),
+  profileMatchInstalledContent: (profileId)                   => ipcRenderer.invoke('profile:matchInstalledContent', profileId),
   profileToggleMod:         (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:toggleMod', profileId, fileName, accountId),
   profileDeleteMod:         (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:deleteMod', profileId, fileName, accountId),
   profileGetModMeta:        (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:getModMeta', profileId, fileName, accountId),

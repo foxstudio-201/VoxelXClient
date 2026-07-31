@@ -36,7 +36,7 @@ const { Readable } = require('stream')
 const rpc  = require('./discordRPC.cjs')
 const { getHwid, getHwidFormatted } = require('./hwid.cjs')
 const { startDiscordLink } = require('./discordAuth.cjs')
-const { registerProfileHandlers, registerGroupHandlers, registerProfileContentHandlers, registerJavaDistroHandlers } = require('./profileManager.cjs')
+const { registerProfileHandlers, registerProfileContentHandlers, registerJavaDistroHandlers } = require('./profileManager.cjs')
 const { registerServerHandlers } = require('./serverManager.cjs')
 const { registerServerBookmarkHandlers } = require('./launcher/serverBookmarks.cjs')
 const { registerLauncherHandlers } = require('./launcher.cjs')
@@ -347,10 +347,15 @@ function createMainWindow() {
     width: 1280, height: 720,
     minWidth: 1024, minHeight: 600,
     frame: false, transparent: false,
-    backgroundColor: '#0f0f0f',
+    show: false,
+    backgroundColor: '#080808',
     title: 'VoxelXLauncher',
     icon,
     webPreferences: secureWebPrefs(),
+  })
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
   })
 
   mainWindow.webContents.on('will-navigate', (e, url) => {
@@ -753,7 +758,7 @@ ipcMain.handle('updater:check', async (e) => {
       currentVersion,
       latestVersion:  latestVersion || currentVersion,
       releaseName:    data.name || latestVersion,
-      releaseNotes:   data.body || '',
+      releaseNotes:   '',
       releaseUrl:     data.html_url || `https://github.com/${GITHUB_REPO}/releases`,
       publishedAt:    data.published_at || null,
       installerAsset,
@@ -1240,7 +1245,6 @@ ipcMain.handle('shell:openExternal', (e, url) => {
 })
 
 registerProfileHandlers(getTrustedWindow)
-registerGroupHandlers(getTrustedWindow)
 registerProfileContentHandlers(getTrustedWindow)
 registerJavaDistroHandlers(getTrustedWindow)
 registerServerHandlers(getTrustedWindow)
@@ -1552,7 +1556,7 @@ ipcMain.handle('modpack:cancel', (e) => {
   return { ok: true, noop: true }
 })
 
-ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, source, profileMeta, groupId }) => {
+ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, source, profileMeta }) => {
   const win = getTrustedWindow(e)
   if (!win) return { error: 'Unauthorized' }
 
@@ -1736,7 +1740,38 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
   const profileId = require('crypto').randomUUID()
   const now = new Date().toISOString()
   const INSTANCES_DIR_DL = path.join(DATA_DIR_DL, 'instances')
-  const instancePath = path.join(INSTANCES_DIR_DL, profileId)
+
+  function slugifyName(name) {
+    return String(name || 'profile')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 64) || 'profile'
+  }
+
+  function uniqueInstanceDir(baseName) {
+    const slug = slugifyName(baseName)
+    let folder = slug
+    let n = 2
+    const taken = new Set()
+    try {
+      const PROFILES_FILE_DL_TMP = path.join(DATA_DIR_DL, 'profiles.json')
+      const existing = JSON.parse(fs.readFileSync(PROFILES_FILE_DL_TMP, 'utf-8'))
+      ;(existing.profiles || []).forEach(p => { if (p.instancePath) taken.add(path.resolve(p.instancePath)) })
+    } catch {}
+    const isTaken = p => {
+      const resolved = path.resolve(p)
+      return taken.has(resolved) || fs.existsSync(resolved)
+    }
+    while (isTaken(path.join(INSTANCES_DIR_DL, folder))) {
+      folder = `${slug}-${n}`
+      n++
+    }
+    return path.join(INSTANCES_DIR_DL, folder)
+  }
+
+  const instancePath = uniqueInstanceDir(meta.name || 'Modpack')
   try { fs.mkdirSync(instancePath, { recursive: true }) } catch {}
 
   const profile = {
@@ -1804,22 +1839,6 @@ ipcMain.handle('modpack:downloadAndImport', async (e, { downloadUrl, filename, s
     } catch {}
 
     try { fs.unlinkSync(tmpPath) } catch {}
-
-    if (groupId && typeof groupId === 'string' && /^[0-9a-f-]{36}$/.test(groupId)) {
-      try {
-        const GROUPS_FILE_DL = path.join(DATA_DIR_DL, 'groups.json')
-        let groupsData
-        try { groupsData = JSON.parse(fs.readFileSync(GROUPS_FILE_DL, 'utf-8')) }
-        catch { groupsData = { groups: [] } }
-        const grp = groupsData.groups.find(g => g.id === groupId)
-        if (grp && !grp.profileIds.includes(profileId)) {
-          grp.profileIds.push(profileId)
-          const tmpG = GROUPS_FILE_DL + '.tmp'
-          fs.writeFileSync(tmpG, JSON.stringify(groupsData, null, 2), { mode: 0o600 })
-          fs.renameSync(tmpG, GROUPS_FILE_DL)
-        }
-      } catch {}
-    }
 
     sendProgress({ phase: 'done', log: `Đã tạo profile "${meta.name}" thành công!`, percent: 100 })
     activeModpackDownloads.delete(win.webContents.id)

@@ -220,6 +220,7 @@ function launchGame(opts) {
     ...boostJvmArgs,
     ...bigCoreJvmArgs,
 
+    '--add-opens=java.base/java.lang=ALL-UNNAMED',
     '-Dorg.lwjgl.util.NoChecks=true',
     '-Dorg.lwjgl.opengl.Display.allowSoftwareOpenGL=false',
     '-Dorg.lwjgl.opengl.Display.enableHighDPI=true',

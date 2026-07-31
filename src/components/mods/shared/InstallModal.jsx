@@ -126,13 +126,7 @@ function ProfileSelect({ profiles, value, onChange }) {
 }
 
 export default function InstallModal({ project, versions, projectType, source = 'modrinth', onClose }) {
-  const [groups, setGroups] = useState([])
   const { selectedId } = useAccounts()
-
-  useEffect(() => {
-    if (!isElectron) return
-    window.electronAPI.getGroups?.().then(data => setGroups(data?.groups || [])).catch(() => {})
-  }, [])
 
   if (projectType === 'modpack') {
     return (
@@ -140,7 +134,6 @@ export default function InstallModal({ project, versions, projectType, source = 
         project={project}
         version={versions?.[0]}
         source={source}
-        groups={groups}
         onClose={onClose}
       />
     )
@@ -206,6 +199,7 @@ export default function InstallModal({ project, versions, projectType, source = 
       projectType,
       instancePath: selectedProfile.instancePath,
       accountId:    selectedId || null,
+      deleteOldVersions: true,
     })
   }
 
