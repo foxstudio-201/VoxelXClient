@@ -53,7 +53,12 @@
       "bigCoreMode": "Big Core Mode",
       "bigCoreModeDesc": "Pin game process to the highest-performance CPU cores and restrict ActiveProcessorCount for maximum single-threaded performance",
       "ui": "Interface",
-      "uiTabs": ["Font", "Colors", "Borders", "Background"],
+      "uiTabs": [
+        "Font",
+        "Colors",
+        "Borders",
+        "Background"
+      ],
       "fontLabel": "Font",
       "fontPreview": "Preview",
       "borderRadius": "Corner radius",
@@ -108,7 +113,7 @@
   "sidebar": {
     "home": "Home",
     "play": "Play",
-    "mods": "Mods",
+    "mods": "Modpacks",
     "worlds": "Servers",
     "settings": "Settings",
     "account": "Account"

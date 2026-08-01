@@ -54,7 +54,6 @@ export const DEFAULT_SETTINGS = {
   musicEnabled:         true,
   musicVolume:          35,
   language:             'vi',
-  gamingMode:           false,
   initialSetupCompleted: false,
 }
 

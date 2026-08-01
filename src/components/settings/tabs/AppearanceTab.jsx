@@ -11,10 +11,6 @@ function applyBackground(bgId, customBgPath = '') {
   }))
 }
 
-function applyGamingMode(v) {
-  window.dispatchEvent(new CustomEvent('vxc-gaming-mode', { detail: v }))
-}
-
 function customBgUrl(filePath) {
   return `vxc-bg://local?path=${encodeURIComponent(filePath.replace(/\\/g, '/'))}`
 }
@@ -213,14 +209,6 @@ export default function AppearanceTab({ settings, onChange }) {
             )}
           </div>
         </div>
-      </Section>
-
-      <Section title="Gaming Mode">
-        <SettingRow
-          label="Chế độ hiển thị Gaming"
-          description="Giao diện dạng thẻ chạy ngang kiểu cover-flow">
-          <Toggle checked={!!settings.gamingMode} onChange={v => { onChange({ gamingMode: v }); applyGamingMode(v) }} />
-        </SettingRow>
       </Section>
 
     </div>

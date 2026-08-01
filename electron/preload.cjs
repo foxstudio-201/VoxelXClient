@@ -206,6 +206,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   profileListMods:          (profileId, accountId)            => ipcRenderer.invoke('profile:listMods', profileId, accountId),
   profileGetInstalledContent: (profileId)                     => ipcRenderer.invoke('profile:getInstalledContent', profileId),
   profileMatchInstalledContent: (profileId)                   => ipcRenderer.invoke('profile:matchInstalledContent', profileId),
+  onContentScanDone:          (cb)                            => {
+    const listener = (_e, profileId) => cb(profileId)
+    ipcRenderer.on('content:scanDone', listener)
+    return () => ipcRenderer.removeListener('content:scanDone', listener)
+  },
   profileToggleMod:         (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:toggleMod', profileId, fileName, accountId),
   profileDeleteMod:         (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:deleteMod', profileId, fileName, accountId),
   profileGetModMeta:        (profileId, fileName, accountId)  => ipcRenderer.invoke('profile:getModMeta', profileId, fileName, accountId),

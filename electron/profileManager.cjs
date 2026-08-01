@@ -437,22 +437,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
     }
     const queries = searchQueryCandidates(extractSearchSlug(fileName)).slice(0, 20)
     if (queries.length === 0) return { retry: false, meta: null }
-    for (const query of queries) {
-      const data = await httpsGet(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(query)}&limit=1&facets=[["project_type:${projectType}"]]`)
-      if (data === null) return { retry: true, meta: null }
-      const h = data?.hits?.[0]
-      if (h && titlesOverlap(query, h.title)) {
-        return { retry: false, meta: {
-          source: 'modrinth',
-          name: h.title,
-          description: h.description,
-          iconUrl: h.icon_url,
-          author: h.author,
-          downloads: h.downloads,
-          projectUrl: `https://modrinth.com/${projectType}/${h.slug}`,
-        } }
-      }
-    }
+    // CurseForge is the preferred source — try it first, fall back to Modrinth.
     try {
       const cf = require('./launcher/curseforge/curseForgeSearch.cjs')
       for (const query of queries) {
@@ -470,6 +455,22 @@ function registerProfileContentHandlers(getTrustedWindow) {
         } }
       }
     } catch { return { retry: true, meta: null } }
+    for (const query of queries) {
+      const data = await httpsGet(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(query)}&limit=1&facets=[["project_type:${projectType}"]]`)
+      if (data === null) return { retry: true, meta: null }
+      const h = data?.hits?.[0]
+      if (h && titlesOverlap(query, h.title)) {
+        return { retry: false, meta: {
+          source: 'modrinth',
+          name: h.title,
+          description: h.description,
+          iconUrl: h.icon_url,
+          author: h.author,
+          downloads: h.downloads,
+          projectUrl: `https://modrinth.com/${projectType}/${h.slug}`,
+        } }
+      }
+    }
     return { retry: false, meta: null }
   }
 
@@ -662,38 +663,10 @@ function registerProfileContentHandlers(getTrustedWindow) {
           if (hr.status !== 404) return { retry: true, matched: false }
         }
       }
-      // 2) Name search with progressive query narrowing (Modrinth first)
+      // 2) Name search with progressive query narrowing (CurseForge first, Modrinth fallback)
       const projectType = type === 'mod' ? 'mod' : type === 'shader' ? 'shader' : 'resourcepack'
       const queries = searchQueryCandidates(extractSearchSlug(fileName))
       if (queries.length === 0) return { retry: false, matched: false }
-      let modrinthHit = null
-      for (const query of queries) {
-        const data = await httpsGet(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(query)}&limit=1&facets=[["project_type:${projectType}"]]`)
-        if (data === null) return { retry: true, matched: false }
-        const h = data?.hits?.[0]
-        if (h) {
-          const vers = await httpsGet(`https://api.modrinth.com/v2/project/${h.project_id}/version`)
-          if (vers === null) return { retry: true, matched: false }
-          let versionId = null
-          if (Array.isArray(vers)) {
-            const matched = vers.find(v => (v.files || []).some(f => f.filename === fileName))
-            versionId = matched ? matched.id : null
-          }
-          if (versionId) {
-            return { retry: false, matched: true, projectId: String(h.project_id), versionId, platform: 'modrinth', meta: {
-              source: 'modrinth', name: h.title, description: h.description, iconUrl: h.icon_url,
-              author: h.author, downloads: h.downloads, projectUrl: `https://modrinth.com/${projectType}/${h.slug}`,
-            } }
-          }
-          if (!modrinthHit && titlesOverlap(query, h.title)) {
-            modrinthHit = { projectId: String(h.project_id), platform: 'modrinth', meta: {
-              source: 'modrinth', name: h.title, description: h.description, iconUrl: h.icon_url,
-              author: h.author, downloads: h.downloads, projectUrl: `https://modrinth.com/${projectType}/${h.slug}`,
-            } }
-          }
-        }
-      }
-      // 3) CurseForge fallback with the same candidate queries (prefer exact filename match)
       let cfHit = null
       try {
         const cf = require('./launcher/curseforge/curseForgeSearch.cjs')
@@ -727,6 +700,34 @@ function registerProfileContentHandlers(getTrustedWindow) {
           }
         }
       } catch { return { retry: true, matched: false } }
+      // 3) Modrinth fallback with the same candidate queries (prefer exact filename match)
+      let modrinthHit = null
+      for (const query of queries) {
+        const data = await httpsGet(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(query)}&limit=1&facets=[["project_type:${projectType}"]]`)
+        if (data === null) return { retry: true, matched: false }
+        const h = data?.hits?.[0]
+        if (h) {
+          const vers = await httpsGet(`https://api.modrinth.com/v2/project/${h.project_id}/version`)
+          if (vers === null) return { retry: true, matched: false }
+          let versionId = null
+          if (Array.isArray(vers)) {
+            const matched = vers.find(v => (v.files || []).some(f => f.filename === fileName))
+            versionId = matched ? matched.id : null
+          }
+          if (versionId) {
+            return { retry: false, matched: true, projectId: String(h.project_id), versionId, platform: 'modrinth', meta: {
+              source: 'modrinth', name: h.title, description: h.description, iconUrl: h.icon_url,
+              author: h.author, downloads: h.downloads, projectUrl: `https://modrinth.com/${projectType}/${h.slug}`,
+            } }
+          }
+          if (!modrinthHit && titlesOverlap(query, h.title)) {
+            modrinthHit = { projectId: String(h.project_id), platform: 'modrinth', meta: {
+              source: 'modrinth', name: h.title, description: h.description, iconUrl: h.icon_url,
+              author: h.author, downloads: h.downloads, projectUrl: `https://modrinth.com/${projectType}/${h.slug}`,
+            } }
+          }
+        }
+      }
       if (cfHit) return { retry: false, matched: true, ...cfHit, versionId: null }
       if (modrinthHit) return { retry: false, matched: true, ...modrinthHit, versionId: null }
       return { retry: false, matched: false }
@@ -784,6 +785,7 @@ function registerProfileContentHandlers(getTrustedWindow) {
           versionId: (typeof info === 'object' && info !== null) ? info.versionId : null,
           versionNumber: (typeof info === 'object' && info !== null) ? info.versionNumber : null,
           datePublished: (typeof info === 'object' && info !== null) ? info.datePublished : null,
+          platform: (typeof info === 'object' && info !== null) ? (info.platform || null) : null,
         }
       }
       files[type] = []
@@ -917,6 +919,17 @@ function registerProfileContentHandlers(getTrustedWindow) {
     const metaResult = {}
     for (const [key, m] of Object.entries(metaCacheFile)) {
       if (m && typeof m === 'object') metaResult[key] = m
+    }
+    // Tell the renderer the scan finished so it can refresh names/icons
+    // (matched too late to be included in this response). Only fire when
+    // something actually changed, so a network-error retry loop never
+    // triggers endless reloads.
+    if (dirty || backfilled > 0) {
+      try {
+        for (const w of require('electron').BrowserWindow.getAllWindows()) {
+          if (!w.isDestroyed()) w.webContents.send('content:scanDone', profileId)
+        }
+      } catch {}
     }
     return { ok: true, matchedFiles, meta: metaResult }
   })

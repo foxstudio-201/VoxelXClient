@@ -3,7 +3,6 @@ import { Check, DiscordLogo, DownloadSimple, MusicNote } from '@phosphor-icons/r
 import { useLang } from '../i18n/LangProvider'
 import { applyAppSettings, saveAppSettings } from '../utils/appSettings'
 import defaultPreview from '../../default.png'
-import gamingPreview from '../../gaming.png'
 import martianIcon from '../assets/martian-icon.png'
 
 const COPY = {
@@ -59,7 +58,6 @@ export default function InitialSetup({ initialSettings, onComplete }) {
     musicEnabled: initialSettings?.musicEnabled !== false,
     discordRPC: !!initialSettings?.discordRPC,
     autoCheckUpdate: initialSettings?.autoCheckUpdate !== false,
-    gamingMode: !!initialSettings?.gamingMode,
   })
   const [saving, setSaving] = useState(false)
   const stepNames = ['welcome', 'language', 'music', 'discord', 'updates', 'appearance', 'done']
@@ -76,7 +74,6 @@ export default function InitialSetup({ initialSettings, onComplete }) {
     const finalSettings = { ...settings, initialSetupCompleted: true }
     await saveAppSettings(finalSettings)
     applyAppSettings(finalSettings)
-    window.dispatchEvent(new CustomEvent('vxc-gaming-mode', { detail: finalSettings.gamingMode }))
     window.dispatchEvent(new CustomEvent('vxc-music-init', { detail: { enabled: finalSettings.musicEnabled, volume: finalSettings.musicVolume ?? 35 } }))
     onComplete(finalSettings)
   }
@@ -104,7 +101,7 @@ export default function InitialSetup({ initialSettings, onComplete }) {
             {current === 'discord' && <ToggleChoice enabled={settings.discordRPC} onClick={() => setSettings(value => ({ ...value, discordRPC: !value.discordRPC }))} onLabel={`${copy.enabled} Discord Rich Presence`} offLabel={`${copy.disabled} Discord Rich Presence`} icon={DiscordLogo} />}
             {current === 'updates' && <ToggleChoice enabled={settings.autoCheckUpdate} onClick={() => setSettings(value => ({ ...value, autoCheckUpdate: !value.autoCheckUpdate }))} onLabel={`${copy.enabled} auto update`} offLabel={`${copy.disabled} auto update`} icon={DownloadSimple} />}
 
-            {current === 'appearance' && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{[{ id: false, label: copy.default, image: defaultPreview }, { id: true, label: copy.gaming, image: gamingPreview }].map(option => <button key={option.label} type="button" onClick={() => setSettings(value => ({ ...value, gamingMode: option.id }))} className={`relative h-48 rounded-xl overflow-hidden border text-left transition-all ${settings.gamingMode === option.id ? 'border-orange-400/80 shadow-[0_0_0_1px_rgba(251,146,60,.18)]' : 'border-white/[0.09] hover:border-white/30'}`}><img src={option.image} alt={`${option.label} preview`} className="absolute inset-0 w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" /><span className="absolute left-4 bottom-3 text-sm font-semibold text-white">{option.label}</span>{settings.gamingMode === option.id && <span className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/90 text-black flex items-center justify-center"><Check size={14} weight="bold" /></span>}</button>)}</div>}
+            {current === 'appearance' && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><button type="button" className="relative h-48 rounded-xl overflow-hidden border border-orange-400/80 shadow-[0_0_0_1px_rgba(251,146,60,.18)] text-left transition-all"><img src={defaultPreview} alt={`${copy.default} preview`} className="absolute inset-0 w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" /><span className="absolute left-4 bottom-3 text-sm font-semibold text-white">{copy.default}</span><span className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/90 text-black flex items-center justify-center"><Check size={14} weight="bold" /></span></button></div>}
 
             {current === 'done' && <div className="rounded-xl border border-white/[0.1] bg-white/[0.025] p-7 text-center"><div className="w-11 h-11 mx-auto rounded-full border border-orange-400/70 text-orange-400 flex items-center justify-center"><Check size={22} weight="bold" /></div><p className="text-sm text-white/50 mt-5">Các lựa chọn của bạn đã sẵn sàng để lưu.</p></div>}
           </div>

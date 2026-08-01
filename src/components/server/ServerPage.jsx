@@ -299,7 +299,7 @@ function ServerCardList({ server, onClick, onDelete, javaProgress }) {
   )
 }
 
-export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgress, gamingMode }) {
+export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgress }) {
   const { t } = useLang()
   const [servers, setServers]         = useState([])
   const [loading, setLoading]         = useState(true)
@@ -393,7 +393,7 @@ export default function ServerPage({ serverJavaProgress = {}, onServerJavaProgre
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {}
-      <div className={`flex-shrink-0 flex items-center px-6 pt-6 pb-4 ${gamingMode ? 'gap-4' : 'justify-between'}`}>
+      <div className="flex-shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
         <div>
           <h1 className="text-lg font-bold text-white">{t('server.page.title')}</h1>
           <p className="text-xs text-white/30 mt-0.5">{t('server.page.subtitle')}</p>

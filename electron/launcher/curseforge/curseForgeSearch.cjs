@@ -152,11 +152,15 @@ async function getProject(id) {
   if (!data || !data.data) return null
   const p = data.data
   const proj = formatProject(p)
-  proj.body = p.summary
-
-  const descData = await fetchCfSafe(`/mods/${id}/description`)
-  if (descData && descData.data) {
-    proj.body = descData.data
+  // Full description only — never fall back to the short summary.
+  proj.body = ''
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const descData = await fetchCfSafe(`/mods/${id}/description`)
+    if (descData && descData.data) {
+      proj.body = descData.data
+      break
+    }
+    if (attempt === 0) await new Promise(r => setTimeout(r, 300))
   }
   return proj
 }
@@ -229,6 +233,7 @@ function deleteOldModFiles(destDir, projectId, newFilename, versionMeta) {
     versionId:   versionMeta?.versionId   ?? null,
     versionNumber: versionMeta?.versionNumber ?? null,
     datePublished: versionMeta?.datePublished ?? null,
+    platform:    'curseforge',
   }
   try { fs.writeFileSync(trackPath, JSON.stringify(tracking, null, 2)) } catch {}
 }

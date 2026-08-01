@@ -120,7 +120,14 @@ async function searchProjects(opts = {}) {
 }
 
 async function getProject(idOrSlug) {
-  return httpsGetJson(`${BASE}/project/${idOrSlug}`)
+  const data = await httpsGetJson(`${BASE}/project/${idOrSlug}`)
+  if (!data || data.error) return null
+  return {
+    ...data,
+    project_id: data.id,
+    // Full project description (markdown) — never the short summary.
+    body: data.body || data.description || '',
+  }
 }
 
 async function getProjectVersions(idOrSlug, { gameVersions = [], loaders = [] } = {}) {
@@ -179,6 +186,7 @@ function deleteOldModFiles(destDir, projectId, newFilename, versionMeta) {
     versionId:   versionMeta?.versionId   ?? null,
     versionNumber: versionMeta?.versionNumber ?? null,
     datePublished: versionMeta?.datePublished ?? null,
+    platform:    'modrinth',
   }
   try { fs.writeFileSync(trackPath, JSON.stringify(tracking, null, 2)) } catch {}
 }

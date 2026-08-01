@@ -30,17 +30,15 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import CurseForgeSubTabs from './CurseForgeSubTabs'
 import CurseForgeFilters from './CurseForgeFilters'
 import CurseForgeGrid from './CurseForgeGrid'
 import CurseForgeDetail from './CurseForgeDetail'
 import ViewToggle from '../shared/ViewToggle'
-import TabLoadingOverlay from '../shared/TabLoadingOverlay'
 import { useCurseForgeSearch } from './useCurseForge'
 
 const DEFAULT_FILTERS = {
   query:        '',
-  projectType:  'mod',
+  projectType:  'modpack',
   sortBy:       'relevance',
   gameVersions: [],
   loaders:      [],
@@ -52,29 +50,12 @@ export default function CurseForgeTab() {
   const [view, setView]               = useState('grid')
   const [selectedProject, setProject] = useState(null)
   const [searchInput, setSearchInput] = useState('')
-  const [tabLoading, setTabLoading]   = useState(false)
-  const tabLoadingTimer               = useRef(null)
 
   const { results, total, loading, error, loadMore, hasMore, refresh } = useCurseForgeSearch(filters)
-
-  useEffect(() => {
-    if (!loading && tabLoading) {
-
-      tabLoadingTimer.current = setTimeout(() => setTabLoading(false), 120)
-    }
-    return () => clearTimeout(tabLoadingTimer.current)
-  }, [loading, tabLoading])
 
   function updateFilters(patch) {
     setFilters(prev => ({ ...prev, ...patch }))
     setProject(null)
-  }
-
-  function handleSubTab(type) {
-    setTabLoading(true)
-    setProject(null)
-    setSearchInput('')
-    setFilters(prev => ({ ...prev, projectType: type, query: '' }))
   }
 
   function handleSearch(e) {
@@ -102,8 +83,6 @@ export default function CurseForgeTab() {
     <div className="flex flex-col h-full overflow-hidden">
       {}
       <div className="flex-shrink-0 px-4 pt-3 pb-2 space-y-2">
-        <CurseForgeSubTabs active={filters.projectType} onChange={handleSubTab} />
-
         <form onSubmit={handleSearch} className="flex items-center gap-2">
           <div className="flex-1 relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +144,6 @@ export default function CurseForgeTab() {
 
         {}
         <div className="flex-1 overflow-hidden px-2 py-1 relative" style={{ isolation: 'isolate' }}>
-          <TabLoadingOverlay visible={tabLoading} />
           <CurseForgeGrid
             results={results}
             loading={loading}

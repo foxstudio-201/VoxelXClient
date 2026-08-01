@@ -79,9 +79,6 @@ export default function SplashScreen({ onDone }) {
             detail: { bgId: s.background, customBgPath: s.customBgPath ?? '' },
           }))
         }
-        if (!cancelled && s?.gamingMode !== undefined) {
-          window.dispatchEvent(new CustomEvent('vxc-gaming-mode', { detail: s.gamingMode }))
-        }
         if (typeof s?.autoCheckUpdate === 'boolean') {
           autoCheckUpdate = s.autoCheckUpdate
         }

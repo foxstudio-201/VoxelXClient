@@ -53,7 +53,12 @@
       "bigCoreMode": "Chế độ Big Core",
       "bigCoreModeDesc": "Ghim tiến trình game vào các lõi CPU hiệu năng cao nhất và giới hạn ActiveProcessorCount để tối ưu hiệu năng đơn luồng",
       "ui": "Giao diện",
-      "uiTabs": ["Kiểu chữ", "Màu sắc", "Đường viền", "Nền"],
+      "uiTabs": [
+        "Kiểu chữ",
+        "Màu sắc",
+        "Đường viền",
+        "Nền"
+      ],
       "fontLabel": "Font chữ",
       "fontPreview": "Xem trước",
       "borderRadius": "Độ cong góc",
@@ -108,7 +113,7 @@
   "sidebar": {
     "home": "Trang chủ",
     "play": "Chơi",
-    "mods": "Mods",
+    "mods": "Modpacks",
     "worlds": "Server",
     "settings": "Cài đặt",
     "account": "Tài khoản"
@@ -593,7 +598,7 @@
         "errorUnknown": "Lỗi không xác định",
         "spigotFolder": "plugins/",
         "downloadType": "Tải {{type}}"
-    }
+      }
     }
   },
   "account": {
