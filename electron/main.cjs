@@ -1313,9 +1313,9 @@ ipcMain.handle('neoforge:getVersions', async (e, gameVersion) => {
   if (typeof gameVersion !== 'string') return { error: 'Invalid game version' }
   try {
     const https = require('https')
-    const url = `https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml`
-    const xml = await new Promise((resolve, reject) => {
+    const getXml = (url) => new Promise((resolve, reject) => {
       https.get(url, { headers: { 'User-Agent': 'VoxelXLauncher/1.0' } }, (res) => {
+        if (res.statusCode === 404) return resolve('')
         let body = ''
         res.on('data', c => { body += c })
         res.on('end', () => {
@@ -1324,18 +1324,42 @@ ipcMain.handle('neoforge:getVersions', async (e, gameVersion) => {
         })
       }).on('error', reject)
     })
-    const matches = xml.match(/<version>([^<]+)<\/version>/g) || []
-    // NeoForge version format: "21.1.x" → MC "1.21.1", "26.0.x" → MC "26"
+    // NeoForge versions are split across two maven groups:
+    //  - net/neoforged/neoforge  → "20.4.x" (MC 1.20.4+), "21.1.x" (MC 1.21.1)...
+    //  - net/neoforged/forge     → "1.20.1-47.x.x" (MC 1.20.1)
+    const urls = [
+      'https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml',
+      'https://maven.neoforged.net/releases/net/neoforged/forge/maven-metadata.xml',
+    ]
+    const xmls = await Promise.all(urls.map(getXml))
+    const versions = []
+    for (const xml of xmls) {
+      const matches = xml.match(/<version>([^<]+)<\/version>/g) || []
+      for (const m of matches) {
+        const v = m.replace(/<\/?version>/g, '').trim()
+        if (v && !versions.includes(v)) versions.push(v)
+      }
+    }
     const mcKey = gameVersion.startsWith('1.')
       ? gameVersion.replace(/^1\./, '')   // "1.21.1" → "21.1"
       : gameVersion                        // "26" → "26"
-    const allVersions = matches
-      .map(m => m.replace(/<\/?version>/g, '').trim())
-      .filter(v => v.startsWith(mcKey + '.'))
-      .reverse()
-      .slice(0, 30)
-    const latest = allVersions[0] || null
-    return { ok: true, data: { versions: allVersions, latest, recommended: null } }
+    // Match both naming styles: "1.20.1-47.x.x" (prefixed) and "20.4.x".
+    const matched = versions.filter(v =>
+      v.startsWith(gameVersion + '-') || v.startsWith(mcKey + '.')
+    )
+    const numOf = (v) => (v.match(/\d+/g) || []).map(Number)
+    matched.sort((a, b) => {
+      const na = numOf(a), nb = numOf(b)
+      const len = Math.max(na.length, nb.length)
+      for (let i = 0; i < len; i++) {
+        const da = na[i] ?? 0, db = nb[i] ?? 0
+        if (da !== db) return db - da
+      }
+      return 0
+    })
+    const sliced = matched.slice(0, 30)
+    const latest = sliced[0] || null
+    return { ok: true, data: { versions: sliced, latest, recommended: null } }
   } catch (err) {
     return { error: err.message }
   }

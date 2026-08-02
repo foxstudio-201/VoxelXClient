@@ -36,6 +36,8 @@ const fs     = require('fs')
 const path   = require('path')
 const { spawnSync } = require('child_process')
 
+const { buildLoaderConfig, readVersionJsonFromInstance, readInstallProfileFromInstance } = require('./forgeVersionJson.cjs')
+
 const BMCLAPI      = 'https://bmclapi2.bangbang93.com'
 const FORGE_MAVEN  = 'https://files.minecraftforge.net/maven'
 
@@ -90,9 +92,26 @@ function resolveJvmArgs(rawArgs, librariesDir, versionName) {
       .replace(/\$\{classpath_separator\}/g, sep)
       .replace(/\$\{version_name\}/g,        versionName)
   }
+  // CurseForge's generated ignoreList also ends with the bare forge version
+  // (e.g. "...,forge-47.4.4.jar,forge-47.4.4"). Match it exactly.
+  const forgeToken = /^forge-[\d.]+$/.test(versionName) ? `,${versionName}` : ''
+  // CustomSkinLoader's runtime Common jar exports net.minecraft.client.renderer
+  // (the same package the client srg jar exports). If it's left on the module
+  // path, bootstraplauncher fails to build the layer with a split-package
+  // error. Adding it to the ignoreList keeps it on the classpath instead.
+  const cslToken = ',CustomSkinLoader'
   const result = []
   for (const arg of rawArgs) {
-    if (typeof arg === 'string') { result.push(subst(arg)); continue }
+    if (typeof arg === 'string') {
+      const s = subst(arg)
+      if (s.startsWith('-DignoreList=')) {
+        const extra = (forgeToken || cslToken) && (!s.includes('CustomSkinLoader') ? cslToken : '')
+        result.push(s + forgeToken + extra)
+      } else {
+        result.push(s)
+      }
+      continue
+    }
     if (arg && typeof arg === 'object' && arg.value) {
       let allowed = true
       if (Array.isArray(arg.rules)) {
@@ -123,6 +142,44 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     ? fullVersion.slice(mcVersion.length + 1)
     : forgeVersion
 
+  // For CurseForge instances the complete version.json is stored in
+  // minecraftinstance.json — no installer download/run needed at all.
+  let providedVersionJson = null
+  let providedInstallProfile = null
+  try {
+    const instJsonPath = path.join(instanceRoot, 'minecraftinstance.json')
+    if (fs.existsSync(instJsonPath)) {
+      providedVersionJson = readVersionJsonFromInstance(instJsonPath)
+      providedInstallProfile = readInstallProfileFromInstance(instJsonPath)
+    }
+  } catch {}
+
+  if (providedVersionJson) {
+    const config = await buildLoaderConfig({
+      mcVersion,
+      loaderName: 'forge',
+      versionSuffix: buildOnlyVersion,
+      librariesDir,
+      instanceRoot,
+      onProgress,
+      javaPath,
+      versionJson: providedVersionJson,
+      installProfile: providedInstallProfile,
+    })
+    if (config) {
+      onProgress?.({ phase: 'forge_ready', log: `Forge ${config.versionId} ready. Main: ${config.mainClass}`, done: 1, total: 1 })
+      return {
+        mainClass:           config.mainClass,
+        extraLibraries:      config.libraryPaths,
+        jvmArgs:             config.jvmArgs,
+        gameArgs:            config.gameArgs,
+        shimJar:             null,
+        customClientJar:     config.customClientJar || null,
+        needsVanillaClasspath: true,
+      }
+    }
+  }
+
   const installerName = `forge-${fullVersion}-installer.jar`
   const installerDir  = path.join(librariesDir, 'net', 'minecraftforge', 'forge', fullVersion)
   const installerPath = path.join(installerDir, installerName)
@@ -151,7 +208,37 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     onProgress?.({ phase: 'forge_download', log: 'Forge installer already cached.', done: 1, total: 1 })
   }
 
-  // ── Place vanilla jar for installer ───────────────────────────────────────
+  const versionId       = `${mcVersion}-forge-${buildOnlyVersion}`
+  const versionDir      = path.join(instanceRoot, 'versions', versionId)
+  const versionJsonPath = path.join(versionDir, `${versionId}.json`)
+
+  // ── Preferred path: build config from the installer's embedded version.json ──
+  // No `--installClient` run, no Linux SHA1 processor dance.
+  const config = await buildLoaderConfig({
+    installerPath,
+    mcVersion,
+    loaderName: 'forge',
+    versionSuffix: buildOnlyVersion,
+    librariesDir,
+    instanceRoot,
+    onProgress,
+    javaPath,
+  })
+
+  if (config) {
+    onProgress?.({ phase: 'forge_ready', log: `Forge ${config.versionId} ready. Main: ${config.mainClass}`, done: 1, total: 1 })
+    return {
+      mainClass:           config.mainClass,
+      extraLibraries:      config.libraryPaths,
+      jvmArgs:             config.jvmArgs,
+      gameArgs:            config.gameArgs,
+      shimJar:             null,
+      customClientJar:     config.customClientJar || null,
+      needsVanillaClasspath: true,
+    }
+  }
+
+  // ── Fallback: place vanilla jar and run the installer ─────────────────────
   const vanillaVersionDir = path.join(instanceRoot, 'versions', mcVersion)
   const vanillaJarDest    = path.join(vanillaVersionDir, `${mcVersion}.jar`)
   if (!fs.existsSync(vanillaJarDest) && clientJar && fs.existsSync(clientJar)) {
@@ -159,10 +246,6 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
     fs.copyFileSync(clientJar, vanillaJarDest)
     onProgress?.({ phase: 'forge_install', log: 'Placed vanilla client.jar for installer.' })
   }
-
-  const versionId       = `${mcVersion}-forge-${buildOnlyVersion}`
-  const versionDir      = path.join(instanceRoot, 'versions', versionId)
-  const versionJsonPath = path.join(versionDir, `${versionId}.json`)
 
   // instLibDir is where the installer places processed libraries
   const instLibDir = path.join(instanceRoot, 'libraries')
@@ -293,7 +376,9 @@ async function setupForge(mcVersion, forgeVersion, librariesDir, clientJar, java
   }
 
   const effectiveLibDir = fs.existsSync(instLibDir) ? instLibDir : librariesDir
-  const versionName     = profile.id || fullVersion
+  // ${version_name} must be "forge-{build}" (e.g. "forge-47.4.4") to match what
+  // bootstraplauncher expects — NOT profile.id which may be "1.20.1-forge-47.4.4".
+  const versionName     = `forge-${buildOnlyVersion}`
   const jvmArgs         = resolveJvmArgs(profile.arguments?.jvm || [], effectiveLibDir, versionName)
 
   const gameArgs = Array.isArray(profile.arguments?.game)

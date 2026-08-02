@@ -105,10 +105,18 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
   const [accountMenuProfile, setAccountMenuProfile] = useState(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [predownload, setPredownload] = useState(null)
   const newLaunchRef = useRef(false)
   const toast = useToast()
   const isElectron = typeof window !== 'undefined' && window.electronAPI
   const initLoaded = useRef(false)
+
+  useEffect(() => {
+    if (!isElectron || !window.electronAPI.onPreDownloadProgress) return
+    return window.electronAPI.onPreDownloadProgress(data => {
+      setPredownload(prev => prev ? { ...prev, log: data.log, percent: data.percent } : null)
+    })
+  }, [])
 
   useEffect(() => {
     if (!isElectron) return
@@ -168,6 +176,17 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
     initLoaded.current = true
     setShowCreate(false)
     toast?.({ type: 'success', title: 'Profile created', message: result.profile?.name })
+    if (isElectron && result.profile?.id) {
+      setPredownload({ profileId: result.profile.id, log: 'Đang chuẩn bị tài nguyên game...', percent: 0 })
+      window.electronAPI.preDownload({ profileId: result.profile.id }).then(r => {
+        if (r?.ok) {
+          setPredownload(prev => prev ? { ...prev, log: 'Tài nguyên game đã sẵn sàng', percent: 100 } : null)
+          setTimeout(() => setPredownload(null), 2500)
+        } else {
+          setPredownload(null)
+        }
+      })
+    }
     return result
   }
 
@@ -616,6 +635,19 @@ export default function HomePage({ onNavigate, launchState, progress, launchErro
                     )}
                   </div>
                 </div>
+                {predownload?.profileId === p.id && (
+                  <div className="absolute inset-x-0 bottom-2 z-20 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-black/50 border border-white/10 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                          style={{ width: `${predownload.percent || 0}%` }} />
+                      </div>
+                      <span className="text-[10px] font-bold text-cyan-300 drop-shadow-lg flex-shrink-0">
+                        {Math.round(predownload.percent || 0)}%
+                      </span>
+                    </div>
+                  </div>
+                )}
                 </div>
               </div>
             )

@@ -33,7 +33,7 @@ function ProfileFileIcon({ name, isDir }) {
   )
 }
 
-export default function FilesTab({ profile, accountId }) {
+export default function FilesTab({ profile }) {
   const { t } = useLang()
   const [currentPath, setCurrentPath] = useState('')
   const [entries, setEntries] = useState([])
@@ -43,13 +43,13 @@ export default function FilesTab({ profile, accountId }) {
     if (!isElectron || !profile?.id) return
     setLoading(true)
     try {
-      const r = await window.electronAPI.profileListDirFull(profile.id, subPath, accountId)
+      const r = await window.electronAPI.profileListDirFull(profile.id, subPath)
       setEntries(r?.ok ? (r.entries || []) : [])
       setCurrentPath(subPath)
     } finally {
       setLoading(false)
     }
-  }, [profile?.id, accountId])
+  }, [profile?.id])
 
   useEffect(() => {
     const timer = setTimeout(() => { loadDir('') }, 0)

@@ -545,6 +545,20 @@ function registerLauncherHandlers(getTrustedWindow) {
         sendProgressAndLog({ phase: 'neoforge', log: `NeoForge ready. Main: ${mainClassOverride}`, percent: 97 })
       }
 
+      // CustomSkinLoader (forge/neoforge): ignore non-critical skin-manager patch
+      // failures instead of crashing the game at boot.
+      if (profile.loader === 'forge' || profile.loader === 'neoforge') {
+        try {
+          const cslCoreDir = path.join(instancePath, 'CustomSkinLoader', 'Core')
+          const modsDir = path.join(instancePath, 'mods')
+          const hasCsl = (fs.existsSync(cslCoreDir) && fs.readdirSync(cslCoreDir).some(f => f.endsWith('.jar'))) ||
+            (fs.existsSync(modsDir) && fs.readdirSync(modsDir).some(f => /^CustomSkinLoader_Universal/i.test(f)))
+          if (hasCsl) {
+            extraJvmArgs = [...extraJvmArgs, '-Dcustomskinloader.ignorePatchFailure=true']
+          }
+        } catch {}
+      }
+
       sendProgressAndLog({ phase: 'launching', log: `Launching as ${account.username}...`, percent: 98 })
 
       // Boost Mode: tắt tiến trình nền trước khi khởi động game
@@ -715,6 +729,73 @@ function registerLauncherHandlers(getTrustedWindow) {
       }
     }
     return stopped > 0 ? { ok: true, stopped } : { error: 'Game is not running' }
+  })
+
+  // Pre-download a profile's game resources (version JSON, Java, assets and
+  // loader libraries) into the shared LAUNCHER_DIR cache so the first launch
+  // is fast — assets already cached are skipped, only what's missing is fetched.
+  ipcMain.handle('launcher:preDownload', async (e, { profileId }) => {
+    const win = getTrustedWindow(e)
+    if (!win) return { error: 'Unauthorized' }
+    const profilesData = readProfiles()
+    const profile = profilesData.profiles.find(p => p.id === profileId)
+    if (!profile) return { error: 'Profile not found' }
+
+    const launcherDir = LAUNCHER_DIR
+    if (!fs.existsSync(launcherDir)) fs.mkdirSync(launcherDir, { recursive: true })
+    const runtimesDir = path.join(DATA_DIR, 'runtimes')
+
+    function sendProgress(data) {
+      if (!win.isDestroyed()) win.webContents.send('launcher:predownload:progress', data)
+    }
+
+    try {
+      sendProgress({ phase: 'predownload', log: `Loading version info for ${profile.gameVersion}...`, percent: 2 })
+      const versionJson = await resolveVersion(profile.gameVersion, launcherDir)
+
+      sendProgress({ phase: 'predownload', log: 'Checking Java runtime...', percent: 5 })
+      const javaPath = await ensureJava(profile.gameVersion, runtimesDir, (p) => {
+        sendProgress({
+          phase: 'predownload',
+          log: p.log || `Java: ${p.done}/${p.total}`,
+          percent: 5 + Math.round((p.percent || 0) * 0.2),
+          doneFiles: p.done,
+          totalFiles: p.total,
+        })
+      }, versionJson)
+
+      sendProgress({ phase: 'predownload', log: 'Checking game assets...', percent: 30 })
+      const assets = await downloadAssets(versionJson, launcherDir, (p) => {
+        sendProgress({
+          phase: 'predownload',
+          log: p.log || `Assets: ${p.doneFiles}/${p.totalFiles}`,
+          percent: 30,
+          doneFiles: p.doneFiles,
+          totalFiles: p.totalFiles,
+        })
+      })
+
+      if (profile.loader === 'fabric' && profile.loaderVersion) {
+        sendProgress({ phase: 'predownload', log: `Setting up Fabric ${profile.loaderVersion}...`, percent: 90 })
+        await setupFabric(profile.gameVersion, profile.loaderVersion, path.join(launcherDir, 'libraries'), (p) => {
+          sendProgress({ phase: 'predownload', log: p.log, percent: 90, doneFiles: p.done, totalFiles: p.total })
+        })
+      }
+
+      if ((profile.loader === 'forge' || profile.loader === 'neoforge') && profile.loaderVersion) {
+        const setup = profile.loader === 'forge' ? setupForge : setupNeoForge
+        sendProgress({ phase: 'predownload', log: `Setting up ${profile.loader} ${profile.loaderVersion}...`, percent: 90 })
+        await setup(profile.gameVersion, profile.loaderVersion, path.join(launcherDir, 'libraries'), assets.clientJar, javaPath, launcherDir, (p) => {
+          sendProgress({ phase: 'predownload', log: p.log, percent: 90, doneFiles: p.done, totalFiles: p.total })
+        })
+      }
+
+      sendProgress({ phase: 'predownload', log: 'Profile resources ready — launch will be fast.', percent: 100 })
+      return { ok: true }
+    } catch (err) {
+      sendProgress({ phase: 'predownload', log: `Pre-download warning: ${err.message}`, percent: 100 })
+      return { ok: false, error: err.message }
+    }
   })
 
   ipcMain.handle('launcher:isRunning', (e, { profileId, accountId }) => {

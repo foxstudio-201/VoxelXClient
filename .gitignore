@@ -48,6 +48,7 @@ packaging/aur/pkg/
 packaging/aur/*.pkg.tar.zst
 packaging/aur/*.deb
 packaging/aur/*.AppImage
+packaging/aur/linux-unpacked.tar.xz
 
 # Code signing certificates (NEVER commit these)
 certs/
@@ -66,3 +67,4 @@ electron/app-secret.cjs
 packaging/aur/linux-unpacked.tar.zst
 *.mp3
 linux-unpacked.tar.zst
+linux-unpacked.tar.xz

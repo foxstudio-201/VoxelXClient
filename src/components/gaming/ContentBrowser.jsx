@@ -35,7 +35,9 @@ export function ContentBrowser({ profile, contentType, platform, onBack }) {
   const [detailLoading, setDetailLoading] = useState(false)
   const [installed, setInstalled] = useState({})
   const [installedFiles, setInstalledFiles] = useState({})
-  const versionsLoadingRef = useRef(new Set())
+  const versionsPendingRef = useRef({})
+  const [downloading, setDownloading] = useState(null)
+  const [downloadError, setDownloadError] = useState(null)
 
   const typeLabel = contentType === 'resourcepack' ? 'resourcepack' : contentType
 
@@ -138,27 +140,41 @@ export function ContentBrowser({ profile, contentType, platform, onBack }) {
   }
 
   // Versions always come from the platform the user selected — no fallback
-  // to the other platform.
+  // to the other platform. Returns the fetched list so callers never read
+  // stale `versions` state right after an await.
   async function loadVersions(item) {
-    if (!isElectron) return
+    if (!isElectron) return []
     const key = versionKeyOf(item)
-    if (versions[key] || versionsLoadingRef.current.has(key)) return
-    versionsLoadingRef.current.add(key)
-    try {
-      const filters = versionFilters()
-      const data = platform === 'curseforge'
-        ? await window.electronAPI.curseforgeGetVersions(item.project_id, filters).catch(() => null)
-        : await window.electronAPI.modrinthGetVersions(item.project_id, filters).catch(() => null)
-      const arr = Array.isArray(data) ? data : []
-      setVersions(prev => ({ ...prev, [key]: arr.map(v => ({ ...v, source: platform })) }))
-    } catch {} finally {
-      versionsLoadingRef.current.delete(key)
-    }
+    if (versionsPendingRef.current[key]) return versionsPendingRef.current[key]
+    if (versions[key]) return versions[key]
+    const p = (async () => {
+      try {
+        const filters = versionFilters()
+        const data = platform === 'curseforge'
+          ? await window.electronAPI.curseforgeGetVersions(item.project_id, filters).catch(() => null)
+          : await window.electronAPI.modrinthGetVersions(item.project_id, filters).catch(() => null)
+        const arr = Array.isArray(data) ? data.map(v => ({ ...v, source: platform })) : []
+        setVersions(prev => ({ ...prev, [key]: arr }))
+        return arr
+      } catch {
+        return []
+      } finally {
+        setTimeout(() => { delete versionsPendingRef.current[key] }, 0)
+      }
+    })()
+    versionsPendingRef.current[key] = p
+    return p
   }
 
   async function ensureVersions(item) {
     await loadVersions(item)
   }
+
+  useEffect(() => {
+    if (!downloadError) return
+    const timer = setTimeout(() => setDownloadError(null), 5000)
+    return () => clearTimeout(timer)
+  }, [downloadError])
 
   useEffect(() => { refreshInstalled() }, [profile.id])
 
@@ -244,17 +260,16 @@ export function ContentBrowser({ profile, contentType, platform, onBack }) {
 
   async function handleDownloadLatest(item) {
     if (!isElectron) return
-    const key = versionKeyOf(item)
-    let vers = versions[key]
-    if (!vers) {
-      await loadVersions(item)
-      vers = versions[key]
-    }
-
-    const latest = (vers || []).find(v => v.version_type === 'release') || (vers || [])[0]
-    if (!latest) return
-
+    setDownloading(item.project_id)
+    setDownloadError(null)
     try {
+      let vers = versions[versionKeyOf(item)]
+      if (!vers) vers = await loadVersions(item)
+      const latest = (vers || []).find(v => v.version_type === 'release') || (vers || [])[0]
+      if (!latest) {
+        setDownloadError(`No compatible version found for "${item.title || 'this item'}"`)
+        return
+      }
       const opts = {
         versionId: latest.id,
         projectId: latest.project_id,
@@ -271,7 +286,11 @@ export function ContentBrowser({ profile, contentType, platform, onBack }) {
         await window.electronAPI.modrinthInstall(opts)
       }
       refreshInstalled()
-    } catch {}
+    } catch (err) {
+      setDownloadError(err?.message || 'Download failed')
+    } finally {
+      setDownloading(null)
+    }
   }
 
   async function handleDownload(version) {
@@ -326,6 +345,11 @@ export function ContentBrowser({ profile, contentType, platform, onBack }) {
           </div>
         </div>
 
+        {downloadError && (
+          <div className="mb-1.5 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] text-red-400">
+            {downloadError}
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto min-h-0 space-y-1" style={{ scrollbarColor: 'rgba(255,255,255,0.10) transparent' }}>
           {loading && results.length === 0 ? (
             <div className="flex items-center justify-center py-10">
@@ -361,17 +385,27 @@ export function ContentBrowser({ profile, contentType, platform, onBack }) {
                   </div>
                   {!inst ? (
                     <button onClick={e => { e.stopPropagation(); handleDownloadLatest(item) }}
-                      className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-white transition-all hover:scale-105"
+                      disabled={downloading === item.project_id}
+                      className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-white transition-all hover:scale-105 disabled:opacity-60 disabled:hover:scale-100"
                       style={{ background: 'linear-gradient(135deg,#f97316,#ea580c)' }}
                       title="Download latest version">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                      {downloading === item.project_id ? (
+                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="4"/><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4"/></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                      )}
                     </button>
                   ) : update ? (
                     <button onClick={e => { e.stopPropagation(); handleDownloadLatest(item) }}
-                      className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-white transition-all hover:scale-105 flex items-center gap-1"
+                      disabled={downloading === item.project_id}
+                      className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-white transition-all hover:scale-105 disabled:opacity-60 disabled:hover:scale-100 flex items-center gap-1"
                       style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
                       title="Update to latest version">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M11 5v11.17l-4.88-4.88-1.42 1.41L12 19.71l7.3-7.01-1.42-1.41L13 16.17V5h-2zM5 21h14v-2H5v2z"/></svg>
+                      {downloading === item.project_id ? (
+                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" strokeWidth="4"/><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4"/></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M11 5v11.17l-4.88-4.88-1.42 1.41L12 19.71l7.3-7.01-1.42-1.41L13 16.17V5h-2zM5 21h14v-2H5v2z"/></svg>
+                      )}
                       Update
                     </button>
                   ) : (

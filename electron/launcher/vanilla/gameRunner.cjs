@@ -242,7 +242,11 @@ function launchGame(opts) {
   let versionJvmArgs
   if (isForge) {
 
-    versionJvmArgs = []
+    // Forge still needs the full classpath on -cp (the bootstraplauncher module
+    // path is supplied by the forge jvm args). Launchers that merge the vanilla
+    // jvm args (CurseForge, Modrinth) include this -cp; omitting it changes how
+    // the JPMS module layer resolves mods and can cause split-package crashes.
+    versionJvmArgs = ['-cp', classpath]
   } else if (needsVanillaCP) {
 
     const sep = process.platform === 'win32' ? ';' : ':'
